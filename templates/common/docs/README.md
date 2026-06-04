@@ -64,12 +64,16 @@ Load the matching row only. Add adjacent docs only when the loaded doc directly 
 
 - Move phases in order unless the user asks for a fast lane.
 - Do not code before the PRD has MVP, non-goals, and acceptance criteria.
-- Do not cross a layer boundary without updating architecture or ports.
+- Do not cross a layer boundary without reading `domain/ports.md` and updating architecture or ports.
+- Before adding failure paths, read `harness/data-flow.md`.
+- Before modifying stateful components, read `harness/state-machines.md`.
+- Unsure whether to open a feature doc? Read `harness/agent-workflow.md` Section 1.
 - Do not spawn a subagent without a role, read boundary, write boundary, and return contract.
 - Do not run writing agents in parallel unless write sets are disjoint.
+- Before coordinating multiple agents, fill `harness/PLAN.md#Parallel Dispatch` and follow `harness/dispatch.md`.
 - Do not add stack-specific agents or skills without following `harness/extension.md`.
 - Do not close work without tests or recorded manual verification.
-- Do not mark work `Verified` until evidence is recorded in `docs/harness/PLAN.md` or the feature doc.
+- Do not mark work `Verified` until evidence is recorded in `harness/PLAN.md` or the feature doc.
 - Run `node scripts/validate-harness.mjs` for scaffold structure; run `node scripts/validate-harness.mjs --strict` after bootstrap and before release.
 - If a doc still has `{{...}}`, treat that section as a template, not project fact.
 

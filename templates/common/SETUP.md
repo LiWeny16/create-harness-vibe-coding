@@ -84,9 +84,41 @@ When user intent is unclear or ambiguous:
 
 False confidence is worse than a question. If you catch yourself thinking "this is probably what they want," stop and ask.
 
+## How to Find Proper Skills
+
+After the architecture stage reveals your stack, install matching agent skills. Skills teach Claude Code domain-specific patterns, testing conventions, and design rules.
+
+**Built-in route**: invoke the `/find-skills` skill (or say "help me find skills for X"). Examples:
+
+```text
+"Find skills for React TypeScript frontend testing."
+"Find skills for Python FastAPI backend development."
+"What skills exist for Playwright e2e testing?"
+"I need a skill for PostgreSQL schema design."
+```
+
+**Superpowers**: [Superpowers](https://github.com/obra/superpowers) is a community skill registry. Search it:
+
+```bash
+# If superpowers CLI or MCP is configured
+npx skills search "react testing"
+npx skills search "python api"
+```
+
+**Manual discovery**: search GitHub and npm directly using patterns from `docs/research/README.md#Architecture Decision References`.
+
+**Priority order**:
+1. `/find-skills` first — fastest discovery, respects your tool environment.
+2. Superpowers registry — broad community coverage.
+3. GitHub search — when the first two miss niche domains.
+
+**What to install**: after finding skills, add them to `.claude/skills/<name>/SKILL.md`. Follow `docs/harness/extension.md` for compatibility. Start with 1-2 skills per stack area; more is not better.
+
+This scaffold includes built-in harness skills (`.claude/skills/harness-*`). Keep those. Add stack-specific ones alongside them.
+
 ## Optional Agent Assets
 
-This scaffold includes common research and workflow agents. After the product shape is known, Claude may install or copy more stack-specific agents, skills, rules, and hooks into `.claude/`. Follow `docs/harness/extension.md` for every added asset.
+After the product shape is known, Claude may also install or copy stack-specific agents, rules, and hooks into `.claude/`. Follow `docs/harness/extension.md` for every added asset.
 
 Examples:
 
@@ -96,13 +128,18 @@ This is a Python data product. Add data pipeline and pytest workflow agents.
 This is a Go service. Add API, security, and integration-test agents.
 ```
 
-## Cleanup
+## Cleanup (Isolate & Remove)
 
-After bootstrap succeeds:
+This file is designed to be orphaned. When all configuration is complete:
+
+1. Open `CLAUDE.md`. Delete the line: `If SETUP.md exists in the project root, read it first.`
+2. Delete this file.
 
 ```bash
 rm SETUP.md
 ```
+
+After both steps, `SETUP.md` is fully isolated — no file references it, no trace remains. You are free to delete it at any time. It is a bootstrap scaffold, not a permanent fixture.
 
 ---
 

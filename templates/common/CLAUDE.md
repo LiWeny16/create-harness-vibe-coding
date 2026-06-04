@@ -1,37 +1,23 @@
 # CLAUDE.md
 
-## Doc Navigation (read before every task)
+## 1. Startup
 
-- `docs/README.md` is the router. Load the matching row, then only the docs it directly names. Never bulk-read `docs/`.
-- Every new session: read `MEMORY.md`, then `docs/README.md`. If work spans more than one step, update `docs/harness/PLAN.md`.
-
-| Your Role | Required Reading |
-|-----------|-----------------|
-| New to the project / unclear idea | `docs/harness/lifecycle.md` → `docs/research/PRD.md` |
-| Researching market / stack / examples | `docs/research/README.md` → `docs/research/research-results.md` |
-| Writing code / implementing | `docs/harness/agent-workflow.md` → `docs/features/_template.md` |
-| Designing architecture / new modules | `docs/harness/architecture.md` → `docs/domain/ports.md` |
-| Reviewing code | `docs/harness/agent-workflow.md` → tests |
-| Fixing bugs / debugging | `docs/harness/data-flow.md` → `docs/harness/state-machines.md` |
-| Coordinating subagents | `docs/harness/context-loading.md` → `docs/harness/dispatch.md` |
-
-**Hard rules**:
-- Before touching cross-layer boundaries, read `docs/domain/ports.md`.
-- Before adding failure paths, read `docs/harness/data-flow.md`.
-- Before modifying stateful components, read `docs/harness/state-machines.md`.
-- Unsure whether to open a feature doc? Read `docs/harness/agent-workflow.md` §1.
-- Before coordinating multiple agents, fill `docs/harness/PLAN.md#Parallel Dispatch` and follow `docs/harness/dispatch.md`.
-- When adding stack-specific agents, skills, rules, or hooks, follow `docs/harness/extension.md`.
+- Every session: read `MEMORY.md`, then `docs/README.md`.
+- If `SETUP.md` exists in the project root, read it first.
+- All routing, role-based reading, and per-task doc loads live in `docs/README.md`. Not here.
+- If work spans more than one step, update `docs/harness/PLAN.md`.
+- Universal rules live in `.claude/rules/ecc/common.md`.
+- Never bulk-read `docs/`.
 
 ---
 
-Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-specific instructions as needed. These guidelines bias toward caution over speed. For trivial tasks, use judgment.
+Behavioral guidelines to reduce common LLM coding mistakes. For trivial tasks, use judgment. These bias toward caution over speed.
 
-## 1. Think Before Coding
+## 2. Think Before Coding
 
 **Don't assume. Don't hide confusion. Surface tradeoffs.**
 
-### 1.0 Confidence Threshold (Non-Negotiable)
+### 2.1 Confidence Threshold (Non-Negotiable)
 
 - You must have **≥95% confidence** in user intent before writing implementation code.
 - If confidence is below 95%, stop and ask. False confidence is worse than a question.
@@ -46,7 +32,7 @@ Before implementing:
 - If a simpler approach exists, say so. Push back when warranted.
 - If something is unclear, stop. Name what's confusing. Ask.
 
-## 2. Simplicity First
+## 3. Simplicity First
 
 **Minimum code that solves the problem. Nothing speculative.**
 
@@ -58,7 +44,7 @@ Before implementing:
 
 Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
 
-## 3. Surgical Changes
+## 4. Surgical Changes
 
 **Touch only what you must. Clean up only your own mess.**
 
@@ -74,7 +60,7 @@ When your changes create orphans:
 
 The test: Every changed line should trace directly to the user's request.
 
-## 4. Goal-Driven Execution
+## 5. Goal-Driven Execution
 
 **Define success criteria. Loop until verified.**
 
@@ -98,7 +84,7 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ---
 
-## 5. Memory & Self-Learning
+## 6. Memory & Self-Learning
 
 - **User memory**: triggers "remember", "never", "next time", "always", "I prefer" — persist newest-first under `MEMORY.md#User Mem`. Don't record ordinary chat. Ambiguous? Ask.
 - **Tool memory**: auto-record under `MEMORY.md#Tool Usage Standards` when a tool/pattern fails 3+ times or a better alternative is found. Update old entries, don't duplicate. Never record secrets.
