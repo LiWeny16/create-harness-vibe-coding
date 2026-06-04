@@ -4,10 +4,43 @@ import pc from 'picocolors';
 import { askProjectName, askTargetDir } from './prompts.js';
 import { generate } from './generator.js';
 
-// Parse CLI args for non-interactive mode
-const args = process.argv.slice(2);
-const argName = args[0];
-const argDir = args[1];
+// ── CLI flags ──────────────────────────────────────────────
+const raw = process.argv.slice(2);
+const flags = new Set(raw.filter(a => a.startsWith('-')));
+const has = name => flags.has(name) || flags.has(`--${name}`);
+const showHelp = has('h') || has('help');
+const skipPrompts = has('y') || has('yes');
+
+if (showHelp) {
+  console.log('');
+  console.log('  create-harness-vibe-coding');
+  console.log('');
+  console.log('  Usage:');
+  console.log('    npx create-harness-vibe-coding@latest [project-name] [target-dir] [flags]');
+  console.log('');
+  console.log('  Arguments:');
+  console.log('    project-name   Name for the new project (default: my-vibe-project)');
+  console.log('    target-dir     Directory to create the project in (default: ./<project-name>)');
+  console.log('');
+  console.log('  Flags:');
+  console.log('    -y, --yes      Skip all prompts, use defaults or provided args');
+  console.log('    -h, --help     Show this help');
+  console.log('');
+  console.log('  Examples:');
+  console.log('    npx create-harness-vibe-coding@latest');
+  console.log('    npx create-harness-vibe-coding@latest -y');
+  console.log('    npx create-harness-vibe-coding@latest my-project');
+  console.log('    npx create-harness-vibe-coding@latest my-project ./dist/my-project -y');
+  console.log('');
+  process.exit(0);
+}
+
+// Positional args (non-flag)
+const positional = raw.filter(a => !a.startsWith('-'));
+const argName = positional[0];
+const argDir = positional[1];
+
+const DEFAULT_NAME = 'my-vibe-project';
 
 console.log('');
 console.log(pc.magenta('╔══════════════════════════════════════════╗'));
@@ -18,15 +51,18 @@ console.log('');
 
 let projectName, targetDir;
 
-// Non-interactive mode: use CLI args or defaults
-if (argName) {
-  projectName = argName;
+// Non-interactive: positionals provided OR -y/--yes flag set
+if (argName || skipPrompts) {
+  projectName = argName || DEFAULT_NAME;
   targetDir = argDir || `./${projectName}`;
 
   console.log(pc.dim('────────────────────────────────────────────'));
   console.log(`  Project     ${pc.green(projectName)}`);
   console.log(`  Directory   ${pc.green(targetDir)}`);
   console.log(`  Creates     ${pc.cyan('CLAUDE.md, docs/harness/PLAN.md, docs/, scripts/, .claude/, SETUP.md, tests/')}`);
+  if (skipPrompts) {
+    console.log(`  Mode        ${pc.dim('non-interactive (-y)')}`);
+  }
   console.log(pc.dim('────────────────────────────────────────────'));
   console.log('');
 

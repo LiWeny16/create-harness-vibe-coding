@@ -123,16 +123,36 @@ my-project/
 
 ## Usage
 
+### Human
+
 ```bash
-# Interactive mode
+# Interactive mode — prompts for project name and directory
 npx create-harness-vibe-coding@latest
-
-# Non-interactive (CI/CD)
-npx create-harness-vibe-coding@latest my-app ./dist/my-app
-
-# Always get the latest version
-npx create-harness-vibe-coding@latest my-project
 ```
+
+### Agent / CI/CD
+
+Agents and automation can skip all prompts with `-y`:
+
+```bash
+# One-liner with defaults (project name = my-vibe-project)
+npx create-harness-vibe-coding@latest -y
+
+# Named project, auto directory
+npx create-harness-vibe-coding@latest my-app -y
+
+# Named project, explicit directory
+npx create-harness-vibe-coding@latest my-app ./dist/my-app -y
+```
+
+| Flag | Purpose |
+|------|---------|
+| `-y`, `--yes` | Skip all prompts. Uses positional args or defaults. |
+| `-h`, `--help` | Print usage and exit. |
+
+> [!TIP]
+> Agents should always pass `-y` to avoid hanging on interactive prompts.
+> If the agent needs to discover the CLI surface first, run with `--help`.
 
 ### After scaffolding, tell Claude:
 

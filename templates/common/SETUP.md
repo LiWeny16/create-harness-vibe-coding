@@ -63,3 +63,26 @@ After bootstrap succeeds:
 ```bash
 rm SETUP.md
 ```
+
+---
+
+## For Agents (Self-Bootstrapping)
+
+If you are an AI agent running `create-harness-vibe-coding` to scaffold your own project harness, use non-interactive mode:
+
+```bash
+npx create-harness-vibe-coding@latest <project-name> <target-dir> -y
+```
+
+Example:
+
+```bash
+npx create-harness-vibe-coding@latest my-agent-project ./my-agent-project -y
+```
+
+After scaffolding, bootstrap the harness yourself:
+
+1. Read `CLAUDE.md`, `MEMORY.md`, and `docs/README.md`.
+2. Follow the Required Bootstrap Sequence above.
+3. Run `node scripts/validate-harness.mjs --strict` when done.
+4. Delete `SETUP.md`.
