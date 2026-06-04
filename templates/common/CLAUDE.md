@@ -1,13 +1,9 @@
 # CLAUDE.md
 
-## 📖 Doc Navigation (read before every task)
+## Doc Navigation (read before every task)
 
-`@docs/README.md` is the project fact source and router. Keep context small: load the matching row, then only the docs it directly names.
-
-Every new session starts with:
-1. Read `@MEMORY.md`.
-2. Read `@docs/README.md`.
-3. If work spans more than one step, update `@docs/harness/PLAN.md`.
+- `docs/README.md` is the router. Load the matching row, then only the docs it directly names. Never bulk-read `docs/`.
+- Every new session: read `MEMORY.md`, then `docs/README.md`. If work spans more than one step, update `docs/harness/PLAN.md`.
 
 | Your Role | Required Reading |
 |-----------|-----------------|
@@ -26,13 +22,10 @@ Every new session starts with:
 - Unsure whether to open a feature doc? Read `docs/harness/agent-workflow.md` §1.
 - Before coordinating multiple agents, fill `docs/harness/PLAN.md#Parallel Dispatch` and follow `docs/harness/dispatch.md`.
 - When adding stack-specific agents, skills, rules, or hooks, follow `docs/harness/extension.md`.
-- **Every new session must read `@MEMORY.md`** for accumulated context.
 
 ---
 
-Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-specific instructions as needed.
-
-**Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
+Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-specific instructions as needed. These guidelines bias toward caution over speed. For trivial tasks, use judgment.
 
 ## 1. Think Before Coding
 
@@ -107,39 +100,6 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ## 5. Memory & Self-Learning
 
-Every new session must read `@MEMORY.md`.
-
-### 5.1 User Memory
-
-Persist only durable user preferences, corrections, or workflow defaults. Trigger examples: "remember", "never", "next time", "always", "I prefer".
-
-Append newest first under `MEMORY.md#User Mem`:
-
-```markdown
-### YYYY-MM-DD — <short title>
-- **Trigger**: <user's exact words>
-- **Behavior**: <what to do / what to avoid going forward>
-- **Why**: <user's reason, if provided>
-```
-
-Do not record ordinary conversation. If persistence is ambiguous, ask first.
-
-### 5.2 Tool Self-Learning
-
-Auto-record only reusable, non-private workflow lessons under `MEMORY.md#Tool Usage Standards` when:
-
-- the same tool/MCP/skill failure repeats 3+ times, or a better alternative is found
-- the same local error pattern repeats, such as lint, type, import, or test setup failures
-- a skill/tool is used inefficiently and a clearer standard emerges
-
-Use this format:
-
-```markdown
-### <tool/skill name> — <brief issue>
-- **Scenario**: <when it triggers>
-- **Problem**: <specific symptom>
-- **Solution**: <recommended approach>
-- **Date**: <first recorded date>
-```
-
-Update existing entries instead of duplicating them. Never record secrets or private user data.
+- **User memory**: triggers "remember", "never", "next time", "always", "I prefer" — persist newest-first under `MEMORY.md#User Mem`. Don't record ordinary chat. Ambiguous? Ask.
+- **Tool memory**: auto-record under `MEMORY.md#Tool Usage Standards` when a tool/pattern fails 3+ times or a better alternative is found. Update old entries, don't duplicate. Never record secrets.
+- Format details live in `MEMORY.md`, not here.
