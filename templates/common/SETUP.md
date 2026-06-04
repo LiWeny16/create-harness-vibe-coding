@@ -44,6 +44,60 @@ Claude must follow this order:
 10. Run `node scripts/validate-harness.mjs --strict`.
 11. Record final verification and next feedback step in `docs/harness/PLAN.md`.
 
+### Template Fill Guide
+
+Each template doc contains `{{PLACEHOLDER}}` markers. Below is what every placeholder expects. Replace all markers in the doc before moving to the next doc. If a section does not apply yet, leave the `{{...}}` but record why in `docs/harness/PLAN.md`.
+
+**`docs/research/PRD.md`** — Product scope. Fill with product facts from user input, not guesses:
+- `{{WHY_THIS_PROJECT_EXISTS}}`: one-sentence motivation
+- `{{MUST_1..3}}`: concrete, testable MVP items (checkbox form)
+- `{{NON_GOAL_1..3}}`: explicitly out-of-scope items
+- `{{USER_ROLE}}`, `{{SCENARIO}}`, `{{FREQUENCY}}`, `{{PAIN}}`: one row per user type
+- `{{ACCEPTANCE_1..3}}`: verifiable project-level acceptance criteria
+- `{{DIMENSION}}`, `{{TARGET}}`, `{{MEASUREMENT}}`: non-functional requirements (perf, security, etc.)
+
+**`docs/research/research-results.md`** — Tech decisions. Research before filling:
+- Use `docs/research/README.md` as the research protocol.
+- `{{CANDIDATE_1..3}}`: each candidate (framework, library, architecture style) with Purpose/Strength/Weakness/Decision/Link.
+- `{{Architecture Style}}`: the chosen architectural style (e.g., Hexagonal, Modular Monolith).
+- `{{CONSTRAINT_1..3}}`: hard technical constraints derived from research.
+- `{{ALTERNATIVE_1..2}}`: rejected candidates worth watching for future.
+
+**`docs/harness/architecture.md`** — Layer structure. Derive from research-results:
+- Fill the ASCII layer diagram with actual layer names. Do NOT add layers without a proven need.
+- `2.1–2.5`: describe each harness core component (Runner, Permission Policy, Event Bus, State Store, Tool Registry) in project-specific terms.
+- `3. Architectural Constraints`: add project-specific non-negotiables. Keep the domain/harness purity rules.
+
+**`docs/domain/ports.md`** — Cross-layer contracts. One driving port + one driven port from the first slice:
+- `{{INBOUND_PORT_1}}`: the first inbound port (e.g., "CreateOrderPort").
+- `{{OUTBOUND_PORT_1}}`: the first outbound port (e.g., "OrderRepository").
+- For each port: fill Purpose, Preconditions, Postconditions, Error Semantics, Idempotency.
+- Leave remaining rows as `{{...}}` until more slices add ports.
+
+**`docs/harness/PLAN.md`** — Active execution state. Update continuously:
+- `## Current Goal`: one sentence, what this iteration achieves.
+- `## Phase`: current lifecycle phase (Idea/Research/PRD/Architecture/Plan/Build/Verify/Feedback).
+- `## Success Criteria`: verifiable outcomes for this iteration.
+- `## Tasks`: numbered tasks with owner, write set, and verify command.
+- `## Parallel Dispatch`: only when spawning subagents — fill agent roles, read/write boundaries.
+- `## Verification`: record test results, review findings, docs sync checklist.
+
+**`docs/harness/data-flow.md`** — Runtime event paths (only when first slice has async/multi-step flow):
+- `{{EVENT_1}}`: the first event type with producer, consumers, payload fields, delivery semantics.
+- Happy Path: fill the Mermaid sequence diagram with actual ports and actions.
+- Failure Paths: for each failure point, document trigger, system behavior, event, caller perception, recovery.
+- If the first slice is synchronous and stateless, leave this doc as `{{...}}` and note in PLAN.md.
+
+**`docs/harness/state-machines.md`** — State transitions (only when first slice has stateful entities):
+- Define states, transitions, guards, and illegal transitions for the first stateful entity.
+- If no stateful entity exists in the first slice, leave as `{{...}}` and note in PLAN.md.
+
+**General rules for all templates**:
+- Replace `{{projectName}}` with the actual project name immediately.
+- Never invent content for a `{{...}}` marker. If you lack facts, ask the user or leave the marker.
+- `<!-- HTML comments -->` in templates are instructions to you. Read them. Delete them after filling the section.
+- After filling all templates in a phase, run `node scripts/validate-harness.mjs --strict`. Any remaining `{{...}}` in project-fact files will be flagged.
+
 ## Architecture Research (Dynamic)
 
 Do not guess the architecture. Use `docs/research/README.md` as the protocol and the high-star repos below as seed references. Search within them; do not read them whole.
