@@ -109,6 +109,54 @@ Use these patterns when turning research into PRD or feature docs:
 - Product scope: [PRD.md](PRD.md).
 - Architecture consequences: `docs/harness/architecture.md` and `docs/domain/ports.md`.
 
+## Architecture Decision References
+
+When filling `docs/harness/architecture.md`, `docs/domain/ports.md`, and `docs/research/research-results.md`, use these high-trust sources as starting points. Search within them; do not read them whole.
+
+### System Design & Architecture Patterns
+
+| Source | Stars | What To Use It For |
+|--------|-------|--------------------|
+| [donnemartin/system-design-primer](https://github.com/donnemartin/system-design-primer) | 266k+ | System design fundamentals, trade-off frameworks, scalability patterns |
+| [ByteByteGoHq/system-design-101](https://github.com/ByteByteGoHq/system-design-101) | 65k+ | Visual system design concepts, communication protocols, database patterns |
+| [DovAmir/awesome-design-patterns](https://github.com/DovAmir/awesome-design-patterns) | 47k+ | Curated design patterns: general arch, cloud, serverless, microservices, front-end, security |
+| [mehdihadeli/awesome-software-architecture](https://github.com/mehdihadeli/awesome-software-architecture) | high | Design patterns deep-dive: CQRS, Outbox, Saga, Circuit Breaker, BFF, scaling, caching |
+| [ashishps1/awesome-system-design-resources](https://github.com/ashishps1/awesome-system-design-resources) | 30k+ | System design interview prep: networking, API design, database, caching, distributed systems |
+
+### Front-End Architecture
+
+| Source | Stars | What To Use It For |
+|--------|-------|--------------------|
+| [greatfrontend/awesome-front-end-system-design](https://github.com/greatfrontend/awesome-front-end-system-design) | high | Front-end system design: news feed, e-commerce, chat, video streaming, SDUI |
+
+### Architecture Decision Records (ADR)
+
+| Source | Purpose |
+|--------|---------|
+| [adr.github.io](https://adr.github.io) | ADR overview, templates (MADR, Nygard, Y-Statement), tooling |
+| [architecture-decision-record/architecture-decision-record](https://github.com/architecture-decision-record/architecture-decision-record) | Canonical ADR repo with git-based workflow |
+| [adr/madr](https://github.com/adr/madr) | Markdown Architectural Decision Records template |
+
+### Agent Skills (Stack-Specific)
+
+> When the architecture stage reveals a specific stack, search for matching agent skills. Skills extend Claude Code / Codex with stack-aware patterns, testing conventions, and design rules.
+
+| Source | Purpose |
+|--------|---------|
+| [travisvn/awesome-claude-skills](https://github.com/travisvn/awesome-claude-skills) | Curated Claude Skills directory |
+| [Composio — Top Design Skills](https://composio.dev/content/top-design-skills) | UI/UX design skills for Claude Code and Codex |
+| `npx skills search "<stack>"` | Built-in skill discovery (if available) |
+
+Search patterns for agent skill discovery:
+
+```text
+site:github.com "claude code" OR codex skill <stack> architecture
+site:github.com SKILL.md <framework> design patterns
+site:npmjs.com "claude-code" OR "codex" skill <domain>
+```
+
+---
+
 ## Method References
 
 - GitHub Spec Kit: spec-first phases and AI coding-agent workflow: https://github.github.com/spec-kit/

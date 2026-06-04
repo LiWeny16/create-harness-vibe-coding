@@ -44,6 +44,46 @@ Claude must follow this order:
 10. Run `node scripts/validate-harness.mjs --strict`.
 11. Record final verification and next feedback step in `docs/harness/PLAN.md`.
 
+## Architecture Research (Dynamic)
+
+Do not guess the architecture. Use `docs/research/README.md` as the protocol and the high-star repos below as seed references. Search within them; do not read them whole.
+
+### Seed Repositories (High-Star, High-Trust)
+
+| Repository | Stars | Use For |
+|-----------|-------|---------|
+| [donnemartin/system-design-primer](https://github.com/donnemartin/system-design-primer) | 266k+ | System design fundamentals, trade-off frameworks |
+| [ByteByteGoHq/system-design-101](https://github.com/ByteByteGoHq/system-design-101) | 65k+ | Visual system design, protocol/DB patterns |
+| [DovAmir/awesome-design-patterns](https://github.com/DovAmir/awesome-design-patterns) | 47k+ | General arch, cloud, serverless, microservices, front-end, security |
+| [mehdihadeli/awesome-software-architecture](https://github.com/mehdihadeli/awesome-software-architecture) | high | CQRS, Outbox, Saga, Circuit Breaker, BFF, scaling |
+| [greatfrontend/awesome-front-end-system-design](https://github.com/greatfrontend/awesome-front-end-system-design) | high | Front-end system design patterns |
+| [adr.github.io](https://adr.github.io) | — | ADR templates and tooling |
+
+### Architecture Fill Protocol
+
+After research, fill these docs in order:
+
+1. `docs/research/research-results.md` — Record candidate architectures with Adopt / Reject / Watch decisions. Use the `## Candidate References` template.
+2. `docs/harness/architecture.md` — Fill the layering diagram, core components, and constraints. Do NOT add speculative layers. One layer per proven need.
+3. `docs/domain/ports.md` — Define ONE driving port and ONE driven port from the first vertical slice. More ports come with more slices.
+4. `docs/harness/data-flow.md` — Fill the happy path for the first slice only. Add failure paths when they differ from the happy path.
+
+**Constraint**: If the research does not give you enough confidence to fill a section, leave the `{{...}}` placeholder and record the open question in `docs/harness/PLAN.md`. The strict validator will catch it.
+
+## User Confirmation Protocol (Non-Negotiable)
+
+> This harness is a design partner, not a solo builder. The user owns product intent.
+
+When user intent is unclear or ambiguous:
+
+- **Maximum 3 blocking questions per decision point.** Ask the highest-impact questions first.
+- **Do not act on assumptions that affect architecture, scope, stack, or user-facing behavior.**
+- **You must have ≥95% confidence before writing implementation code.** If below that threshold, stop and ask.
+- **Record every assumption explicitly** in `docs/harness/PLAN.md` so the user can correct it later.
+- **Silent picks are forbidden.** If two valid approaches exist and you cannot decide with high confidence, present both to the user with trade-offs.
+
+False confidence is worse than a question. If you catch yourself thinking "this is probably what they want," stop and ask.
+
 ## Optional Agent Assets
 
 This scaffold includes common research and workflow agents. After the product shape is known, Claude may install or copy more stack-specific agents, skills, rules, and hooks into `.claude/`. Follow `docs/harness/extension.md` for every added asset.

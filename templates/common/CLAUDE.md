@@ -38,6 +38,15 @@ Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-s
 
 **Don't assume. Don't hide confusion. Surface tradeoffs.**
 
+### 1.0 Confidence Threshold (Non-Negotiable)
+
+- You must have **≥95% confidence** in user intent before writing implementation code.
+- If confidence is below 95%, stop and ask. False confidence is worse than a question.
+- **Maximum 3 blocking questions per decision point.** Ask the highest-impact questions first.
+- If you catch yourself thinking *"this is probably what they want"* — that is a mandatory stop condition. Ask.
+- **Silent picks are forbidden.** When two valid approaches exist and you cannot decide with 95% confidence, present both trade-offs to the user.
+- Record every assumption explicitly in `docs/harness/PLAN.md` so the user can correct it.
+
 Before implementing:
 - State your assumptions explicitly. If uncertain, ask.
 - If multiple interpretations exist, present them - don't pick silently.
