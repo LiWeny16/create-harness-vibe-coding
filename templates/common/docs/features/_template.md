@@ -1,9 +1,12 @@
 # {{FEATURE_NAME}}
 
-> **When to use**: During the PRD phase, every new feature identified in `research/PRD.md` must have its own features document created from this template. One feature = one doc = one implementation unit. Do not code a PRD scope item without a corresponding features doc.
+> **When to use**: Every PRD scope item in `research/PRD.md` Section 2 must have a feature doc — either a new one from this template, or an iteration on an existing one. Do not code a PRD scope item without a corresponding features doc.
+>
+> **New vs iterate**: If the scope item has ≥85% overlap with an existing feature doc, iterate the existing doc (bump `Version`, add a `## Changelog` entry). If overlap is below 85%, create a new file from this template. When in doubt, ask the user.
 
 > **Status**: Draft / In Progress / Blocked / Done
 > **Created**: {{YYYY-MM-DD}}
+> **Version**: 1
 > **Owner**: {{OWNER_OR_AGENT}}
 > **Related Docs**: {{PRD_OR_ARCH_DOC_LINKS}}
 
@@ -142,3 +145,13 @@ Estimate the context budget for this feature. If the main agent would need to re
 
 Remaining risks:
 - {{RISK_OR_NONE}}
+
+---
+
+## 5. Changelog
+
+> Only populate when iterating an existing feature doc (Version ≥ 2).
+
+| Version | Date | What Changed | Reason |
+| --- | --- | --- | --- |
+| 1 | {{YYYY-MM-DD}} | Initial version | — |

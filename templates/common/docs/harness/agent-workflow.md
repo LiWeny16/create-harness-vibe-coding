@@ -12,15 +12,11 @@ If context grows, load [context-loading.md](context-loading.md) and split the wo
 
 ## Feature Packet
 
-Create `docs/features/{{FEATURE_SLUG}}.md` from [../features/_template.md](../features/_template.md) when work changes behavior, touches multiple files, crosses layers, or needs more than one short session.
+Every PRD scope item (`research/PRD.md` Section 2) must have its own feature doc at `docs/features/<name>.md` created from `docs/features/_template.md`. One feature = one doc = one implementation unit. Do not code without a feature doc.
 
-The packet must contain:
+Small scope is not an exception — a short feature doc is better than none. If the work is truly too small for a full feature doc (single-file fix, no behavior change), it is not a PRD scope item.
 
-- requirements and non-goals
-- acceptance criteria
-- allowed write set and forbidden scope
-- task list with verification commands
-- test results and residual risks
+**New vs iterate**: if a PRD scope item has ≥85% overlap with an existing feature doc, open the existing doc, bump `Version`, and add a `## Changelog` entry. Only create a new file when the scope is substantially different. When unsure, ask.
 
 ## Standard Build Loop
 
