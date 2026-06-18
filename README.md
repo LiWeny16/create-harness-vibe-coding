@@ -130,6 +130,35 @@ my-project/
 npx create-harness-vibe-coding@latest
 ```
 
+### Existing Project
+
+The scaffold is designed to be added to an existing repository without silently replacing project files.
+
+```bash
+# Preview the write plan first. No files or directories are created.
+npx create-harness-vibe-coding@latest my-app . -y --dry-run
+
+# Preserve existing files and add only missing harness files.
+npx create-harness-vibe-coding@latest my-app . -y --on-conflict skip
+```
+
+By default, conflicts fail before writing. This protects existing `CLAUDE.md`, `AGENTS.md`, `.claude/`, `.gitignore`, docs, and scripts from accidental replacement.
+
+| Conflict mode | Meaning | Risk |
+|---------------|---------|------|
+| `fail` | Default. Stop if a target file already exists. | Safest for existing projects; requires a follow-up decision. |
+| `skip` | Keep existing files and create only missing files. | Existing docs may need manual links to new harness docs or workflows. |
+| `backup` | Rename the existing file to `<name>.harness-backup`, then write the scaffold file. | Review backups before deleting; repeated runs may need cleanup. |
+| `overwrite` | Replace existing files with scaffold versions. | Destructive. Use only after reviewing `--dry-run` output or with explicit approval. |
+
+Recommended bootstrap for agents:
+
+```bash
+node bin/create-harness-vibe-coding.js my-app . -y --dry-run
+node bin/create-harness-vibe-coding.js my-app . -y --on-conflict skip
+node scripts/validate-harness.mjs
+```
+
 ### Agent / CI/CD
 
 Agents and automation can skip all prompts with `-y`:
@@ -143,16 +172,81 @@ npx create-harness-vibe-coding@latest my-app -y
 
 # Named project, explicit directory
 npx create-harness-vibe-coding@latest my-app ./dist/my-app -y
+
+# CI-safe existing-project preview
+npx create-harness-vibe-coding@latest my-app . -y --dry-run
+
+# CI-safe existing-project add without replacing files
+npx create-harness-vibe-coding@latest my-app . -y --on-conflict skip
 ```
 
 | Flag | Purpose |
 |------|---------|
 | `-y`, `--yes` | Skip all prompts. Uses positional args or defaults. |
+| `--dry-run` | Print the planned creates, skips, backups, overwrites, and conflicts without writing. |
+| `--on-conflict <mode>` | Choose `fail`, `skip`, `backup`, or `overwrite` when files already exist. |
+| `--list-options` | Print the optional workflow catalog and presets. |
+| `--with <ids>` | Add optional workflows by comma-separated id. |
+| `--without <ids>` | Remove optional workflows selected by `--preset` or `--with`. |
+| `--preset <name>` | Add a named workflow preset such as `web-app` or `fullstack`. |
 | `-h`, `--help` | Print usage and exit. |
 
 > [!TIP]
 > Agents should always pass `-y` to avoid hanging on interactive prompts.
-> If the agent needs to discover the CLI surface first, run with `--help`.
+> If the agent needs to discover the CLI surface first, run with `--help` and `--list-options`.
+
+### Optional Workflows
+
+Optional workflows are local template assets selected explicitly at generation time. They do not install package dependencies or fetch a remote marketplace.
+
+```bash
+# Show available optional workflow ids and presets
+npx create-harness-vibe-coding@latest --list-options
+
+# Add individual workflows
+npx create-harness-vibe-coding@latest my-app -y --with browser-e2e,ts-react-frontend
+
+# Add a preset for common web app work
+npx create-harness-vibe-coding@latest my-app -y --preset web-app
+
+# Add a broader frontend/backend/PR-review preset
+npx create-harness-vibe-coding@latest my-app -y --preset fullstack
+
+# Trim a preset without restating every selected workflow
+npx create-harness-vibe-coding@latest my-app -y --preset fullstack --without github-pr-review
+```
+
+Built-in optional workflow ids:
+
+| Workflow | Use when |
+|----------|----------|
+| `browser-e2e` | Browser smoke tests, screenshots, traces, and UI evidence. |
+| `ui-ux-review` | Screenshot-driven responsive, accessibility, and polish review. |
+| `github-pr-review` | PR diff, checks, review findings, and CI evidence. |
+| `python-backend` | Python API/backend work with unittest or pytest verification. |
+| `ts-react-frontend` | TypeScript React work with typecheck, component tests, build, and browser smoke. |
+
+Presets:
+
+| Preset | Includes |
+|--------|----------|
+| `web-app` | `ts-react-frontend`, `browser-e2e`, `ui-ux-review` |
+| `fullstack` | `ts-react-frontend`, `python-backend`, `browser-e2e`, `github-pr-review` |
+
+### Verification
+
+```bash
+# Run repository tests
+npm test
+
+# Confirm optional workflow catalog output
+node bin/create-harness-vibe-coding.js --list-options
+
+# After generating a project, validate the harness from that project root
+node scripts/validate-harness.mjs
+```
+
+The harness validator checks scaffold consistency. It is not a full React, Playwright, Chrome DevTools Protocol, or browser matrix test suite.
 
 ### After scaffolding, tell Claude:
 

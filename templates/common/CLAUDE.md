@@ -86,6 +86,8 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ## 6. Memory & Self-Learning
 
-- **User memory**: triggers "remember", "never", "next time", "always", "I prefer" — persist newest-first under `MEMORY.md#User Mem`. Don't record ordinary chat. Ambiguous? Ask.
-- **Tool memory**: auto-record under `MEMORY.md#Tool Usage Standards` when a tool/pattern fails 3+ times or a better alternative is found. Update old entries, don't duplicate. Never record secrets.
-- Format details live in `MEMORY.md`, not here.
+- `MEMORY.md` is the index. Detailed durable memory lives in `memory/`.
+- **Tool reflection trigger**: record a lightweight reflection when the same tool/use pattern fails 3+ times, or when a better command pattern/environment fix is found. Write it newest-first in `memory/tool-usage-reflections.md`.
+- **User correction trigger**: record a lightweight preference/correction when the user asks to remember it, or when the user corrects the same assumption/pattern 2+ times. Write it newest-first in `memory/user-corrections-preferences.md`.
+- **Agent lesson trigger**: record reusable lessons from review/debug loops in `memory/agent-lessons-patterns.md` when they would prevent recurrence.
+- Update old entries instead of duplicating them. Never record secrets, credentials, tokens, or private data. If a memory is ambiguous, ask before writing.

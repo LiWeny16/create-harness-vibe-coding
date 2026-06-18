@@ -1,6 +1,7 @@
-# MEMORY.md — {{projectName}} Project Resource Index
+# MEMORY.md - {{projectName}} Project Resource Index
 
 > The project fact source is reached via `CLAUDE.md -> docs/README.md`. This file persists cross-session context: resource index, user preferences, tool usage standards.
+> Detailed memory lives in `memory/`. Keep entries short, newest first, and free of secrets.
 
 ## Agents (Sub-agents)
 
@@ -46,13 +47,16 @@ Located under `.claude/rules/ecc/`, auto-loaded by the CC engine:
 - [Agent workflow](docs/harness/agent-workflow.md)
 - [Harness validator](scripts/validate-harness.mjs)
 
-## User Mem
+## Memory Folder
 
-> User preferences, habits, corrections. Written by CLAUDE.md §5.1 triggers, newest first.
-> No entries yet — awaiting first "remember…" instruction.
+- [Tool usage/reflections](memory/tool-usage-reflections.md) - repeated tool failures, better command patterns, environment-specific fixes.
+- [User corrections/preferences](memory/user-corrections-preferences.md) - repeated user corrections, durable preferences, common-sense course corrections.
+- [Agent lessons/patterns](memory/agent-lessons-patterns.md) - reusable lessons from review, debugging, validation, and handoff loops.
 
-## Tool Usage Standards
+Write to the memory folder when the guidance should survive chat context loss:
 
-> Claude Code self-learning: high-frequency tool/MCP/skill pitfalls, alternatives, common error fix templates.
-> Written by CLAUDE.md §5.2 triggers.
-> No entries yet — awaiting first auto-discovery.
+- Use `memory/tool-usage-reflections.md` when the same tool/use pattern fails 3+ times, a better command pattern is found, or an environment-specific fix should be reused.
+- Use `memory/user-corrections-preferences.md` when the user explicitly asks to remember a preference, or the user corrects the same assumption/pattern 2+ times.
+- Use `memory/agent-lessons-patterns.md` when a review/debug loop yields a reusable lesson or regression guard.
+- Use `MEMORY.md` for the resource index and routing pointers, not long-form lessons.
+- Never record secrets, credentials, tokens, or private data. If a memory is ambiguous, ask before writing.

@@ -10,7 +10,8 @@ if (args.has('--help') || args.has('-h')) {
   console.log(`Usage: node scripts/validate-harness.mjs [--strict]
 
 Default mode checks scaffold structure, links, agents, and skills.
---strict also fails when project fact docs still contain {{...}} placeholders.`);
+--strict also fails when project fact docs still contain unresolved {{TOKEN}} placeholders.
+Literal explanatory {{...}} text is allowed.`);
   process.exit(0);
 }
 
@@ -34,10 +35,17 @@ const commonSkills = [
   'harness-build-loop',
 ];
 
+const memoryFiles = [
+  'memory/tool-usage-reflections.md',
+  'memory/user-corrections-preferences.md',
+  'memory/agent-lessons-patterns.md',
+];
+
 const required = [
   'AGENTS.md',
   'CLAUDE.md',
   'MEMORY.md',
+  ...memoryFiles,
   '.claude/settings.json',
   '.claude/rules/ecc/common.md',
   ...commonAgents.map(agent => `.claude/agents/${agent}.md`),
@@ -80,6 +88,12 @@ const contextPacks = [
   'Verifier:',
 ];
 
+const durableCommunicationDocs = [
+  'docs/README.md',
+  'docs/harness/dispatch.md',
+  'docs/harness/context-loading.md',
+];
+
 const errors = [];
 
 function read(rel) {
@@ -97,6 +111,36 @@ function frontmatterField(text, field) {
   return match ? match[1].trim() : '';
 }
 
+function listDirectories(rel) {
+  const dir = path.join(root, rel);
+  if (!fs.existsSync(dir)) return [];
+  return fs.readdirSync(dir, { withFileTypes: true })
+    .filter(entry => entry.isDirectory())
+    .map(entry => entry.name);
+}
+
+function listMarkdownFiles(rel) {
+  const dir = path.join(root, rel);
+  if (!fs.existsSync(dir)) return [];
+  const normalizedRel = rel.replaceAll(path.sep, '/');
+  return fs.readdirSync(dir, { withFileTypes: true })
+    .filter(entry => entry.isFile() && entry.name.endsWith('.md'))
+    .map(entry => `${normalizedRel}/${entry.name}`);
+}
+
+function unresolvedTemplatePlaceholders(text) {
+  const placeholders = [];
+  const pattern = /\{\{([^{}\r\n]+)\}\}/g;
+
+  for (const match of text.matchAll(pattern)) {
+    const token = match[1].trim();
+    if (token === '...') continue;
+    placeholders.push(`{{${token}}}`);
+  }
+
+  return [...new Set(placeholders)];
+}
+
 for (const rel of required) {
   if (!fs.existsSync(path.join(root, rel))) {
     errors.push(`missing required file: ${rel}`);
@@ -108,10 +152,15 @@ if (fs.existsSync(path.join(root, 'docs/research/scaffolds.md'))) {
 }
 
 if (strict) {
+  console.log('Strict placeholder scope:');
+  for (const rel of projectFacts) {
+    console.log(`- ${rel}`);
+  }
+
   for (const rel of projectFacts) {
     const text = read(rel);
-    if (text.includes('{{')) {
-      errors.push(`template placeholders remain in project fact file: ${rel}`);
+    for (const placeholder of unresolvedTemplatePlaceholders(text)) {
+      errors.push(`template placeholder remains in project fact file: ${rel}: ${placeholder}`);
     }
   }
 }
@@ -122,6 +171,14 @@ if (docsReadme) {
     if (!docsReadme.includes(marker)) errors.push(`docs/README.md missing router marker: ${marker}`);
   }
 }
+
+for (const rel of durableCommunicationDocs) {
+  requireText(rel, 'project files are the only durable communication channel', 'durable filesystem communication invariant');
+  requireText(rel, 'chat/subagent transcript state is non-authoritative', 'non-authoritative transcript invariant');
+}
+
+requireText('CLAUDE.md', 'same tool/use pattern fails 3+ times', 'tool reflection trigger');
+requireText('CLAUDE.md', 'user corrects the same assumption/pattern 2+ times', 'user correction reflection trigger');
 
 const plan = read('docs/harness/PLAN.md');
 if (plan) {
@@ -158,12 +215,51 @@ if (memory) {
     const rel = `.claude/skills/${skill}/SKILL.md`;
     if (!memory.includes(rel)) errors.push(`MEMORY.md missing skill registration: ${rel}`);
   }
+  for (const rel of memoryFiles) {
+    if (!memory.includes(rel)) errors.push(`MEMORY.md missing memory file registration: ${rel}`);
+  }
 }
+
+for (const workflow of listMarkdownFiles('docs/workflows')) {
+  if (!docsReadme.includes(workflow) && !memory.includes(workflow)) {
+    errors.push(`workflow is not registered in docs/README.md or MEMORY.md: ${workflow}`);
+  }
+}
+
+function requireUiSelectorContract(rel) {
+  const text = read(rel);
+  if (!text) return;
+
+  const markers = [
+    'data-testid',
+    'accessible labels/roles',
+    'inputs, buttons, filters, rows, empty/error/loading states',
+  ];
+
+  if (markers.some(marker => !text.includes(marker))) {
+    errors.push(`${rel} missing stable UI selector contract`);
+  }
+}
+
+requireUiSelectorContract('docs/workflows/browser-e2e.md');
+requireUiSelectorContract('docs/workflows/ts-react-frontend.md');
+requireUiSelectorContract('docs/features/_template.md');
 
 for (const skill of commonSkills) {
   const rel = `.claude/skills/${skill}/SKILL.md`;
   const text = read(rel);
   if (!text) continue;
+  if (frontmatterField(text, 'name') !== skill) errors.push(`${rel} frontmatter name does not match directory`);
+  if (!frontmatterField(text, 'description')) errors.push(`${rel} missing frontmatter field: description`);
+}
+
+for (const skill of listDirectories('.claude/skills')) {
+  if (commonSkills.includes(skill)) continue;
+
+  const rel = `.claude/skills/${skill}/SKILL.md`;
+  const text = read(rel);
+  if (!text) continue;
+
   if (frontmatterField(text, 'name') !== skill) errors.push(`${rel} frontmatter name does not match directory`);
   if (!frontmatterField(text, 'description')) errors.push(`${rel} missing frontmatter field: description`);
 }

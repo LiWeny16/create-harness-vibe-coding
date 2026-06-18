@@ -4,6 +4,17 @@ Purpose: keep stack-specific agents, skills, rules, and hooks compatible with th
 
 Use during setup whenever adding assets from ECC, SuperClaude, toolboxes, or local project conventions.
 
+## Non-Invasive Extension Rules
+
+Extensions must preserve project and harness ownership boundaries.
+
+- Preserve existing `.claude/`, `CLAUDE.md`, `AGENTS.md`, `.gitignore`, `docs/README.md`, `docs/workflows/*.md`, settings, hooks, and local rules unless the user explicitly requests an overwrite.
+- Treat existing project config as project fact. Read it before adding assets, then adapt new assets to the project instead of replacing the project.
+- Register added agents, skills, workflows, rules, and hooks in `MEMORY.md` and this docs router where applicable.
+- Added assets may extend `.claude/skills/`, `.claude/agents/`, `.claude/rules/`, or `docs/workflows/`, but they must not replace core harness docs.
+- Core harness docs are `docs/README.md`, `docs/harness/PLAN.md`, `docs/harness/context-loading.md`, `docs/harness/dispatch.md`, `docs/harness/agent-workflow.md`, and this file.
+- If an optional workflow needs a new command or tool, document the command and fallback in `docs/workflows/<name>.md` instead of changing core harness behavior.
+
 ## Agent Contract
 
 Every added agent must have frontmatter:
@@ -63,5 +74,6 @@ After adding assets:
 
 - list agents in `MEMORY.md#Agents`
 - list skills in `MEMORY.md#Skills`
+- list workflows by path in `MEMORY.md` or `docs/README.md`
 - update `docs/harness/PLAN.md` when the asset affects current work
 - run `node scripts/validate-harness.mjs`

@@ -7,6 +7,8 @@ Use when work needs parallel reading, independent review, cross-layer analysis, 
 ## Principles
 
 - Main agent owns the final decision, integration, and verification.
+- project files are the only durable communication channel; chat/subagent transcript state is non-authoritative.
+- Important assumptions, decisions, blockers, evidence, and handoffs must be written to `docs/harness/PLAN.md`, the current feature doc, `MEMORY.md`, or `memory/*` as appropriate.
 - Prefer three or fewer active agents.
 - Read-only agents may run in parallel.
 - Writing agents run serially unless write sets are disjoint.
@@ -76,6 +78,7 @@ PLAN patch:
 ```
 
 Use `Files changed: none` for read-only agents. Use `PLAN patch: none` when no state update is needed.
+If a handoff matters after context loss, write it to `docs/harness/PLAN.md`, the current feature doc, or `memory/*`; do not rely on chat transcript state.
 
 ## Statuses
 

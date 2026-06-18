@@ -34,6 +34,16 @@
 - [ ] {{ACCEPTANCE_CRITERION_2}}
 - [ ] {{ACCEPTANCE_CRITERION_3}}
 
+### 1.5 UI Automation Hooks
+
+For TS/React or browser workflows, define required stable accessible labels/roles and stable test hooks such as `data-testid` before implementation. These selectors must cover critical UI controls and states so CDP, Playwright, and manual verification can target inputs, buttons, filters, rows, empty/error/loading states, dialogs, navigation, and submitted/saved/error feedback without brittle DOM paths.
+
+| Element / State | Accessible Role / Label | `data-testid` | Verification Target |
+| --- | --- | --- | --- |
+| {{INPUT_OR_CONTROL}} | {{ROLE_OR_LABEL}} | {{DATA_TESTID}} | {{PLAYWRIGHT_OR_MANUAL_CHECK}} |
+| {{EMPTY_ERROR_LOADING_OR_ROW_STATE}} | {{ROLE_OR_LABEL}} | {{DATA_TESTID}} | {{PLAYWRIGHT_OR_MANUAL_CHECK}} |
+| Not UI-facing | N/A | N/A | N/A |
+
 ---
 
 ## 2. Design

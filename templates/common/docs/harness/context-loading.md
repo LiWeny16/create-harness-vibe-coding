@@ -8,6 +8,8 @@ Use when context is growing, subagents are needed, or an agent is unsure which h
 
 If this file and `docs/README.md` disagree, follow `docs/README.md`, record the assumption in `docs/harness/PLAN.md`, and update this file later.
 
+project files are the only durable communication channel; chat/subagent transcript state is non-authoritative. Important assumptions, decisions, blockers, evidence, and handoffs must be written to `docs/harness/PLAN.md`, the current feature doc, `MEMORY.md`, or `memory/*` as appropriate.
+
 ## Main Context
 
 Always keep:
@@ -30,6 +32,7 @@ Load other docs only by trigger.
 | layer, dependency, module boundary | `docs/harness/architecture.md`, `docs/domain/ports.md` |
 | task split, owner, write set | `docs/harness/PLAN.md`, `docs/harness/agent-workflow.md` |
 | parallel agents, dispatch, worktree decision | `docs/harness/dispatch.md`, `docs/harness/PLAN.md` |
+| memory, repeated tool failure, repeated user correction, reusable lesson | `MEMORY.md`, the relevant `memory/*.md` file |
 | event, retry, failure path | `docs/harness/data-flow.md` |
 | status, transition, resume | `docs/harness/state-machines.md` |
 | subagent spawn | this file plus the role pack below |
