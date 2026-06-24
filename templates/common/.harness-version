@@ -1,0 +1,8 @@
+{
+  "generator": "{{generatorVersion}}",
+  "generated": "{{generatedTimestamp}}",
+  "options": [],
+  "autoCheck": true,
+  "source": "https://raw.githubusercontent.com/zingspark/create-harness-vibe-coding/main/templates/common/",
+  "checksums": {}
+}

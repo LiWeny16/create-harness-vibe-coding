@@ -10,7 +10,8 @@ Load:
 - `Harness/subagents.md`
 - `Harness/context-loading.md`
 - `Harness/dispatch.md` when more than one agent is useful
-- `Harness/PLAN.md`
+- `Harness/PROGRESS.md`
+- `Harness/tasks/<task-id>/PROGRESS.md` and `Harness/tasks/<task-id>/PLAN.md` when available
 - current feature doc if present
 
 For each subagent or bounded pass, provide:

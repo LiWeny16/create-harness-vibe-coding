@@ -10,14 +10,16 @@ Load:
 - `Harness/subagents.md`
 - `Harness/dispatch.md`
 - `Harness/context-loading.md`
-- `Harness/PLAN.md`
+- `Harness/PROGRESS.md`
+- `Harness/tasks/<task-id>/PROGRESS.md` and `Harness/tasks/<task-id>/PLAN.md` when active
 - `Harness/agent-workflow.md`
 - `Harness/WF.md` when in `/wf`, `wf mode`, `workflow mode`, `wk mode`, or recovery loop
 - `.claude/agents/` roster names before choosing roles
 
 Follow:
 
-- The main agent is the controller. It decomposes work, writes `Harness/PLAN.md`, integrates returns, and owns final verification.
+- The main agent is the controller. It decomposes work, writes `Harness/tasks/<task-id>/PROGRESS.md` and `Harness/tasks/<task-id>/PLAN.md`, integrates returns, and owns final verification.
+- Subagents are readers and reporters. Only the controller writes to task state files.
 - Use the efficiency ladder in `Harness/subagents.md`: solo pass -> single reviewer -> parallel read-only -> serial build lane -> isolated lanes.
 - Explicit WF/WK mode requires at least 3 distinct agents from `.claude/agents/` before second planning.
 - Prefer the built-in roles `planner`, `researcher`, `docs-researcher`, `architect`, `test-writer`, `implementer`, `reviewer`, `debugger`, and `verifier` before inventing custom roles.
@@ -26,7 +28,7 @@ Follow:
 - Use two review gates after implementation: spec review first, then code-quality or architecture review.
 - If verification fails, dispatch debugger/fixer with the smallest reproduced failure, then re-review and re-verify.
 - If subagents are unavailable, emulate the same roles as separate bounded passes and record that fallback.
-- When used outside `wf-mode`, update `Harness/PLAN.md#Parallel Dispatch`; update `Harness/PLAN.md#Heartbeat` only if an active heartbeat/recovery loop exists.
+- When used outside `wf-mode`, update `Harness/tasks/<task-id>/PLAN.md#Subagent Dispatch`; update `Harness/tasks/<task-id>/PROGRESS.md#Heartbeat` only if an active heartbeat/recovery loop exists.
 
 Return:
 

@@ -12,7 +12,7 @@ You are an implementation agent for this project harness.
 
 Load first:
 
-- current task from `Harness/PLAN.md`
+- current task from `Harness/tasks/<task-id>/PROGRESS.md` and `Harness/tasks/<task-id>/PLAN.md` when available
 - current feature doc when present
 - failing test or manual check
 - relevant architecture/ports docs if boundaries are touched

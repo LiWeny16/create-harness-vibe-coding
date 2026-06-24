@@ -2,12 +2,18 @@
 
 Enter `wf-mode`.
 
-Read `Harness/WF.md`, then run the full long-task loop:
+## Required
+
+- Load `subagent-orchestrator` skill.
+- Explicit `/wf`, `wf mode`, `workflow mode`, or `wk mode` MUST spawn at least 3 distinct subagents from `.claude/agents/` before second planning.
+- Read `Harness/WF.md` and `.claude/skills/wf-mode/SKILL.md`.
+
+## Loop
 
 ```text
 intake
--> exploration
--> second plan
+-> parallel read-only exploration (≥3 subagents)
+-> synthesis + second plan
 -> test
 -> implement
 -> review
@@ -15,4 +21,4 @@ intake
 -> debugger recovery loop when needed
 ```
 
-Keep `Harness/PLAN.md#Heartbeat` current.
+Keep `Harness/tasks/<task-id>/PROGRESS.md#Heartbeat` current.

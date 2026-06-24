@@ -8,7 +8,7 @@
 <h1 align="center">create-harness-vibe-coding</h1>
 <p align="center">
   <b>0-1 product harness scaffold for AI-assisted engineering.</b><br>
-  <sub>Idea -> Research -> PRD -> Architecture -> Harness/PLAN.md -> Build -> Verify -> Feedback.</sub>
+  <sub>Idea -> Research -> PRD -> Architecture -> Plan -> Build -> Verify -> Feedback.</sub>
 </p>
 
 ---
@@ -22,19 +22,21 @@ npx create-harness-vibe-coding@latest my-project
 | What You Get | Purpose |
 |-------------|---------|
 | `CLAUDE.md` + `Harness/README.md` | Thin root entry and dynamic doc router |
-| `Harness/PLAN.md` | Active execution state, heartbeat, and handoffs |
-| `Harness/WF.md` + `/wf` | Long-task workflow: explore, second-plan, build, review, verify, recover |
+| `Harness/PROGRESS.md` + `Harness/tasks/` | Global task index and per-task progress capsules |
+| `Harness/WF.md` + `/wf` | Long-task workflow: parallel explore, second-plan, build, review, verify, recover |
+| `/wf update` | GitHub-based incremental scaffold update with checksum safety |
 | `Harness/subagents.md` + `subagent-orchestrator` | Controller-led multi-agent orchestration with source-attributed methods |
+| `memory-master` + `context-master` | Auto-triggered memory writing on repeated failures, and non-blocking context compression alerts |
 | Research + PRD templates | Clarify idea, scope, non-goals, acceptance criteria |
 | Research protocol | Route research agents, source search, and fallback tools |
-| Built-in common agents | Research, planning, architecture, testing, implementation, debugging, review, verification |
+| Built-in common agents | 11 agents: research, planning, architecture, testing, implementation, debugging, review, verification, memory, context |
 | Harness architecture docs | Boundaries, ports, data flow, state machines |
 | Dispatch protocol | Lightweight parallel-agent coordination without a scheduler |
 | Extension contract | Keep stack-specific agents and skills compatible |
 | Context-loading protocol | Inject only the right docs into each subagent |
 | README optimizer skill | Optional README preservation, tables, and approved architecture diagrams |
 | Skill-style loaders | `.claude/skills/*` route lifecycle, context, and build loops |
-| Harness validator | Checks required files and unresolved project placeholders |
+| Harness validator | Checks required files, agent/skill registrations, invariants |
 | `.claude/` skeleton | Root runtime integration for Claude Code agents, skills, commands, and rules |
 
 ---
@@ -45,13 +47,15 @@ Most 0-1 AI coding projects fail before code quality matters:
 
 | Without Harness | With This Scaffold |
 |---|---|
-| Idea jumps straight to code | lifecycle forces research, PRD, and scope |
-| Agent reads too much context | docs router loads only the needed harness file |
-| Subagents get vague prompts | context-loading packs define role, boundaries, and return format |
-| Process drift is invisible | validator checks core harness readiness |
-| Architecture drifts silently | ports, data-flow, and state docs mark boundary changes |
-| Tests come after implementation | workflow requires failing test or manual check first |
-| Long tasks stall after failures | `/wf` adds heartbeat, recovery, debugger, review, and verifier loops |
+| Idea jumps straight to code | Lifecycle forces research, PRD, and scope |
+| Agent reads too much context | Docs router loads only the needed harness file |
+| Subagents get vague prompts | Context-loading packs define role, boundaries, and return format |
+| Process drift is invisible | Validator checks core harness readiness |
+| Architecture drifts silently | Ports, data-flow, and state docs mark boundary changes |
+| Tests come after implementation | Workflow requires failing test or manual check first |
+| Long tasks stall after failures | `/wf` adds heartbeat, recovery loop, auto memory-master at 3 failures |
+| Context bloats over long sessions | `context-master` gives non-blocking compression alerts at ~85% window |
+| Scaffold rots after generation | `/wf update` pulls latest improvements from GitHub with checksum safety |
 
 ---
 
@@ -61,9 +65,11 @@ Most 0-1 AI coding projects fail before code quality matters:
 npx scaffold
 -> Claude reads Harness/SETUP.md
 -> Harness router selects only needed harness docs
--> PRD/research/architecture/PLAN are filled
--> first vertical slice is built, tested, reviewed, verified, and fed back
--> validator catches missing project facts before release
+-> PRD/research/architecture are filled
+-> First task capsule created at Harness/tasks/<id>/
+-> First vertical slice is built, tested, reviewed, verified, and fed back
+-> Validator catches missing project facts before release
+-> /wf update pulls latest scaffold improvements from GitHub
 ```
 
 ### Harness idea
@@ -84,7 +90,9 @@ my-project/
 │   ├── README.md          ← Dynamic doc router
 │   ├── SETUP.md           ← Temporary init guide (delete after setup)
 │   ├── MEMORY.md          ← Cross-session resource index
-│   ├── PLAN.md            ← Active execution plan, handoffs, heartbeat
+│   ├── PROGRESS.md        ← Global task index and cross-task decisions
+│   ├── PLAN.md            ← Deprecated stub → see PROGRESS.md + tasks/
+│   ├── .harness-version   ← Scaffold version + file checksums
 │   ├── WF.md              ← Long-task workflow and recovery loop
 │   ├── lifecycle.md       ← 0-1 product flow
 │   ├── subagents.md       ← Controller-led subagent orchestration
@@ -98,7 +106,10 @@ my-project/
 │   ├── domain/
 │   │   └── ports.md       ← Port contracts: pre/postconditions, errors
 │   ├── features/
-│   │   └── _template.md   ← Kiro-lite feature doc template
+│   │   └── _template.md   ← Feature doc template
+│   ├── tasks/
+│   │   ├── _template/     ← Task capsule template (copy for new tasks)
+│   │   └── <task-id>/     ← Per-task PROGRESS.md + PLAN.md + artifacts
 │   ├── research/
 │   │   ├── README.md
 │   │   ├── PRD.md
@@ -112,10 +123,11 @@ my-project/
 │       └── validate-harness.mjs
 ├── .claude/
 │   ├── settings.json     ← Base permissions
-│   ├── agents/           ← Built-in common agents + stack-specific agents later
-│   ├── skills/           ← Harness loaders + stack-specific skills
+│   ├── agents/           ← 11 common agents + stack-specific
+│   ├── skills/           ← Harness skills + wf-update + stack-specific
 │   ├── commands/
-│   │   └── wf.md          ← Slash-command bridge into wf-mode
+│   │   ├── wf.md          ← /wf — enter workflow mode
+│   │   └── update.md      ← /wf update — GitHub-based scaffold update
 │   ├── hooks/            ← Configure automation after stack choice
 │   └── rules/ecc/
 │       └── common.md     ← Universal coding rules
@@ -283,6 +295,75 @@ Presets:
 | `web-app` | `ts-react-frontend`, `browser-e2e`, `ui-ux-review` |
 | `fullstack` | `ts-react-frontend`, `python-backend`, `browser-e2e`, `github-pr-review` |
 
+### WF Mode
+
+For long, difficult, multi-file, multi-agent, or repeated-failure tasks. Enter by typing `/wf`, `wf mode`, `workflow mode`, or `wk mode`.
+
+```text
+/wf — triggers the full Ralph-style harness loop:
+  Intake (95% confidence gate)
+  -> 3+ parallel read-only subagents (planner + architect + researcher)
+  -> Synthesis + second plan → writes to Harness/tasks/<id>/PLAN.md
+  -> test-writer → implementer → reviewers → verifier
+  -> Failed? debugger → review → verify → loop
+  -> Closeout: context-master + memory-master consolidate knowledge
+```
+
+| Phase | What happens | Heartbeat |
+|-------|-------------|-----------|
+| Intake | State goal, confidence, risks, write boundaries | Update before dispatching |
+| Explore | 3-5 parallel read-only subagents | After each subagent return |
+| Second Plan | Synthesize findings into `tasks/<id>/PLAN.md` | After plan written |
+| Build | `test-writer` → `implementer` serial lane | Before/after long commands |
+| Review | Spec review, then code-quality review | After each review gate |
+| Verify | Run declared checks, record evidence | After each verification |
+| Recover | `debugger` → fix → review → verify → loop | After each failure |
+| Close | `context-master` extraction → `memory-master` consolidation → archive | Final heartbeat |
+
+WF mode also auto-dispatches:
+- **`memory-master`** at 3 same-class failures (records pattern before asking user)
+- **`context-master`** at ~85% context window (non-blocking compression suggestion)
+- **`context-master` + `memory-master`** at closeout (extract + persist session knowledge)
+
+```bash
+# Tell the agent to use WF mode
+"Use /wf for this migration."
+"This is a long task — enter wf mode."
+"wf mode — help me refactor the auth layer."
+```
+
+### WF Update
+
+Check for scaffold updates from GitHub and apply them incrementally with checksum safety.
+
+```bash
+# Check available updates without applying
+/wf update --check
+
+# Full update with safe incremental apply
+/wf update
+```
+
+**How it works:**
+
+1. Reads `Harness/.harness-version` — gets local version + 54 file SHA-256 checksums
+2. Fetches latest template files from `raw.githubusercontent.com/zingspark/create-harness-vibe-coding/main/templates/common/`
+3. Compares checksums file-by-file against stored values
+4. Classifies each file into three tiers:
+
+| Tier | Policy | Examples |
+|------|--------|----------|
+| **SAFE** | Overwrite if local checksum matches stored (unmodified) | `Harness/WF.md`, `.claude/agents/*.md`, all skills |
+| **PRESERVE** | Never touch | `Harness/PROGRESS.md`, `Harness/tasks/**`, `Harness/memory/**`, root `README.md` |
+| **MERGE** | Overwrite if unmodified; report and skip if user-modified | `CLAUDE.md`, `Harness/MEMORY.md`, `Harness/README.md` |
+
+5. Reports: `updated/N, merge/N, created/N, skipped/N`
+6. Updates `.harness-version` checksums after applying
+
+**Auto-check on session start:** When `Harness/.harness-version` has `autoCheck: true`, the agent runs a non-blocking `update --check` (10s timeout). If an update is available, it notifies without blocking the current task. Set `autoCheck: false` to disable.
+
+**Offline behavior:** If GitHub is unreachable, the update check exits cleanly. All other harness features work without network.
+
 ### Verification
 
 ```bash
@@ -303,8 +384,10 @@ The harness validator checks scaffold consistency. It is not a full React, Playw
 ```
 "Read Harness/SETUP.md. Bootstrap this project from idea to first vertical slice."
 "Read Harness/SETUP.md. This is a React TypeScript SaaS idea. Clarify PRD first, then plan the first slice."
-"Read Harness/SETUP.md. This is a Python data product. Research the stack, define the MVP, then create Harness/PLAN.md."
+"Read Harness/SETUP.md. This is a Python data product. Research the stack, define the MVP, then create a task capsule."
 "Use /wf for this long migration. Explore first, make a second plan, then implement, review, verify, and recover with heartbeat updates."
+"/wf update --check — check if the scaffold has been improved since last generation."
+"/wf update — pull the latest harness improvements from GitHub safely."
 ```
 
 ---

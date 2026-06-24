@@ -14,7 +14,7 @@ Load first:
 
 - `Harness/research/README.md`
 - `Harness/research/research-results.md`
-- `Harness/PLAN.md`
+- `Harness/tasks/<task-id>/PROGRESS.md` and `Harness/tasks/<task-id>/PLAN.md` when available
 
 Inputs you must receive:
 

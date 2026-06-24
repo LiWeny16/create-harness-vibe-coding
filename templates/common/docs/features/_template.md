@@ -34,7 +34,17 @@
 - [ ] {{ACCEPTANCE_CRITERION_2}}
 - [ ] {{ACCEPTANCE_CRITERION_3}}
 
-### 1.5 UI Automation Hooks
+### 1.5 Optimistic UI Rollback
+
+If any UI mutation happens before an async operation completes (DOM replacement,
+state update, visual feedback), list the rollback path for when the operation fails:
+
+| Mutation | Failure Recovery |
+|----------|-----------------|
+| {{MUTATION_1}} | {{ROLLBACK_1}} |
+| Not applicable — no optimistic mutations are used. | |
+
+### 1.6 UI Automation Hooks
 
 For TS/React or browser workflows, define required stable accessible labels/roles and stable test hooks such as `data-testid` before implementation. These selectors must cover critical UI controls and states so CDP, Playwright, and manual verification can target inputs, buttons, filters, rows, empty/error/loading states, dialogs, navigation, and submitted/saved/error feedback without brittle DOM paths.
 

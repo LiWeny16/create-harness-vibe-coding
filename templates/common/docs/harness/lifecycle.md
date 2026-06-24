@@ -10,10 +10,10 @@ Use when starting a new product, clarifying a vague idea, or deciding the next p
 | Research | problem and constraints | `research/research-results.md` | `research/README.md` followed; at least 3 references or explicit reason not possible |
 | PRD | research decision | `research/PRD.md` | MVP, non-goals, acceptance criteria are verifiable |
 | Architecture | PRD | `Harness/architecture.md`, `Harness/domain/ports.md` | boundaries and first ports are defined |
-| Plan | PRD and architecture | `Harness/PLAN.md`, optional `Harness/dispatch.md`, one `Harness/features/<name>.md` per PRD scope item | tasks have owners, write sets, verification |
+| Plan | PRD and architecture | `Harness/PROGRESS.md`, `Harness/tasks/<task-id>/PLAN.md`, optional `Harness/dispatch.md`, one `Harness/features/<name>.md` per PRD scope item | tasks have owners, write sets, verification |
 | Build | plan and tests | minimal vertical slice | tests or manual checks prove behavior |
 | Verify | implementation | review findings, test evidence | no unresolved critical/high findings |
-| Feedback | verified slice | next iteration or release decision | learnings recorded in PRD, PLAN, or MEMORY |
+| Feedback | verified slice | next iteration or release decision | learnings recorded in PRD, `Harness/tasks/<task-id>/PROGRESS.md`, or MEMORY |
 
 ## Operating Rules
 

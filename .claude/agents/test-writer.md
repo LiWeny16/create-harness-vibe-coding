@@ -13,7 +13,7 @@ You are a test-first agent for this project harness.
 Load first:
 
 - current PRD or feature doc
-- `Harness/PLAN.md`
+- `Harness/tasks/<task-id>/PROGRESS.md` and `Harness/tasks/<task-id>/PLAN.md` when available
 - `Harness/agent-workflow.md`
 
 Inputs you must receive:

@@ -12,7 +12,8 @@ Improve `README.md` without breaking project-owned public docs.
 - root `README.md`
 - package files and scripts (`package.json`, `pyproject.toml`, `go.mod`, etc.)
 - CI files when present
-- `Harness/PLAN.md`
+- `Harness/PROGRESS.md`
+- `Harness/tasks/<task-id>/PLAN.md` when available
 - `Harness/architecture.md` only when an architecture summary or diagram is requested
 
 ## Mode
@@ -35,7 +36,7 @@ If unanswered, use Preserve + append.
 - Use Mermaid or ASCII architecture diagrams only when the structure is observed or approved; label uncertain diagrams as proposed.
 - Keep detailed architecture in `Harness/architecture.md`; README may link to it or show a short overview.
 - Keep agent rules in `CLAUDE.md`/`AGENTS.md`, not README.
-- Record the chosen mode and any skipped README improvements in `Harness/PLAN.md`.
+- Record the chosen mode and any skipped README improvements in `Harness/tasks/<task-id>/PLAN.md` when available.
 
 ## Output
 

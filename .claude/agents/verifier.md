@@ -12,7 +12,7 @@ You are a verification agent for this project harness.
 
 Load first:
 
-- `Harness/PLAN.md`
+- `Harness/tasks/<task-id>/PROGRESS.md` and `Harness/tasks/<task-id>/PLAN.md` when available
 - current feature doc when present
 - verification commands and acceptance criteria
 

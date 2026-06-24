@@ -8,7 +8,8 @@ description: Use for /wf, wf mode, workflow mode, wk mode, long difficult tasks,
 Load:
 
 - `Harness/WF.md`
-- `Harness/PLAN.md`
+- `Harness/PROGRESS.md`
+- `Harness/tasks/<task-id>/PROGRESS.md` and `Harness/tasks/<task-id>/PLAN.md` when active
 - `Harness/agent-workflow.md` when implementation, review, or verification starts
 - `Harness/subagents.md`, `Harness/dispatch.md`, and `Harness/context-loading.md` immediately for explicit WF/WK mode; otherwise only when coordinating subagents or bounded role passes
 - current feature doc when one exists
@@ -24,25 +25,28 @@ intake + 95% confidence gate
 -> bounded implementation
 -> review
 -> verification
--> debugger recovery loop when verification fails
+-> debugger recovery loop when verification fails (dispatch memory-master after 3 same-class failures)
+-> context-master session analysis + knowledge extraction
+-> memory-master consolidation
 -> close with evidence
 ```
 
 Rules:
 
-- Update `Harness/PLAN.md#Heartbeat` before long commands, after failures, before handoff, and at closeout.
+- Update `Harness/tasks/<task-id>/PROGRESS.md#Heartbeat` before long commands, after failures, before handoff, and at closeout.
 - Explicit `/wf`, `wf mode`, `workflow mode`, or `wk mode` MUST use `subagent-orchestrator` and spawn at least 3 distinct subagents from `.claude/agents/` before second planning.
 - Use the 7:3 collaboration bias from `Harness/WF.md`: default to multi-agent collaboration for substantial work; use solo mode only for clearly small/local tasks outside explicit WF/WK mode.
 - Use `subagent-orchestrator` and `Harness/subagents.md` when the task has broad reading, cross-layer impact, independent review needs, or repeated failures.
 - If subagents are unavailable, emulate the same roles as separate bounded passes.
 - Do not claim browser/UI acceptance without real-browser evidence from Chrome DevTools, CDP, Playwright, or documented manual browser checks.
 - If `Harness/workflows/browser-e2e.md` is not installed, use `Harness/WF.md#Browser And API Evidence` as the fallback evidence contract or ask the user before adding the optional workflow.
-- If the same failure class happens three times, stop blind fixes and ask the user with evidence-backed options.
+- If the same failure class happens three times, dispatch `memory-master` to record the failure pattern first, then ask the user with evidence-backed options.
 
 Return:
 
 - changed files
 - agents or bounded passes used
+- memory-master / context-master dispatches
 - commands run
 - browser/API evidence when applicable
 - review findings

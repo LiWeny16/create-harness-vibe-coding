@@ -6,9 +6,9 @@ Use when context is growing, subagents are needed, or an agent is unsure which h
 
 `Harness/README.md` is the primary router. This file is a secondary context-splitting protocol for subagents and long tasks.
 
-If this file and `Harness/README.md` disagree, follow `Harness/README.md`, record the assumption in `Harness/PLAN.md`, and update this file later.
+If this file and `Harness/README.md` disagree, follow `Harness/README.md`, record the assumption in `Harness/tasks/<task-id>/PROGRESS.md`, and update this file later.
 
-project files are the only durable communication channel; chat/subagent transcript state is non-authoritative. Important assumptions, decisions, blockers, evidence, and handoffs must be written to `Harness/PLAN.md`, the current feature doc, `Harness/MEMORY.md`, or `Harness/memory/*` as appropriate.
+project files are the only durable communication channel; chat/subagent transcript state is non-authoritative. Important assumptions, decisions, blockers, evidence, and handoffs must be written to `Harness/tasks/<task-id>/PROGRESS.md` and `Harness/tasks/<task-id>/PLAN.md`, the current feature doc, `Harness/MEMORY.md`, or `Harness/memory/*` as appropriate.
 
 ## Main Context
 
@@ -17,7 +17,9 @@ Always keep:
 - `CLAUDE.md`
 - `Harness/MEMORY.md`
 - `Harness/README.md`
-- `Harness/PLAN.md` when active
+- `Harness/PROGRESS.md` when active
+- `Harness/tasks/<task-id>/PROGRESS.md` when active
+- `Harness/tasks/<task-id>/PLAN.md` when active
 - current feature doc when active
 
 Load other docs only by trigger.
@@ -30,8 +32,8 @@ Load other docs only by trigger.
 | research, competitors, stack choice | `Harness/research/README.md`, `Harness/research/research-results.md` |
 | official docs, API, SDK, version, limits | `Harness/research/README.md`, `Harness/architecture.md`, `Harness/domain/ports.md` as needed |
 | layer, dependency, module boundary | `Harness/architecture.md`, `Harness/domain/ports.md` |
-| task split, owner, write set | `Harness/PLAN.md`, `Harness/agent-workflow.md` |
-| parallel agents, dispatch, worktree decision | `Harness/subagents.md`, `Harness/dispatch.md`, `Harness/PLAN.md` |
+| task split, owner, write set | `Harness/tasks/<task-id>/PROGRESS.md`, `Harness/tasks/<task-id>/PLAN.md`, `Harness/agent-workflow.md` |
+| parallel agents, dispatch, worktree decision | `Harness/subagents.md`, `Harness/dispatch.md`, `Harness/tasks/<task-id>/PLAN.md` |
 | memory, repeated tool failure, repeated user correction, reusable lesson | `Harness/MEMORY.md`, the relevant `Harness/memory/*.md` file |
 | event, retry, failure path | `Harness/data-flow.md` |
 | status, transition, resume | `Harness/state-machines.md` |
@@ -88,6 +90,16 @@ Verifier:
 - inject: verification commands and acceptance criteria
 - forbid: code changes
 - return: commands run, results, residual risk
+
+Memory Master:
+- inject: trigger reason, current failure/user-correction/closeout context, task PROGRESS.md section
+- forbid: source code, unrelated Harness docs
+- return: memory action summary, files written, cross-project flag
+
+Context Master:
+- inject: trigger reason (threshold % or closeout), current task PROGRESS.md, task phase
+- forbid: source code, memory files, MEMORY.md writes
+- return: context usage %, stale blocks, compressible blocks, durable knowledge candidates, compression suggestion
 
 ## Handoff Rule
 

@@ -10,18 +10,19 @@ Use when work needs parallel reading, independent review, cross-layer analysis, 
 
 - Main agent owns the final decision, integration, and verification.
 - project files are the only durable communication channel; chat/subagent transcript state is non-authoritative.
-- Important assumptions, decisions, blockers, evidence, and handoffs must be written to `Harness/PLAN.md`, the current feature doc, `Harness/MEMORY.md`, or `Harness/memory/*` as appropriate.
-- Prefer three or fewer active agents.
+- Important assumptions, decisions, blockers, evidence, and handoffs must be written to `Harness/tasks/<task-id>/PROGRESS.md` and `Harness/tasks/<task-id>/PLAN.md`, the current feature doc, `Harness/MEMORY.md`, or `Harness/memory/*` as appropriate.
+- Prefer three or fewer active agents (WF mode overrides this; see [WF.md](WF.md)).
 - Read-only agents may run in parallel.
 - Writing agents run serially unless write sets are disjoint.
 - Use a worktree when two agents may touch overlapping files or long-running branches.
 - Only summaries enter main context. Load named files directly when details are needed.
+- Subagents read task files, return findings and PLAN patch suggestions. Only the main agent commits changes to PROGRESS.md and PLAN.md.
 
 ## Dispatch Loop
 
 ```text
 Goal
--> Fill PLAN tasks and Parallel Dispatch
+-> Fill task PROGRESS.md and PLAN.md
 -> Apply subagents.md efficiency ladder
 -> Run parallel read-only agents
 -> Main agent integrates findings
@@ -29,7 +30,7 @@ Goal
 -> Implementer makes bounded change
 -> Reviewer checks diff
 -> Verifier records evidence
--> Main agent updates PLAN and closes or iterates
+-> Main agent updates task files and closes or iterates
 ```
 
 ## Modes
@@ -54,6 +55,8 @@ Goal
 | `debugger` | Serial Write | smallest fix for a reproduced failure |
 | `reviewer` | Parallel Read | diff review, risks, missing tests |
 | `verifier` | Parallel Read | run checks and record evidence |
+| `memory-master` | Serial Write | write/consolidate memory entries, dedup, cross-project extraction |
+| `context-master` | Parallel Read | analyze context usage, recommend compression, extract session knowledge |
 
 ## Dispatch Rules
 
@@ -61,7 +64,7 @@ Goal
 - A write set of `none` means read-only.
 - If two write sets overlap, do not run those agents in parallel.
 - If an agent returns uncertainty, mark the row `Blocked` or add a follow-up row.
-- If docs, tests, and code disagree, stop implementation and record the conflict in `PLAN.md`.
+- If docs, tests, and code disagree, stop implementation and record the conflict in `Harness/tasks/<task-id>/PROGRESS.md`.
 
 ## Handoff Format
 
@@ -81,7 +84,7 @@ PLAN patch:
 ```
 
 Use `Files changed: none` for read-only agents. Use `PLAN patch: none` when no state update is needed.
-If a handoff matters after context loss, write it to `Harness/PLAN.md`, the current feature doc, or `Harness/memory/*`; do not rely on chat transcript state.
+If a handoff matters after context loss, write it to `Harness/tasks/<task-id>/PROGRESS.md`, `Harness/tasks/<task-id>/PLAN.md`, the current feature doc, or `Harness/memory/*`; do not rely on chat transcript state.
 
 ## Statuses
 

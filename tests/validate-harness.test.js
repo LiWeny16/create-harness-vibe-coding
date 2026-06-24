@@ -7,7 +7,7 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { generate } from '../src/generator.js';
 
 const projectFacts = [
-  'Harness/PLAN.md',
+  'Harness/PROGRESS.md',
   'Harness/research/PRD.md',
   'Harness/research/research-results.md',
   'Harness/architecture.md',
@@ -36,51 +36,24 @@ function generateProject(options = {}) {
 }
 
 function writeResolvedProjectFacts(targetDir, planGoal = 'Ship the first verified slice. Literal placeholder syntax `{{...}}` may appear in explanatory text.') {
-  writeRel(targetDir, 'Harness/PLAN.md', `# PLAN.md - Active Execution Plan
+  writeRel(targetDir, 'Harness/PROGRESS.md', `# PROGRESS.md
 
-## Current Goal
+Global task index.
+
+## Active Task
+
+None
+
+## Task Index
+
+| ID | Goal | Phase | Closed |
+|----|------|-------|--------|
+
+## Cross-Task Decisions
 
 ${planGoal}
-
-## Phase
-
-Current: Build
-
-## Heartbeat
-
-Mode: normal
-Last beat: 2026-06-24 validation
-Current phase: Build
-Current blocker: none
-Next beat trigger: after strict validation
-Failure count: 0
-Recovery action: none
-
-## Success Criteria
-
-- [ ] A user-visible slice is verified.
-
-## Scope
-
-Allowed write set:
-- \`src/**\`
-
-Forbidden:
-- none
-
-## Loaded Context
-
-- \`Harness/README.md\`
-
-## Tasks
-
-| # | Task | Owner | Verify | Status |
-| --- | --- | --- | --- | --- |
-| 1 | Verify slice | implementer | \`npm test\` | Verified |
-
-## Parallel Dispatch
-
-No parallel dispatch needed.
+`);
+  writeRel(targetDir, 'Harness/PLAN.md', `# PLAN.md — DEPRECATED
 
 ## Subagent Synthesis
 
@@ -174,7 +147,7 @@ test('strict validation fails real unresolved template placeholders by token', (
 
   assert.notEqual(result.status, 0);
   assert.match(output, /Strict placeholder scope:/);
-  assert.match(output, /Harness\/PLAN\.md/);
+  assert.match(output, /Harness\/PROGRESS\.md/);
   assert.match(output, /\{\{CURRENT_GOAL\}\}/);
 });
 

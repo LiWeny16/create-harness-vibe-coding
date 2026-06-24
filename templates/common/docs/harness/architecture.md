@@ -60,7 +60,7 @@ State must have one owner, legal transitions, and observable recovery behavior.
 - Identify durable state, runtime cache, derived UI state, external system state, and audit/event history separately.
 - Name the owner of each state slice; do not let UI, application services, and infrastructure all mutate the same state directly.
 - Model long-running workflows with explicit states, guards, and failure transitions in `Harness/state-machines.md`.
-- Store resumable progress and recovery decisions in `Harness/PLAN.md#Heartbeat` or project-owned durable storage, not only in chat.
+- Store resumable progress and recovery decisions in `Harness/tasks/<task-id>/PROGRESS.md#Heartbeat` or project-owned durable storage, not only in chat.
 - Keep state minimal: derive values when cheap, persist only what must survive reload, retry, or handoff.
 
 ---

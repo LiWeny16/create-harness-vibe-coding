@@ -13,6 +13,7 @@ const EMPTY_DIRS = [
 ];
 
 function harnessDest(file) {
+  if (file === '.harness-version') return 'Harness/.harness-version';
   if (file === 'SETUP.md') return 'Harness/SETUP.md';
   if (file === 'MEMORY.md') return 'Harness/MEMORY.md';
   if (file === 'scripts/validate-harness.mjs') return 'Harness/scripts/validate-harness.mjs';
@@ -23,6 +24,7 @@ function harnessDest(file) {
   if (file.startsWith('docs/domain/')) return file.replace(/^docs\/domain\//, 'Harness/domain/');
   if (file.startsWith('docs/features/')) return file.replace(/^docs\/features\//, 'Harness/features/');
   if (file.startsWith('docs/workflows/')) return file.replace(/^docs\/workflows\//, 'Harness/workflows/');
+  if (file.startsWith('docs/tasks/')) return file.replace(/^docs\/tasks\//, 'Harness/tasks/');
   return file;
 }
 

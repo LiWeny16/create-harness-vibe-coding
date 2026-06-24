@@ -21,7 +21,7 @@ WF mode requires multi-subagent orchestration by default.
 - Explicit `/wf`, `wf mode`, `workflow mode`, or `wk mode` MUST spawn at least 3 distinct subagents from `.claude/agents/` before second planning unless the runtime cannot spawn subagents.
 - Use a 7:3 collaboration bias: prefer multi-agent collaboration for long, uncertain, cross-file, cross-layer, browser/API, migration, or repeated-failure work; reserve solo mode for clearly local, low-risk, one-file tasks outside explicit WF/WK mode.
 - Default initial fan-out: `planner`, `researcher` or `docs-researcher`, and `architect`. Add `test-writer`, `reviewer`, `debugger`, or `verifier` when the phase needs them.
-- Record every dispatch or bounded-pass fallback in `Harness/PLAN.md#Parallel Dispatch`.
+- Record every dispatch or bounded-pass fallback in `Harness/tasks/<task-id>/PLAN.md#Subagent Dispatch`.
 - If subagents are unavailable, emulate the same roles as separate bounded passes and record why the fallback was used.
 
 ## WF Loop
@@ -42,10 +42,10 @@ Intake
 
 ## Intake
 
-1. Read `CLAUDE.md`, `Harness/MEMORY.md`, `Harness/README.md`, and `Harness/PLAN.md`.
+1. Read `CLAUDE.md`, `Harness/MEMORY.md`, `Harness/README.md`, `Harness/PROGRESS.md`, and the current task's `PROGRESS.md` and `PLAN.md` under `Harness/tasks/<task-id>/`.
 2. State the goal, non-goals, confidence level, known risks, and write boundaries.
 3. Ask up to three blocking questions only when the next action cannot reach 95% confidence.
-4. Update `Harness/PLAN.md#Heartbeat` before dispatching agents or running long commands.
+4. Update `Harness/tasks/<task-id>/PROGRESS.md#Heartbeat` before dispatching agents or running long commands.
 5. Load `Harness/subagents.md` before coordinating multiple agents; explicit WF/WK mode always coordinates multiple roles.
 
 ## Exploration
@@ -59,13 +59,14 @@ Use parallel read-only subagents first. Explicit WF/WK mode starts with at least
 | `docs-researcher` | official docs, SDK/API versions, browser/tool limits | none unless returning a docs patch |
 | `architect` | boundaries, ports, data flow, state impact, migration risks | none unless returning a docs patch |
 
-Use local files first. Use web search, Tavily, TinyFish, GitHub, official docs, or user-provided links only when the decision needs current or external evidence. Record tool choice and limitations in `Harness/research/research-results.md` or `Harness/PLAN.md`.
+Use local files first. Use web search, Tavily, TinyFish, GitHub, official docs, or user-provided links only when the decision needs current or external evidence. Record tool choice and limitations in `Harness/research/research-results.md` or `Harness/tasks/<task-id>/PLAN.md`.
 
 ## Subagent Orchestration
 
 Use `Harness/subagents.md` as the orchestration methodology and `Harness/dispatch.md` as the dispatch table protocol.
 
 - The main agent is the controller and owns synthesis, integration, and final verification.
+- Subagents are readers and reporters. Only the main agent writes to task PROGRESS.md and PLAN.md. Subagents return PLAN patch suggestions which the main agent reviews before committing.
 - Parallelize read-only exploration; serialize writers unless write sets are disjoint and isolated.
 - Every subagent gets a dispatch pack with role, goal, read set, write set, forbidden scope, injected docs, evidence, stop condition, and return format.
 - After implementation, run spec review before code-quality or architecture review.
@@ -84,7 +85,7 @@ After exploration, synthesize:
 - verification path
 - rollback or recovery plan
 
-Write the result to `Harness/PLAN.md` before implementation.
+Write the result to `Harness/tasks/<task-id>/PLAN.md` before implementation. Update `Harness/tasks/<task-id>/PROGRESS.md#Heartbeat`.
 
 ## Build And Review
 
@@ -111,20 +112,20 @@ For API changes, run the project API/integration test path or a documented real 
 
 If verification fails:
 
-1. Update `Harness/PLAN.md#Heartbeat` with failure count and blocker.
+1. Update `Harness/tasks/<task-id>/PROGRESS.md#Heartbeat` with failure count and blocker.
 2. Dispatch `debugger` with the failing command, error output, and smallest relevant files.
 3. Fix the smallest reproduced failure.
 4. Run reviewer again.
 5. Run verifier again.
 6. Repeat until verified or blocked by missing user input/external state.
 
-If the same failure class happens three times, stop blind fixes. Record evidence, likely root causes, attempted paths, and ask the user to choose among clear options.
+If the same failure class happens three times, stop blind fixes. Before asking the user, dispatch `memory-master` to record the failure pattern, attempted paths, and root cause hypothesis to `Harness/memory/agent-lessons-patterns.md`. Then present evidence-backed options to the user.
 
 ## Heartbeat Protocol
 
 Heartbeat is a lightweight recovery protocol, not a background daemon.
 
-Update `Harness/PLAN.md#Heartbeat`:
+Update `Harness/tasks/<task-id>/PROGRESS.md#Heartbeat`:
 
 - before a long command
 - after a long command
@@ -135,6 +136,8 @@ Update `Harness/PLAN.md#Heartbeat`:
 
 The agent may set the next beat interval by event instead of time, such as "after next test run", "after reviewer returns", or "after browser evidence is captured".
 
+When context approaches ~85% of the window, dispatch `context-master` to analyze and append a compression suggestion to `Harness/tasks/<task-id>/PROGRESS.md#Heartbeat`. The suggestion is non-blocking; the controller checks it at the next natural pause point.
+
 ## Closeout
 
 Close only when:
@@ -143,4 +146,9 @@ Close only when:
 - reviewer has no unresolved critical/high findings
 - test/API/browser evidence is recorded
 - affected Harness docs are synced
-- `Harness/PLAN.md#Heartbeat` says the task is verified or lists the exact next recovery action
+- `context-master` has analyzed the session and extracted durable knowledge
+- `memory-master` has consolidated extracted knowledge into `Harness/memory/*` and `Harness/MEMORY.md`
+- Current task PROGRESS.md and PLAN.md are archived under `Harness/tasks/<task-id>/` with Phase set to Verified
+- `Harness/PROGRESS.md` task index is updated (Closed column filled, Active Task cleared or set to next task)
+- `Harness/tasks/<task-id>/PROGRESS.md#Heartbeat` says the task is verified or lists the exact next recovery action
+- `Harness/PROGRESS.md` task index reflects the closed task

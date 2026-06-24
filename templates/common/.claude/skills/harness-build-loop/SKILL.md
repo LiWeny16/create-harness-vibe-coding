@@ -10,7 +10,8 @@ Load:
 - `Harness/agent-workflow.md`
 - `Harness/subagents.md` when more than one agent, reviewer, or recovery pass is useful
 - `Harness/dispatch.md` when more than one agent is useful
-- `Harness/PLAN.md`
+- `Harness/PROGRESS.md`
+- `Harness/tasks/<task-id>/PROGRESS.md` and `Harness/tasks/<task-id>/PLAN.md` when available
 - current feature doc if present
 
 Follow:

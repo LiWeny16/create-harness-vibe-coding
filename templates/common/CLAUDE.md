@@ -6,12 +6,17 @@ Root entry for Claude Code. Keep this file short.
 
 - If `Harness/` exists, this repository is governed by the Harness contract. Treat these files as mandatory operating instructions, not optional references.
 - Every session: load `Harness/MEMORY.md` first, then `Harness/README.md`.
-- If `Harness/SETUP.md` exists, follow it before normal project work; it is the install/bootstrap contract and may be deleted only after setup is complete.
+- If `Harness/SETUP.md` exists, follow it before normal project work; it is the install/bootstrap contract and may be deleted after setup is complete.
 - `Harness/MEMORY.md` is the memory/resource router: agents, skills, durable memories, and cross-session lessons. Follow its registrations when selecting agents/skills or recording memory.
 - `Harness/README.md` is the task router. For every request, check `Harness/README.md#Load By Task`; if a row matches, read and follow those docs before acting.
-- If work spans more than one step, update `Harness/PLAN.md`.
+- `Harness/PROGRESS.md` is the global task index. Load at session start to see active task and task history.
+- If work spans more than one step, create a task capsule from `Harness/tasks/_template/` and update `Harness/tasks/<task-id>/PROGRESS.md`.
 - Use `/wf`, `wf-mode`, `wf mode`, `workflow mode`, `wk mode`, or `Harness/WF.md` for long, difficult, uncertain, multi-file, or repeated-failure work.
 - Use `subagent-orchestrator` and `Harness/subagents.md` when coordinating multiple subagents.
+- Use `/wf update` to check for and apply scaffold updates from GitHub. See `.claude/skills/wf-update/SKILL.md`.
+- Subagents are readers and reporters. Only the main agent writes to `Harness/tasks/<task-id>/PROGRESS.md` and `Harness/tasks/<task-id>/PLAN.md`.
+- For memory writing and consolidation (repeated failures, user corrections, closeout), dispatch `memory-master`.
+- For context analysis and compression alerts (~85% window), dispatch `context-master`.
 - Universal rules live in `.claude/rules/ecc/common.md`.
 - Never bulk-read `Harness/`; route through `Harness/README.md` and `Harness/MEMORY.md`.
 
@@ -20,7 +25,7 @@ Root entry for Claude Code. Keep this file short.
 - You must have **>=95% confidence** in user intent before writing implementation code.
 - If confidence is below 95%, stop and ask up to 3 blocking questions.
 - If multiple valid approaches exist and the choice affects architecture, scope, stack, or user-facing behavior, present trade-offs instead of picking silently.
-- State assumptions before implementation and record durable assumptions, decisions, blockers, handoffs, and verification evidence in `Harness/PLAN.md`.
+- State assumptions before implementation and record durable assumptions, decisions, blockers, handoffs, and verification evidence in `Harness/tasks/<task-id>/PLAN.md`.
 - If something is unclear, stop. Name what is unclear and ask instead of guessing.
 
 ## 3. Simplicity First
@@ -44,7 +49,8 @@ Root entry for Claude Code. Keep this file short.
 
 - Define verifiable success criteria before implementation.
 - For bugs, reproduce the failure or document why reproduction is impossible before fixing.
-- For multi-step work, keep `Harness/PLAN.md` current with loaded context, task state, assumptions, and verification.
+- For multi-step work, keep `Harness/tasks/<task-id>/PROGRESS.md` and `Harness/tasks/<task-id>/PLAN.md` current. The main agent is the only state committer; subagents return suggestions only.
+- State assumptions before implementation and record durable assumptions, decisions, blockers, handoffs, and verification evidence in `Harness/tasks/<task-id>/PLAN.md`.
 - Every task needs a test, build check, validator run, or recorded manual check.
 - Do not claim web/UI acceptance without real-browser evidence from Chrome DevTools, CDP, Playwright, or documented manual browser checks.
 - Do not place project build scripts, git conventions, run commands, or release process in this file. Put them in `README.md`.
@@ -57,4 +63,7 @@ Root entry for Claude Code. Keep this file short.
 - **Tool reflection trigger**: record a lightweight reflection when the same tool/use pattern fails 3+ times, or when a better command pattern/environment fix is found. Write it newest-first in `Harness/memory/tool-usage-reflections.md`.
 - **User correction trigger**: record a lightweight preference/correction when the user asks to remember it, or when the user corrects the same assumption/pattern 2+ times. Write it newest-first in `Harness/memory/user-corrections-preferences.md`.
 - **Agent lesson trigger**: record reusable lessons from review/debug loops in `Harness/memory/agent-lessons-patterns.md` when they would prevent recurrence.
+- **WF auto-trigger**: when the same failure class happens 3+ times in a WF recovery loop, dispatch `memory-master` to record the failure pattern to `Harness/memory/agent-lessons-patterns.md` before asking the user.
+- **Context threshold trigger**: when context approaches ~85% of the window, dispatch `context-master` to analyze and write a non-blocking compression suggestion to `Harness/tasks/<task-id>/PROGRESS.md#Heartbeat`.
+- **Closeout trigger**: during WF closeout, dispatch `context-master` to extract durable knowledge, then `memory-master` to consolidate into `Harness/memory/*`.
 - Never record secrets, credentials, tokens, or private data.

@@ -14,6 +14,8 @@
 - [debugger](../.claude/agents/debugger.md) — smallest fix for a reproduced failure.
 - [reviewer](../.claude/agents/reviewer.md) — read-only diff review and closeout risk.
 - [verifier](../.claude/agents/verifier.md) — verification commands and evidence.
+- [memory-master](../.claude/agents/memory-master.md) — memory writing, dedup, consolidation, and cross-project knowledge extraction.
+- [context-master](../.claude/agents/context-master.md) — context analysis, compression alerts, and session knowledge extraction for memory-master.
 
 Stack-specific agents can be added after the product shape is known.
 
@@ -27,6 +29,7 @@ Stack-specific agents can be added after the product shape is known.
 - [wf-mode](../.claude/skills/wf-mode/SKILL.md) — long-task workflow: exploration, second plan, implementation, review, verification, heartbeat, and recovery loop.
 - [subagent-orchestrator](../.claude/skills/subagent-orchestrator/SKILL.md) — controller-led subagent orchestration, parallel read-only passes, review gates, and recovery handoffs.
 - [readme-optimizer](../.claude/skills/readme-optimizer/SKILL.md) — README preservation, append-only development sections, structured tables, and approved architecture diagrams.
+- [wf-update](../.claude/skills/wf-update/SKILL.md) — GitHub-based incremental harness update, checksum comparison, and safe in-place updates.
 
 Stack-specific skills can be added after the product shape is known.
 
@@ -51,6 +54,7 @@ Located under `.claude/rules/ecc/`, auto-loaded by the CC engine:
 - [Architecture docs](architecture.md)
 - [Agent workflow](agent-workflow.md)
 - [Harness validator](scripts/validate-harness.mjs)
+- [Version file](.harness-version)
 
 ## Memory Folder
 

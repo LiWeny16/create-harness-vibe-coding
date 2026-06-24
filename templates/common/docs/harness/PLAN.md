@@ -1,103 +1,52 @@
-# PLAN.md - Active Execution Plan
+# PLAN.md — DEPRECATED
 
-Use this file when work spans more than one step, one file, or one agent.
+Workflow state has moved to task-capsule structure. Do not append new content here.
 
-## Current Goal
+Active state:
+- `Harness/PROGRESS.md` — global task index and cross-task decisions
+- `Harness/tasks/<task-id>/PROGRESS.md` — per-task progress, phase, heartbeat
+- `Harness/tasks/<task-id>/PLAN.md` — per-task implementation plan, verification evidence
 
-{{CURRENT_GOAL}}
+Templates:
+- `Harness/tasks/_template/` — copy this directory to create a new task
 
-## Phase
+## Legacy Content (historical reference only)
 
-Choose one: Idea / Research / PRD / Architecture / Plan / Build / Verify / Feedback.
+The sections below are archived from the monolithic PLAN.md era. Active task data has been migrated to `Harness/tasks/`.
 
-Current: {{CURRENT_PHASE}}
+---
 
-## Heartbeat
+### Historical: Dogfood Bootstrap
 
-Mode: normal
-Last beat: {{LAST_BEAT}}
-Current phase: {{CURRENT_PHASE}}
-Current blocker: {{CURRENT_BLOCKER_OR_NONE}}
-Next beat trigger: {{NEXT_BEAT_TRIGGER}}
-Failure count: 0
-Recovery action: {{RECOVERY_ACTION_OR_NONE}}
+Goal: Dogfood the generated Harness scaffold inside this repository so future agents use root `Harness/` routing instead of stale `docs/harness/` guidance.
 
-Update this section before long commands, after long commands, before and after subagent handoffs, after failed verification, and before stopping for user input. In `wf-mode`, use this as the resume point after context loss or interruption.
+**Success Criteria** (all verified):
+- [x] Root `CLAUDE.md` routes through `Harness/MEMORY.md` and `Harness/README.md`
+- [x] Root `MEMORY.md` no longer contains stale `docs/harness/` paths or template placeholders
+- [x] Root `Harness/` and `.claude/` dogfood runtime assets exist
+- [x] Harness strict validation passes
+- [x] Repository tests pass
 
-## Progress Rules
-
-- Phase tracks lifecycle progress.
-- Task status tracks execution progress.
-- Update before handoff, after verification, and when blocked.
-
-Allowed task statuses: Pending / In Progress / Blocked / Done / Verified.
-
-- Pending: not started.
-- In Progress: active work.
-- Blocked: needs user input or external change.
-- Done: task complete, evidence not final.
-- Verified: verification evidence is recorded.
-
-## Success Criteria
-
-- [ ] {{CRITERION_1}}
-- [ ] {{CRITERION_2}}
-- [ ] {{CRITERION_3}}
-
-## Scope
-
-Allowed write set:
-- `{{PATH_OR_GLOB}}`
-
-Forbidden:
-- {{OUT_OF_SCOPE}}
-
-## Loaded Context
-
-Keep this list short. Add only docs/files used for the current phase.
-
-- `Harness/README.md`
-- `{{LOADED_DOC_OR_FILE}}`
-
-## Tasks
-
-| # | Task | Owner | Verify | Status |
-| --- | --- | --- | --- | --- |
-| 1 | {{TASK}} | {{OWNER}} | `{{COMMAND_OR_CHECK}}` | Pending |
-
-## Parallel Dispatch
-
-Use [subagents.md](subagents.md) and [dispatch.md](dispatch.md) when more than one agent or bounded pass is useful.
-
-| Task | Agent | Mode | Read Set | Write Set | Depends On | Output | Status |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| {{TASK}} | {{AGENT}} | Parallel Read / Serial Write / Isolated Worktree | `{{READ_SET}}` | `{{WRITE_SET_OR_NONE}}` | {{DEPENDENCY_OR_NONE}} | {{EXPECTED_OUTPUT}} | Pending |
-
-## Subagent Synthesis
-
-Agents used:
-Findings accepted:
-Findings rejected:
-Conflicts:
-Decisions:
-Next write set:
-Verification path:
-Residual risk:
-
-## Agent Handoffs
-
-| Agent | Role | Context Pack | Result |
-| --- | --- | --- | --- |
-| {{AGENT}} | {{ROLE}} | {{DOCS_OR_FILES}} | {{SUMMARY}} |
-
-## Decisions
-
+**Decisions:**
 | Date | Decision | Reason |
-| --- | --- | --- |
-| {{YYYY-MM-DD}} | {{DECISION}} | {{REASON}} |
+|------|----------|--------|
+| 2026-06-24 | Dogfood root `Harness/` while keeping templates under `templates/` | Separate package source from operating harness |
+| 2026-06-24 | memory-master + context-master added to commonAgents | Global memory and context management |
 
-## Verification
+### Historical: WF Conflict Fix
 
+Goal: Fix WF-mode orphaned files and conflicts: align commands/wf.md, resolve subagent count tension, fix README "may" vs "MUST", add memory-master and context-master agents.
+
+**Subagent Dispatch:**
+| Agent | Mode | Purpose | Status |
+|-------|------|---------|--------|
+| Subagent 1 | Serial Write | Create memory-master.md, context-master.md, update commands/wf.md | Verified |
+| Subagent 2 | Serial Write | Fix agent-workflow.md, dispatch.md, README.md conflicts | Verified |
+| Subagent 3 | Serial Write | Update WF.md, wf-mode/SKILL.md, subagents.md, MEMORY.md, context-loading.md, CLAUDE.md, validate-harness.mjs | Verified |
+| Subagent 4 | Serial Write | Sync template changes to dogfood runtime files | Verified |
+
+**Verification:**
 | Check | Result | Notes |
-| --- | --- | --- |
-| `{{CHECK}}` | Not run | {{NOTES}} |
+|-------|--------|-------|
+| `node Harness/scripts/validate-harness.mjs --strict` | Pass | all invariants preserved |
+| `npm test` | Pass | 58/58 tests passed |

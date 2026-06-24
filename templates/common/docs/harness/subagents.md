@@ -4,7 +4,7 @@ Purpose: coordinate subagents for speed without losing control of scope, evidenc
 
 Use this file when work needs multiple roles, parallel reading, independent review, broad context, repeated failures, or `/wf`.
 
-project files are the only durable communication channel; chat/subagent transcript state is non-authoritative. Important assumptions, decisions, blockers, evidence, and handoffs must be written to `Harness/PLAN.md`, the current feature doc, `Harness/MEMORY.md`, or `Harness/memory/*` as appropriate.
+project files are the only durable communication channel; chat/subagent transcript state is non-authoritative. Important assumptions, decisions, blockers, evidence, and handoffs must be written to `Harness/tasks/<task-id>/PROGRESS.md` and `Harness/tasks/<task-id>/PLAN.md`, the current feature doc, `Harness/MEMORY.md`, or `Harness/memory/*` as appropriate.
 
 ## Source Attribution
 
@@ -28,7 +28,7 @@ The main agent is the controller. It owns:
 - intent confidence and user questions
 - task decomposition
 - read/write set boundaries
-- dispatch table in `Harness/PLAN.md`
+- dispatch table in `Harness/tasks/<task-id>/PLAN.md#Subagent Dispatch`
 - integration of returned summaries
 - final verification and closeout
 
@@ -49,6 +49,8 @@ Use the installed roster under `.claude/agents/` before inventing ad hoc roles.
 | `reviewer` | spec compliance, code quality, maintainability, security, missing tests |
 | `debugger` | reproduced failures, root cause isolation, smallest safe fix |
 | `verifier` | command execution, real browser/API checks, final evidence |
+| `memory-master` | write/consolidate memory entries, dedup, cross-project extraction; dispatched on repeated failures, user corrections, and WF closeout |
+| `context-master` | analyze context usage, recommend compression at ~85% window, extract durable session knowledge during closeout |
 
 ## WF Default Fan-Out
 
@@ -67,6 +69,8 @@ Then add phase-specific agents:
 - `reviewer` for spec and code-quality gates
 - `debugger` after a reproduced verification failure
 - `verifier` for final command/browser/API evidence
+- `context-master` before closeout for knowledge extraction
+- `memory-master` after repeated failures and during closeout for consolidation
 
 The default decision ratio is a 7:3 collaboration bias: choose multi-agent collaboration for substantial or uncertain work about 70% of the time; choose solo mode only for clearly local, low-risk work that is not explicitly in WF/WK mode.
 
@@ -127,8 +131,9 @@ Do not make a subagent rediscover the entire project or read the whole harness. 
 - Read-only agents may run in parallel.
 - Writing agents run serially unless write sets are disjoint and the controller has chosen an isolated worktree.
 - Reviewers may run in parallel after implementation, but spec compliance is evaluated before code-quality approval.
-- Do not let two agents edit `Harness/PLAN.md`, `Harness/MEMORY.md`, or `Harness/memory/*` concurrently. The controller writes durable state.
-- If two agents disagree, the controller records the conflict in `Harness/PLAN.md` and chooses the smallest reversible next step.
+- Subagents are readers and reporters. They return findings and PLAN patch suggestions. Only the controller (main agent) commits state changes to task files.
+- Do not let two agents edit `Harness/tasks/<task-id>/PROGRESS.md`, `Harness/tasks/<task-id>/PLAN.md`, `Harness/MEMORY.md`, or `Harness/memory/*` concurrently. The controller writes durable state.
+- If two agents disagree, the controller records the conflict in `Harness/tasks/<task-id>/PLAN.md` and chooses the smallest reversible next step.
 
 ## Review Gates
 
@@ -144,7 +149,7 @@ If either reviewer finds issues, the implementer or debugger fixes them and the 
 | Status | Controller Action |
 | --- | --- |
 | `DONE` | start review gates |
-| `DONE_WITH_CONCERNS` | read concerns, decide whether to address before review, record in `PLAN.md` |
+| `DONE_WITH_CONCERNS` | read concerns, decide whether to address before review, record in `Harness/tasks/<task-id>/PROGRESS.md` |
 | `NEEDS_CONTEXT` | provide only missing context and re-dispatch |
 | `BLOCKED` | change something: add context, split task, upgrade reasoning, use debugger, or ask user |
 
@@ -153,14 +158,14 @@ Never retry the same failed prompt unchanged.
 ## Failure Recovery
 
 - First failed verification: record evidence, dispatch debugger with the smallest reproduced failure.
-- Second same-class failure: narrow scope, update `PLAN.md#Heartbeat`, and add a reviewer before another fix.
+- Second same-class failure: narrow scope, update `Harness/tasks/<task-id>/PROGRESS.md#Heartbeat`, and add a reviewer before another fix.
 - Third same-class failure: stop blind fixes. Present evidence-backed options to the user.
 
 The recovery loop must preserve the same evidence standard as the main workflow: real commands, real browser/API checks when applicable, and recorded logs or artifacts.
 
 ## Synthesis Output
 
-After subagents return, the controller writes one synthesis into `Harness/PLAN.md`:
+After subagents return, the controller writes one synthesis into `Harness/tasks/<task-id>/PLAN.md`:
 
 ```text
 Agents used:

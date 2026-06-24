@@ -298,7 +298,7 @@ test('generated scaffold stores harness-owned payload under root Harness directo
   const orchestratorSkill = readRel(targetDir, '.claude/skills/subagent-orchestrator/SKILL.md');
   assert.match(orchestratorSkill, /Harness\/subagents\.md/);
   assert.match(orchestratorSkill, /after wf-mode has been selected/);
-  assert.match(orchestratorSkill, /update `Harness\/PLAN\.md#Parallel Dispatch`/);
+  assert.match(orchestratorSkill, /update `Harness\/tasks\/<task-id>\/PLAN\.md#Subagent Dispatch`/);
   assert.match(orchestratorSkill, /\.claude\/agents\//);
   assert.match(orchestratorSkill, /Explicit WF\/WK mode requires at least 3 distinct agents/);
   assert.doesNotMatch(orchestratorSkill, /^description:.*repeated failures/m);
@@ -315,10 +315,8 @@ test('generated scaffold stores harness-owned payload under root Harness directo
   assert.match(readmeSkill, /Mermaid or ASCII architecture diagrams/);
 
   const plan = readRel(targetDir, 'Harness/PLAN.md');
-  assert.match(plan, /## Heartbeat/);
-  assert.match(plan, /Next beat trigger/);
-  assert.match(plan, /Recovery action/);
-  assert.match(plan, /## Subagent Synthesis/);
+  assert.match(plan, /DEPRECATED/);
+  assert.match(plan, /## Legacy Content/);
 });
 
 test('backup conflict policy keeps original and writes template file', () => {
@@ -510,7 +508,7 @@ test('generated scaffold includes memory folder registrations and reflection tri
   assert.match(docsReadme, /readme-optimizer/);
   assert.match(docsReadme, /Routing priority/);
   assert.match(docsReadme, /wk mode/);
-  assert.match(docsReadme, /\| Need WF mode[^\n]*\[WF\.md\]\(WF\.md\), \[PLAN\.md\]\(PLAN\.md\)[^\n]*explicit WF\/WK loads subagent docs immediately/);
+  assert.match(docsReadme, /\| Need WF mode[^\n]*\[WF\.md\]\(WF\.md\), \[PROGRESS\.md\]\(PROGRESS\.md\)[^\n]*explicit WF\/WK loads subagent docs immediately/);
   assert.doesNotMatch(docsReadme, /\| Need WF mode[^\n]*subagents\.md/);
   assert.match(routerSkill, /routes to `wf-mode` first/);
   assert.match(routerSkill, /`\/wf`, `wf mode`, `workflow mode`, `wk mode`/);

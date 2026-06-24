@@ -14,7 +14,7 @@ Load first:
 
 - failing command and error output
 - related files
-- `Harness/PLAN.md`
+- `Harness/tasks/<task-id>/PROGRESS.md` and `Harness/tasks/<task-id>/PLAN.md` when available
 - current feature doc when present
 
 Inputs you must receive:

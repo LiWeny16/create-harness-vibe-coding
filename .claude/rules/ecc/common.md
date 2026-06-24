@@ -9,9 +9,9 @@ alwaysApply: true
 
 - Start with `CLAUDE.md`, `Harness/MEMORY.md`, and `Harness/README.md`.
 - Do not bulk-read `Harness/`. Load by router trigger.
-- Keep `Harness/PLAN.md` current when work has multiple steps, files, or agents.
+- Keep `Harness/tasks/<task-id>/PROGRESS.md` and `Harness/tasks/<task-id>/PLAN.md` current when work has multiple steps, files, or agents.
 - project files are the only durable communication channel. chat/subagent transcript state is non-authoritative.
-- Important assumptions, decisions, blockers, evidence, and handoffs must be written to `Harness/PLAN.md`, the current feature doc, `Harness/MEMORY.md`, or `Harness/memory/*` as appropriate.
+- Important assumptions, decisions, blockers, evidence, and handoffs must be written to `Harness/tasks/<task-id>/PROGRESS.md`, `Harness/tasks/<task-id>/PLAN.md`, the current feature doc, `Harness/MEMORY.md`, or `Harness/memory/*` as appropriate.
 
 ## Verification
 
