@@ -1,7 +1,7 @@
 # Data Flow — {{projectName}}
 
 > **Purpose**: Define the complete lifecycle of each event/request — happy path + all failure branches.
-> **This is the most important file in the entire docs folder** — what AI most often invents during implementation is failure-path behavior. Write it clearly and it won't.
+> **This is the most important runtime-flow file in `Harness/`** — what AI most often invents during implementation is failure-path behavior. Write it clearly and it won't.
 >
 > Philosophy source: EventCatalog pattern + arc42 Chapter 6 (Runtime View).
 

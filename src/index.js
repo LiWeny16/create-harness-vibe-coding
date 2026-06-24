@@ -100,7 +100,7 @@ if (argName || skipPrompts) {
   console.log(pc.dim('────────────────────────────────────────────'));
   console.log(`  Project     ${pc.green(projectName)}`);
   console.log(`  Directory   ${pc.green(targetDir)}`);
-  console.log(`  Creates     ${pc.cyan('CLAUDE.md, docs/harness/PLAN.md, docs/, scripts/, .claude/, SETUP.md, tests/')}`);
+  console.log(`  Creates     ${pc.cyan('CLAUDE.md, README.md, Harness/PLAN.md, Harness/, .claude/, tests/')}`);
   if (generationOptions.dryRun) {
     console.log(`  Mode        ${pc.yellow('dry-run')}`);
   }
@@ -142,15 +142,30 @@ if (argName || skipPrompts) {
   console.log(pc.dim('────────────────────────────────────────────'));
   console.log(`  Project     ${pc.green(projectName)}`);
   console.log(`  Directory   ${pc.green(targetDir)}`);
-  console.log(`  Creates     ${pc.cyan('CLAUDE.md, docs/harness/PLAN.md, docs/, scripts/, .claude/, SETUP.md, tests/')}`);
+  console.log(`  Creates     ${pc.cyan('CLAUDE.md, README.md, Harness/PLAN.md, Harness/, .claude/, tests/')}`);
   console.log(`  Conflicts   ${pc.cyan(generationOptions.onConflict)}`);
   console.log(pc.dim('────────────────────────────────────────────'));
   console.log('');
 
+  const preview = generate({ projectName, targetDir, ...generationOptions, dryRun: true });
+  if (!preview.success) {
+    printResult(preview, targetDir);
+  }
+
+  console.log(pc.yellow('Planned changes: no files have been written yet.'));
+  printSummary(preview.summary);
+  printPlan(preview.plan);
+  printWarnings(preview);
+  console.log('');
+
+  if (generationOptions.dryRun) {
+    process.exit(0);
+  }
+
   let proceed = true;
   try {
     proceed = await p.confirm({
-      message: 'Confirm generation?',
+      message: 'Confirm generation with this plan?',
       initialValue: true,
     });
     if (p.isCancel(proceed)) proceed = false;
@@ -187,19 +202,14 @@ function printResult(result, targetDir) {
     console.log(pc.green('\nGeneration complete.\n'));
     printSummary(result.summary);
 
-    if (result.warnings.length > 0) {
-      console.log(pc.yellow('\nWarning(s):'));
-      for (const warning of result.warnings) {
-        console.log(pc.yellow(`  - ${warning}`));
-      }
-    }
+    printWarnings(result);
 
     console.log(pc.bold('Next steps:'));
     console.log(`  ${pc.cyan(`cd ${targetDir}`)}`);
     console.log(`  ${pc.cyan('claude')}                          # Start Claude Code`);
-    console.log(`  Tell Claude: "${pc.yellow('Read SETUP.md. Bootstrap this project from idea to first vertical slice.')}"`);
+    console.log(`  Tell Claude: "${pc.yellow('Read Harness/SETUP.md. Bootstrap this project from idea to first vertical slice.')}"`);
     console.log('');
-    console.log(pc.dim('  SETUP.md is temporary. Delete it after initialization.'));
+    console.log(pc.dim('  Harness/SETUP.md is temporary. Delete it after initialization.'));
     console.log('');
 
   } else {
@@ -323,6 +333,15 @@ function printPlan(plan) {
     for (const file of files) {
       console.log(`    - ${file}`);
     }
+  }
+}
+
+function printWarnings(result) {
+  if (!result.warnings.length) return;
+
+  console.log(pc.yellow('\nWarning(s):'));
+  for (const warning of result.warnings) {
+    console.log(pc.yellow(`  - ${warning}`));
   }
 }
 

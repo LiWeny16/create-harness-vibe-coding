@@ -19,7 +19,7 @@
 - Capture runtime exceptions, console errors, and failed network requests before and after the flow.
 - Interact through stable accessible labels/roles or `data-testid`, not brittle DOM paths.
 - Verify at least one critical flow end-to-end in the real browser target.
-- Save screenshot, trace, video, or result artifact paths and record them in `docs/harness/PLAN.md` or the feature doc.
+- Save screenshot, trace, video, or result artifact paths and record them in `Harness/PLAN.md` or the feature doc.
 - Clean up any dev server or browser processes started for verification.
 
 ## Common Commands

@@ -1,36 +1,31 @@
 # CLAUDE.md
 
-## 1. Startup
+## 1. Harness Binding & Startup
 
-- Every session: read `MEMORY.md`, then `docs/README.md`.
-- If `SETUP.md` exists in the project root, read it first.
-- All routing, role-based reading, and per-task doc loads live in `docs/README.md`. Not here.
-- If work spans more than one step, update `docs/harness/PLAN.md`.
+- This repository dogfoods the generated Harness scaffold while developing the scaffold itself.
+- If `Harness/` exists, this repository is governed by the Harness contract. Treat these files as mandatory operating instructions, not optional references.
+- Every session: load `Harness/MEMORY.md` first, then `Harness/README.md`.
+- If `Harness/SETUP.md` exists, follow it before normal project work; it is the install/bootstrap contract and may be deleted only after setup is complete.
+- `Harness/MEMORY.md` is the memory/resource router: agents, skills, durable memories, and cross-session lessons. Follow its registrations when selecting agents/skills or recording memory.
+- `Harness/README.md` is the task router. For every request, check `Harness/README.md#Load By Task`; if a row matches, read and follow those docs before acting.
+- If work spans more than one step, update `Harness/PLAN.md`.
+- Use `/wf`, `wf-mode`, or `Harness/WF.md` for long, difficult, uncertain, multi-file, or repeated-failure work.
+- Use `subagent-orchestrator` and `Harness/subagents.md` when coordinating multiple subagents.
 - Universal rules live in `.claude/rules/ecc/common.md`.
-- Never bulk-read `docs/`.
+- Never bulk-read `Harness/`; route through `Harness/README.md` and `Harness/MEMORY.md`.
+- Scaffold source files live under `templates/common/` and `templates/optional/`; generated dogfood runtime files live under root `Harness/` and `.claude/`.
 
 ---
-
-Behavioral guidelines to reduce common LLM coding mistakes. For trivial tasks, use judgment. These bias toward caution over speed.
 
 ## 2. Think Before Coding
 
 **Don't assume. Don't hide confusion. Surface tradeoffs.**
 
-### 2.1 Confidence Threshold (Non-Negotiable)
-
-- You must have **≥95% confidence** in user intent before writing implementation code.
+- You must have at least 95% confidence in user intent before writing implementation code.
 - If confidence is below 95%, stop and ask. False confidence is worse than a question.
-- **Maximum 3 blocking questions per decision point.** Ask the highest-impact questions first.
-- If you catch yourself thinking *"this is probably what they want"* — that is a mandatory stop condition. Ask.
-- **Silent picks are forbidden.** When two valid approaches exist and you cannot decide with 95% confidence, present both trade-offs to the user.
-- Record every assumption explicitly in `docs/harness/PLAN.md` so the user can correct it.
-
-Before implementing:
-- State your assumptions explicitly. If uncertain, ask.
-- If multiple interpretations exist, present them - don't pick silently.
-- If a simpler approach exists, say so. Push back when warranted.
-- If something is unclear, stop. Name what's confusing. Ask.
+- Ask at most 3 blocking questions per decision point. Ask the highest-impact questions first.
+- If two valid approaches exist and you cannot decide with 95% confidence, present both tradeoffs to the user.
+- State assumptions before implementation and record durable assumptions, decisions, blockers, handoffs, and verification evidence in `Harness/PLAN.md`.
 
 ## 3. Simplicity First
 
@@ -38,54 +33,38 @@ Before implementing:
 
 - No features beyond what was asked.
 - No abstractions for single-use code.
-- No "flexibility" or "configurability" that wasn't requested.
+- No unrequested flexibility or configurability.
 - No error handling for impossible scenarios.
-- If you write 200 lines and it could be 50, rewrite it.
-
-Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
+- If the solution is much larger than the problem, simplify before continuing.
 
 ## 4. Surgical Changes
 
 **Touch only what you must. Clean up only your own mess.**
 
-When editing existing code:
-- Don't "improve" adjacent code, comments, or formatting.
-- Don't refactor things that aren't broken.
-- Match existing style, even if you'd do it differently.
-- If you notice unrelated dead code, mention it - don't delete it.
-
-When your changes create orphans:
-- Remove imports/variables/functions that YOUR changes made unused.
-- Don't remove pre-existing dead code unless asked.
-
-The test: Every changed line should trace directly to the user's request.
+- Do not improve adjacent code, comments, or formatting unless needed for the task.
+- Do not refactor unrelated code.
+- Match existing style.
+- If you notice unrelated dead code, mention it instead of deleting it.
+- Every changed line should be traceable to the user's request.
 
 ## 5. Goal-Driven Execution
 
 **Define success criteria. Loop until verified.**
 
-Transform tasks into verifiable goals:
-- "Add validation" → "Write tests for invalid inputs, then make them pass"
-- "Fix the bug" → "Write a test that reproduces it, then make it pass"
-- "Refactor X" → "Ensure tests pass before and after"
+- Transform tasks into verifiable goals before implementation.
+- For multi-step work, keep `Harness/PLAN.md` current with loaded context, task state, assumptions, and verification.
+- Do not claim work is complete until tests or explicit manual verification have been run and recorded.
 
-For multi-step tasks, state a brief plan:
-```
-1. [Step] → verify: [check]
-2. [Step] → verify: [check]
-3. [Step] → verify: [check]
-```
+## 6. File Ownership
 
-Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
+- Do not place project build scripts, git conventions, run commands, or release process in this file. Put them in `README.md`.
+- Do not place code architecture here. Put architecture in `Harness/architecture.md` or the current feature doc.
+- If this file has accumulated unrelated project notes, pause and propose moving them to the right place: `README.md` for development operations, `Harness/architecture.md` for architecture, `Harness/WF.md` or `Harness/workflows/` for workflow rules.
 
----
+## 7. Memory & Self-Learning
 
-**These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
-
----
-
-## 6. Memory & Self-Learning
-
-- **User memory**: triggers "remember", "never", "next time", "always", "I prefer" — persist newest-first under `MEMORY.md#User Mem`. Don't record ordinary chat. Ambiguous? Ask.
-- **Tool memory**: auto-record under `MEMORY.md#Tool Usage Standards` when a tool/pattern fails 3+ times or a better alternative is found. Update old entries, don't duplicate. Never record secrets.
-- Format details live in `MEMORY.md`, not here.
+- `Harness/MEMORY.md` is the resource index. Detailed durable memory lives in `Harness/memory/`.
+- **Tool reflection trigger**: record a lightweight reflection when the same tool/use pattern fails 3+ times, or when a better command pattern/environment fix is found. Write it newest-first in `Harness/memory/tool-usage-reflections.md`.
+- **User correction trigger**: record a lightweight preference/correction when the user asks to remember it, or when the user corrects the same assumption/pattern 2+ times. Write it newest-first in `Harness/memory/user-corrections-preferences.md`.
+- **Agent lesson trigger**: record reusable lessons from review/debug loops in `Harness/memory/agent-lessons-patterns.md` when they would prevent recurrence.
+- Never record secrets, credentials, tokens, or private data in memory.

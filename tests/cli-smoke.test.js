@@ -46,11 +46,13 @@ test('--dry-run prints full plan for existing project conflicts without writing'
   assert.match(output, /create:/i);
   assert.match(output, /conflict:/i);
   assert.match(output, /CLAUDE\.md/);
+  assert.match(output, /confirm refactoring or merging/i);
   assert.match(output, /tests\/\.gitkeep/);
   assert.doesNotMatch(output, /\.\.\. \d+ more/);
   assert.doesNotMatch(output, /Generation complete/i);
   assert.equal(fs.readFileSync(path.join(target, 'CLAUDE.md'), 'utf8'), 'legacy\n');
   assert.equal(fs.existsSync(path.join(target, 'SETUP.md')), false);
+  assert.equal(fs.existsSync(path.join(target, 'Harness', 'SETUP.md')), false);
 });
 
 test('existing project default conflict exits non-zero and preserves file', () => {
@@ -62,8 +64,30 @@ test('existing project default conflict exits non-zero and preserves file', () =
   const result = spawnSync(process.execPath, [bin, 'legacy', target, '-y'], { encoding: 'utf8' });
 
   assert.notEqual(result.status, 0);
-  assert.match(`${result.stdout}\n${result.stderr}`, /conflict/i);
+  const output = `${result.stdout}\n${result.stderr}`;
+  assert.match(output, /conflict/i);
+  assert.match(output, /CLAUDE\.md already exists/);
+  assert.match(output, /confirm refactoring or merging/i);
   assert.equal(fs.readFileSync(path.join(target, 'CLAUDE.md'), 'utf8'), 'legacy\n');
+});
+
+test('interactive fallback previews computed conflict plan before generation failure', () => {
+  const root = tmpdir();
+  const target = path.join(root, 'my-vibe-project');
+  fs.mkdirSync(target, { recursive: true });
+  fs.writeFileSync(path.join(target, 'CLAUDE.md'), 'legacy\n');
+
+  const result = spawnSync(process.execPath, [bin], { cwd: root, encoding: 'utf8' });
+  const output = `${result.stdout}\n${result.stderr}`;
+
+  assert.notEqual(result.status, 0, output);
+  assert.match(output, /Planned changes: no files have been written yet/);
+  assert.match(output, /conflict:/i);
+  assert.match(output, /CLAUDE\.md/);
+  assert.match(output, /Generation failed/);
+  assert.ok(output.indexOf('Planned changes') < output.indexOf('Generation failed'));
+  assert.equal(fs.readFileSync(path.join(target, 'CLAUDE.md'), 'utf8'), 'legacy\n');
+  assert.equal(fs.existsSync(path.join(target, 'Harness', 'SETUP.md')), false);
 });
 
 test('existing project can opt into skip conflicts', () => {
@@ -75,8 +99,10 @@ test('existing project can opt into skip conflicts', () => {
   const output = execFileSync(process.execPath, [bin, 'legacy', target, '-y', '--on-conflict', 'skip'], { encoding: 'utf8' });
 
   assert.match(output, /skipped/i);
+  assert.match(output, /CLAUDE\.md already exists/);
+  assert.match(output, /confirm refactoring or merging/i);
   assert.equal(fs.readFileSync(path.join(target, 'CLAUDE.md'), 'utf8'), 'legacy\n');
-  assert.ok(fs.existsSync(path.join(target, 'scripts', 'validate-harness.mjs')));
+  assert.ok(fs.existsSync(path.join(target, 'Harness', 'scripts', 'validate-harness.mjs')));
 });
 
 test('existing project can use equals form for conflict policy', () => {
@@ -106,13 +132,13 @@ test('--with copies optional skills and workflows', () => {
 
   assert.ok(fs.existsSync(path.join(target, '.claude', 'skills', 'ts-react-frontend', 'SKILL.md')));
   assert.ok(fs.existsSync(path.join(target, '.claude', 'skills', 'browser-e2e', 'SKILL.md')));
-  assert.ok(fs.existsSync(path.join(target, 'docs', 'workflows', 'browser-e2e.md')));
-  assert.match(fs.readFileSync(path.join(target, 'MEMORY.md'), 'utf8'), /ts-react-frontend/);
-  const docsReadme = fs.readFileSync(path.join(target, 'docs', 'README.md'), 'utf8');
+  assert.ok(fs.existsSync(path.join(target, 'Harness', 'workflows', 'browser-e2e.md')));
+  assert.match(fs.readFileSync(path.join(target, 'Harness', 'MEMORY.md'), 'utf8'), /ts-react-frontend/);
+  const docsReadme = fs.readFileSync(path.join(target, 'Harness', 'README.md'), 'utf8');
   const workflowLinks = [...docsReadme.matchAll(/\]\((workflows\/[^)]+)\)/g)].map(match => match[1]);
   assert.ok(workflowLinks.includes('workflows/browser-e2e.md'));
   for (const link of workflowLinks) {
-    assert.ok(fs.existsSync(path.join(target, 'docs', link)), `Expected ${link} to resolve from docs/README.md`);
+    assert.ok(fs.existsSync(path.join(target, 'Harness', link)), `Expected ${link} to resolve from Harness/README.md`);
   }
 });
 
@@ -122,7 +148,7 @@ test('--with equals form copies optional workflows', () => {
 
   execFileSync(process.execPath, [bin, 'web-equals', target, '-y', '--with=browser-e2e'], { encoding: 'utf8' });
 
-  assert.ok(fs.existsSync(path.join(target, 'docs', 'workflows', 'browser-e2e.md')));
+  assert.ok(fs.existsSync(path.join(target, 'Harness', 'workflows', 'browser-e2e.md')));
 });
 
 test('--preset web-app expands optional skills', () => {
@@ -142,7 +168,7 @@ test('--preset equals form expands optional workflows', () => {
 
   execFileSync(process.execPath, [bin, 'web-preset-equals', target, '-y', '--preset=web-app'], { encoding: 'utf8' });
 
-  assert.ok(fs.existsSync(path.join(target, 'docs', 'workflows', 'browser-e2e.md')));
+  assert.ok(fs.existsSync(path.join(target, 'Harness', 'workflows', 'browser-e2e.md')));
 });
 
 test('--without subtracts optional workflows after preset and with', () => {
@@ -221,7 +247,7 @@ test('generated optional project passes harness validator', () => {
   const target = path.join(root, 'validated-web');
 
   execFileSync(process.execPath, [bin, 'validated-web', target, '-y', '--with', 'browser-e2e,ts-react-frontend'], { encoding: 'utf8' });
-  const output = execFileSync(process.execPath, ['scripts/validate-harness.mjs'], { cwd: target, encoding: 'utf8' });
+  const output = execFileSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], { cwd: target, encoding: 'utf8' });
 
   assert.match(output, /Harness validation passed/);
 });
@@ -276,11 +302,11 @@ test('--json with --on-conflict skip outputs structured result', () => {
   assert.ok(Array.isArray(data.plan.skip));
   assert.ok(data.plan.skip.includes('CLAUDE.md'));
   assert.ok(Array.isArray(data.plan.create));
-  assert.ok(data.plan.create.includes('SETUP.md'));
+  assert.ok(data.plan.create.includes('Harness/SETUP.md'));
   assert.equal(data.summary.skipped, data.plan.skip.length);
   // Verify legacy file preserved and new files created
   assert.equal(fs.readFileSync(path.join(target, 'CLAUDE.md'), 'utf8'), 'legacy\n');
-  assert.ok(fs.existsSync(path.join(target, 'SETUP.md')));
+  assert.ok(fs.existsSync(path.join(target, 'Harness', 'SETUP.md')));
 });
 
 test('--json mode is non-interactive and uses defaults', () => {
@@ -299,8 +325,8 @@ test('--json mode is non-interactive and uses defaults', () => {
   assert.equal(data.success, true);
   // Non-interactive mode used defaults — plan includes expected core files
   assert.ok(data.plan.create.includes('CLAUDE.md'));
-  assert.ok(data.plan.create.includes('SETUP.md'));
-  assert.ok(data.plan.create.includes('MEMORY.md'));
+  assert.ok(data.plan.create.includes('Harness/SETUP.md'));
+  assert.ok(data.plan.create.includes('Harness/MEMORY.md'));
   // Verify no interactive text leaked
   assert.doesNotMatch(output, /Generation complete/);
   assert.doesNotMatch(output, /Confirm/);

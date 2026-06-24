@@ -11,8 +11,8 @@ Use this skill when reviewing or changing user-facing screens, layouts, visual h
 
 ## Docs To Load
 
-- `docs/workflows/ui-ux-review.md`
-- `docs/harness/PLAN.md`
+- `Harness/workflows/ui-ux-review.md`
+- `Harness/PLAN.md`
 - Existing design system, component, or style documentation.
 
 ## Required Inputs
@@ -25,7 +25,7 @@ Use this skill when reviewing or changing user-facing screens, layouts, visual h
 
 - UI code and style files already in scope for the task.
 - Screenshot or audit artifacts in existing evidence folders.
-- `docs/harness/PLAN.md` when the review is part of a tracked plan.
+- `Harness/PLAN.md` when the review is part of a tracked plan.
 
 ## Output Format
 
@@ -33,8 +33,8 @@ Return prioritized findings with file or screen references, evidence, recommende
 
 ## PLAN.md Updates
 
-Update `docs/harness/PLAN.md` only for tracked review tasks or when recording required evidence.
+Update `Harness/PLAN.md` only for tracked review tasks or when recording required evidence.
 
 ## dispatch.md Usage
 
-Use `docs/harness/dispatch.md` only for independent review streams such as separate routes or breakpoints.
+Use `Harness/dispatch.md` only for independent review streams such as separate routes or breakpoints.

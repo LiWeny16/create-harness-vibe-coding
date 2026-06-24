@@ -7,11 +7,11 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { generate } from '../src/generator.js';
 
 const projectFacts = [
-  'docs/harness/PLAN.md',
-  'docs/research/PRD.md',
-  'docs/research/research-results.md',
-  'docs/harness/architecture.md',
-  'docs/domain/ports.md',
+  'Harness/PLAN.md',
+  'Harness/research/PRD.md',
+  'Harness/research/research-results.md',
+  'Harness/architecture.md',
+  'Harness/domain/ports.md',
 ];
 
 function tmpdir() {
@@ -36,7 +36,7 @@ function generateProject(options = {}) {
 }
 
 function writeResolvedProjectFacts(targetDir, planGoal = 'Ship the first verified slice. Literal placeholder syntax `{{...}}` may appear in explanatory text.') {
-  writeRel(targetDir, 'docs/harness/PLAN.md', `# PLAN.md - Active Execution Plan
+  writeRel(targetDir, 'Harness/PLAN.md', `# PLAN.md - Active Execution Plan
 
 ## Current Goal
 
@@ -45,6 +45,16 @@ ${planGoal}
 ## Phase
 
 Current: Build
+
+## Heartbeat
+
+Mode: normal
+Last beat: 2026-06-24 validation
+Current phase: Build
+Current blocker: none
+Next beat trigger: after strict validation
+Failure count: 0
+Recovery action: none
 
 ## Success Criteria
 
@@ -60,7 +70,7 @@ Forbidden:
 
 ## Loaded Context
 
-- \`docs/README.md\`
+- \`Harness/README.md\`
 
 ## Tasks
 
@@ -72,6 +82,17 @@ Forbidden:
 
 No parallel dispatch needed.
 
+## Subagent Synthesis
+
+Agents used: none
+Findings accepted: none
+Findings rejected: none
+Conflicts: none
+Decisions: none
+Next write set: none
+Verification path: npm test
+Residual risk: none
+
 ## Verification
 
 | Check | Result | Notes |
@@ -79,7 +100,7 @@ No parallel dispatch needed.
 | \`npm test\` | Pass | includes literal \`{{...}}\` syntax documentation |
 `);
 
-  writeRel(targetDir, 'docs/research/PRD.md', `# PRD: validated
+  writeRel(targetDir, 'Harness/research/PRD.md', `# PRD: validated
 
 ## Why
 
@@ -90,7 +111,7 @@ The project exists to validate the harness.
 - [ ] Strict validation ignores literal \`{{...}}\` syntax examples.
 `);
 
-  writeRel(targetDir, 'docs/research/research-results.md', `# validated - Research Results
+  writeRel(targetDir, 'Harness/research/research-results.md', `# validated - Research Results
 
 ## Final Decision
 
@@ -98,14 +119,14 @@ The project exists to validate the harness.
 - **Core References**: Existing scaffold documentation.
 `);
 
-  writeRel(targetDir, 'docs/harness/architecture.md', `# Harness Architecture - validated
+  writeRel(targetDir, 'Harness/architecture.md', `# Harness Architecture - validated
 
 ## 1. Layering Rules
 
 The generated harness keeps project facts separate from implementation code.
 `);
 
-  writeRel(targetDir, 'docs/domain/ports.md', `# Port Contracts - validated
+  writeRel(targetDir, 'Harness/domain/ports.md', `# Port Contracts - validated
 
 ## 1. Port Classification
 
@@ -119,7 +140,7 @@ test('strict validation passes literal placeholder syntax and prints enforced pr
   const targetDir = generateProject();
   writeResolvedProjectFacts(targetDir);
 
-  const output = execFileSync(process.execPath, ['scripts/validate-harness.mjs', '--strict'], {
+  const output = execFileSync(process.execPath, ['Harness/scripts/validate-harness.mjs', '--strict'], {
     cwd: targetDir,
     encoding: 'utf8',
   });
@@ -135,7 +156,7 @@ test('strict validation fails real unresolved template placeholders by token', (
   const targetDir = generateProject();
   writeResolvedProjectFacts(targetDir, '{{CURRENT_GOAL}}');
 
-  const result = spawnSync(process.execPath, ['scripts/validate-harness.mjs', '--strict'], {
+  const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs', '--strict'], {
     cwd: targetDir,
     encoding: 'utf8',
   });
@@ -143,15 +164,15 @@ test('strict validation fails real unresolved template placeholders by token', (
 
   assert.notEqual(result.status, 0);
   assert.match(output, /Strict placeholder scope:/);
-  assert.match(output, /docs\/harness\/PLAN\.md/);
+  assert.match(output, /Harness\/PLAN\.md/);
   assert.match(output, /\{\{CURRENT_GOAL\}\}/);
 });
 
 test('validation fails when required memory reflection files are missing', () => {
   const targetDir = generateProject();
-  fs.rmSync(path.join(targetDir, 'memory', 'tool-usage-reflections.md'), { force: true });
+  fs.rmSync(path.join(targetDir, 'Harness', 'memory', 'tool-usage-reflections.md'), { force: true });
 
-  const result = spawnSync(process.execPath, ['scripts/validate-harness.mjs'], {
+  const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
     cwd: targetDir,
     encoding: 'utf8',
   });
@@ -166,34 +187,62 @@ test('validation fails when durable filesystem communication invariant is remove
   const invariant = 'project files are the only durable communication channel';
   writeRel(
     targetDir,
-    'docs/README.md',
-    readRel(targetDir, 'docs/README.md').replace(invariant, 'project files are useful context'),
+    'Harness/README.md',
+    readRel(targetDir, 'Harness/README.md').replace(invariant, 'project files are useful context'),
   );
 
-  const result = spawnSync(process.execPath, ['scripts/validate-harness.mjs'], {
+  const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
     cwd: targetDir,
     encoding: 'utf8',
   });
   const output = `${result.stdout}\n${result.stderr}`;
 
   assert.notEqual(result.status, 0);
-  assert.match(output, /docs\/README\.md missing durable filesystem communication invariant/);
+  assert.match(output, /Harness\/README\.md missing durable filesystem communication invariant/);
 });
 
 test('validation fails when optional web workflows lose stable selector requirements', () => {
   const targetDir = generateProject({ withOptions: ['browser-e2e,ts-react-frontend'] });
   writeRel(
     targetDir,
-    'docs/workflows/browser-e2e.md',
-    readRel(targetDir, 'docs/workflows/browser-e2e.md').replaceAll('data-testid', 'data-qa-id'),
+    'Harness/workflows/browser-e2e.md',
+    readRel(targetDir, 'Harness/workflows/browser-e2e.md').replaceAll('data-testid', 'data-qa-id'),
   );
 
-  const result = spawnSync(process.execPath, ['scripts/validate-harness.mjs'], {
+  const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
     cwd: targetDir,
     encoding: 'utf8',
   });
   const output = `${result.stdout}\n${result.stderr}`;
 
   assert.notEqual(result.status, 0);
-  assert.match(output, /docs\/workflows\/browser-e2e\.md missing stable UI selector contract/);
+  assert.match(output, /Harness\/workflows\/browser-e2e\.md missing stable UI selector contract/);
+});
+
+test('validation fails when a registered optional workflow file is missing', () => {
+  const targetDir = generateProject({ withOptions: ['browser-e2e'] });
+  fs.rmSync(path.join(targetDir, 'Harness', 'workflows', 'browser-e2e.md'), { force: true });
+
+  const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
+    cwd: targetDir,
+    encoding: 'utf8',
+  });
+  const output = `${result.stdout}\n${result.stderr}`;
+
+  assert.notEqual(result.status, 0);
+  assert.match(output, /registered workflow file is missing: Harness\/workflows\/browser-e2e\.md/);
+});
+
+test('validation fails when a registered optional skill file is missing', () => {
+  const targetDir = generateProject({ withOptions: ['browser-e2e'] });
+  fs.rmSync(path.join(targetDir, '.claude', 'skills', 'browser-e2e'), { recursive: true, force: true });
+
+  const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
+    cwd: targetDir,
+    encoding: 'utf8',
+  });
+  const output = `${result.stdout}\n${result.stderr}`;
+
+  assert.notEqual(result.status, 0);
+  assert.match(output, /registered skill file is missing: \.claude\/skills\/browser-e2e\/SKILL\.md/);
 });

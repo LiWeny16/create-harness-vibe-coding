@@ -15,7 +15,7 @@
 
 ### v0.1 Must Be Able To
 
-> Each item below must be split into a separate `docs/features/<name>.md` created from `docs/features/_template.md` before implementation begins. One feature = one doc = one implementation unit.
+> Each item below must be split into a separate `Harness/features/<name>.md` created from `Harness/features/_template.md` before implementation begins. One feature = one doc = one implementation unit.
 
 - [ ] {{MUST_1}}
 - [ ] {{MUST_2}}

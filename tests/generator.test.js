@@ -24,6 +24,70 @@ test('dry run returns planned creates without writing files', () => {
   assert.equal(result.summary.created, result.plan.create.length);
 });
 
+test('package README stays English and links to Chinese README', () => {
+  const readme = fs.readFileSync(path.join(process.cwd(), 'README.md'), 'utf8');
+
+  assert.doesNotMatch(readme, /[\u3400-\u9fff]/);
+  assert.match(readme, /Chinese README: \[README-CN\.md\]\(README-CN\.md\)/);
+  assert.match(readme, /One-sentence agent prompt/);
+  assert.match(readme, /There are two installation paths/);
+  assert.match(readme, /npx install/);
+  assert.match(readme, /Agent-link install/);
+  assert.match(readme, /before editing, ask the Agent-link install intake questions/);
+  assert.match(readme, /Agent-link install intake, asked before editing/);
+  assert.match(readme, /Ask at most three blocking questions up front/);
+  assert.match(readme, /Root agent entry/);
+  assert.match(readme, /Harness location/);
+  assert.match(readme, /README ownership/);
+  assert.match(readme, /README optimization/);
+  assert.match(readme, /readme-optimizer/);
+  assert.match(readme, /architecture diagrams/);
+  assert.match(readme, /ECC, Superpowers, custom rules/);
+  assert.match(readme, /Install 1-2 relevant skills only after user approval/);
+  assert.match(readme, /Memory\/privacy/);
+  assert.match(readme, /Branch\/worktree/);
+  assert.match(readme, /Package manager\/stack/);
+  assert.match(readme, /Document existing commands first/);
+  assert.match(readme, /add CI\/CD only after user approval/);
+  assert.match(readme, /https:\/\/github\.com\/zingspark\/create-harness-vibe-coding/);
+  assert.match(readme, /new project run the 0-1 bootstrap/i);
+  assert.match(readme, /existing project or legacy architecture/i);
+  assert.match(readme, /dry-run first/i);
+  assert.match(readme, /follow Harness\/SETUP\.md/i);
+  assert.match(readme, /If `CLAUDE\.md` already exists/);
+  assert.match(readme, /ask for confirmation before refactoring, merging, backing up, or replacing it/);
+});
+
+test('package README-CN gives Chinese one-sentence universal install prompt', () => {
+  const readmeCn = fs.readFileSync(path.join(process.cwd(), 'README-CN.md'), 'utf8');
+
+  assert.match(readmeCn, /一句话交给 Agent/);
+  assert.match(readmeCn, /两种安装方式/);
+  assert.match(readmeCn, /npx 安装/);
+  assert.match(readmeCn, /直接把链接丢给 agent/);
+  assert.match(readmeCn, /编辑前先询问 Agent-link 安装前置问题/);
+  assert.match(readmeCn, /Agent-link 安装前置问题，编辑前先问/);
+  assert.match(readmeCn, /最多问 3 个 blocking 问题/);
+  assert.match(readmeCn, /根 agent 入口/);
+  assert.match(readmeCn, /Harness 存放位置/);
+  assert.match(readmeCn, /README 归属/);
+  assert.match(readmeCn, /README 优化/);
+  assert.match(readmeCn, /readme-optimizer/);
+  assert.match(readmeCn, /架构图/);
+  assert.match(readmeCn, /ECC、Superpowers、自定义 rules/);
+  assert.match(readmeCn, /Memory\/隐私/);
+  assert.match(readmeCn, /Branch\/worktree/);
+  assert.match(readmeCn, /包管理器\/技术栈/);
+  assert.match(readmeCn, /只有用户同意后才新增或规范 CI\/CD/);
+  assert.match(readmeCn, /https:\/\/github\.com\/zingspark\/create-harness-vibe-coding/);
+  assert.match(readmeCn, /新项目走 0-1 bootstrap/);
+  assert.match(readmeCn, /老项目或老架构升级先 dry-run/);
+  assert.match(readmeCn, /只合并缺失的 Harness 规范/);
+  assert.match(readmeCn, /遵循 Harness\/SETUP\.md/);
+  assert.match(readmeCn, /如果项目里已经有 `CLAUDE\.md`/);
+  assert.match(readmeCn, /先请求用户确认是否重构\/合并 `CLAUDE\.md`/);
+});
+
 test('dry run reports existing project conflicts in the plan without writing files', () => {
   const root = tmpdir();
   const targetDir = path.join(root, 'legacy');
@@ -34,11 +98,12 @@ test('dry run reports existing project conflicts in the plan without writing fil
 
   assert.equal(result.success, true);
   assert.ok(result.plan.conflict.includes('CLAUDE.md'));
-  assert.ok(result.plan.create.includes('SETUP.md'));
+  assert.ok(result.plan.create.includes('Harness/SETUP.md'));
   assert.equal(result.summary.created, result.plan.create.length);
   assert.equal(result.summary.conflicts, result.plan.conflict.length);
   assert.equal(fs.readFileSync(path.join(targetDir, 'CLAUDE.md'), 'utf8'), 'legacy rules\n');
   assert.equal(fs.existsSync(path.join(targetDir, 'SETUP.md')), false);
+  assert.equal(fs.existsSync(path.join(targetDir, 'Harness', 'SETUP.md')), false);
 });
 
 test('dry run summary reflects skip backup and overwrite plans', () => {
@@ -69,6 +134,8 @@ test('default conflict policy fails before overwriting existing files', () => {
 
   assert.equal(result.success, false);
   assert.match(result.errors.join('\n'), /conflict/i);
+  assert.match(result.errors.join('\n'), /CLAUDE\.md already exists/);
+  assert.match(result.errors.join('\n'), /ask the user to confirm refactoring or merging/);
   assert.equal(fs.readFileSync(path.join(targetDir, 'CLAUDE.md'), 'utf8'), 'legacy rules\n');
 });
 
@@ -82,8 +149,159 @@ test('skip conflict policy preserves existing files and creates missing harness 
 
   assert.equal(result.success, true);
   assert.ok(result.plan.skip.includes('CLAUDE.md'));
+  assert.match(result.warnings.join('\n'), /CLAUDE\.md already exists/);
+  assert.match(result.warnings.join('\n'), /confirm refactoring or merging/);
   assert.equal(fs.readFileSync(path.join(targetDir, 'CLAUDE.md'), 'utf8'), 'legacy rules\n');
-  assert.ok(fs.existsSync(path.join(targetDir, 'docs', 'harness', 'PLAN.md')));
+  assert.ok(fs.existsSync(path.join(targetDir, 'Harness', 'PLAN.md')));
+});
+
+test('skip conflict policy warns that AGENTS.md needs user consent before merging', () => {
+  const root = tmpdir();
+  const targetDir = path.join(root, 'legacy-agents');
+  fs.mkdirSync(targetDir, { recursive: true });
+  fs.writeFileSync(path.join(targetDir, 'AGENTS.md'), 'legacy agent entry\n');
+
+  const result = generate({ projectName: 'legacy-agents', targetDir, onConflict: 'skip' });
+
+  assert.equal(result.success, true);
+  assert.ok(result.plan.skip.includes('AGENTS.md'));
+  assert.match(result.warnings.join('\n'), /AGENTS\.md/);
+  assert.match(result.warnings.join('\n'), /user consent/i);
+  assert.equal(fs.readFileSync(path.join(targetDir, 'AGENTS.md'), 'utf8'), 'legacy agent entry\n');
+});
+
+test('skip conflict policy warns when README.md development guidance is preserved', () => {
+  const root = tmpdir();
+  const targetDir = path.join(root, 'legacy-readme');
+  fs.mkdirSync(targetDir, { recursive: true });
+  fs.writeFileSync(path.join(targetDir, 'README.md'), 'legacy development docs\n');
+
+  const result = generate({ projectName: 'legacy-readme', targetDir, onConflict: 'skip' });
+
+  assert.equal(result.success, true);
+  assert.ok(result.plan.skip.includes('README.md'));
+  assert.match(result.warnings.join('\n'), /README\.md/);
+  assert.match(result.warnings.join('\n'), /build, test, and git conventions/);
+});
+
+test('skip conflict policy warns when optional workflow registrations need manual merge', () => {
+  const root = tmpdir();
+  const targetDir = path.join(root, 'legacy-harness-registration');
+  fs.mkdirSync(path.join(targetDir, 'Harness'), { recursive: true });
+  fs.writeFileSync(path.join(targetDir, 'Harness', 'README.md'), 'legacy router\n');
+  fs.writeFileSync(path.join(targetDir, 'Harness', 'MEMORY.md'), 'legacy memory\n');
+
+  const result = generate({
+    projectName: 'legacy-harness-registration',
+    targetDir,
+    onConflict: 'skip',
+    withOptions: ['browser-e2e'],
+  });
+
+  assert.equal(result.success, true);
+  assert.ok(result.plan.skip.includes('Harness/README.md'));
+  assert.ok(result.plan.skip.includes('Harness/MEMORY.md'));
+  assert.match(result.warnings.join('\n'), /Harness\/README\.md/);
+  assert.match(result.warnings.join('\n'), /Harness\/MEMORY\.md/);
+});
+
+test('generated scaffold stores harness-owned payload under root Harness directory', () => {
+  const root = tmpdir();
+  const targetDir = path.join(root, 'harness-root');
+
+  const result = generate({ projectName: 'harness-root', targetDir });
+
+  assert.equal(result.success, true);
+
+  for (const rel of [
+    'README.md',
+    'CLAUDE.md',
+    'AGENTS.md',
+    'Harness/README.md',
+    'Harness/SETUP.md',
+    'Harness/MEMORY.md',
+    'Harness/PLAN.md',
+    'Harness/WF.md',
+    'Harness/subagents.md',
+    'Harness/architecture.md',
+    'Harness/dispatch.md',
+    'Harness/context-loading.md',
+    'Harness/agent-workflow.md',
+    'Harness/scripts/validate-harness.mjs',
+    'Harness/memory/tool-usage-reflections.md',
+    'Harness/memory/user-corrections-preferences.md',
+    'Harness/memory/agent-lessons-patterns.md',
+    '.claude/skills/wf-mode/SKILL.md',
+    '.claude/skills/subagent-orchestrator/SKILL.md',
+    '.claude/skills/readme-optimizer/SKILL.md',
+    '.claude/commands/wf.md',
+  ]) {
+    assert.ok(fs.existsSync(path.join(targetDir, ...rel.split('/'))), `Expected ${rel} to be generated`);
+  }
+
+  assert.equal(fs.existsSync(path.join(targetDir, 'SETUP.md')), false);
+  assert.equal(fs.existsSync(path.join(targetDir, 'MEMORY.md')), false);
+  assert.equal(fs.existsSync(path.join(targetDir, 'docs', 'README.md')), false);
+  assert.equal(fs.existsSync(path.join(targetDir, 'docs', 'harness', 'PLAN.md')), false);
+
+  const claude = readRel(targetDir, 'CLAUDE.md');
+  assert.match(claude, /Harness\/README\.md/);
+  assert.match(claude, /Harness\/MEMORY\.md/);
+  assert.match(claude, /If `Harness\/` exists, this repository is governed by the Harness contract/);
+  assert.match(claude, /Harness\/MEMORY\.md` is the memory\/resource router/);
+  assert.match(claude, /Harness\/README\.md#Load By Task/);
+  assert.match(claude, /Harness\/SETUP\.md` exists, follow it before normal project work/);
+  assert.match(claude, /subagent-orchestrator` and `Harness\/subagents\.md/);
+  assert.match(claude, /## 2\. Think Before Coding/);
+  assert.match(claude, /## 3\. Simplicity First/);
+  assert.match(claude, /## 4\. Surgical Changes/);
+  assert.match(claude, /## 5\. Goal-Driven Execution/);
+  assert.ok(claude.split(/\r?\n/).length <= 200);
+  assert.match(claude, /No features beyond what was asked/);
+  assert.match(claude, /No unrequested flexibility/);
+  assert.match(claude, /Touch only files and lines required by the task/);
+  assert.match(claude, /every changed line traceable to the user's request/);
+  assert.match(claude, /verifiable success criteria/);
+  assert.doesNotMatch(claude, /docs\/README\.md/);
+
+  const rootReadme = readRel(targetDir, 'README.md');
+  assert.match(rootReadme, /Development Commands/);
+  assert.match(rootReadme, /Harness\/README\.md/);
+  assert.match(rootReadme, /Follow `Harness\/SETUP\.md` before normal work while it exists/);
+  assert.match(rootReadme, /Harness\/MEMORY\.md/);
+  assert.match(rootReadme, /readme-optimizer/);
+
+  const wf = readRel(targetDir, 'Harness/WF.md');
+  assert.match(wf, /Ralph-style/i);
+  assert.match(wf, /Heartbeat Protocol/);
+  assert.match(wf, /Chrome DevTools|CDP|Playwright/);
+  assert.match(wf, /Harness\/subagents\.md/);
+
+  const subagents = readRel(targetDir, 'Harness/subagents.md');
+  assert.match(subagents, /## Source Attribution/);
+  assert.match(subagents, /npx skills find/);
+  assert.match(subagents, /superpowers:dispatching-parallel-agents/);
+  assert.match(subagents, /superpowers:subagent-driven-development/);
+  assert.match(subagents, /## Efficiency Ladder/);
+  assert.match(subagents, /## Review Gates/);
+
+  const orchestratorSkill = readRel(targetDir, '.claude/skills/subagent-orchestrator/SKILL.md');
+  assert.match(orchestratorSkill, /Harness\/subagents\.md/);
+  assert.match(orchestratorSkill, /after wf-mode has been selected/);
+  assert.match(orchestratorSkill, /update `Harness\/PLAN\.md#Parallel Dispatch`/);
+  assert.doesNotMatch(orchestratorSkill, /^description:.*repeated failures/m);
+
+  const readmeSkill = readRel(targetDir, '.claude/skills/readme-optimizer/SKILL.md');
+  assert.match(readmeSkill, /Preserve \+ append/);
+  assert.match(readmeSkill, /Structure pass/);
+  assert.match(readmeSkill, /Full rewrite/);
+  assert.match(readmeSkill, /Mermaid or ASCII architecture diagrams/);
+
+  const plan = readRel(targetDir, 'Harness/PLAN.md');
+  assert.match(plan, /## Heartbeat/);
+  assert.match(plan, /Next beat trigger/);
+  assert.match(plan, /Recovery action/);
+  assert.match(plan, /## Subagent Synthesis/);
 });
 
 test('backup conflict policy keeps original and writes template file', () => {
@@ -130,6 +348,47 @@ test('directory at target file path is always a conflict except skip', () => {
   }
 });
 
+test('file at Harness parent path fails before writing partial scaffold for every conflict policy', () => {
+  for (const policy of ['fail', 'skip', 'backup', 'overwrite']) {
+    const root = tmpdir();
+    const targetDir = path.join(root, `harness-parent-${policy}`);
+    fs.mkdirSync(targetDir, { recursive: true });
+    fs.writeFileSync(path.join(targetDir, 'Harness'), 'not a directory\n');
+
+    const result = generate({ projectName: `harness-parent-${policy}`, targetDir, onConflict: policy });
+
+    assert.equal(result.success, false, policy);
+    assert.match(result.errors.join('\n'), /Harness/);
+    assert.equal(fs.readFileSync(path.join(targetDir, 'Harness'), 'utf8'), 'not a directory\n');
+    assert.equal(fs.existsSync(path.join(targetDir, '.claude')), false, `${policy} should not write partial .claude output`);
+    assert.equal(fs.existsSync(path.join(targetDir, 'CLAUDE.md')), false, `${policy} should not write partial root output`);
+  }
+});
+
+test('generated plan has unique destination paths after Harness mapping', () => {
+  const root = tmpdir();
+  const targetDir = path.join(root, 'unique-destinations');
+
+  const result = generate({
+    projectName: 'unique-destinations',
+    targetDir,
+    dryRun: true,
+    preset: 'fullstack',
+    withOptions: ['ui-ux-review'],
+  });
+
+  assert.equal(result.success, true);
+
+  const plannedFiles = [
+    ...result.plan.create,
+    ...result.plan.conflict,
+    ...result.plan.skip,
+    ...result.plan.backup,
+    ...result.plan.overwrite,
+  ];
+  assert.equal(plannedFiles.length, new Set(plannedFiles).size);
+});
+
 test('skip conflict policy leaves directory at target file path untouched', () => {
   const root = tmpdir();
   const targetDir = path.join(root, 'skip-dir');
@@ -140,7 +399,7 @@ test('skip conflict policy leaves directory at target file path untouched', () =
   assert.equal(result.success, true);
   assert.ok(result.plan.skip.includes('CLAUDE.md'));
   assert.equal(fs.statSync(path.join(targetDir, 'CLAUDE.md')).isDirectory(), true);
-  assert.ok(fs.existsSync(path.join(targetDir, 'SETUP.md')));
+  assert.ok(fs.existsSync(path.join(targetDir, 'Harness', 'SETUP.md')));
 });
 
 test('without options subtract from preset and explicit optional skills', () => {
@@ -203,26 +462,59 @@ test('generated scaffold includes memory folder registrations and reflection tri
   const result = generate({ projectName: 'memory-app', targetDir });
 
   assert.equal(result.success, true);
-  const memoryFiles = [
+  const generatedMemoryFiles = [
+    'Harness/memory/tool-usage-reflections.md',
+    'Harness/memory/user-corrections-preferences.md',
+    'Harness/memory/agent-lessons-patterns.md',
+  ];
+  const memoryRefs = [
     'memory/tool-usage-reflections.md',
     'memory/user-corrections-preferences.md',
     'memory/agent-lessons-patterns.md',
   ];
 
-  for (const rel of memoryFiles) {
+  for (const rel of generatedMemoryFiles) {
     assert.ok(fs.existsSync(path.join(targetDir, ...rel.split('/'))), `Expected ${rel} to be generated`);
   }
 
-  const memoryIndex = readRel(targetDir, 'MEMORY.md');
-  const docsReadme = readRel(targetDir, 'docs/README.md');
-  const setup = readRel(targetDir, 'SETUP.md');
+  const memoryIndex = readRel(targetDir, 'Harness/MEMORY.md');
+  const docsReadme = readRel(targetDir, 'Harness/README.md');
+  const setup = readRel(targetDir, 'Harness/SETUP.md');
   const claude = readRel(targetDir, 'CLAUDE.md');
+  const routerSkill = readRel(targetDir, '.claude/skills/harness-router/SKILL.md');
+  const wfSkill = readRel(targetDir, '.claude/skills/wf-mode/SKILL.md');
 
-  for (const rel of memoryFiles) {
+  for (const rel of memoryRefs) {
     assert.match(memoryIndex, new RegExp(rel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
-    assert.match(docsReadme, new RegExp(rel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
   }
+  assert.match(docsReadme, /Harness\/memory\/tool-usage-reflections\.md/);
+  assert.match(docsReadme, /subagents\.md/);
+  assert.match(docsReadme, /README optimization/);
+  assert.match(docsReadme, /readme-optimizer/);
+  assert.match(docsReadme, /Routing priority/);
+  assert.match(docsReadme, /\| Need WF mode[^\n]*\[WF\.md\]\(WF\.md\), \[PLAN\.md\]\(PLAN\.md\)[^\n]*load subagent docs only when needed/);
+  assert.doesNotMatch(docsReadme, /\| Need WF mode[^\n]*subagents\.md/);
+  assert.match(routerSkill, /routes to `wf-mode` first/);
+  assert.match(routerSkill, /Let `wf-mode` decide when to load subagent docs/);
+  assert.match(wfSkill, /only when coordinating subagents or bounded role passes/);
+  assert.match(memoryIndex, /subagent-orchestrator/);
+  assert.match(memoryIndex, /readme-optimizer/);
+  assert.match(memoryIndex, /subagents\.md/);
   assert.match(setup, /memory\//);
+  assert.match(setup, /Agent-Link Install Intake/);
+  assert.match(setup, /Ask at most three blocking questions up front/);
+  assert.match(setup, /Root agent entry/);
+  assert.match(setup, /Harness location/);
+  assert.match(setup, /README ownership/);
+  assert.match(setup, /README optimization/);
+  assert.match(setup, /readme-optimizer/);
+  assert.match(setup, /ECC, Superpowers, custom rules/);
+  assert.match(setup, /Install 1-2 relevant skills only after user approval/);
+  assert.match(setup, /Memory\/privacy/);
+  assert.match(setup, /Branch\/worktree/);
+  assert.match(setup, /Package manager\/stack/);
+  assert.match(setup, /Document existing commands first/);
+  assert.match(setup, /add CI\/CD only after user approval/);
   assert.match(claude, /same tool\/use pattern fails 3\+ times/);
   assert.match(claude, /user corrects the same assumption\/pattern 2\+ times/);
 });
@@ -234,7 +526,7 @@ test('core docs declare project files as the durable communication channel', () 
   const result = generate({ projectName: 'durable-docs', targetDir });
 
   assert.equal(result.success, true);
-  for (const rel of ['docs/README.md', 'docs/harness/dispatch.md', 'docs/harness/context-loading.md']) {
+  for (const rel of ['Harness/README.md', 'Harness/subagents.md', 'Harness/dispatch.md', 'Harness/context-loading.md']) {
     const body = readRel(targetDir, rel);
     assert.match(body, /project files are the only durable communication channel/i, `${rel} should declare durable filesystem authority`);
     assert.match(body, /chat\/subagent transcript state is non-authoritative/i, `${rel} should reject transcript state as authoritative`);
@@ -253,9 +545,9 @@ test('generated web workflows require stable accessible selectors and test hooks
 
   assert.equal(result.success, true);
 
-  const browserWorkflow = readRel(targetDir, 'docs/workflows/browser-e2e.md');
-  const reactWorkflow = readRel(targetDir, 'docs/workflows/ts-react-frontend.md');
-  const featureTemplate = readRel(targetDir, 'docs/features/_template.md');
+  const browserWorkflow = readRel(targetDir, 'Harness/workflows/browser-e2e.md');
+  const reactWorkflow = readRel(targetDir, 'Harness/workflows/ts-react-frontend.md');
+  const featureTemplate = readRel(targetDir, 'Harness/features/_template.md');
 
   for (const body of [browserWorkflow, reactWorkflow]) {
     assert.match(body, /data-testid/);
@@ -266,6 +558,36 @@ test('generated web workflows require stable accessible selectors and test hooks
   assert.match(featureTemplate, /UI Automation Hooks/);
   assert.match(featureTemplate, /data-testid/);
   assert.match(featureTemplate, /critical UI controls and states/);
+});
+
+test('generated optional workflows are registered under Harness workflows', () => {
+  const root = tmpdir();
+  const targetDir = path.join(root, 'harness-web-contracts');
+
+  const result = generate({
+    projectName: 'harness-web-contracts',
+    targetDir,
+    preset: 'web-app',
+  });
+
+  assert.equal(result.success, true);
+
+  const harnessReadme = readRel(targetDir, 'Harness/README.md');
+  const memoryIndex = readRel(targetDir, 'Harness/MEMORY.md');
+  const browserSkill = readRel(targetDir, '.claude/skills/browser-e2e/SKILL.md');
+
+  for (const rel of [
+    'Harness/workflows/browser-e2e.md',
+    'Harness/workflows/ts-react-frontend.md',
+    'Harness/workflows/ui-ux-review.md',
+  ]) {
+    assert.ok(fs.existsSync(path.join(targetDir, ...rel.split('/'))), `Expected ${rel} to be generated`);
+  }
+
+  assert.match(harnessReadme, /\]\(workflows\/browser-e2e\.md\)/);
+  assert.match(memoryIndex, /workflows\/browser-e2e\.md/);
+  assert.match(browserSkill, /Harness\/workflows\/browser-e2e\.md/);
+  assert.equal(fs.existsSync(path.join(targetDir, 'docs', 'workflows', 'browser-e2e.md')), false);
 });
 
 test('generated browser workflow includes Chrome DevTools CDP MCP checklist', () => {
@@ -280,7 +602,7 @@ test('generated browser workflow includes Chrome DevTools CDP MCP checklist', ()
 
   assert.equal(result.success, true);
 
-  const browserWorkflow = readRel(targetDir, 'docs/workflows/browser-e2e.md');
+  const browserWorkflow = readRel(targetDir, 'Harness/workflows/browser-e2e.md');
 
   assert.match(browserWorkflow, /## Chrome DevTools \/ CDP \/ MCP Checklist/);
   assert.match(browserWorkflow, /record the URL and port/);

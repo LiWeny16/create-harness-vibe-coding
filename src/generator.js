@@ -12,6 +12,20 @@ const EMPTY_DIRS = [
   'tests',
 ];
 
+function harnessDest(file) {
+  if (file === 'SETUP.md') return 'Harness/SETUP.md';
+  if (file === 'MEMORY.md') return 'Harness/MEMORY.md';
+  if (file === 'scripts/validate-harness.mjs') return 'Harness/scripts/validate-harness.mjs';
+  if (file.startsWith('memory/')) return `Harness/${file}`;
+  if (file === 'docs/README.md') return 'Harness/README.md';
+  if (file.startsWith('docs/harness/')) return file.replace(/^docs\/harness\//, 'Harness/');
+  if (file.startsWith('docs/research/')) return file.replace(/^docs\/research\//, 'Harness/research/');
+  if (file.startsWith('docs/domain/')) return file.replace(/^docs\/domain\//, 'Harness/domain/');
+  if (file.startsWith('docs/features/')) return file.replace(/^docs\/features\//, 'Harness/features/');
+  if (file.startsWith('docs/workflows/')) return file.replace(/^docs\/workflows\//, 'Harness/workflows/');
+  return file;
+}
+
 /**
  * Replace {{vars}} in file contents.
  */
@@ -109,7 +123,7 @@ function createCoreFileSpecs() {
     .map(file => normalizePath(file))
     .sort()
     .map(file => ({
-      dest: file,
+      dest: harnessDest(file),
       src: path.join(TEMPLATES_DIR, ...file.split('/')),
       type: 'common',
     }));
@@ -126,7 +140,7 @@ function createOptionalFileSpecs(selectedSkills) {
       const absRoot = path.join(OPTIONAL_DIR, ...fileRoot.split('/'));
       for (const file of walkFiles(absRoot).map(normalizePath).sort()) {
         specs.push({
-          dest: file,
+          dest: harnessDest(file),
           src: path.join(absRoot, ...file.split('/')),
           type: 'optional',
           skillId: skill.id,
@@ -136,6 +150,21 @@ function createOptionalFileSpecs(selectedSkills) {
   }
 
   return specs;
+}
+
+function duplicateDests(fileSpecs) {
+  const seen = new Set();
+  const duplicates = new Set();
+
+  for (const spec of fileSpecs) {
+    if (seen.has(spec.dest)) {
+      duplicates.add(spec.dest);
+    } else {
+      seen.add(spec.dest);
+    }
+  }
+
+  return [...duplicates].sort();
 }
 
 function createPlan(resolvedDir, fileSpecs) {
@@ -166,7 +195,11 @@ function createPlan(resolvedDir, fileSpecs) {
     const absDir = dir === '.'
       ? resolvedDir
       : path.join(resolvedDir, ...dir.split('/'));
-    if (!fs.existsSync(absDir)) {
+    if (fs.existsSync(absDir)) {
+      if (!fs.statSync(absDir).isDirectory()) {
+        plan.conflict.push(dir === '.' ? './' : `${dir}/`);
+      }
+    } else {
       plan.mkdir.push(dir === '.' ? './' : `${dir}/`);
     }
   }
@@ -232,9 +265,9 @@ function nextBackupPath(destPath) {
 function registerOptionalContent(file, content, selectedSkills) {
   if (!selectedSkills.length) return content;
 
-  if (file === 'MEMORY.md') {
+  if (file === 'Harness/MEMORY.md') {
     const lines = selectedSkills.map(skill => (
-      `- [${skill.id}](.claude/skills/${skill.id}/SKILL.md) - ${skill.description} Workflow: docs/workflows/${skill.id}.md`
+      `- [${skill.id}](../.claude/skills/${skill.id}/SKILL.md) - ${skill.description} Workflow: [workflows/${skill.id}.md](workflows/${skill.id}.md)`
     ));
     return content.replace(
       'Stack-specific skills can be added after the product shape is known.',
@@ -242,7 +275,7 @@ function registerOptionalContent(file, content, selectedSkills) {
     );
   }
 
-  if (file === 'docs/README.md') {
+  if (file === 'Harness/README.md') {
     const lines = selectedSkills.map(skill => (
       `- [${skill.title}](workflows/${skill.id}.md) - ${skill.description}`
     ));
@@ -253,14 +286,25 @@ function registerOptionalContent(file, content, selectedSkills) {
 }
 
 function registrationWarnings(plan, selectedSkills) {
-  if (!selectedSkills.length) return [];
-
   const warnings = [];
-  if (plan.skip.includes('MEMORY.md')) {
-    warnings.push('MEMORY.md was skipped; manually register selected optional skills under #Skills.');
+
+  if (selectedSkills.length) {
+    if (plan.skip.includes('Harness/MEMORY.md')) {
+      warnings.push('Harness/MEMORY.md was skipped; manually register selected optional skills under #Skills.');
+    }
+    if (plan.skip.includes('Harness/README.md')) {
+      warnings.push('Harness/README.md was skipped; manually register selected optional workflow paths.');
+    }
   }
-  if (plan.skip.includes('docs/README.md')) {
-    warnings.push('docs/README.md was skipped; manually register selected optional workflow paths.');
+
+  if (plan.skip.includes('README.md')) {
+    warnings.push('README.md was skipped; keep project run, build, test, and git conventions there, not in CLAUDE.md.');
+  }
+  if (plan.skip.includes('CLAUDE.md') || plan.conflict.includes('CLAUDE.md')) {
+    warnings.push('CLAUDE.md already exists; ask the user to confirm refactoring or merging it with the Harness root-entry contract before editing.');
+  }
+  if (plan.skip.includes('AGENTS.md')) {
+    warnings.push('AGENTS.md was skipped; ask for user consent before merging or replacing the project agent entry contract.');
   }
 
   return warnings;
@@ -290,6 +334,7 @@ export function generate({
   ];
   const specsByDest = new Map(fileSpecs.map(spec => [spec.dest, spec]));
   const plan = createPlan(resolvedDir, fileSpecs);
+  const duplicateDestinations = duplicateDests(fileSpecs);
 
   if (!VALID_CONFLICT_POLICIES.has(onConflict)) {
     errors.push(`Unknown conflict policy "${onConflict}". Use fail, skip, backup, or overwrite.`);
@@ -305,6 +350,18 @@ export function generate({
 
   if (optional.errors.length > 0) {
     errors.push(...optional.errors);
+    return {
+      success: false,
+      created,
+      errors,
+      plan,
+      summary: createSummary(plan, { noWrites: true }),
+      warnings,
+    };
+  }
+
+  if (duplicateDestinations.length > 0) {
+    errors.push(`Generation stopped because duplicate template destination(s) were found: ${duplicateDestinations.join(', ')}`);
     return {
       success: false,
       created,
@@ -332,6 +389,9 @@ export function generate({
 
   if (plan.conflict.length > 0) {
     errors.push(`Generation stopped because ${plan.conflict.length} file conflict(s) were found: ${plan.conflict.join(', ')}`);
+    if (plan.conflict.includes('CLAUDE.md')) {
+      errors.push('CLAUDE.md already exists. It is the root agent entry contract; ask the user to confirm refactoring or merging it with the Harness entry contract before editing, backing up, or overwriting.');
+    }
     return {
       success: false,
       created,

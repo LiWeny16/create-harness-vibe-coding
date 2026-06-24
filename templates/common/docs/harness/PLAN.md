@@ -12,6 +12,18 @@ Choose one: Idea / Research / PRD / Architecture / Plan / Build / Verify / Feedb
 
 Current: {{CURRENT_PHASE}}
 
+## Heartbeat
+
+Mode: normal
+Last beat: {{LAST_BEAT}}
+Current phase: {{CURRENT_PHASE}}
+Current blocker: {{CURRENT_BLOCKER_OR_NONE}}
+Next beat trigger: {{NEXT_BEAT_TRIGGER}}
+Failure count: 0
+Recovery action: {{RECOVERY_ACTION_OR_NONE}}
+
+Update this section before long commands, after long commands, before and after subagent handoffs, after failed verification, and before stopping for user input. In `wf-mode`, use this as the resume point after context loss or interruption.
+
 ## Progress Rules
 
 - Phase tracks lifecycle progress.
@@ -44,7 +56,7 @@ Forbidden:
 
 Keep this list short. Add only docs/files used for the current phase.
 
-- `docs/README.md`
+- `Harness/README.md`
 - `{{LOADED_DOC_OR_FILE}}`
 
 ## Tasks
@@ -55,11 +67,22 @@ Keep this list short. Add only docs/files used for the current phase.
 
 ## Parallel Dispatch
 
-Use [dispatch.md](dispatch.md) when more than one agent or bounded pass is useful.
+Use [subagents.md](subagents.md) and [dispatch.md](dispatch.md) when more than one agent or bounded pass is useful.
 
 | Task | Agent | Mode | Read Set | Write Set | Depends On | Output | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | {{TASK}} | {{AGENT}} | Parallel Read / Serial Write / Isolated Worktree | `{{READ_SET}}` | `{{WRITE_SET_OR_NONE}}` | {{DEPENDENCY_OR_NONE}} | {{EXPECTED_OUTPUT}} | Pending |
+
+## Subagent Synthesis
+
+Agents used:
+Findings accepted:
+Findings rejected:
+Conflicts:
+Decisions:
+Next write set:
+Verification path:
+Residual risk:
 
 ## Agent Handoffs
 

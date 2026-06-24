@@ -70,4 +70,4 @@ Fill in each port using the format below:
 
 ---
 
-> **Note**: The current ports.md is a template. Replace `{{...}}` placeholders with your project's domain details. Refer to `docs/harness/data-flow.md` to understand how ports are orchestrated.
+> **Note**: The current ports.md is a template. Replace `{{...}}` placeholders with your project's domain details. Refer to `Harness/data-flow.md` to understand how ports are orchestrated.
