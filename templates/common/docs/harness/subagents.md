@@ -34,6 +34,42 @@ The main agent is the controller. It owns:
 
 Subagents provide bounded work. They do not own final scope, architecture, release claims, or user-facing decisions.
 
+## Built-in Agent Roster
+
+Use the installed roster under `.claude/agents/` before inventing ad hoc roles.
+
+| Agent | Default Use |
+| --- | --- |
+| `planner` | decompose goals, map unknowns, define success criteria and write sets |
+| `researcher` | local/external ecosystem context, comparable projects, current facts |
+| `docs-researcher` | official docs, SDK/API behavior, browser/tool constraints |
+| `architect` | boundaries, interface decoupling, state ownership, data flow, migration risk |
+| `test-writer` | failing tests, manual check contracts, browser/API evidence plan |
+| `implementer` | bounded code or doc changes after the second plan |
+| `reviewer` | spec compliance, code quality, maintainability, security, missing tests |
+| `debugger` | reproduced failures, root cause isolation, smallest safe fix |
+| `verifier` | command execution, real browser/API checks, final evidence |
+
+## WF Default Fan-Out
+
+Explicit `/wf`, `wf mode`, `workflow mode`, or `wk mode` requires at least 3 distinct agents from `.claude/agents/` before second planning.
+
+Default starter set:
+
+- `planner` for decomposition and local map
+- `architect` for boundaries, interfaces, and state impact
+- `researcher` or `docs-researcher` depending whether the unknowns are project/ecosystem facts or official tool/API behavior
+
+Then add phase-specific agents:
+
+- `test-writer` before implementation
+- `implementer` for the serial write lane
+- `reviewer` for spec and code-quality gates
+- `debugger` after a reproduced verification failure
+- `verifier` for final command/browser/API evidence
+
+The default decision ratio is a 7:3 collaboration bias: choose multi-agent collaboration for substantial or uncertain work about 70% of the time; choose solo mode only for clearly local, low-risk work that is not explicitly in WF/WK mode.
+
 ## Efficiency Ladder
 
 Choose the cheapest coordination level that is safe.
@@ -46,13 +82,13 @@ Choose the cheapest coordination level that is safe.
 | Serial build lane | normal feature or fix | test-writer -> implementer -> reviewers -> verifier |
 | Isolated lanes | disjoint write sets or competing approaches | separate worktrees, then review and merge |
 
-Default: at most three active subagents. More agents increase coordination cost and conflict risk.
+Default for automatic WF triggers: 3-5 active read-only agents before second planning. For explicit WF/WK mode, never use the solo pass unless subagents are unavailable; use bounded role passes as the recorded fallback.
 
 ## WF Orchestration Shape
 
 ```text
 controller intake
--> parallel explorer/researcher/docs-researcher/architect passes
+-> parallel planner/researcher/docs-researcher/architect subagents
 -> controller synthesis
 -> second plan with dependencies and write sets
 -> test-writer

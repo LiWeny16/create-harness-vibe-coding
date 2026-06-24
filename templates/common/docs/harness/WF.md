@@ -1,6 +1,6 @@
 # WF Mode - Long Task Workflow
 
-Use this when work is long, difficult, uncertain, multi-file, multi-agent, or user-triggered with `/wf`, `wf mode`, or `workflow mode`.
+Use this when work is long, difficult, uncertain, multi-file, multi-agent, or user-triggered with `/wf`, `wf mode`, `workflow mode`, or `wk mode`.
 
 This is a Ralph-style harness loop: keep moving through evidence, bounded exploration, second planning, implementation, review, verification, and recovery instead of stalling on the first obstacle.
 
@@ -8,18 +8,28 @@ This is a Ralph-style harness loop: keep moving through evidence, bounded explor
 
 Enter WF mode when any of these are true:
 
-- The user explicitly says `/wf`, `wf mode`, or asks for the full workflow.
+- The user explicitly says `/wf`, `wf mode`, `workflow mode`, `wk mode`, or asks for the full workflow.
 - The task needs more than one step, more than three files, or more than one subsystem.
 - The task needs research, architecture judgment, browser/API validation, or migration planning.
 - Confidence in intent, architecture, or implementation is below 95%.
 - The same command, test, tool, or approach fails twice.
+
+## Multi-Subagent Requirement
+
+WF mode requires multi-subagent orchestration by default.
+
+- Explicit `/wf`, `wf mode`, `workflow mode`, or `wk mode` MUST spawn at least 3 distinct subagents from `.claude/agents/` before second planning unless the runtime cannot spawn subagents.
+- Use a 7:3 collaboration bias: prefer multi-agent collaboration for long, uncertain, cross-file, cross-layer, browser/API, migration, or repeated-failure work; reserve solo mode for clearly local, low-risk, one-file tasks outside explicit WF/WK mode.
+- Default initial fan-out: `planner`, `researcher` or `docs-researcher`, and `architect`. Add `test-writer`, `reviewer`, `debugger`, or `verifier` when the phase needs them.
+- Record every dispatch or bounded-pass fallback in `Harness/PLAN.md#Parallel Dispatch`.
+- If subagents are unavailable, emulate the same roles as separate bounded passes and record why the fallback was used.
 
 ## WF Loop
 
 ```text
 Intake
 -> confidence gate
--> parallel explorer / researcher / docs-researcher / architect passes
+-> parallel planner / researcher / docs-researcher / architect subagents
 -> synthesis
 -> second plan
 -> test-writer
@@ -36,15 +46,15 @@ Intake
 2. State the goal, non-goals, confidence level, known risks, and write boundaries.
 3. Ask up to three blocking questions only when the next action cannot reach 95% confidence.
 4. Update `Harness/PLAN.md#Heartbeat` before dispatching agents or running long commands.
-5. Load `Harness/subagents.md` before coordinating multiple agents.
+5. Load `Harness/subagents.md` before coordinating multiple agents; explicit WF/WK mode always coordinates multiple roles.
 
 ## Exploration
 
-Use parallel read-only passes first. Prefer three or fewer active agents.
+Use parallel read-only subagents first. Explicit WF/WK mode starts with at least three distinct `.claude/agents/` roles before the second plan. For automatic WF triggers, default to 3-5 active agents unless the task is clearly small enough for the solo exception.
 
 | Agent | Purpose | Writes |
 | --- | --- | --- |
-| Explorer Pass | map local project facts, commands, app entry points, existing docs | none |
+| `planner` | map local project facts, commands, app entry points, existing docs, and initial decomposition | none |
 | `researcher` | product, ecosystem, dependency, and external context | none unless returning a docs patch |
 | `docs-researcher` | official docs, SDK/API versions, browser/tool limits | none unless returning a docs patch |
 | `architect` | boundaries, ports, data flow, state impact, migration risks | none unless returning a docs patch |

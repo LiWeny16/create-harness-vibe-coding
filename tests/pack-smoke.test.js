@@ -18,6 +18,7 @@ test('npm pack includes core and optional templates', () => {
   assert.match(output, /templates\/optional\/skills\/[^/\\]+\/\.claude\/skills\/[^/\\]+\/SKILL\.md|templates\\optional\\skills\\[^/\\]+\\.claude\\skills\\[^/\\]+\\SKILL\.md/);
   assert.match(output, /templates\/optional\/skills\/[^/\\]+\/docs\/workflows\/[^/\\]+\.md|templates\\optional\\skills\\[^/\\]+\\docs\\workflows\\[^/\\]+\.md/);
   assert.match(output, /src\/generator\.js|src\\generator\.js/);
+  assert.match(output, /README-CN\.md/);
 });
 
 test('test script runs unit and smoke tests', () => {

@@ -9,7 +9,7 @@
 - `Harness/MEMORY.md` is the memory/resource router: agents, skills, durable memories, and cross-session lessons. Follow its registrations when selecting agents/skills or recording memory.
 - `Harness/README.md` is the task router. For every request, check `Harness/README.md#Load By Task`; if a row matches, read and follow those docs before acting.
 - If work spans more than one step, update `Harness/PLAN.md`.
-- Use `/wf`, `wf-mode`, or `Harness/WF.md` for long, difficult, uncertain, multi-file, or repeated-failure work.
+- Use `/wf`, `wf-mode`, `wf mode`, `workflow mode`, `wk mode`, or `Harness/WF.md` for long, difficult, uncertain, multi-file, or repeated-failure work.
 - Use `subagent-orchestrator` and `Harness/subagents.md` when coordinating multiple subagents.
 - Universal rules live in `.claude/rules/ecc/common.md`.
 - Never bulk-read `Harness/`; route through `Harness/README.md` and `Harness/MEMORY.md`.
@@ -35,6 +35,7 @@
 - No abstractions for single-use code.
 - No unrequested flexibility or configurability.
 - No error handling for impossible scenarios.
+- Use explicit interfaces or state models only when they protect a real boundary, clarify ownership, or make verification/recovery simpler.
 - If the solution is much larger than the problem, simplify before continuing.
 
 ## 4. Surgical Changes

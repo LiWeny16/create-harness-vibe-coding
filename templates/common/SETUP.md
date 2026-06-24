@@ -39,7 +39,7 @@ Claude must follow this order:
 4. Read `Harness/research/README.md`, then fill `Harness/research/research-results.md` with adopted/rejected research choices.
 5. Fill minimum architecture: `Harness/architecture.md` and one port in `Harness/domain/ports.md`.
 6. Create the first vertical-slice plan in `Harness/PLAN.md`.
-7. Use `Harness/subagents.md`, `Harness/context-loading.md`, and `Harness/dispatch.md` when spawning subagents.
+7. Use `Harness/subagents.md`, `Harness/context-loading.md`, and `Harness/dispatch.md` when explicit WF/WK mode or any spawned subagents are involved.
 8. Fill `Harness/data-flow.md` or `Harness/state-machines.md` only when the slice changes runtime flow, failure behavior, or state.
 9. Implement only after a failing test or manual verification step is defined.
 10. Run `node Harness/scripts/validate-harness.mjs --strict`.
@@ -116,11 +116,13 @@ The harness validator checks for specific structural invariants. When comparing 
 | `README.md` | Existing README is project-owned. Preserve by default; ask whether to append only Development notes or run `readme-optimizer` for a structure pass with tables/diagrams before broad edits |
 | `Harness/MEMORY.md` | All 9 common agents registered under `## Agents`; all common harness skills registered under `## Skills`; all 3 `Harness/memory/` files registered under `## Memory Folder`; `Harness/memory/` folder usage guidance; `Project Resource Index` in title |
 | `.claude/rules/ecc/common.md` | `## Context` section with the durable communication invariant (`project files are the only durable communication channel`); `## Memory` section with three reflection file entries; `## Security` section |
-| `Harness/README.md` | `## Keyword Routing` heading; `## Load By Task` table with at minimum the rows: "Adding harness to existing project", "Need implementation plan", "Need parallel agents", "Need subagents", "Need durable memory or reflection"; `## Doc Map` with `memory/` and `subagents.md` entries; the durable communication invariant text; `Harness/README.md is the primary router` |
+| `Harness/README.md` | `## Keyword Routing` heading; `## Load By Task` table with at minimum the rows: "Need WF mode", "Adding harness to existing project", "Need implementation plan", "Need parallel agents", "Need subagents", "Need durable memory or reflection"; WF routing keywords include `/wf`, `wf mode`, `workflow mode`, and `wk mode`; explicit WF/WK output says subagent docs load immediately; `## Doc Map` with `memory/` and `subagents.md` entries; the durable communication invariant text; `Harness/README.md is the primary router` |
+| `Harness/WF.md` | `WF mode requires multi-subagent orchestration by default`; explicit `/wf`, `wf mode`, `workflow mode`, or `wk mode` requires at least 3 distinct `.claude/agents/` subagents before second planning; `7:3 collaboration bias`; `Heartbeat Protocol` |
 | `Harness/extension.md` | `## Non-Invasive Extension Rules` section with the "Preserve existing" rule; `## Agent Contract` section; `## Registration` section |
 | `Harness/dispatch.md` | The durable communication invariant; common agent entries for all 9 agents; `## Handoff Format` heading |
 | `Harness/context-loading.md` | The durable communication invariant; `Harness/README.md is the primary router`; all 10 subagent context packs (Explorer Pass, Planner, Researcher, Docs Researcher, Architect, Test Writer, Implementer, Reviewer, Debugger, Verifier) |
-| `Harness/subagents.md` | `## Source Attribution`; `Controller Role`; `Efficiency Ladder`; `Review Gates`; source markers for `npx skills find`, `dispatching-parallel-agents`, and `subagent-driven-development` |
+| `Harness/subagents.md` | `## Source Attribution`; `## Built-in Agent Roster`; `## WF Default Fan-Out`; `Controller Role`; `Efficiency Ladder`; `Review Gates`; `7:3 collaboration bias`; source markers for `npx skills find`, `dispatching-parallel-agents`, and `subagent-driven-development` |
+| `Harness/architecture.md` | `## 2. Interface Decoupling`; `## 3. State Design`; `Avoid speculative abstraction`; layer constraints derived from actual project facts |
 | `Harness/PLAN.md` | `## Current Goal`, `## Phase`, `## Success Criteria`, `## Loaded Context`, `## Tasks`, `## Parallel Dispatch`, `## Subagent Synthesis`, `## Verification` headings |
 | `Harness/SETUP.md` | Only meaningful for fresh projects. If the project has its own onboarding docs, skip this file entirely (it is temporary). If kept, ensure the "Existing Project Bootstrap Sequence" is present. |
 | `Harness/workflows/browser-e2e.md` (if installed as optional) | `data-testid`, `accessible labels/roles`, and `inputs, buttons, filters, rows, empty/error/loading states` requirement |
@@ -134,7 +136,7 @@ The harness validator checks for specific structural invariants. When comparing 
 - `.claude/skills/harness-*/SKILL.md`, `.claude/skills/wf-mode/SKILL.md`, and `.claude/skills/subagent-orchestrator/SKILL.md` — core harness skills, WF mode, and subagent orchestration
 - `.claude/rules/ecc/common.md` — universal rules (unless the project has custom rules in this file)
 - `.claude/settings.json` — harness settings
-- `Harness/lifecycle.md`, `Harness/subagents.md`, `Harness/agent-workflow.md`, `Harness/architecture.md`, `Harness/data-flow.md`, `Harness/state-machines.md` — harness runtime docs
+- `Harness/WF.md`, `Harness/lifecycle.md`, `Harness/subagents.md`, `Harness/agent-workflow.md`, `Harness/architecture.md`, `Harness/data-flow.md`, `Harness/state-machines.md` — harness runtime docs
 - `Harness/research/*.md` — research protocol and templates
 - `Harness/domain/ports.md` — port contract template
 - `AGENTS.md` — agent registry; if it already exists, ask for user consent before merging or replacing it
@@ -168,8 +170,10 @@ Each template doc contains `{{PLACEHOLDER}}` markers. Below is what every placeh
 
 **`Harness/architecture.md`** — Layer structure. Derive from research-results:
 - Fill the ASCII layer diagram with actual layer names. Do NOT add layers without a proven need.
-- `2.1–2.5`: describe each harness core component (Runner, Permission Policy, Event Bus, State Store, Tool Registry) in project-specific terms.
-- `3. Architectural Constraints`: add project-specific non-negotiables. Keep the domain/harness purity rules.
+- `Interface Decoupling`: document only real boundaries and ports. Do not add speculative factories, plugin systems, generic repositories, or config layers.
+- `State Design`: name state owners, persistence level, legal transitions, and recovery behavior for long-running workflows.
+- `Harness Core Components`: describe each core component (Runner, Permission Policy, Event Bus, State Store, Tool Registry) in project-specific terms.
+- `Architectural Constraints`: add project-specific non-negotiables. Keep the domain/harness purity rules.
 
 **`Harness/domain/ports.md`** — Cross-layer contracts. One driving port + one driven port from the first slice:
 - `{{INBOUND_PORT_1}}`: the first inbound port (e.g., "CreateOrderPort").

@@ -276,12 +276,22 @@ test('generated scaffold stores harness-owned payload under root Harness directo
   assert.match(wf, /Heartbeat Protocol/);
   assert.match(wf, /Chrome DevTools|CDP|Playwright/);
   assert.match(wf, /Harness\/subagents\.md/);
+  assert.match(wf, /WF mode requires multi-subagent orchestration by default/);
+  assert.match(wf, /Explicit `\/wf`, `wf mode`, `workflow mode`, or `wk mode` MUST spawn at least 3 distinct subagents/);
+  assert.match(wf, /\.claude\/agents\//);
+  assert.match(wf, /7:3 collaboration bias/);
 
   const subagents = readRel(targetDir, 'Harness/subagents.md');
   assert.match(subagents, /## Source Attribution/);
   assert.match(subagents, /npx skills find/);
   assert.match(subagents, /superpowers:dispatching-parallel-agents/);
   assert.match(subagents, /superpowers:subagent-driven-development/);
+  assert.match(subagents, /## Built-in Agent Roster/);
+  assert.match(subagents, /## WF Default Fan-Out/);
+  assert.match(subagents, /`planner`/);
+  assert.match(subagents, /`architect`/);
+  assert.match(subagents, /`test-writer`/);
+  assert.doesNotMatch(subagents, /parallel explorer\/researcher/);
   assert.match(subagents, /## Efficiency Ladder/);
   assert.match(subagents, /## Review Gates/);
 
@@ -289,7 +299,14 @@ test('generated scaffold stores harness-owned payload under root Harness directo
   assert.match(orchestratorSkill, /Harness\/subagents\.md/);
   assert.match(orchestratorSkill, /after wf-mode has been selected/);
   assert.match(orchestratorSkill, /update `Harness\/PLAN\.md#Parallel Dispatch`/);
+  assert.match(orchestratorSkill, /\.claude\/agents\//);
+  assert.match(orchestratorSkill, /Explicit WF\/WK mode requires at least 3 distinct agents/);
   assert.doesNotMatch(orchestratorSkill, /^description:.*repeated failures/m);
+
+  const architecture = readRel(targetDir, 'Harness/architecture.md');
+  assert.match(architecture, /## 2\. Interface Decoupling/);
+  assert.match(architecture, /## 3\. State Design/);
+  assert.match(architecture, /Avoid speculative abstraction/);
 
   const readmeSkill = readRel(targetDir, '.claude/skills/readme-optimizer/SKILL.md');
   assert.match(readmeSkill, /Preserve \+ append/);
@@ -492,9 +509,11 @@ test('generated scaffold includes memory folder registrations and reflection tri
   assert.match(docsReadme, /README optimization/);
   assert.match(docsReadme, /readme-optimizer/);
   assert.match(docsReadme, /Routing priority/);
-  assert.match(docsReadme, /\| Need WF mode[^\n]*\[WF\.md\]\(WF\.md\), \[PLAN\.md\]\(PLAN\.md\)[^\n]*load subagent docs only when needed/);
+  assert.match(docsReadme, /wk mode/);
+  assert.match(docsReadme, /\| Need WF mode[^\n]*\[WF\.md\]\(WF\.md\), \[PLAN\.md\]\(PLAN\.md\)[^\n]*explicit WF\/WK loads subagent docs immediately/);
   assert.doesNotMatch(docsReadme, /\| Need WF mode[^\n]*subagents\.md/);
   assert.match(routerSkill, /routes to `wf-mode` first/);
+  assert.match(routerSkill, /`\/wf`, `wf mode`, `workflow mode`, `wk mode`/);
   assert.match(routerSkill, /Let `wf-mode` decide when to load subagent docs/);
   assert.match(wfSkill, /only when coordinating subagents or bounded role passes/);
   assert.match(memoryIndex, /subagent-orchestrator/);

@@ -41,9 +41,33 @@
 
 ---
 
-## 2. Harness Core Components
+## 2. Interface Decoupling
 
-### 2.1 Runner / Loop
+Use interfaces or ports to protect real boundaries, not to create abstraction for its own sake.
+
+- Define a port when code crosses a layer, process, network, storage, SDK, browser, or permission boundary.
+- Keep domain and application logic independent from infrastructure adapters.
+- Pass data through explicit contracts instead of reaching into another feature's internals.
+- Prefer direct calls inside the same cohesive module when there is only one caller, one implementation, and no boundary to protect.
+- Avoid speculative abstraction: do not add factories, plugin systems, service locators, generic repositories, or config layers until the feature has a concrete second use or a real testability/replacement need.
+
+---
+
+## 3. State Design
+
+State must have one owner, legal transitions, and observable recovery behavior.
+
+- Identify durable state, runtime cache, derived UI state, external system state, and audit/event history separately.
+- Name the owner of each state slice; do not let UI, application services, and infrastructure all mutate the same state directly.
+- Model long-running workflows with explicit states, guards, and failure transitions in `Harness/state-machines.md`.
+- Store resumable progress and recovery decisions in `Harness/PLAN.md#Heartbeat` or project-owned durable storage, not only in chat.
+- Keep state minimal: derive values when cheap, persist only what must survive reload, retry, or handoff.
+
+---
+
+## 4. Harness Core Components
+
+### 4.1 Runner / Loop
 
 - **Responsibility**: Drives a task from input to completion: loading context, calling application use-cases, handling stop conditions.
 - **Design Decision**:
@@ -51,28 +75,28 @@
   - Stop conditions are explicitly modeled — Rationale: prevents agent loops from running indefinitely or silently half-completing
 - **Does NOT handle**: Business rules, domain object creation details, external service implementations
 
-### 2.2 Permission Policy
+### 4.2 Permission Policy
 
 - **Responsibility**: Decides whether a given tool, file, network, or external action is allowed to execute.
 - **Design Decision**:
   - High-risk actions are denied by default, allow rules are explicitly declared — Rationale: the platform must first guarantee security boundaries
 - **Does NOT handle**: Judging whether a business action is correct
 
-### 2.3 Event Bus / Audit Trail
+### 4.3 Event Bus / Audit Trail
 
 - **Responsibility**: Records task lifecycle, tool invocations, failures, human approvals, and final results.
 - **Design Decision**:
   - Events are append-only, audit records cannot be overwritten in place — Rationale: facilitates replay, debugging, and post-mortem analysis
 - **Does NOT handle**: Saving final data on behalf of business systems
 
-### 2.4 State / Checkpoint Store
+### 4.4 State / Checkpoint Store
 
 - **Responsibility**: Saves recoverable state, context summaries, task progress, and interrupt points.
 - **Design Decision**:
   - State format must be serializable — Rationale: enables replay, resume, testing, and migration
 - **Does NOT handle**: Long-term business database modeling
 
-### 2.5 Tool Registry
+### 4.5 Tool Registry
 
 - **Responsibility**: Registers callable tools along with their input/output contracts, permission labels, and error semantics.
 - **Design Decision**:
@@ -81,7 +105,7 @@
 
 ---
 
-## 3. Architectural Constraints (Non-Negotiable)
+## 5. Architectural Constraints (Non-Negotiable)
 
 - `domain/` only defines business models, business invariants, and port protocols; does not import `harness/`, `infrastructure/`, or `interfaces/`.
 - `harness/` may orchestrate workflows, security gates, auditing, and stop conditions, but must not determine business meaning.

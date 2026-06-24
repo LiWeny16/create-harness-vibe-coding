@@ -6,6 +6,8 @@
 
 ## 1. Port Classification
 
+Create a port only for a real boundary: CLI invocation, programmatic generator calls, template filesystem access, target filesystem writes, optional catalog loading, or generated validator execution. Do not create an interface only because another implementation might exist someday.
+
 ### 1.1 Driving Ports
 
 | Port | Definition Location | Purpose |
@@ -105,3 +107,4 @@ Postconditions:
 - Generated Harness docs live under root `Harness/`, not generated `docs/harness/`.
 - Optional workflow registrations must point to existing generated files.
 - Validator rules and tests must be updated whenever common generated files or required registrations change.
+- Each port needs one clear owner and a concrete caller, adapter, or testability need. Avoid speculative ports.

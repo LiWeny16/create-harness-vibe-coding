@@ -35,21 +35,41 @@ Hard constraints:
 - Existing-project safety is owned by conflict planning in `src/generator.js`, not by template prose alone.
 - Package publication is constrained by `package.json#files`; root dogfood files are not package contents.
 
-## 2. Core Components
+## 2. Interface Decoupling
 
-### 2.1 CLI Entry
+Use interfaces and module boundaries to protect real seams in the generator, not to decorate straightforward code.
+
+- `src/index.js` owns CLI/user interaction; `src/generator.js` owns planning and file writes.
+- Template files are declarative inputs; source code should not depend on root dogfood `Harness/**`.
+- Optional catalog structure is the extension contract for presets and optional skills.
+- Avoid speculative abstraction: do not add plugin systems, generic runners, extra config layers, or service containers until a real second use or testability boundary exists.
+- When a boundary is real, express it with a small data contract and test it through generated output behavior.
+
+## 3. State Design
+
+State in this repo should be explicit, serializable, and owned by one layer.
+
+- Generator plan state is computed in memory and returned as `plan`/`summary`; file writes consume that plan instead of re-deciding conflicts.
+- Filesystem state is authoritative only through existence/type checks and write results.
+- Optional selection state comes from CLI flags plus `templates/optional/catalog.json`; do not duplicate it in template prose.
+- Release state lives in `package.json`, npm, git tags, and GitHub; document commands in `README.md`, not `CLAUDE.md`.
+- Long-running agent work records resumable status in `Harness/PLAN.md#Heartbeat`.
+
+## 4. Core Components
+
+### 4.1 CLI Entry
 
 - **Location**: `bin/create-harness-vibe-coding.js`, `src/index.js`
 - **Responsibility**: Parse flags, handle interactive/non-interactive modes, print plans/results, and call the generator.
 - **Does NOT handle**: Template walking, conflict classification, or file writing internals.
 
-### 2.2 Prompt Layer
+### 4.2 Prompt Layer
 
 - **Location**: `src/prompts.js`
 - **Responsibility**: Ask basic interactive npx questions: project name and target directory.
 - **Does NOT handle**: Agent-link install intake. That matrix is read by coding agents from `README.md` and `Harness/SETUP.md`.
 
-### 2.3 Generator Core
+### 4.3 Generator Core
 
 - **Location**: `src/generator.js`
 - **Responsibility**: Resolve optional selections, map template paths to destination paths, detect conflicts, render templates, register optional workflows, and write files.
@@ -58,25 +78,25 @@ Hard constraints:
   - `createPlan()` and `addFileActions()` classify directories and file actions before writes.
   - `registerOptionalContent()` updates generated router/memory docs when optional workflows are selected.
 
-### 2.4 Template Assets
+### 4.4 Template Assets
 
 - **Location**: `templates/common/**`, `templates/optional/**`
 - **Responsibility**: Define generated `CLAUDE.md`, `AGENTS.md`, `README.md`, `Harness/**`, `.claude/**`, optional skills, and optional workflows.
 - **Does NOT handle**: Existing-project decisions. Templates state contracts; generator and agents apply them safely.
 
-### 2.5 Validator
+### 4.5 Validator
 
 - **Source template**: `templates/common/scripts/validate-harness.mjs`
 - **Generated location**: `Harness/scripts/validate-harness.mjs`
 - **Responsibility**: Validate required scaffold files, skill/agent registrations, router invariants, optional workflow registrations, and strict project-fact placeholders.
 
-### 2.6 Dogfood Runtime
+### 4.6 Dogfood Runtime
 
 - **Location**: root `Harness/**`, `.claude/**`, `CLAUDE.md`, `AGENTS.md`, `MEMORY.md`
 - **Responsibility**: Govern future AI-agent work in this repository.
 - **Does NOT handle**: Changing package output unless edits are made to `templates/**` or source code.
 
-## 3. Data Flow
+## 5. Data Flow
 
 ```text
 CLI args / prompts
@@ -91,7 +111,7 @@ CLI args / prompts
 -> tests and generated validator verify behavior
 ```
 
-## 4. Architectural Constraints
+## 6. Architectural Constraints
 
 - Do not add generated-output behavior by editing only root `Harness/`; edit `templates/common/**` or `templates/optional/**`.
 - Do not add user-facing CLI behavior without tests in `tests/cli-smoke.test.js` or `tests/generator.test.js`.
@@ -99,7 +119,7 @@ CLI args / prompts
 - Do not write Harness docs into generated `docs/`; `Harness/` is the generated root for harness-owned docs.
 - Do not make root `CLAUDE.md` a dumping ground for build commands, architecture, or release process.
 
-## 5. Known Follow-Up Risks
+## 7. Known Follow-Up Risks
 
 - Interactive confirmation currently happens before full conflict-plan display in interactive mode.
 - Some README tests assert exact prose and can be made more structural.

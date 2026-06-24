@@ -124,6 +124,16 @@ The project exists to validate the harness.
 ## 1. Layering Rules
 
 The generated harness keeps project facts separate from implementation code.
+
+## 2. Interface Decoupling
+
+Use ports only for real boundaries.
+
+## 3. State Design
+
+State has one owner and explicit recovery behavior.
+
+Avoid speculative abstraction unless there is a concrete second use or testability need.
 `);
 
   writeRel(targetDir, 'Harness/domain/ports.md', `# Port Contracts - validated
@@ -199,6 +209,24 @@ test('validation fails when durable filesystem communication invariant is remove
 
   assert.notEqual(result.status, 0);
   assert.match(output, /Harness\/README\.md missing durable filesystem communication invariant/);
+});
+
+test('validation fails when WF multi-agent orchestration contract is removed', () => {
+  const targetDir = generateProject();
+  writeRel(
+    targetDir,
+    'Harness/WF.md',
+    readRel(targetDir, 'Harness/WF.md').replace('WF mode requires multi-subagent orchestration by default', 'WF mode may use one or more passes'),
+  );
+
+  const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
+    cwd: targetDir,
+    encoding: 'utf8',
+  });
+  const output = `${result.stdout}\n${result.stderr}`;
+
+  assert.notEqual(result.status, 0);
+  assert.match(output, /Harness\/WF\.md missing WF multi-subagent default/);
 });
 
 test('validation fails when optional web workflows lose stable selector requirements', () => {

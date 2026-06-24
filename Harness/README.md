@@ -51,7 +51,7 @@ Keywords are retrieval hints, not project facts.
 
 Load the matching row only. Add adjacent docs only when the loaded doc directly names them.
 
-Routing priority: if a request is long, difficult, uncertain, repeated-failure, migration, architecture-heavy, browser-visible, or broad multi-agent implementation work, choose the WF row first. `wf-mode` may then delegate subagent coordination to `subagent-orchestrator`.
+Routing priority: if a request explicitly says `/wf`, `wf mode`, `workflow mode`, or `wk mode`, or is long, difficult, uncertain, repeated-failure, migration, architecture-heavy, browser-visible, or broad multi-agent implementation work, choose the WF row first. `wf-mode` may then delegate subagent coordination to `subagent-orchestrator`.
 
 | When to Read | Keywords | Load | Output |
 | --- | --- | --- | --- |
@@ -59,7 +59,7 @@ Routing priority: if a request is long, difficult, uncertain, repeated-failure, 
 | Need market/tech direction | research, market, competitor, stack, library, pricing, policy | [research/README.md](research/README.md), [research/research-results.md](research/research-results.md) | research protocol, adopted/rejected choices |
 | Need MVP/spec | PRD, MVP, scope, requirement, acceptance, non-goal | [research/PRD.md](research/PRD.md) | one-page PRD with verifiable acceptance criteria |
 | Need architecture or boundaries | architecture, boundary, layer, domain, port, adapter, dependency | [architecture.md](architecture.md), [domain/ports.md](domain/ports.md) | layer map, ports, constraints |
-| Need WF mode | wf, /wf, workflow mode, long task, difficult, stuck, repeated failure | [WF.md](WF.md), [PLAN.md](PLAN.md) | exploration plan, second plan, heartbeat, recovery loop; load subagent docs only when needed |
+| Need WF mode | wf, /wf, wf mode, workflow mode, wk mode, long task, difficult, stuck, repeated failure | [WF.md](WF.md), [PLAN.md](PLAN.md) | exploration plan, second plan, heartbeat, recovery loop; explicit WF/WK loads subagent docs immediately |
 | Adding harness to existing project | existing project, onboarding, migrate, bootstrap, preserve, conflict | [extension.md](extension.md), [PLAN.md](PLAN.md), root `README.md` and package/CI files | discovered project facts, preserved config, manual registration plan |
 | README optimization | README, docs, quickstart, install docs, architecture diagram, command table, documentation polish | root `README.md`, `.claude/skills/readme-optimizer/SKILL.md`, [PLAN.md](PLAN.md), [architecture.md](architecture.md) as needed | approved README mode, preserved sections, proposed diff plan |
 | Need implementation plan | plan, task, write set, verify, milestone, progress | [PLAN.md](PLAN.md), [agent-workflow.md](agent-workflow.md) | tasks, write set, verification commands |
@@ -77,7 +77,7 @@ Routing priority: if a request is long, difficult, uncertain, repeated-failure, 
 ## Gates
 
 - Move phases in order unless the user asks for a fast lane.
-- Use `/wf` when a task is long, difficult, uncertain, multi-file, or repeatedly failing.
+- Use `/wf`, `wf mode`, `workflow mode`, or `wk mode` when a task is long, difficult, uncertain, multi-file, or repeatedly failing.
 - Do not code before the PRD has MVP, non-goals, and acceptance criteria.
 - Do not cross a layer boundary without reading `domain/ports.md` and updating architecture or ports.
 - Before adding failure paths, read `data-flow.md`.

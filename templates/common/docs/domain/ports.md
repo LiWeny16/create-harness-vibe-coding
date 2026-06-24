@@ -10,6 +10,8 @@
 
 ## 1. Port Classification
 
+Create a port only for a real boundary: external service, storage, SDK, process, browser/API boundary, permission boundary, or cross-layer dependency. Do not create a port only because an interface might be useful someday.
+
 ### 1.1 Driving Ports (Inbound — external calls application)
 
 | Port | Definition Location | Purpose |
@@ -67,6 +69,7 @@ Fill in each port using the format below:
 - {{INVARIANT_1}}
 - {{INVARIANT_2}}
 - New ports must be defined in `domain/ports`; adapters go in `infrastructure/`.
+- Each port needs one clear owner and at least one real caller. Avoid speculative ports without a concrete adapter or testability need.
 
 ---
 

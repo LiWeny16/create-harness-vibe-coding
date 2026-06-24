@@ -10,6 +10,14 @@
 
 Fill out each stateful component using this format:
 
+Before defining states, name the state owner and persistence level. State that crosses agent handoff, retry, browser session, API workflow, or release boundary must have explicit transitions; temporary derived state should stay local and should not become a new state machine.
+
+### State Ownership
+
+| State Slice | Owner | Persistence | Notes |
+| --- | --- | --- | --- |
+| `{{STATE_SLICE}}` | `{{OWNER}}` | durable / runtime / derived / external | {{NOTES}} |
+
 ### State Enumeration
 
 | State | Description | Entry Condition | Exit Condition |
