@@ -7,27 +7,29 @@
 
 <h1 align="center">create-harness-vibe-coding</h1>
 <p align="center">
-  <b>0-1 产品 Harness 脚手架，AI 辅助工程全流程。</b><br>
-  <sub>想法 → 调研 → PRD → 架构 → 计划 → 构建 → 验证 → 反馈。</sub>
+  <b>给你的 AI Agent 一个产品脚手架。一条命令，告别漂移。</b><br>
+  <sub>想法 → 调研 → PRD → 架构 → 计划 → 构建 → 验证 → 反馈</sub>
 </p>
 
-## 一条命令
+## 一条命令，搞定一切。
 
 ```bash
 npx create-harness-vibe-coding@latest my-project
 ```
 
----
+## 一句话交给你的 Agent
 
-## 交给 Agent
-
-> 把下面这句话粘贴到 Claude Code、Codex、Cursor、Gemini CLI 或任意编程 Agent 中。
+> 已有项目？不用看文档。把下面这句话粘贴给你的 Agent。
 
 ```text
 请按照 https://github.com/zingspark/create-harness-vibe-coding 的 README 为当前项目配置 create-harness-vibe-coding；编辑前先询问 Agent-link 安装前置问题；新项目走 0-1 bootstrap，老项目或老架构升级先 dry-run，保留现有文件，只合并缺失的 Harness 规范，然后遵循 Harness/SETUP.md。
 ```
 
-English README: [README.md](README.md)
+就这两条路：
+- **你来**：跑上面那条 `npx` 命令
+- **交给 Agent**：把上面那句话贴给它
+
+[English README](README.md)
 
 ---
 

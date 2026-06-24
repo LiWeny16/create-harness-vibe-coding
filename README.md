@@ -7,27 +7,29 @@
 
 <h1 align="center">create-harness-vibe-coding</h1>
 <p align="center">
-  <b>0-1 product harness scaffold for AI-assisted engineering.</b><br>
-  <sub>Idea -> Research -> PRD -> Architecture -> Plan -> Build -> Verify -> Feedback.</sub>
+  <b>Give your AI agent a product harness. One scaffold. Zero drift.</b><br>
+  <sub>Idea → Research → PRD → Architecture → Plan → Build → Verify → Feedback</sub>
 </p>
 
-## One Command
+## One Command. Done.
 
 ```bash
 npx create-harness-vibe-coding@latest my-project
 ```
 
----
+## Your Agent Knows What to Do
 
-## For Agents
-
-> Paste this into Claude Code, Codex, Cursor, Gemini CLI, or any coding agent.
+> Already have a project? Don't read. Just paste this to your agent.
 
 ```text
 Follow the README at https://github.com/zingspark/create-harness-vibe-coding to configure this project with create-harness-vibe-coding; before editing, ask the Agent-link install intake questions; for a new project run the 0-1 bootstrap, and for an existing project or legacy architecture run a dry-run first, preserve existing files, merge only missing Harness guidance, then follow Harness/SETUP.md.
 ```
 
-[README-CN.md](README-CN.md) (Chinese README)
+That's the whole install. Two paths:
+- **You**: run `npx` above
+- **Your agent**: paste the sentence above
+
+[README-CN.md](README-CN.md) (中文)
 
 ---
 
