@@ -18,7 +18,7 @@ npx create-harness-vibe-coding@latest my-project
 
 ## 一句话交给你的 Agent
 
-已有项目？**不用读文档。**把这句话贴给它。Agent 知道该做什么。
+已有项目？**不用读文档**。把这句话贴给它。Agent 知道该做什么。
 
 ```text
 请按照 https://github.com/zingspark/create-harness-vibe-coding 的 README 为当前项目配置 create-harness-vibe-coding；编辑前先询问 Agent-link 安装前置问题；新项目走 0-1 bootstrap，老项目或老架构升级先 dry-run，保留现有文件，只合并缺失的 Harness 规范，然后遵循 Harness/SETUP.md。

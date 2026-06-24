@@ -18,7 +18,7 @@ npx create-harness-vibe-coding@latest my-project
 
 ## Your Agent Knows What to Do
 
-Already have a project? **Don't read the docs.** Paste this sentence. Your agent handles the rest.
+Already have a project? **Don't read the docs**. Paste this sentence. Your agent handles the rest.
 
 ```text
 Follow the README at https://github.com/zingspark/create-harness-vibe-coding to configure this project with create-harness-vibe-coding; before editing, ask the Agent-link install intake questions; for a new project run the 0-1 bootstrap, and for an existing project or legacy architecture run a dry-run first, preserve existing files, merge only missing Harness guidance, then follow Harness/SETUP.md.
