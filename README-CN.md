@@ -28,15 +28,15 @@ npx create-harness-vibe-coding@latest my-project
 
 ```mermaid
 graph TD
-    A["/wf 进入工作流"] --> B[探索: 3+ 并行 subagent]
-    B --> C[二阶段计划 → PLAN.md]
-    C --> D[构建: test→implement]
-    D --> E[双门禁审查]
-    E --> F{通过?}
-    F -->|否| G[debugger→修复→循环]
+    A[ /wf 进入工作流 ] --> B[ 探索: 3个并行subagent ]
+    B --> C[ 二阶段计划 ]
+    C --> D[ 构建: test write加implement ]
+    D --> E[ 双门禁审查 ]
+    E --> F{ 通过? }
+    F -->| 否 | G[ debugger 修复 循环 ]
     G --> E
-    F -->|是| H[收尾: context→memory]
-    H --> I[/wf update 增量更新]
+    F -->| 是 | H[ 收尾: context加memory ]
+    H --> I[ wf update 增量更新 ]
 ```
 
 ## 核心文件
