@@ -64,28 +64,19 @@ test('package README-CN gives Chinese one-sentence universal install prompt', ()
   assert.match(readmeCn, /一句话交给 Agent/);
   assert.match(readmeCn, /两种安装方式/);
   assert.match(readmeCn, /npx 安装/);
-  assert.match(readmeCn, /直接把链接丢给 agent/);
-  assert.match(readmeCn, /编辑前先询问 Agent-link 安装前置问题/);
-  assert.match(readmeCn, /Agent-link 安装前置问题，编辑前先问/);
-  assert.match(readmeCn, /最多问 3 个 blocking 问题/);
-  assert.match(readmeCn, /根 agent 入口/);
-  assert.match(readmeCn, /Harness 存放位置/);
-  assert.match(readmeCn, /README 归属/);
-  assert.match(readmeCn, /README 优化/);
-  assert.match(readmeCn, /readme-optimizer/);
-  assert.match(readmeCn, /架构图/);
-  assert.match(readmeCn, /ECC、Superpowers、自定义 rules/);
-  assert.match(readmeCn, /Memory\/隐私/);
-  assert.match(readmeCn, /Branch\/worktree/);
-  assert.match(readmeCn, /包管理器\/技术栈/);
-  assert.match(readmeCn, /只有用户同意后才新增或规范 CI\/CD/);
+  assert.match(readmeCn, /直接把链接丢给 Agent/);
+  assert.match(readmeCn, /一条命令/);
+  assert.match(readmeCn, /Harness 工作流/);
+  assert.match(readmeCn, /核心文件/);
+  assert.match(readmeCn, /WF 模式/);
+  assert.match(readmeCn, /WF Update/);
+  assert.match(readmeCn, /已有项目安装/);
+  assert.match(readmeCn, /验证/);
   assert.match(readmeCn, /https:\/\/github\.com\/zingspark\/create-harness-vibe-coding/);
   assert.match(readmeCn, /新项目走 0-1 bootstrap/);
   assert.match(readmeCn, /老项目或老架构升级先 dry-run/);
   assert.match(readmeCn, /只合并缺失的 Harness 规范/);
   assert.match(readmeCn, /遵循 Harness\/SETUP\.md/);
-  assert.match(readmeCn, /如果项目里已经有 `CLAUDE\.md`/);
-  assert.match(readmeCn, /先请求用户确认是否重构\/合并 `CLAUDE\.md`/);
 });
 
 test('dry run reports existing project conflicts in the plan without writing files', () => {

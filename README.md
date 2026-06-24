@@ -11,13 +11,15 @@
   <sub>Idea -> Research -> PRD -> Architecture -> Plan -> Build -> Verify -> Feedback.</sub>
 </p>
 
----
-
 ## One Command
 
 ```bash
 npx create-harness-vibe-coding@latest my-project
 ```
+
+Chinese README: [README-CN.md](README-CN.md)
+
+---
 
 | What You Get | Purpose |
 |-------------|---------|
