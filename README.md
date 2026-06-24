@@ -17,7 +17,17 @@
 npx create-harness-vibe-coding@latest my-project
 ```
 
-Chinese README: [README-CN.md](README-CN.md)
+---
+
+## For Agents
+
+> Paste this into Claude Code, Codex, Cursor, Gemini CLI, or any coding agent.
+
+```text
+Follow the README at https://github.com/zingspark/create-harness-vibe-coding to configure this project with create-harness-vibe-coding; before editing, ask the Agent-link install intake questions; for a new project run the 0-1 bootstrap, and for an existing project or legacy architecture run a dry-run first, preserve existing files, merge only missing Harness guidance, then follow Harness/SETUP.md.
+```
+
+[README-CN.md](README-CN.md) (Chinese README)
 
 ---
 
@@ -77,6 +87,21 @@ npx scaffold
 ### Harness idea
 
 The scaffold does not prebuild business code. It gives agents a compact process for turning an idea into a verified product slice.
+
+### Harness Workflow
+
+```mermaid
+graph TD
+    A[ /wf Enter Workflow ] --> B[ Explore: 3+ parallel subagents ]
+    B --> C[ Second Plan ]
+    C --> D[ Build: test-writer → implementer ]
+    D --> E[ Dual-Gate Review ]
+    E --> F{ Pass? }
+    F -->| No | G[ debugger fix → loop ]
+    G --> E
+    F -->| Yes | H[ Closeout: context-master + memory-master ]
+    H --> I[ /wf update incremental update ]
+```
 
 ---
 
@@ -162,10 +187,6 @@ npx create-harness-vibe-coding@latest
 ### Existing Project
 
 The scaffold is designed to be added to an existing repository without silently replacing project files.
-
-Chinese README: [README-CN.md](README-CN.md)
-
-One-sentence agent prompt: `Follow the README at https://github.com/zingspark/create-harness-vibe-coding to configure this project with create-harness-vibe-coding; before editing, ask the Agent-link install intake questions; for a new project run the 0-1 bootstrap, and for an existing project or legacy architecture run a dry-run first, preserve existing files, merge only missing Harness guidance, then follow Harness/SETUP.md.`
 
 There are two installation paths:
 
