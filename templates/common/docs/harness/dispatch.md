@@ -65,6 +65,7 @@ Goal
 - If two write sets overlap, do not run those agents in parallel.
 - If an agent returns uncertainty, mark the row `Blocked` or add a follow-up row.
 - If docs, tests, and code disagree, stop implementation and record the conflict in `Harness/tasks/<task-id>/PROGRESS.md`.
+- In /wf max, file claims must respect WF-MAX.md leaf condition: no split below 50 avgLines, no split when files ≤ span×2.
 
 ## Handoff Format
 
@@ -83,6 +84,7 @@ Next:
 PLAN patch:
 Concurrency group:  <wave number — 0=exploration, 1,2,3,...=implementation waves. Optional; only used in /wf max.>
 File claim:         <list of exact file paths this agent exclusively owns. Optional; only used in /wf max.>
+Granularity floor:  <50 avgLines → do NOT spawn. Apply leaf condition from WF-MAX.md.>
 ```
 
 Use `Files changed: none` for read-only agents. Use `PLAN patch: none` when no state update is needed.

@@ -1,84 +1,95 @@
 ---
 name: wf-max
-description: Use when the user says /wf max, wf max, or asks for maximum parallelism. Three-tier enterprise hierarchy: CEO dispatches Managers, Managers dispatch Workers, max 14 concurrent with optimal span ratios.
+description: Use for /wf max or maximum parallelism. Three-tier CEO→Manager→Worker hierarchy with recursive depth, per-domain span caps, and leaf-condition stop rules.
 ---
 
 # WF Max
 
-Three-tier maximum-parallelism workflow. CEO (controller) dispatches domain Managers; each Manager dispatches parallel Workers. Built on military Rule of 3, Amazon two-pizza teams (5-7), and Dunbar layers (5→15→50).
+CEO → Managers → Workers. Scale to 1000 agents via recursive depth. Full spec: `Harness/WF-MAX.md`.
 
 ## Load
 
-- `Harness/WF-MAX.md`
-- `Harness/subagents.md`
-- `Harness/dispatch.md`
-- `Harness/context-loading.md`
+- `Harness/WF-MAX.md` — organization model, span formula, wave orchestration
+- `Harness/subagents.md` — agent roster, controller role
+- `Harness/dispatch.md` — File claim, Concurrency group handoff fields
+- `Harness/agent-workflow.md` — cohesion rule (feature doc < Worker granularity)
 
-## Three-Tier Organization
+## Organization
 
 ```
-TIER 1 — CEO (controller, 1 agent)
-  Owns: intent, scope, integration, final verification
-  Direct reports: 3-5 Managers
-
-TIER 2 — Managers (3-5 agents)
-  Architect-Manager: boundaries, interfaces, data contracts (span=3)
-  Implementation-Manager: write-set coloring, N implementers (span=5-7)
-  Review-Manager: spec/code/security parallel reviewers (span=3-4)
-
-TIER 3 — Workers (manager_count × span)
-  One file/module/dimension per worker. Execute and return.
+CEO(1) → Managers(span) → Workers(leaf) or Sub-Managers(depth≥3)
 ```
+
+- CEO: intent, scope, integration, final verification.
+- Manager: domain partition → parallel dispatch → synthesize → report.
+- Worker: single file (write) or single dimension (read). File claims must be file-level disjoint.
+- depth≥3: Manager spawns Sub-Manager (span≤7). No mixed Worker+Sub-Manager in same wave.
 
 ## Span Formula
 
 ```
-span = min(7, ceil(sqrt(files_in_domain)))
-  Complex (architecture):     span = 3
-  Standard (implementation):  span = 5-7
-  Simple (review, research):  span = 7-10
+span = min(ceil(sqrt(files)), domain_cap)
+  Architecture:   3
+  Implementation: 5-7
+  Review:         7-10
+  Research:       10-12
 ```
 
-## Organization Sizing
+## Total Agents
 
-| Scale | Files | CEO | Mgrs | Workers | Total |
-|-------|-------|-----|------|---------|-------|
-| XS | 1-4 | 1 | 0 | 1-3 | 2-4 |
-| S | 5-12 | 1 | 2 | 6 | 9 |
-| M | 13-30 | 1 | 3 | 15 | 19 |
-| L | 31-60 | 1 | 5 | 35 | 41 |
-| XL | 60+ | 1 | 7 | 49+ | 57+ |
+```
+total(depth, span) = Σ span^L for L=0..depth
+```
 
-## Manager Dispatch
+No hard cap. Governed by leaf condition + overhead filter.
 
-CEO → Manager (serial across domains):
-1. CEO partitions task into domains
-2. CEO dispatches Managers with domain scope
-3. Each Manager dispatches Workers in parallel
-4. Manager synthesizes Worker returns → reports to CEO
+## Leaf Condition
 
-Manager → Workers (parallel within domain):
-1. Manager partitions domain into worker units
-2. Manager dispatches all workers simultaneously
-3. Manager collects, deduplicates, resolves conflicts
-4. Manager returns integrated report to CEO
+```
+stop if: files ≤ span×2 | avgLines < 50 | overhead > 0.30
+```
 
-## Saturation Cap
+Overhead threshold: `overhead > 0.30 → degrade to /wf`
 
-Total 14 concurrent: 1 CEO + up to 3 Managers + up to 10 Workers per wave.
-Breakdown examples: 1+3+10=14 (M scale), 1+2+6=9 (S scale), 1+5+8=14 (L scale).
+## Manager Types (4)
 
-## Rules
+| Type | Span | Workers |
+|------|------|---------|
+| Explore-Mgr | 5-10 | researcher₁..ₙ, domain-explorer₁..ₙ |
+| Architect-Mgr | 3 | boundary-researcher, interface-designer, data-flow-mapper |
+| Implement-Mgr | 5-7 | implementer₁..ₙ (1 file_claim/Worker) |
+| Review-Mgr | 3-4 | reviewer-spec, reviewer-code, reviewer-security |
 
-- Context threshold: ~70% (CEO + Manager overhead consumes more context).
-- File claims must be disjoint across all workers in the same wave.
-- Managers verify no cross-worker file creation before reporting to CEO.
-- If communication overhead > 30% of useful work, fall back to /wf.
+## Manager Synthesis
 
-## Return
+```
+1. COLLECT → 2. DEDUPLICATE → 3. CONFLICT (flag, no silent resolve) → 4. SYNTHESIZE → 5. REPORT
+```
+Worker failure: retry 1× → absorb or escalate to CEO.
 
-- Organization chart (CEO→Managers→Workers)
-- Span calibration per manager
-- Integration results per domain
-- Review findings per dimension
-- Updated heartbeat
+## Wave Orchestration
+
+```
+W0: Explore-Mgr → N parallel → synthesize → CEO
+W1: Architect-Mgr → 3 parallel → boundary contract → CEO approval
+W2: Implement-Mgr → write-set coloring → wave dispatch: N parallel → merge → CEO
+W2R: Review-Mgr → 3-4 parallel → dedupe+severity → CEO assigns fixes
+W3+: Dependent waves (repeat W2)
+CLOSEOUT: CEO → context-master + memory-master (direct)
+```
+
+## When NOT to Use
+
+- files <5 → /wf
+- all changes share single interface → serial
+- overhead > 30% → degrade
+
+## /wf vs /wf max
+
+| | /wf | /wf max |
+|---|-----|------|
+| Organization | flat | CEO→Mgr→Worker (3-tier) |
+| Span formula | none | sqrt(files) + domain cap |
+| Recursive depth | 0 | 1-3 (scales to 1000) |
+| Granularity floor | none | <50 lines no split |
+| Context threshold | ~85% | ~70% |

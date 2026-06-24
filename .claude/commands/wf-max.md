@@ -23,4 +23,6 @@ intake
 -> closeout with context-master + memory-master
 ```
 
+Full organization model, span formula, Manager types, leaf condition, and synthesis protocol: [WF-MAX.md](Harness/WF-MAX.md).
+
 Keep `Harness/tasks/<task-id>/PROGRESS.md#Heartbeat` current.
