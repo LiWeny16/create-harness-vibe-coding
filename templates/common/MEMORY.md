@@ -30,6 +30,7 @@ Stack-specific agents can be added after the product shape is known.
 - [subagent-orchestrator](../.claude/skills/subagent-orchestrator/SKILL.md) — controller-led subagent orchestration, parallel read-only passes, review gates, and recovery handoffs.
 - [readme-optimizer](../.claude/skills/readme-optimizer/SKILL.md) — README preservation, append-only development sections, structured tables, and approved architecture diagrams.
 - [wf-update](../.claude/skills/wf-update/SKILL.md) — GitHub-based incremental harness update, checksum comparison, and safe in-place updates.
+- [wf-max](../.claude/skills/wf-max/SKILL.md) — maximum-parallelism workflow: write-set coloring, wave dispatch, parallel review per dimension.
 
 Stack-specific skills can be added after the product shape is known.
 
@@ -46,6 +47,7 @@ Located under `.claude/rules/ecc/`, auto-loaded by the CC engine:
 - [Task directory](tasks/)
 - [Docs router](README.md)
 - [WF mode](WF.md)
+- [WF Max mode](WF-MAX.md)
 - [0-1 lifecycle](lifecycle.md)
 - [Research protocol](research/README.md)
 - [Context loading protocol](context-loading.md)

@@ -81,6 +81,8 @@ Evidence:
 Risks:
 Next:
 PLAN patch:
+Concurrency group:  <wave number — 0=exploration, 1,2,3,...=implementation waves. Optional; only used in /wf max.>
+File claim:         <list of exact file paths this agent exclusively owns. Optional; only used in /wf max.>
 ```
 
 Use `Files changed: none` for read-only agents. Use `PLAN patch: none` when no state update is needed.

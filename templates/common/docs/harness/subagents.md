@@ -85,6 +85,7 @@ Choose the cheapest coordination level that is safe.
 | Parallel read-only | broad reading, research, architecture, multiple independent failures | 2-3 read-only agents |
 | Serial build lane | normal feature or fix | test-writer -> implementer -> reviewers -> verifier |
 | Isolated lanes | disjoint write sets or competing approaches | separate worktrees, then review and merge |
+| Max parallelism | 5+ disjoint files, fan-out benefit > coordination cost | /wf max: write-set coloring -> wave dispatch -> parallel review |
 
 Default for automatic WF triggers: 3-5 active read-only agents before second planning. For explicit WF/WK mode, never use the solo pass unless subagents are unavailable; use bounded role passes as the recorded fallback.
 
@@ -105,6 +106,18 @@ controller intake
 ```
 
 Use this shape for `/wf`, long tasks, multi-file changes, architecture work, migrations, browser/API behavior, or repeated failures.
+
+```text
+/wf max orchestration shape:
+controller intake
+-> wave 0: max-parallel exploration (4-14 read-only agents)
+-> controller synthesis: dependency graph + write-set coloring
+-> wave 1: N parallel implementers (disjoint file claims)
+-> wave 1 review: parallel spec/code/security reviewers
+-> wave 2+: dependent implementers (if any)
+-> integration verifier
+-> closeout with evidence
+```
 
 ## Dispatch Pack
 

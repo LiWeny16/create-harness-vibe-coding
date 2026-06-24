@@ -37,6 +37,7 @@ const commonSkills = [
   'harness-build-loop',
   'wf-mode',
   'wf-update',
+  'wf-max',
   'subagent-orchestrator',
   'readme-optimizer',
 ];
@@ -53,9 +54,11 @@ const required = [
   'README.md',
   'Harness/MEMORY.md',
   'Harness/WF.md',
+  'Harness/WF-MAX.md',
   ...memoryFiles,
   '.claude/settings.json',
   '.claude/commands/wf.md',
+  '.claude/commands/wf-max.md',
   '.claude/rules/ecc/common.md',
   ...commonAgents.map(agent => `.claude/agents/${agent}.md`),
   ...commonSkills.map(skill => `.claude/skills/${skill}/SKILL.md`),
@@ -436,6 +439,14 @@ requireText('Harness/architecture.md', 'Avoid speculative abstraction', 'anti-ov
 requireText('CLAUDE.md', 'Use explicit interfaces or state models only when they protect a real boundary', 'CLAUDE interface/state simplicity rule');
 requireText('CLAUDE.md', '/wf update', 'wf update startup instruction');
 requireText('Harness/README.md', 'Need harness update', 'update routing row');
+requireText('Harness/WF-MAX.md', 'write-set coloring', 'WF-MAX coloring algorithm');
+requireText('Harness/WF-MAX.md', 'wave dispatch', 'WF-MAX wave dispatch');
+requireText('Harness/README.md', '/wf max', 'wf max router alias');
+requireText('Harness/README.md', 'WF-MAX.md', 'WF-MAX router reference');
+requireText('Harness/subagents.md', 'Max parallelism', 'subagents max parallelism row');
+requireText('Harness/dispatch.md', 'Concurrency group', 'dispatch concurrency group field');
+requireText('Harness/dispatch.md', 'File claim', 'dispatch file claim field');
+requireText('CLAUDE.md', '/wf max', 'wf max startup instruction');
 
 if (errors.length) {
   console.error(`Harness validation failed${strict ? ' (strict)' : ''}:`);
