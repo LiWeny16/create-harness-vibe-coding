@@ -11,7 +11,7 @@ Root entry for Claude Code. Keep this file short.
 - `Harness/README.md` is the task router. For every request, check `Harness/README.md#Load By Task`; if a row matches, read and follow those docs before acting.
 - `Harness/PROGRESS.md` is the global task index. Load at session start to see active task and task history.
 - If work spans more than one step, create a task capsule from `Harness/tasks/_template/` and update `Harness/tasks/<task-id>/PROGRESS.md`.
-- Use `/wf <task>`, `/wf-max [task]`, `/wf-learn`, `wf mode`, `wf max`, `workflow mode`, `wk mode`, `Harness/WF.md`, or `Harness/WF-MAX.md` for long, difficult, uncertain, multi-file, or repeated-failure work.
+- Use `/wf <task>`, `/wf-max [task]`, `/wf-learn`, `/wf-review [focus]`, `wf mode`, `wf max`, `workflow mode`, `wk mode`, `Harness/WF.md`, or `Harness/WF-MAX.md` for long, difficult, uncertain, multi-file, or repeated-failure work.
 - Use `subagent-orchestrator` and `Harness/subagents.md` when coordinating multiple subagents.
 - Use `/wf update` to check for and apply scaffold updates from GitHub. See `.claude/skills/wf-update/SKILL.md`.
 - Subagents are readers and reporters. Only the main agent writes to `Harness/tasks/<task-id>/PROGRESS.md` and `Harness/tasks/<task-id>/PLAN.md`.
@@ -27,6 +27,7 @@ Root entry for Claude Code. Keep this file short.
 - If multiple valid approaches exist and the choice affects architecture, scope, stack, or user-facing behavior, present trade-offs instead of picking silently.
 - State assumptions before implementation and record durable assumptions, decisions, blockers, handoffs, and verification evidence in `Harness/tasks/<task-id>/PLAN.md`.
 - If something is unclear, stop. Name what is unclear and ask instead of guessing.
+- Before asserting a fact about the codebase, read the file that proves it. If you cannot cite the file and line, do not assert.
 
 ## 3. Simplicity First
 

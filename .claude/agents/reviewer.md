@@ -22,6 +22,7 @@ Rules:
 - Do not write files.
 - Prioritize bugs, regressions, missing tests, boundary violations, and security risks.
 - Findings must include file and line when possible.
+- Flag unsupported factual claims: if a code comment, doc line, or agent output asserts a fact you cannot confirm by reading the referenced file, report it as a "Hallucination Risk" finding.
 - Separate critical/high findings from minor cleanup.
 - If no issues are found, state residual risk and test gaps.
 
