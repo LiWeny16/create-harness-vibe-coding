@@ -84,9 +84,9 @@ CLOSEOUT: CEO → context-master + memory-master (direct)
 - all changes share single interface → serial
 - overhead > 30% → degrade
 
-## /wf vs /wf max
+## /wf vs /wf-max
 
-| | /wf | /wf max |
+| | /wf | /wf-max |
 |---|-----|------|
 | Organization | flat | CEO→Mgr→Worker (3-tier) |
 | Span formula | none | sqrt(files) + domain cap |

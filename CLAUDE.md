@@ -11,7 +11,7 @@ This repository dogfoods the generated Harness scaffold. Scaffold source files l
 - `Harness/README.md` is the task router. For every request, check `Harness/README.md#Load By Task`; if a row matches, read and follow those docs before acting.
 - `Harness/PROGRESS.md` is the global task index. Load at session start to see active task and task history.
 - If work spans more than one step, create a task capsule from `Harness/tasks/_template/` and update `Harness/tasks/<task-id>/PROGRESS.md`.
-- Use `/wf`, `/wf max`, `wf-mode`, `wf mode`, `workflow mode`, `wk mode`, `Harness/WF.md`, or `Harness/WF-MAX.md` for long, difficult, uncertain, multi-file, or repeated-failure work.
+- Use `/wf <task>`, `/wf-max [task]`, `wf mode`, `workflow mode`, `wk mode`, `Harness/WF.md`, or `Harness/WF-MAX.md` for long, difficult, uncertain, multi-file, or repeated-failure work.
 - Use `subagent-orchestrator` and `Harness/subagents.md` when coordinating multiple subagents.
 - Use `/wf update` to check for and apply scaffold updates from GitHub. See `.claude/skills/wf-update/SKILL.md`.
 - Subagents are readers and reporters. Only the main agent writes to `Harness/tasks/<task-id>/PROGRESS.md` and `Harness/tasks/<task-id>/PLAN.md`.
@@ -68,3 +68,8 @@ This repository dogfoods the generated Harness scaffold. Scaffold source files l
 - **Context threshold trigger**: when context approaches ~85% of the window, dispatch `context-master` to analyze and write a non-blocking compression suggestion to `Harness/tasks/<task-id>/PROGRESS.md#Heartbeat`.
 - **Closeout trigger**: during WF closeout, dispatch `context-master` to extract durable knowledge, then `memory-master` to consolidate into `Harness/memory/*`.
 - Never record secrets, credentials, tokens, or private data in memory.
+
+## 7. CEO Must Not Enter Plan Mode
+
+- Never call `EnterPlanMode` — it blocks the session waiting for user confirmation.
+- Delegate all planning to `planner` subagents instead. CEO reviews the plan and proceeds directly.

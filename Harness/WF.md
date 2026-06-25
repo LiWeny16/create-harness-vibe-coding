@@ -13,7 +13,7 @@ Enter WF mode when any of these are true:
 - The task needs research, architecture judgment, browser/API validation, or migration planning.
 - Confidence in intent, architecture, or implementation is below 95%.
 - The same command, test, tool, or approach fails twice.
-- The user explicitly says `/wf max` or `wf max` (for maximum-parallelism mode, see [WF-MAX.md](WF-MAX.md)).
+- The user explicitly says `/wf-max [task]` or `wf max` (for maximum-parallelism mode, see [WF-MAX.md](WF-MAX.md)).
 
 ## Multi-Subagent Requirement
 
@@ -25,7 +25,7 @@ WF mode requires multi-subagent orchestration by default.
 - Record every dispatch or bounded-pass fallback in `Harness/tasks/<task-id>/PLAN.md#Subagent Dispatch`.
 - If subagents are unavailable, emulate the same roles as separate bounded passes and record why the fallback was used.
 
-For maximum-parallelism mode (write-set coloring, wave dispatch, parallel reviewers), use `/wf max` and see [WF-MAX.md](WF-MAX.md).
+For maximum-parallelism mode (write-set coloring, wave dispatch, parallel reviewers), use `/wf-max [task]` and see [WF-MAX.md](WF-MAX.md).
 
 ## WF Loop
 

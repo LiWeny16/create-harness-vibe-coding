@@ -1,6 +1,6 @@
-# /wf
+# /wf <task/mission>
 
-Enter `wf-mode`.
+Enter `wf-mode` with the given task or mission description.
 
 ## Required
 

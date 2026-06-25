@@ -2,7 +2,7 @@
 
 ## Trigger
 
-- Explicit: `/wf max`
+- Explicit: `/wf-max [task]`
 - Auto: WF task with write-set ≥5 files AND clear disjoint boundaries
 - parallelismScore = (files × avgLines × 3 / 800) × independenceFactor
   - spawn ≥2.0 | maybe 1.0-2.0 | skip <1.0 (degrade to /wf)
@@ -113,16 +113,16 @@ overhead(depth) = 0.10 (depth≤2) | 0.20 (depth=3) | 0.35 (depth≥4)
 - overhead > 0.30 → degrade to /wf
 - independenceFactor: 1.0 (no deps) | 0.3-0.7 (shared imports)
 
-## When NOT to use /wf max
+## When NOT to use /wf-max
 
 - files < 5 → use /wf
 - all changes share single interface → serial dependency
 - import/re-export refactor → global consistency required
 - communication overhead > 30% → degrade
 
-## /wf vs /wf max
+## /wf vs /wf-max
 
-| Dimension        | /wf              | /wf max                          |
+| Dimension        | /wf              | /wf-max                          |
 |------------------|------------------|----------------------------------|
 | Organization     | flat             | CEO → Mgr → Worker (3-tier)      |
 | Exploration      | 3-5 serial       | Mgr → 10 parallel                |

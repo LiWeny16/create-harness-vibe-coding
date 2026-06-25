@@ -1,6 +1,6 @@
-# /wf max
+# /wf-max [task]
 
-Enter maximum-parallelism workflow mode. Splits tasks into minimal non-conflicting units and dispatches as many subagents as possible in parallel waves.
+Enter maximum-parallelism workflow mode with an optional task description. Splits tasks into minimal non-conflicting units and dispatches as many subagents as possible in parallel waves.
 
 ## Required
 

@@ -410,7 +410,7 @@ requireText('Harness/WF.md', 'Explicit `/wf`, `wf mode`, `workflow mode`, or `wk
 requireText('Harness/WF.md', '.claude/agents/', 'WF built-in agent roster path');
 requireText('Harness/WF.md', '7:3 collaboration bias', 'WF collaboration bias');
 requireText('Harness/WF.md', 'Harness/tasks/', 'WF task directory reference');
-requireText('Harness/README.md', '`/wf`, `wf mode`, `workflow mode`, or `wk mode`', 'WF/WK router aliases');
+requireText('Harness/README.md', '`wf mode`, `workflow mode`, or `wk mode`', 'WF/WK router aliases');
 requireText('Harness/README.md', 'explicit WF/WK loads subagent docs immediately', 'explicit WF/WK router output');
 requireText('.claude/skills/harness-router/SKILL.md', '`/wf`, `wf mode`, `workflow mode`, `wk mode`', 'harness-router WF/WK aliases');
 requireText('.claude/skills/wf-mode/SKILL.md', 'Harness/WF.md', 'wf-mode loads WF document');
@@ -441,12 +441,12 @@ requireText('CLAUDE.md', '/wf update', 'wf update startup instruction');
 requireText('Harness/README.md', 'Need harness update', 'update routing row');
 requireText('Harness/WF-MAX.md', 'write-set coloring', 'WF-MAX coloring algorithm');
 requireText('Harness/WF-MAX.md', 'wave dispatch', 'WF-MAX wave dispatch');
-requireText('Harness/README.md', '/wf max', 'wf max router alias');
+requireText('Harness/README.md', '/wf-max', 'wf max router alias');
 requireText('Harness/README.md', 'WF-MAX.md', 'WF-MAX router reference');
 requireText('Harness/subagents.md', 'Max parallelism', 'subagents max parallelism row');
 requireText('Harness/dispatch.md', 'Concurrency group', 'dispatch concurrency group field');
 requireText('Harness/dispatch.md', 'File claim', 'dispatch file claim field');
-requireText('CLAUDE.md', '/wf max', 'wf max startup instruction');
+requireText('CLAUDE.md', '/wf-max', 'wf max startup instruction');
 
 if (errors.length) {
   console.error(`Harness validation failed${strict ? ' (strict)' : ''}:`);

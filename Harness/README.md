@@ -51,7 +51,7 @@ Keywords are retrieval hints, not project facts.
 
 Load the matching row only. Add adjacent docs only when the loaded doc directly names them.
 
-Routing priority: if a request explicitly says `/wf`, `/wf max`, `wf mode`, `workflow mode`, or `wk mode`, or is long, difficult, uncertain, repeated-failure, migration, architecture-heavy, browser-visible, or broad multi-agent implementation work, choose the WF row first. `wf-mode` MUST then delegate subagent coordination to `subagent-orchestrator`.
+Routing priority: if a request explicitly says `/wf <task>`, `/wf-max [task]`, `wf mode`, `workflow mode`, or `wk mode`, or is long, difficult, uncertain, repeated-failure, migration, architecture-heavy, browser-visible, or broad multi-agent implementation work, choose the WF row first. `wf-mode` MUST then delegate subagent coordination to `subagent-orchestrator`.
 
 | When to Read | Keywords | Load | Output |
 | --- | --- | --- | --- |
@@ -60,7 +60,7 @@ Routing priority: if a request explicitly says `/wf`, `/wf max`, `wf mode`, `wor
 | Need MVP/spec | PRD, MVP, scope, requirement, acceptance, non-goal | [research/PRD.md](research/PRD.md) | one-page PRD with verifiable acceptance criteria |
 | Need architecture or boundaries | architecture, boundary, layer, domain, port, adapter, dependency | [architecture.md](architecture.md), [domain/ports.md](domain/ports.md) | layer map, ports, constraints |
 | Need WF mode | wf, /wf, wf mode, workflow mode, wk mode, long task, difficult, stuck, repeated failure | [WF.md](WF.md), [PROGRESS.md](PROGRESS.md), the current task `tasks/<id>/PROGRESS.md` and `tasks/<id>/PLAN.md` | exploration plan, second plan, heartbeat, recovery loop; explicit WF/WK loads subagent docs immediately |
-| Need WF Max mode | /wf max, wf max, maximum parallelism, max parallel | [WF-MAX.md](WF-MAX.md), [WF.md](WF.md), [subagents.md](subagents.md), [dispatch.md](dispatch.md) | max-parallel exploration, write-set coloring, wave dispatch |
+| Need WF Max mode | /wf-max, wf max, maximum parallelism, max parallel | [WF-MAX.md](WF-MAX.md), [WF.md](WF.md), [subagents.md](subagents.md), [dispatch.md](dispatch.md) | max-parallel exploration, write-set coloring, wave dispatch |
 | Adding harness to existing project | existing project, onboarding, migrate, bootstrap, preserve, conflict | [extension.md](extension.md), [PROGRESS.md](PROGRESS.md), root `README.md` and package/CI files | discovered project facts, preserved config, manual registration plan |
 | README optimization | README, docs, quickstart, install docs, architecture diagram, command table, documentation polish | root `README.md`, `.claude/skills/readme-optimizer/SKILL.md`, [PROGRESS.md](PROGRESS.md), [architecture.md](architecture.md) as needed | approved README mode, preserved sections, proposed diff plan |
 | Need implementation plan | plan, task, write set, verify, milestone, progress | [PROGRESS.md](PROGRESS.md), the current task `tasks/<id>/PROGRESS.md` and `tasks/<id>/PLAN.md`, [agent-workflow.md](agent-workflow.md) | tasks, write set, verification commands |
@@ -79,7 +79,7 @@ Routing priority: if a request explicitly says `/wf`, `/wf max`, `wf mode`, `wor
 ## Gates
 
 - Move phases in order unless the user asks for a fast lane.
-- Use `/wf`, `wf mode`, `workflow mode`, or `wk mode` when a task is long, difficult, uncertain, multi-file, or repeatedly failing.
+- Use `/wf <task>`, `/wf-max [task]`, `wf mode`, `workflow mode`, or `wk mode` when a task is long, difficult, uncertain, multi-file, or repeatedly failing.
 - Do not code before the PRD has MVP, non-goals, and acceptance criteria.
 - Do not cross a layer boundary without reading `domain/ports.md` and updating architecture or ports.
 - Before adding failure paths, read `data-flow.md`.
@@ -108,7 +108,7 @@ Harness/tasks/_template/           task capsule template (copy to create new tas
 Harness/WF.md                      long-task workflow and recovery loop
 Harness/WF-MAX.md                  max-parallelism workflow with wave dispatch
 .claude/skills/wf-max/SKILL.md     max-parallelism skill loader
-.claude/commands/wf-max.md         /wf max slash command bridge
+.claude/commands/wf-max.md         /wf-max slash command bridge
 Harness/lifecycle.md               0-1 product flow
 Harness/subagents.md               controller-led subagent orchestration
 Harness/context-loading.md         dynamic loading and subagent packs
