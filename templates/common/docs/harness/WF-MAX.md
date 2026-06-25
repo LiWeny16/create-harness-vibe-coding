@@ -21,7 +21,7 @@ CEO(1) ──┬── Manager₁(span) ──┬── Worker₁..ₙ
          └── Manager₂(span) ── Worker₁..ₙ
 ```
 
-- CEO: intent, scope, integration, final verification. Direct reports 3-5 Managers.
+- CEO: intent, scope, integration, final verification. Direct reports 3-5 Managers. **CEO never writes code directly** — dispatch Workers for all file changes. CEO only synthesizes results and decides next waves.
 - Manager: domain partition → parallel dispatch → synthesize → report. Serial across domains; parallel within domain.
 - Worker: single file per write Worker (implementer, one file_claim). Single dimension/topic per read Worker (reviewer, researcher). File claims must be file-level disjoint. Topic-level splitting within a single file is only allowed for read-only Workers.
 - depth ≥3: Manager spawns Sub-Manager (span ≤7) instead of Worker. Recursive until leaf condition met.

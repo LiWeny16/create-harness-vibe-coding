@@ -67,3 +67,10 @@ Root entry for Claude Code. Keep this file short.
 - **Context threshold trigger**: when context approaches ~85% of the window, dispatch `context-master` to analyze and write a non-blocking compression suggestion to `Harness/tasks/<task-id>/PROGRESS.md#Heartbeat`.
 - **Closeout trigger**: during WF closeout, dispatch `context-master` to extract durable knowledge, then `memory-master` to consolidate into `Harness/memory/*`.
 - Never record secrets, credentials, tokens, or private data.
+
+## 7. CEO Constraints
+
+- Never call `EnterPlanMode` — it blocks the session waiting for user confirmation. Delegate all planning to `planner` subagents.
+- **Never write code directly in `/wf` or `/wf-max` mode.** CEO orchestrates only: dispatch subagents, review results, synthesize, decide next wave. Subagents write code; CEO does not touch files.
+- Exception: only when all subagents have failed, or the task is trivially flat (single file, <20 lines). Otherwise delegate everything.
+- Why: CEO context is the bottleneck. Every direct edit bloats context and degrades orchestration quality.

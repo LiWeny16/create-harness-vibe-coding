@@ -69,7 +69,9 @@ This repository dogfoods the generated Harness scaffold. Scaffold source files l
 - **Closeout trigger**: during WF closeout, dispatch `context-master` to extract durable knowledge, then `memory-master` to consolidate into `Harness/memory/*`.
 - Never record secrets, credentials, tokens, or private data in memory.
 
-## 7. CEO Must Not Enter Plan Mode
+## 7. CEO Constraints
 
-- Never call `EnterPlanMode` — it blocks the session waiting for user confirmation.
-- Delegate all planning to `planner` subagents instead. CEO reviews the plan and proceeds directly.
+- Never call `EnterPlanMode` — it blocks the session waiting for user confirmation. Delegate all planning to `planner` subagents.
+- **Never write code directly in `/wf` or `/wf-max` mode.** CEO orchestrates only: dispatch subagents, review results, synthesize, decide next wave. Subagents write code; CEO does not touch files.
+- Exception: only when all subagents have failed, or the task is trivially flat (single file, <20 lines). Otherwise delegate everything.
+- Why: CEO context is the bottleneck. Every direct edit bloats context and degrades orchestration quality.
