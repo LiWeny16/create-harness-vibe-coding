@@ -40,7 +40,7 @@ Rules:
 - If subagents are unavailable, emulate the same roles as separate bounded passes.
 - Do not claim browser/UI acceptance without real-browser evidence from Chrome DevTools, CDP, Playwright, or documented manual browser checks.
 - If `Harness/workflows/browser-e2e.md` is not installed, use `Harness/WF.md#Browser And API Evidence` as the fallback evidence contract or ask the user before adding the optional workflow.
-- If the same failure class happens three times, dispatch `memory-master` to record the failure pattern first, then ask the user with evidence-backed options.
+- Before closeout, dispatch `context-master` then `memory-master` (or use `/wf-learn`) to extract and consolidate lessons. Do not skip — the auto-trigger is unreliable; make this a mandatory gate.
 
 Return:
 

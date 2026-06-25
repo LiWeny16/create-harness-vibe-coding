@@ -29,6 +29,7 @@ Stack-specific agents can be added after the product shape is known.
 - [wf-mode](../.claude/skills/wf-mode/SKILL.md) — long-task workflow: exploration, second plan, implementation, review, verification, heartbeat, and recovery loop.
 - [subagent-orchestrator](../.claude/skills/subagent-orchestrator/SKILL.md) — controller-led subagent orchestration, parallel read-only passes, review gates, and recovery handoffs.
 - [readme-optimizer](../.claude/skills/readme-optimizer/SKILL.md) — README preservation, append-only development sections, structured tables, and approved architecture diagrams.
+- [wf-learn](../.claude/skills/wf-learn/SKILL.md) — force memory learning cycle: context-master → memory-master → project + global memory.
 - [wf-update](../.claude/skills/wf-update/SKILL.md) — GitHub-based incremental harness update, checksum comparison, and safe in-place updates.
 - [wf-max](../.claude/skills/wf-max/SKILL.md) — maximum-parallelism workflow: write-set coloring, wave dispatch, parallel review per dimension.
 

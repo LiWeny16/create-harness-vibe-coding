@@ -60,6 +60,7 @@ Routing priority: if a request explicitly says `/wf <task>`, `/wf-max [task]`, `
 | Need MVP/spec | PRD, MVP, scope, requirement, acceptance, non-goal | [research/PRD.md](research/PRD.md) | one-page PRD with verifiable acceptance criteria |
 | Need architecture or boundaries | architecture, boundary, layer, domain, port, adapter, dependency | [architecture.md](architecture.md), [domain/ports.md](domain/ports.md) | layer map, ports, constraints |
 | Need WF mode | wf, /wf, wf mode, workflow mode, wk mode, long task, difficult, stuck, repeated failure | [WF.md](WF.md), [PROGRESS.md](PROGRESS.md), the current task `tasks/<id>/PROGRESS.md` and `tasks/<id>/PLAN.md` | exploration plan, second plan, heartbeat, recovery loop; explicit WF/WK loads subagent docs immediately |
+| Need to learn from errors | /wf-learn, wf learn, learn, remember, memory, lesson | [MEMORY.md](MEMORY.md), `.claude/skills/wf-learn/SKILL.md`, `Harness/memory/*` | context-master → memory-master → project + global memory |
 | Need WF Max mode | /wf-max, wf max, maximum parallelism, max parallel | [WF-MAX.md](WF-MAX.md), [WF.md](WF.md), [subagents.md](subagents.md), [dispatch.md](dispatch.md) | max-parallel exploration, write-set coloring, wave dispatch |
 | Adding harness to existing project | existing project, onboarding, migrate, bootstrap, preserve, conflict | [extension.md](extension.md), [PROGRESS.md](PROGRESS.md), root `README.md` and package/CI files | discovered project facts, preserved config, manual registration plan |
 | README optimization | README, docs, quickstart, install docs, architecture diagram, command table, documentation polish | root `README.md`, `.claude/skills/readme-optimizer/SKILL.md`, [PROGRESS.md](PROGRESS.md), [architecture.md](architecture.md) as needed | approved README mode, preserved sections, proposed diff plan |
@@ -109,6 +110,7 @@ Harness/WF.md                      long-task workflow and recovery loop
 Harness/WF-MAX.md                  max-parallelism workflow with wave dispatch
 .claude/skills/wf-max/SKILL.md     max-parallelism skill loader
 .claude/commands/wf-max.md         /wf-max slash command bridge
+.claude/commands/learn.md          /wf-learn slash command bridge
 Harness/lifecycle.md               0-1 product flow
 Harness/subagents.md               controller-led subagent orchestration
 Harness/context-loading.md         dynamic loading and subagent packs
