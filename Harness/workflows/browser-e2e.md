@@ -18,6 +18,42 @@ Browser evidence in this project follows the contract:
 3. **Agent mode is for dynamic exploration** — use Browser Use Agent API when the page structure is unknown or changing
 4. **Evidence goes to the task directory** — `Harness/tasks/<task-id>/evidence/*.png`
 
+### Stable UI Selector Contract
+
+All browser automation and E2E tests in this project use a stable selector contract. Selectors must be written against **public, stable attributes** that survive refactors, not against ephemeral class names or DOM indices.
+
+**Required selector priority (most stable first):**
+
+1. **`data-testid`** — the primary stable anchor for automated tests
+2. **accessible labels/roles** — `getByRole`, `getByLabelText`, `getByPlaceholderText` (ARIA roles, `<label>` associations, placeholder text)
+3. **Text content** — `getByText` for visible user-facing strings
+
+**Required coverage targets.** Every interactive page tested by browser automation must cover: inputs, buttons, filters, rows, empty/error/loading states.
+
+| Category | Examples |
+|---|---|
+| **Inputs** | text fields, textareas, selects, checkboxes, radios, file uploads |
+| **Buttons** | submit buttons, icon-only buttons, toggle buttons, CTA buttons |
+| **Filters** | search inputs, dropdown filters, date range pickers, filter chips/tags |
+| **Rows** | table rows, list items, card containers — the repeating data unit |
+| **Empty state** | "no results" message, empty illustration, zero-state CTA |
+| **Error state** | inline validation errors, toast notifications, server error banners |
+| **Loading state** | spinners, skeletons, progress bars, "Loading…" text |
+
+**Selector format examples:**
+
+```
+data-testid="search-input"
+data-testid="submit-btn"
+data-testid="filter-status"
+data-testid="result-row"
+data-testid="empty-state"
+data-testid="error-banner"
+data-testid="loading-spinner"
+```
+
+**Rationale:** `data-testid` attributes are decoupled from styling and layout — they survive CSS refactors, component renames, and DOM restructuring. Accessible labels and roles are the fallback when `data-testid` is not available, and they double as a11y coverage. Class-name and XPath selectors are not accepted in test automation because they break on cosmetic changes.
+
 ## Quick Install
 
 ```bash
