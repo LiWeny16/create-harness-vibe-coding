@@ -58,7 +58,7 @@ Routing priority: if a request explicitly says `/wf <task>`, `/wf-max [task]`, `
 | Raw idea or vague product request | idea, vague, clarify, goal, non-goal, lifecycle | [lifecycle.md](lifecycle.md), [research/PRD.md](research/PRD.md) | clarified goal, non-goals, first questions |
 | Need market/tech direction | research, market, competitor, stack, library, pricing, policy | [research/README.md](research/README.md), [research/research-results.md](research/research-results.md) | research protocol, adopted/rejected choices |
 | Need MVP/spec | PRD, MVP, scope, requirement, acceptance, non-goal | [research/PRD.md](research/PRD.md) | one-page PRD with verifiable acceptance criteria |
-| Need architecture or boundaries | architecture, boundary, layer, domain, port, adapter, dependency | [architecture.md](architecture.md), [domain/ports.md](domain/ports.md) | layer map, ports, constraints |
+| Need architecture or boundaries | architecture, boundary, layer, port, adapter, dependency | [architecture.md](architecture.md) | layer map, ports, constraints (domain/ports.md available as optional reference) |
 | Need WF mode | wf, /wf, wf mode, workflow mode, wk mode, long task, difficult, stuck, repeated failure | [WF.md](WF.md), [PROGRESS.md](PROGRESS.md), the current task `tasks/<id>/PROGRESS.md` and `tasks/<id>/PLAN.md` | exploration plan, second plan, heartbeat, recovery loop; explicit WF/WK loads subagent docs immediately |
 | Need to learn from errors | /wf-learn, wf learn, learn, remember, memory, lesson | [MEMORY.md](MEMORY.md), `.claude/skills/wf-learn/SKILL.md`, `Harness/memory/*` | context-master → memory-master → project + global memory |
 | Need peer review | /wf-review, peer review, second opinion, cross-check, stuck | `.claude/skills/wf-review/SKILL.md`, `Harness/README.md` | cross-model review via other CLI (Codex/Claude) |
@@ -72,7 +72,7 @@ Routing priority: if a request explicitly says `/wf <task>`, `/wf-max [task]`, `
 | Optional workflow installed | workflow, optional, ui-ux-review, github-pr-review, python-backend, ts-react-frontend | matching `workflows/*.md` (if installed), [extension.md](extension.md) | workflow-specific evidence, commands, fallback path |
 | Need durable memory or reflection | memory, remember, preference, correction, tool failure, lesson, reflection | [MEMORY.md](MEMORY.md), `Harness/memory/tool-usage-reflections.md`, `Harness/memory/user-corrections-preferences.md`, `Harness/memory/agent-lessons-patterns.md` | concise newest-first memory entry or no-op rationale |
 | Need subagents | subagent, role pack, context, inject, return format, orchestrator | [subagents.md](subagents.md), [context-loading.md](context-loading.md), [dispatch.md](dispatch.md) | controller plan, role-specific context pack, dispatch pack |
-| Need feature work | feature, implementation, TDD, test, review, closeout | [features/_template.md](features/_template.md), [agent-workflow.md](agent-workflow.md) | feature doc, tests, implementation loop |
+| Need feature work | feature, implementation, TDD, test, review, closeout | [tasks/_template/PLAN.md](tasks/_template/PLAN.md), [agent-workflow.md](agent-workflow.md) | feature doc, tests, implementation loop |
 | Flow or failure behavior changes | data flow, event, failure, retry, recovery, caller behavior | [data-flow.md](data-flow.md) | happy path, failure path, caller behavior |
 | Stateful behavior changes | state, transition, guard, illegal transition, state machine | [state-machines.md](state-machines.md) | states, transitions, illegal transitions |
 | Review or release check | review, release, finding, risk, evidence, verification | [agent-workflow.md](agent-workflow.md), current feature doc | findings, verification evidence |
@@ -84,7 +84,7 @@ Routing priority: if a request explicitly says `/wf <task>`, `/wf-max [task]`, `
 - Move phases in order unless the user asks for a fast lane.
 - Use `/wf <task>`, `/wf-max [task]`, `wf mode`, `workflow mode`, or `wk mode` when a task is long, difficult, uncertain, multi-file, or repeatedly failing.
 - Do not code before the PRD has MVP, non-goals, and acceptance criteria.
-- Do not cross a layer boundary without reading `domain/ports.md` and updating architecture or ports.
+- (Optional) For cross-layer contracts sketch, see `domain/ports.md`.
 - Before adding failure paths, read `data-flow.md`.
 - Before modifying stateful components, read `state-machines.md`.
 - Unsure whether to open a feature doc? Read `agent-workflow.md` Section 1.
@@ -126,8 +126,8 @@ Harness/agent-workflow.md          build/review/test loop
 Harness/architecture.md            layer boundaries
 Harness/data-flow.md               runtime/failure paths
 Harness/state-machines.md          state transitions
-Harness/domain/ports.md            cross-layer contracts
-Harness/features/_template.md      feature work packet
+Harness/domain/ports.md            (optional) cross-layer contracts sketch
+Harness/features/_template.md      (optional) legacy feature packet template — prefer tasks/_template/
 Harness/research/README.md         research protocol
 Harness/research/PRD.md            product scope
 Harness/research/research-results.md research results

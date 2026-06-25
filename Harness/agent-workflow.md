@@ -12,8 +12,9 @@ If context grows, load [context-loading.md](context-loading.md) and split the wo
 
 ## Feature Packet
 
-Every PRD scope item must be covered by a feature doc at `Harness/features/<name>.md`
-created from `Harness/features/_template.md`. Do not code without a feature doc.
+Every PRD scope item must be covered by a task plan at `Harness/tasks/<task-id>/PLAN.md`
+created from `Harness/tasks/_template/PLAN.md` (the primary work tracking system).
+`Harness/features/_template.md` is a legacy alternative; prefer tasks/ for new work.
 
 **Cohesion rule**: if multiple PRD scope items share the same write set, the same
 test/verification path, and the same review boundary, group them into a single
