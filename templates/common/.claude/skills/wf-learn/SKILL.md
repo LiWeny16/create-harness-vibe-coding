@@ -30,7 +30,7 @@ Force a memory learning cycle. Context-master analyzes, memory-master consolidat
 | Project | `Harness/memory/tool-usage-reflections.md` | tool/command patterns found |
 | Project | `Harness/memory/user-corrections-preferences.md` | user preferences found |
 | Project | `Harness/memory/agent-lessons-patterns.md` | review/debug lessons found |
-| Global | `C:\Users\Onion\.claude\projects\*\memory\` | cross-project patterns |
+| Global | `<user>/.claude/projects/*/memory/` | cross-project patterns |
 
 ## Rules
 

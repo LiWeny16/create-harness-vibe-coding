@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.5.0] - 2026-06-25
+
+- `/wf-learn` command: force memory learning cycle (context-master → memory-master → project + global memory).
+- Fix auto-trigger: replace unreliable "3x failure" rule with mandatory closeout gate in wf-mode.
+- Register `/wf-learn` in all routers (CLAUDE.md, MEMORY.md, README.md).
+
+## [0.4.3] - 2026-06-25
+
+- Add CHANGELOG.md with full version history (0.1.4 → 0.4.2).
+- Create git tags v0.3.0–v0.4.2 and GitHub Releases for all major versions.
+- Bump harness-version to 0.4.2.
+
 ## [0.4.2] - 2026-06-25
 
 - Simplify CLAUDE.md Section 7: route to WF.md/WF-MAX.md instead of inline dispatch rules.

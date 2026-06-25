@@ -122,7 +122,7 @@ If verification fails:
 5. Run verifier again.
 6. Repeat until verified or blocked by missing user input/external state.
 
-If the same failure class happens three times, stop blind fixes. Before asking the user, dispatch `memory-master` to record the failure pattern, attempted paths, and root cause hypothesis to `Harness/memory/agent-lessons-patterns.md`. Then present evidence-backed options to the user.
+Before asking the user after repeated failures, dispatch `context-master` then `memory-master` (or use `/wf-learn`) to record the failure pattern, attempted paths, and root cause hypothesis. Present evidence-backed options to the user.
 
 ## Heartbeat Protocol
 

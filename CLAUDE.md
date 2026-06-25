@@ -64,7 +64,7 @@ This repository dogfoods the generated Harness scaffold. Scaffold source files l
 - **Tool reflection trigger**: record a lightweight reflection when the same tool/use pattern fails 3+ times, or when a better command pattern/environment fix is found. Write it newest-first in `Harness/memory/tool-usage-reflections.md`.
 - **User correction trigger**: record a lightweight preference/correction when the user asks to remember it, or when the user corrects the same assumption/pattern 2+ times. Write it newest-first in `Harness/memory/user-corrections-preferences.md`.
 - **Agent lesson trigger**: record reusable lessons from review/debug loops in `Harness/memory/agent-lessons-patterns.md` when they would prevent recurrence.
-- **WF auto-trigger**: when the same failure class happens 3+ times in a WF recovery loop, dispatch `memory-master` to record the failure pattern to `Harness/memory/agent-lessons-patterns.md` before asking the user.
+- **WF auto-trigger**: before WF closeout, dispatch `context-master` then `memory-master` (or use `/wf-learn`). The old "3x same failure" auto-trigger is unreliable — make this a mandatory closeout gate.
 - **Context threshold trigger**: when context approaches ~85% of the window, dispatch `context-master` to analyze and write a non-blocking compression suggestion to `Harness/tasks/<task-id>/PROGRESS.md#Heartbeat`.
 - **Closeout trigger**: during WF closeout, dispatch `context-master` to extract durable knowledge, then `memory-master` to consolidate into `Harness/memory/*`.
 - Never record secrets, credentials, tokens, or private data in memory.

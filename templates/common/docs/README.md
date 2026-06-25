@@ -51,7 +51,7 @@ Keywords are retrieval hints, not project facts.
 
 Load the matching row only. Add adjacent docs only when the loaded doc directly names them.
 
-Routing priority: if a request explicitly says `/wf <task>`, `/wf-max [task]`, `wf mode`, `workflow mode`, or `wk mode`, or is long, difficult, uncertain, repeated-failure, migration, architecture-heavy, browser-visible, or broad multi-agent implementation work, choose the WF row first. `wf-mode` MUST then delegate subagent coordination to `subagent-orchestrator`.
+Routing priority: if a request explicitly says `/wf <task>`, `/wf-max [task]`, `/wf-learn`, `wf mode`, `workflow mode`, or `wk mode`, or is long, difficult, uncertain, repeated-failure, migration, architecture-heavy, browser-visible, or broad multi-agent implementation work, choose the WF row first. `wf-mode` MUST then delegate subagent coordination to `subagent-orchestrator`.
 
 | When to Read | Keywords | Load | Output |
 | --- | --- | --- | --- |
