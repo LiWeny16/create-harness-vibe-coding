@@ -1,17 +1,16 @@
 # CLAUDE.md
 
-Root entry for Claude Code. Keep this file short.
+This repository dogfoods the generated Harness scaffold. Scaffold source files live under `templates/common/` and `templates/optional/`; generated dogfood runtime files live under root `Harness/` and `.claude/`.
 
 ## 1. Harness Binding & Startup
 
 - If `Harness/` exists, this repository is governed by the Harness contract. Treat these files as mandatory operating instructions, not optional references.
 - Every session: load `Harness/MEMORY.md` first, then `Harness/README.md`.
-- If `Harness/SETUP.md` exists, follow it before normal project work; it is the install/bootstrap contract and may be deleted after setup is complete.
 - `Harness/MEMORY.md` is the memory/resource router: agents, skills, durable memories, and cross-session lessons. Follow its registrations when selecting agents/skills or recording memory.
 - `Harness/README.md` is the task router. For every request, check `Harness/README.md#Load By Task`; if a row matches, read and follow those docs before acting.
 - `Harness/PROGRESS.md` is the global task index. Load at session start to see active task and task history.
 - If work spans more than one step, create a task capsule from `Harness/tasks/_template/` and update `Harness/tasks/<task-id>/PROGRESS.md`.
-- Use `/wf <task>`, `/wf-max [task]`, `/wf-learn`, `/wf-review [focus]`, `wf mode`, `wf max`, `workflow mode`, `wk mode`, `Harness/WF.md`, or `Harness/WF-MAX.md` for long, difficult, uncertain, multi-file, or repeated-failure work.
+- Use `/wf <task>`, `/wf-review [focus]`, `wf mode`, `workflow mode`, or `wk mode` for long, difficult, uncertain, multi-file, or repeated-failure work.
 - Use `subagent-orchestrator` and `Harness/subagents.md` when coordinating multiple subagents.
 - Use `/wf update` to check for and apply scaffold updates from GitHub. See `.claude/skills/wf-update/SKILL.md`.
 - Subagents are readers and reporters. Only the main agent writes to `Harness/tasks/<task-id>/PROGRESS.md` and `Harness/tasks/<task-id>/PLAN.md`.
@@ -19,6 +18,7 @@ Root entry for Claude Code. Keep this file short.
 - For context analysis and compression alerts (~85% window), dispatch `context-master`.
 - Universal rules live in `.claude/rules/ecc/common.md`.
 - Never bulk-read `Harness/`; route through `Harness/README.md` and `Harness/MEMORY.md`.
+- Scaffold source files live under `templates/common/` and `templates/optional/`; generated dogfood runtime files live under root `Harness/` and `.claude/`.
 
 ## 2. Think Before Coding
 
@@ -67,10 +67,10 @@ Root entry for Claude Code. Keep this file short.
 - **WF auto-trigger**: before WF closeout, dispatch `context-master` then `memory-master` (or use `/wf-learn`). The old "3x same failure" auto-trigger is unreliable — make this a mandatory closeout gate.
 - **Context threshold trigger**: when context approaches ~85% of the window, dispatch `context-master` to analyze and write a non-blocking compression suggestion to `Harness/tasks/<task-id>/PROGRESS.md#Heartbeat`.
 - **Closeout trigger**: during WF closeout, dispatch `context-master` to extract durable knowledge, then `memory-master` to consolidate into `Harness/memory/*`.
-- Never record secrets, credentials, tokens, or private data.
+- Never record secrets, credentials, tokens, or private data in memory.
 
 ## 7. CEO Constraints
 
 - Never call `EnterPlanMode` — delegate planning to `planner` subagents (see `Harness/WF.md`).
 - Never write code directly in `/wf` or `/wf-max` mode — delegate all implementation to subagents (see `Harness/WF-MAX.md`).
-- **Enforcement**: `.claude/settings.json` hooks prevent `EnterPlanMode` calls. Settings include `allowTools: ["!EnterPlanMode"]` for the main session.
+- **Enforcement**: `.claude/settings.json` denies `EnterPlanMode` via the `deny` list. No hooks or `allowTools` needed — the tool is blocked at the permission layer.
