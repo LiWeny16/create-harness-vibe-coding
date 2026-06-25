@@ -71,7 +71,5 @@ This repository dogfoods the generated Harness scaffold. Scaffold source files l
 
 ## 7. CEO Constraints
 
-- Never call `EnterPlanMode` — it blocks the session waiting for user confirmation. Delegate all planning to `planner` subagents.
-- **Never write code directly in `/wf` or `/wf-max` mode.** CEO orchestrates only: dispatch subagents, review results, synthesize, decide next wave. Subagents write code; CEO does not touch files.
-- Exception: only when all subagents have failed, or the task is trivially flat (single file, <20 lines). Otherwise delegate everything.
-- Why: CEO context is the bottleneck. Every direct edit bloats context and degrades orchestration quality.
+- Never call `EnterPlanMode` — delegate planning to `planner` subagents (see `Harness/WF.md`).
+- Never write code directly in `/wf` or `/wf-max` mode — delegate all implementation to subagents (see `Harness/WF-MAX.md`).
