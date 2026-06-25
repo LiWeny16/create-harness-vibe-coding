@@ -2,6 +2,13 @@
 
 Enter maximum-parallelism workflow mode with an optional task description. Splits tasks into minimal non-conflicting units and dispatches as many subagents as possible in parallel waves.
 
+## CEO Exploration Constraint (READ THIS FIRST)
+
+**You are the CEO. Your job is to ask questions, not read files.** During exploration:
+- **DO NOT deep-read source files.** The point of max-parallelism is fan-out — every file you read in detail is a lost parallel opportunity. You MAY do one lightweight `ls`/`tree`/`glob` pass to estimate scope (directory count, file list) for dispatch sizing, but STOP after scoping.
+- **Spawn 5-10 read-only subagents in ONE message.** Default to `sonnet` — exploration needs real understanding. Use `haiku` only for shallow directory scans. Use `opus` if the user asks.
+- **You may only read:** `Harness/` docs, `CLAUDE.md`, directory listings for scoping, and subagent returns. Nothing else until the write-set is declared.
+
 ## Required
 
 - Load `wf-max` skill.

@@ -19,7 +19,7 @@ For the full phase contract, load [lifecycle.md](lifecycle.md).
 - project files are the only durable communication channel; chat/subagent transcript state is non-authoritative.
 - Important assumptions, decisions, blockers, evidence, and handoffs must be written to the current task's `tasks/<id>/PROGRESS.md` and `tasks/<id>/PLAN.md`, the current feature doc, `Harness/MEMORY.md`, or `Harness/memory/*` as appropriate.
 - Build commands, git conventions, and release notes belong in root `README.md`, not `CLAUDE.md`.
-- README rewrites are optional project-doc work. Use `readme-optimizer` and preserve existing public docs unless the user approves a broader restructure.
+- README rewrites are optional project-doc work. Use `wf-readme` and preserve existing public docs unless the user approves a broader restructure.
 - Code architecture belongs in [architecture.md](architecture.md) or the current feature doc, not `CLAUDE.md`.
 - Core rules live in `CLAUDE.md` and `.claude/rules/ecc/common.md`.
 - WF mode rules live in [WF.md](WF.md).
@@ -51,7 +51,7 @@ Keywords are retrieval hints, not project facts.
 
 Load the matching row only. Add adjacent docs only when the loaded doc directly names them.
 
-Routing priority: if a request explicitly says `/wf <task>`, `wf mode`, `workflow mode`, or `wk mode`, or is long, difficult, uncertain, repeated-failure, migration, architecture-heavy, browser-visible, or broad multi-agent implementation work, choose the WF row first. `wf-mode` MUST then delegate subagent coordination to `subagent-orchestrator`.
+Routing priority: if a request explicitly says `/wf <task>`, `wf mode`, `workflow mode`, or `wk mode`, or is long, difficult, uncertain, repeated-failure, migration, architecture-heavy, browser-visible, or broad multi-agent implementation work, choose the WF row first. Load `Harness/WF.md` directly, then delegate subagent coordination to `subagent-orchestrator`.
 
 | When to Read | Keywords | Load | Output |
 | --- | --- | --- | --- |
@@ -62,7 +62,7 @@ Routing priority: if a request explicitly says `/wf <task>`, `wf mode`, `workflo
 | Need WF mode | wf, /wf, wf mode, workflow mode, wk mode, long task, difficult, stuck, repeated failure | [WF.md](WF.md), [PROGRESS.md](PROGRESS.md), the current task `tasks/<id>/PROGRESS.md` and `tasks/<id>/PLAN.md` | exploration plan, second plan, heartbeat, recovery loop; explicit WF/WK loads subagent docs immediately |
 | Need peer review | /wf-review, peer review, second opinion, cross-check, stuck | `.claude/skills/wf-review/SKILL.md`, `Harness/README.md` | cross-model review via other CLI (Codex/Claude) |
 | Adding harness to existing project | existing project, onboarding, migrate, bootstrap, preserve, conflict | [extension.md](extension.md), [PROGRESS.md](PROGRESS.md), root `README.md` and package/CI files | discovered project facts, preserved config, manual registration plan |
-| README optimization | README, docs, quickstart, install docs, architecture diagram, command table, documentation polish | root `README.md`, `.claude/skills/readme-optimizer/SKILL.md`, [PROGRESS.md](PROGRESS.md), [architecture.md](architecture.md) as needed | approved README mode, preserved sections, proposed diff plan |
+| README optimization | README, docs, quickstart, install docs, architecture diagram, command table, documentation polish | root `README.md`, `.claude/skills/wf-readme/SKILL.md`, [PROGRESS.md](PROGRESS.md), [architecture.md](architecture.md) as needed | approved README mode, preserved sections, proposed diff plan |
 | Need implementation plan | plan, task, write set, verify, milestone, progress | [PROGRESS.md](PROGRESS.md), the current task `tasks/<id>/PROGRESS.md` and `tasks/<id>/PLAN.md`, [agent-workflow.md](agent-workflow.md) | tasks, write set, verification commands |
 | Browser E2E testing or automation | /wf-browser, browser, e2e, web automation, form fill, screenshot verify, page test, browser test, Playwright AI, Browser Use | [workflows/browser-e2e.md](workflows/browser-e2e.md), `.claude/skills/wf-browser/SKILL.md`, `~/.claude/skills/browser-use/SKILL.md` | CLI commands, screenshots, agent history, verification pass/fail evidence |
 | Optional workflow installed | workflow, optional, ui-ux-review, github-pr-review, python-backend, ts-react-frontend | matching `workflows/*.md` (if installed), [extension.md](extension.md) | workflow-specific evidence, commands, fallback path |
@@ -123,8 +123,8 @@ Harness/memory/agent-lessons-patterns.md reusable review/debug lessons
 Harness/scripts/validate-harness.mjs lightweight harness gate
 .claude/agents/*                   built-in common agents
 .claude/skills/*                   skill-style dynamic loaders
-.claude/skills/readme-optimizer/SKILL.md README preservation and optional structure pass
-.claude/commands/wf.md             slash command bridge into wf-mode
+.claude/skills/wf-readme/SKILL.md README preservation and optional structure pass
+.claude/commands/wf.md             slash command bridge into WF mode
 .claude/skills/wf-update/SKILL.md   GitHub-based harness update
 .claude/commands/update.md           /wf update slash command bridge
 Harness/.harness-version             scaffold version and file checksums

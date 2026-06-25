@@ -64,7 +64,7 @@ When the user installs by pasting the GitHub link into an agent, ask intake ques
 | Root agent entry | `CLAUDE.md`, `AGENTS.md`, `.claude/`, or other agent entry files already exist | Preserve files; ask before merging the Harness entry contract |
 | Harness location | `docs/` is already used for GitHub Pages, product docs, or generated docs | Use root `Harness/`; do not write harness docs into `docs/` |
 | README ownership | root `README.md` is a public product page, package docs, or heavily customized | Preserve existing README and propose a minimal Development section |
-| README optimization | existing README is stale, sparse, missing command tables, or the user asks for diagrams/polished docs | Offer `readme-optimizer`; default to append-only Development notes until the user approves a structure pass or full rewrite |
+| README optimization | existing README is stale, sparse, missing command tables, or the user asks for diagrams/polished docs | Offer `wf-readme`; default to append-only Development notes until the user approves a structure pass or full rewrite |
 | Extensions | ECC, Superpowers, custom rules, or stack-specific skills may be useful | Recommend first; install only after user approval |
 | Skills | stack is known and optional skills could improve testing, frontend, backend, review, or browser evidence | Install 1-2 relevant skills only after user approval |
 | CI/CD | CI config exists or the project lacks a test/build gate | Document existing commands first; add CI/CD only after user approval |
@@ -112,15 +112,15 @@ The harness validator checks for specific structural invariants. When comparing 
 |------|----------------|
 | `CLAUDE.md` | Must be merged only after user confirmation when it already exists. Required contract: `## 1. Harness Binding & Startup` with the `Harness/SETUP.md` bootstrap contract line; `## 6. Memory & Self-Learning` section; the tool reflection trigger text (`same tool/use pattern fails 3+ times`); the user correction trigger text (`user corrects the same assumption/pattern 2+ times`); `Never bulk-read Harness/` in Startup |
 | `AGENTS.md` | Root agent entry points to `CLAUDE.md` and `Harness/README.md`; for existing projects, merge only after explicit user consent |
-| `README.md` | Existing README is project-owned. Preserve by default; ask whether to append only Development notes or run `readme-optimizer` for a structure pass with tables/diagrams before broad edits |
+| `README.md` | Existing README is project-owned. Preserve by default; ask whether to append only Development notes or run `wf-readme` for a structure pass with tables/diagrams before broad edits |
 | `Harness/MEMORY.md` | All 9 common agents registered under `## Agents`; all common harness skills registered under `## Skills`; all 3 `Harness/memory/` files registered under `## Memory Folder`; `Harness/memory/` folder usage guidance; `Project Resource Index` in title |
 | `.claude/rules/ecc/common.md` | `## Context` section with the durable communication invariant (`project files are the only durable communication channel`); `## Memory` section with three reflection file entries; `## Security` section |
 | `Harness/README.md` | `## Keyword Routing` heading; `## Load By Task` table with at minimum the rows: "Need WF mode", "Adding harness to existing project", "Need implementation plan", "Need parallel agents", "Need subagents", "Need durable memory or reflection"; WF routing keywords include `/wf`, `wf mode`, `workflow mode`, and `wk mode`; explicit WF/WK output says subagent docs load immediately; `## Doc Map` with `memory/` and `subagents.md` entries; the durable communication invariant text; `Harness/README.md is the primary router` |
-| `Harness/WF.md` | `WF mode requires multi-subagent orchestration by default`; explicit `/wf`, `wf mode`, `workflow mode`, or `wk mode` requires at least 3 distinct `.claude/agents/` subagents before second planning; `7:3 collaboration bias`; `Heartbeat Protocol` |
+| `Harness/WF.md` | `WF mode requires multi-subagent orchestration by default`; explicit `/wf`, `wf mode`, `workflow mode`, or `wk mode` requires at least 3 distinct `.claude/agents/` subagents before second planning; `collaboration decision tree`; `Heartbeat Protocol` |
 | `Harness/extension.md` | `## Non-Invasive Extension Rules` section with the "Preserve existing" rule; `## Agent Contract` section; `## Registration` section |
 | `Harness/dispatch.md` | The durable communication invariant; common agent entries for all 9 agents; `## Handoff Format` heading |
 | `Harness/context-loading.md` | The durable communication invariant; `Harness/README.md is the primary router`; all 10 subagent context packs (Explorer Pass, Planner, Researcher, Docs Researcher, Architect, Test Writer, Implementer, Reviewer, Debugger, Verifier) |
-| `Harness/subagents.md` | `## Source Attribution`; `## Built-in Agent Roster`; `## WF Default Fan-Out`; `Controller Role`; `Efficiency Ladder`; `Review Gates`; `7:3 collaboration bias`; source markers for `npx skills find`, `dispatching-parallel-agents`, and `subagent-driven-development` |
+| `Harness/subagents.md` | `## Source Attribution`; `## Built-in Agent Roster`; `## WF Default Fan-Out`; `Controller Role`; `Efficiency Ladder`; `Review Gates`; `collaboration decision tree`; source markers for `npx skills find`, `dispatching-parallel-agents`, and `subagent-driven-development` |
 | `Harness/architecture.md` | `## 2. Interface Decoupling`; `## 3. State Design`; `Avoid speculative abstraction`; layer constraints derived from actual project facts |
 | `Harness/PROGRESS.md` | global task index with Active Task and task history; cross-task decisions |
 | `Harness/tasks/<id>/PROGRESS.md` | `## Current Goal`, `## Phase`, `## Heartbeat`, `## Loaded Context` headings |
@@ -133,7 +133,7 @@ The harness validator checks for specific structural invariants. When comparing 
 
 - `Harness/memory/tool-usage-reflections.md`, `Harness/memory/user-corrections-preferences.md`, `Harness/memory/agent-lessons-patterns.md` — these are new empty files
 - `.claude/agents/*.md` — all 9 common agents
-- `.claude/skills/harness-*/SKILL.md`, `.claude/skills/wf-mode/SKILL.md`, `.claude/skills/wf-update/SKILL.md`, and `.claude/skills/subagent-orchestrator/SKILL.md` — core harness skills, WF mode, and subagent orchestration
+- `.claude/skills/harness-*/SKILL.md`, `.claude/skills/wf-update/SKILL.md`, and `.claude/skills/subagent-orchestrator/SKILL.md` — core harness skills and subagent orchestration
 - `.claude/commands/update.md` — /wf update command bridge
 - `.claude/rules/ecc/common.md` — universal rules (unless the project has custom rules in this file)
 - `.claude/settings.json` — harness settings

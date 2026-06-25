@@ -123,4 +123,4 @@ CLI args / prompts
 
 - Interactive confirmation currently happens before full conflict-plan display in interactive mode.
 - Some README tests assert exact prose and can be made more structural.
-- `wf-mode` and `subagent-orchestrator` routing priority should continue to be tightened in templates.
+- `subagent-orchestrator` routing priority should continue to be tightened in templates.

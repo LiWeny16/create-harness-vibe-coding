@@ -72,7 +72,7 @@ Then add phase-specific agents:
 - `context-master` before closeout for knowledge extraction
 - `memory-master` after repeated failures and during closeout for consolidation
 
-The default decision ratio is a 7:3 collaboration bias: choose multi-agent collaboration for substantial or uncertain work about 70% of the time; choose solo mode only for clearly local, low-risk work that is not explicitly in WF/WK mode.
+Collaboration mode is determined by concrete conditions, not a fixed ratio. See `Harness/WF.md#Multi-Subagent Requirement` for the full decision tree. Summary: explicit WF/WK mode → always multi-agent. 3+ files or cross-layer → multi-agent. 1-2 local files, well-understood, not in WF mode → solo acceptable. Repeated failure → stop solo, switch to multi-agent.
 
 ## Efficiency Ladder
 

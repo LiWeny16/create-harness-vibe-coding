@@ -3,93 +3,52 @@ name: wf-max
 description: Use for /wf max or maximum parallelism. Three-tier CEO→Manager→Worker hierarchy with recursive depth, per-domain span caps, and leaf-condition stop rules.
 ---
 
-# WF Max
+# WF Max — Maximum Parallelism
 
-CEO → Managers → Workers. Scale to 1000 agents via recursive depth. Full spec: `Harness/WF-MAX.md`.
+## Load (authoritative specs)
 
-## Load
-
-- `Harness/WF-MAX.md` — organization model, span formula, wave orchestration
-- `Harness/subagents.md` — agent roster, controller role
+- `Harness/WF-MAX.md` — full spec: organization model, gates, span formula, anti-patterns, wave orchestration
+- `Harness/subagents.md` — agent roster, controller role, efficiency ladder
 - `Harness/dispatch.md` — File claim, Concurrency group handoff fields
-- `Harness/agent-workflow.md` — cohesion rule (feature doc < Worker granularity)
+- `Harness/agent-workflow.md` — cohesion rule, completion gate
 
-## Organization
+## Trigger & When NOT to Use
 
-```
-CEO(1) → Managers(span) → Workers(leaf) or Sub-Managers(depth≥3)
-```
+- **Trigger**: `/wf-max [task]`, or auto when write-set ≥5 files AND clear disjoint boundaries (parallelismScore ≥2.0)
+- **Degrade to /wf**: files <5, all changes share single interface (serial dependency), import/re-export refactor (global consistency needed), overhead >0.30
+- **Leaf conditions** (stop splitting): files ≤ span×2, avgLines <50, overhead >0.30
 
-- CEO: intent, scope, integration, final verification.
-- Manager: domain partition → parallel dispatch → synthesize → report.
-- Worker: single file (write) or single dimension (read). File claims must be file-level disjoint.
-- depth≥3: Manager spawns Sub-Manager (span≤7). No mixed Worker+Sub-Manager in same wave.
+## Hard Constraints
 
-## Span Formula
+1. **CEO never writes production code.** CEO uses Task, Read, TodoWrite, Grep/Glob. No Edit/Write/Bash on source files. Exception: CEO MAY write to `Harness/tasks/<id>/PLAN.md` and `Harness/tasks/<id>/PROGRESS.md` (task artifacts, not production code).
+2. **E-GATE → D-GATE → W2.** Exploration Gate after W0 (all questions answered). Write Decomposition Gate after W1 architecture defines the write-set (Dispatch Table mandatory). Full spec in WF-MAX.md.
+3. **Single-message dispatch.** ALL parallel Workers for a wave MUST be spawned in ONE message. Sequential one-per-turn spawning defeats parallelism.
+4. **Worker rule**: one write file per Worker (anti-bundling). **Manager rule**: Manager count ≥ ceil(sqrt(write_files) / 3) (anti-under-decomposition at domain level). Each Manager: 2-7 Workers.
+5. **Manager MUST spawn ≥2 Workers or dissolve.** 0-1 Workers = Phantom Manager (AP5).
+6. **Overhead > 0.30 → degrade to /wf.** Record the decision in PLAN.md.
 
-```
-span = min(ceil(sqrt(files)), domain_cap)
-  Architecture:   3
-  Implementation: 5-7
-  Review:         7-10
-  Research:       10-12
-```
-
-## Total Agents
-
-```
-total(depth, span) = Σ span^L for L=0..depth
-```
-
-No hard cap. Governed by leaf condition + overhead filter.
-
-## Leaf Condition
-
-```
-stop if: files ≤ span×2 | avgLines < 50 | overhead > 0.30
-```
-
-Overhead threshold: `overhead > 0.30 → degrade to /wf`
-
-## Manager Types (4)
-
-| Type | Span | Workers |
-|------|------|---------|
-| Explore-Mgr | 5-10 | researcher₁..ₙ, domain-explorer₁..ₙ |
-| Architect-Mgr | 3 | boundary-researcher, interface-designer, data-flow-mapper |
-| Implement-Mgr | 5-7 | implementer₁..ₙ (1 file_claim/Worker) |
-| Review-Mgr | 3-4 | reviewer-spec, reviewer-code, reviewer-security |
-
-## Manager Synthesis
+## Manager Synthesis (retry/escalation)
 
 ```
 1. COLLECT → 2. DEDUPLICATE → 3. CONFLICT (flag, no silent resolve) → 4. SYNTHESIZE → 5. REPORT
 ```
-Worker failure: retry 1× → absorb or escalate to CEO.
+Worker failure: retry 1× → on 2nd failure, Manager absorbs or escalates to CEO for replan.
 
-## Wave Orchestration
+## Wave Order
 
 ```
-W0: Explore-Mgr → N parallel → synthesize → CEO
-W1: Architect-Mgr → 3 parallel → boundary contract → CEO approval
-W2: Implement-Mgr → write-set coloring → wave dispatch: N parallel → merge → CEO
-W2R: Review-Mgr → 3-4 parallel → dedupe+severity → CEO assigns fixes
-W3+: Dependent waves (repeat W2)
-CLOSEOUT: CEO → context-master + memory-master (direct)
+W0 (Explore) → E-GATE → W1 (Architecture) → D-GATE → W2 (Implement, single-message) → W2R (Review) → W3+ (dependent waves) → INTEGRATION → CLOSEOUT
 ```
 
-## When NOT to Use
+## Anti-Pattern Quick Check (before every wave)
 
-- files <5 → /wf
-- all changes share single interface → serial
-- overhead > 30% → degrade
+CEO-as-Worker? Under-decomposition (too few Managers)? Serial spawn? Fake parallelism? Phantom Manager? Silent degrade? → If any match, stop and re-decompose. Full catalog in WF-MAX.md.
 
-## /wf vs /wf-max
+## Return Format
 
-| | /wf | /wf-max |
-|---|-----|------|
-| Organization | flat | CEO→Mgr→Worker (3-tier) |
-| Span formula | none | sqrt(files) + domain cap |
-| Recursive depth | 0 | 1-3 (scales to 1000) |
-| Granularity floor | none | <50 lines no split |
-| Context threshold | ~85% | ~70% |
+- Dispatch Table (every wave)
+- Worker returns (raw, per wave)
+- Manager synthesis reports
+- CEO integration decisions
+- Verification evidence
+- Agent count used vs minimum required (Manager_min audit)

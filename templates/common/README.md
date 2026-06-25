@@ -27,7 +27,7 @@ Replace the examples with the real commands discovered from this project. If a c
 - Keep branch, commit, pull request, CI, and release conventions in this README.
 - Do not place build scripts, git policy, or project maintenance instructions in `CLAUDE.md`.
 - Keep code architecture notes in `Harness/architecture.md` or feature docs.
-- For README improvements, use `.claude/skills/readme-optimizer/SKILL.md`; preserve public docs unless a rewrite is approved.
+- For README improvements, use `.claude/skills/wf-readme/SKILL.md`; preserve public docs unless a rewrite is approved.
 
 ## Harness
 

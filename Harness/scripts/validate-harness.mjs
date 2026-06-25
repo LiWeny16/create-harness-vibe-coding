@@ -30,16 +30,12 @@ const commonAgents = [
 ];
 
 const commonSkills = [
-  'harness-router',
-  'harness-lifecycle',
-  'harness-research',
-  'harness-context',
-  'harness-build-loop',
-  'wf-mode',
   'wf-update',
   'wf-max',
+  'wf-review',
+  'wf-learn',
   'subagent-orchestrator',
-  'readme-optimizer',
+  'wf-readme',
 ];
 
 const memoryFiles = [
@@ -75,7 +71,7 @@ const required = [
   'Harness/research/research-results.md',
   'Harness/research/PRD.md',
   '.claude/skills/wf-update/SKILL.md',
-  '.claude/commands/update.md',
+  '.claude/commands/wf-update.md',
   'Harness/.harness-version',
 ];
 
@@ -270,9 +266,7 @@ if (progress) {
   }
 }
 
-// Legacy PLAN.md deprecation check (it exists as stub, no longer requires active task headings)
-  }
-}
+// Legacy PLAN.md deprecation check (removed — stub only)
 
 const dispatch = read('Harness/dispatch.md');
 if (dispatch) {
@@ -371,7 +365,7 @@ for (const agent of commonAgents) {
   const text = read(rel);
   if (!text) continue;
 
-  for (const field of ['name', 'description', 'tools', 'model', 'skills']) {
+  for (const field of ['name', 'description', 'tools', 'model']) {
     if (!frontmatterField(text, field)) errors.push(`${rel} missing frontmatter field: ${field}:`);
   }
 
@@ -397,28 +391,24 @@ requireText('Harness/WF.md', 'Heartbeat Protocol', 'heartbeat protocol');
 requireText('Harness/WF.md', 'WF mode requires multi-subagent orchestration by default', 'WF multi-subagent default');
 requireText('Harness/WF.md', 'Explicit `/wf`, `wf mode`, `workflow mode`, or `wk mode` MUST spawn at least 3 distinct subagents', 'explicit WF/WK subagent minimum');
 requireText('Harness/WF.md', '.claude/agents/', 'WF built-in agent roster path');
-requireText('Harness/WF.md', '7:3 collaboration bias', 'WF collaboration bias');
+requireText('Harness/WF.md', 'Collaboration decision tree', 'WF decision tree');
 requireText('Harness/WF.md', 'Harness/tasks/', 'WF task directory reference');
 requireText('Harness/README.md', '`wf mode`, `workflow mode`, or `wk mode`', 'WF/WK router aliases');
 requireText('Harness/README.md', 'explicit WF/WK loads subagent docs immediately', 'explicit WF/WK router output');
-requireText('.claude/skills/harness-router/SKILL.md', '`/wf`, `wf mode`, `workflow mode`, `wk mode`', 'harness-router WF/WK aliases');
-requireText('.claude/skills/wf-mode/SKILL.md', 'Harness/WF.md', 'wf-mode loads WF document');
-requireText('.claude/skills/wf-mode/SKILL.md', 'Harness/subagents.md', 'wf-mode loads subagent orchestration');
-requireText('.claude/skills/wf-mode/SKILL.md', 'wk mode', 'wf-mode wk alias');
-requireText('.claude/skills/wf-mode/SKILL.md', 'spawn at least 3 distinct subagents from `.claude/agents/`', 'wf-mode subagent minimum');
+// harness-* wrapper skills removed — routing table in README.md is the single source
+// wf-mode skill removed — WF rules now live directly in Harness/WF.md and .claude/commands/wf.md
 requireText('.claude/skills/subagent-orchestrator/SKILL.md', 'Harness/subagents.md', 'subagent-orchestrator loads subagents doc');
 requireText('.claude/skills/subagent-orchestrator/SKILL.md', '.claude/agents/', 'subagent-orchestrator built-in agent roster path');
 requireText('.claude/skills/subagent-orchestrator/SKILL.md', '`workflow mode`, `wk mode`', 'subagent-orchestrator WF/WK aliases');
-requireText('.claude/skills/harness-context/SKILL.md', 'Harness/subagents.md', 'harness-context loads subagents doc');
-requireText('.claude/skills/readme-optimizer/SKILL.md', 'README.md', 'readme-optimizer loads README');
-requireText('.claude/skills/readme-optimizer/SKILL.md', 'Harness/architecture.md', 'readme-optimizer links architecture docs');
+requireText('.claude/skills/wf-readme/SKILL.md', 'README.md', 'wf-readme loads README');
+requireText('.claude/skills/wf-readme/SKILL.md', 'Harness/architecture.md', 'wf-readme links architecture docs');
 requireText('Harness/subagents.md', '## Source Attribution', 'subagent source attribution');
 requireText('Harness/subagents.md', 'npx skills find', 'find-skills discovery attribution');
 requireText('Harness/subagents.md', 'superpowers:dispatching-parallel-agents', 'parallel-agent source attribution');
 requireText('Harness/subagents.md', 'superpowers:subagent-driven-development', 'subagent-driven source attribution');
 requireText('Harness/subagents.md', '## Built-in Agent Roster', 'built-in agent roster');
 requireText('Harness/subagents.md', '## WF Default Fan-Out', 'WF default fan-out');
-requireText('Harness/subagents.md', '7:3 collaboration bias', 'subagent collaboration bias');
+requireText('Harness/subagents.md', 'concrete conditions', 'subagent decision tree');
 requireText('Harness/subagents.md', 'parallel planner/researcher/docs-researcher/architect subagents', 'WF roster orchestration shape');
 requireText('Harness/subagents.md', '## Efficiency Ladder', 'subagent efficiency ladder');
 requireText('Harness/subagents.md', '## Review Gates', 'subagent review gates');
@@ -426,7 +416,7 @@ requireText('Harness/architecture.md', '## 2. Interface Decoupling', 'architectu
 requireText('Harness/architecture.md', '## 3. State Design', 'architecture state design');
 requireText('Harness/architecture.md', 'Avoid speculative abstraction', 'anti-overengineering architecture rule');
 requireText('CLAUDE.md', 'Use explicit interfaces or state models only when they protect a real boundary', 'CLAUDE interface/state simplicity rule');
-requireText('CLAUDE.md', '/wf update', 'wf update startup instruction');
+requireText('CLAUDE.md', '/wf-update', 'wf update startup instruction');
 requireText('Harness/README.md', 'Need harness update', 'update routing row');
 requireText('Harness/WF-MAX.md', 'write-set coloring', 'WF-MAX coloring algorithm');
 requireText('Harness/WF-MAX.md', 'wave dispatch', 'WF-MAX wave dispatch');

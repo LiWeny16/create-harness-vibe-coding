@@ -19,6 +19,7 @@ Load:
 Follow:
 
 - The main agent is the controller. It decomposes work, writes `Harness/tasks/<task-id>/PROGRESS.md` and `Harness/tasks/<task-id>/PLAN.md`, integrates returns, and owns final verification.
+- **CEO Exploration Rule**: The controller MUST NOT read source files during exploration. Delegate ALL codebase reading to subagents. Default model is `sonnet` — exploration requires real code understanding. Use `haiku` only for shallow scans (directory listing, file counts). Use `opus` if the user requests. The CEO's instinct to "just check one file" is the #1 cause of failed parallelism. CEO reads only `Harness/` docs, `CLAUDE.md`, and subagent returns until the plan is written.
 - Use the efficiency ladder in `Harness/subagents.md`: solo pass -> single reviewer -> parallel read-only -> serial build lane -> isolated lanes.
 - Explicit WF/WK mode requires at least 3 distinct agents from `.claude/agents/` before second planning.
 - Prefer the built-in roles `planner`, `researcher`, `docs-researcher`, `architect`, `test-writer`, `implementer`, `reviewer`, `debugger`, and `verifier` before inventing custom roles.
@@ -27,7 +28,7 @@ Follow:
 - Use two review gates after implementation: spec review first, then code-quality or architecture review.
 - If verification fails, dispatch debugger/fixer with the smallest reproduced failure, then re-review and re-verify.
 - If subagents are unavailable, emulate the same roles as separate bounded passes and record that fallback.
-- When used outside `wf-mode`, update `Harness/tasks/<task-id>/PLAN.md#Subagent Dispatch`; update `Harness/tasks/<task-id>/PROGRESS.md#Heartbeat` only if an active heartbeat/recovery loop exists.
+- When used outside WF mode, update `Harness/tasks/<task-id>/PLAN.md#Subagent Dispatch`; update `Harness/tasks/<task-id>/PROGRESS.md#Heartbeat` only if an active heartbeat/recovery loop exists.
 
 Return:
 

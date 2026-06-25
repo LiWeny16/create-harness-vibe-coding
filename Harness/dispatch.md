@@ -11,7 +11,7 @@ Use when work needs parallel reading, independent review, cross-layer analysis, 
 - Main agent owns the final decision, integration, and verification.
 - project files are the only durable communication channel; chat/subagent transcript state is non-authoritative.
 - Important assumptions, decisions, blockers, evidence, and handoffs must be written to `Harness/tasks/<task-id>/PROGRESS.md` and `Harness/tasks/<task-id>/PLAN.md`, the current feature doc, `Harness/MEMORY.md`, or `Harness/memory/*` as appropriate.
-- Prefer three or fewer active agents (WF mode overrides this; see [WF.md](WF.md)).
+- Agent count: default (non-WF) ≤3 active agents; `/wf` requires ≥3 distinct subagents from `.claude/agents/` before second plan; `/wf max` removes the cap entirely (governed by span formula in WF-MAX.md). See [WF.md](WF.md) and [WF-MAX.md](WF-MAX.md) for the authoritative rules.
 - Read-only agents may run in parallel.
 - Writing agents run serially unless write sets are disjoint.
 - Use a worktree when two agents may touch overlapping files or long-running branches.

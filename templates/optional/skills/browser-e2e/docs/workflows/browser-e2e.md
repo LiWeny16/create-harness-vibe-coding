@@ -46,7 +46,7 @@ If `browser-use` is not installed, fall back to:
 
 ## Integration Points
 
-- **wf-mode**: references this file at line 16 and 42 of `.claude/skills/wf-mode/SKILL.md`
+- **WF mode**: when browser-visible changes are made, follow the evidence contract in `Harness/WF.md#Browser And API Evidence`
 - **wf-browser**: the `/wf-browser` slash command loads this workflow + the skill via `.claude/commands/wf-browser.md`
 - **MEMORY.md**: registered as optional workflow skill
 - **README.md**: routing table row "Browser E2E testing or automation" → browser-e2e

@@ -3,7 +3,6 @@ name: memory-master
 description: Use when a repeated failure, user correction, or WF recovery loop triggers memory writing; also use during WF closeout for consolidation. Writes to Harness/memory/*, Harness/MEMORY.md, and cross-project global memory.
 tools: Read, Grep, Glob, Write, Edit
 model: sonnet
-skills: harness-context
 ---
 
 # Memory Master

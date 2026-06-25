@@ -68,7 +68,16 @@ Rules:
 
 ## Parallel Dispatch
 
-Use [subagents.md](subagents.md) and [dispatch.md](dispatch.md) for multi-agent work. Default to at most three active agents (WF mode overrides this; see [WF.md](WF.md)). In `/wf max`, the CEO/Manager/Worker hierarchy in [WF-MAX.md](WF-MAX.md) overrides this limit entirely with wave-based parallel dispatch. Prefer parallel read-only work first, then serial writes.
+Use [subagents.md](subagents.md) and [dispatch.md](dispatch.md) for multi-agent work. 
+
+**Agent count by mode:**
+| Mode | Agent Count Rule | Source |
+|------|-----------------|--------|
+| Default (non-WF) | ≤3 active agents (conservative default) | This file |
+| `/wf` | ≥3 distinct subagents before second plan (mandatory minimum) | [WF.md](WF.md) |
+| `/wf max` | No fixed limit; governed by span formula + leaf condition + overhead filter | [WF-MAX.md](WF-MAX.md) |
+
+Prefer parallel read-only work first, then serial writes.
 
 Every dispatched agent returns the handoff format defined in [dispatch.md](dispatch.md).
 

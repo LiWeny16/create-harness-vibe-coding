@@ -20,12 +20,56 @@ Enter WF mode when any of these are true:
 WF mode requires multi-subagent orchestration by default.
 
 - Explicit `/wf`, `wf mode`, `workflow mode`, or `wk mode` MUST spawn at least 3 distinct subagents from `.claude/agents/` before second planning unless the runtime cannot spawn subagents.
-- Use a 7:3 collaboration bias: prefer multi-agent collaboration for long, uncertain, cross-file, cross-layer, browser/API, migration, or repeated-failure work; reserve solo mode for clearly local, low-risk, one-file tasks outside explicit WF/WK mode.
+- Collaboration decision tree (replaces the old "7:3" heuristic — concrete conditions, not a magic number):
+  - **In explicit WF/WK mode** → ALWAYS multi-agent (≥3 subagents before second plan). No exceptions.
+  - **3+ files changed** → multi-agent (at minimum: planner + implementer + reviewer).
+  - **Cross-layer change** (DB + API + UI) → multi-agent with architect + implementer(s) + reviewer.
+  - **Uncertain scope or approach** → multi-agent exploration (planner + researcher + architect).
+  - **1-2 files, well-understood, not in WF mode** → solo is acceptable.
+  - **Repeated failure on same task** → STOP solo, switch to multi-agent.
 - Default initial fan-out: `planner`, `researcher` or `docs-researcher`, and `architect`. Add `test-writer`, `reviewer`, `debugger`, or `verifier` when the phase needs them.
 - Record every dispatch or bounded-pass fallback in `Harness/tasks/<task-id>/PLAN.md#Subagent Dispatch`.
 - If subagents are unavailable, emulate the same roles as separate bounded passes and record why the fallback was used.
 
 For maximum-parallelism mode (write-set coloring, wave dispatch, parallel reviewers), use `/wf-max [task]` and see [WF-MAX.md](WF-MAX.md).
+
+## Decomposition Gate
+
+Before second plan, explicit WF/WK mode MUST pass a lightweight decomposition check. This exists because the model's default instinct is to **do the work itself** rather than dispatch — the gate forces a deliberate decomposition step.
+
+### Exploration Dispatch Table
+
+CEO MUST produce this table in PLAN.md before dispatch:
+
+| Agent | Role | Read-Set | Question to Answer | Return Format |
+|-------|------|----------|-------------------|---------------|
+| planner | planner | src/, Harness/ | What is the architecture and what files are affected? | Structured summary |
+| researcher | researcher | external docs/APIs | What is the current best practice for X? | Cited findings |
+| architect | architect | src/interfaces/ | What boundaries will this change cross? | Boundary map |
+
+### Gate Rules
+
+These are HARD constraints. The CEO must check each before proceeding past exploration:
+
+- [ ] **CEO has NOT read any source files.** CEO only reads `Harness/` docs, `CLAUDE.md`, and subagent returns. This is the #1 rule — if you read source files yourself, you have already failed the gate. **Exception**: if subagents are genuinely unavailable (not just "I'd rather do it myself"), fall back to bounded-pass emulation and record `Fallback: subagents unavailable` in PLAN.md — this is a degraded mode, not a loophole.
+- [ ] ≥3 distinct agent types from `.claude/agents/`
+- [ ] **Exploration agents default to `sonnet`.** Most exploration requires real code understanding — architecture, boundaries, patterns. Use `haiku` ONLY for shallow scans (directory listing, file counting, grep counts). Use `opus` when the user explicitly requests it or the codebase is exceptionally complex. The CEO chooses per-agent based on the question depth.
+- [ ] Each agent has ONE specific question (not "explore everything")
+- [ ] Read sets don't fully overlap without written justification
+- [ ] CEO is NOT in the table as a row (CEO synthesizes, doesn't explore)
+- [ ] All parallel exploration agents spawned in ONE message block (single tool-call batch)
+- [ ] Agent count ≥ max(3, ceil(estimated_dirs / 2)) — estimate from prompt/docs; if subagent returns reveal more dirs, run a second exploration wave
+
+### Anti-Pattern Catalog (self-check before every phase)
+
+| # | Anti-Pattern | Symptom | Fix |
+|---|-------------|---------|-----|
+| AP1 | **Solo default** | No subagents; "I read the files, I know enough" | Dispatch minimum planner+researcher+architect |
+| AP2 | **Fake exploration** | Subagents dispatched but returns not synthesized into PLAN.md | Synthesize findings into PLAN.md before second plan |
+| AP3 | **Skip-to-code** | Intake → implementation without exploration phase | Exploration is non-negotiable in explicit WF mode |
+| AP4 | **Lone implementer** | Single implementer for ≥3 files without interleaved review | Split into parallel implementers or add review between files |
+| AP5 | **Review omitted** | Implementation → closeout without review gate | At least one reviewer before verification |
+| AP6 | **Sequential spawn** | Agents dispatched one-per-turn instead of batched | Batch ALL parallel agent spawns into ONE message |
 
 ## WF Loop
 
@@ -71,6 +115,7 @@ Use `Harness/subagents.md` as the orchestration methodology and `Harness/dispatc
 - The main agent is the controller and owns synthesis, integration, and final verification.
 - Subagents are readers and reporters. Only the main agent writes to task PROGRESS.md and PLAN.md. Subagents return PLAN patch suggestions which the main agent reviews before committing.
 - Parallelize read-only exploration; serialize writers unless write sets are disjoint and isolated.
+- **All parallel subagents MUST be spawned in a SINGLE message block.** Do not dispatch one per turn — batch all Task() calls together. This is the #1 mechanical reason parallelism fails.
 - Every subagent gets a dispatch pack with role, goal, read set, write set, forbidden scope, injected docs, evidence, stop condition, and return format.
 - After implementation, run spec review before code-quality or architecture review.
 - If subagents are unavailable, emulate the same roles as bounded passes and record the fallback.

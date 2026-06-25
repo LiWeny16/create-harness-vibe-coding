@@ -1,5 +1,5 @@
 ---
-name: readme-optimizer
+name: wf-readme
 description: Use when a project README already exists and the user asks to preserve, merge, modernize, optimize, or clarify repository documentation during harness install or documentation work.
 ---
 

@@ -20,8 +20,20 @@ Enter WF mode when any of these are true:
 WF mode requires multi-subagent orchestration by default.
 
 - Explicit `/wf`, `wf mode`, `workflow mode`, or `wk mode` MUST spawn at least 3 distinct subagents from `.claude/agents/` before second planning unless the runtime cannot spawn subagents.
-- Use a 7:3 collaboration bias: prefer multi-agent collaboration for long, uncertain, cross-file, cross-layer, browser/API, migration, or repeated-failure work; reserve solo mode for clearly local, low-risk, one-file tasks outside explicit WF/WK mode.
+- Collaboration decision tree (replaces the old "7:3" heuristic — concrete conditions, not a magic number):
+  - **In explicit WF/WK mode** → ALWAYS multi-agent (≥3 subagents before second plan). No exceptions.
+  - **3+ files changed** → multi-agent (at minimum: planner + implementer + reviewer).
+  - **Cross-layer change** (DB + API + UI) → multi-agent with architect + implementer(s) + reviewer.
+  - **Uncertain scope or approach** → multi-agent exploration (planner + researcher + architect).
+  - **1-2 files, well-understood, not in WF mode** → solo is acceptable.
+  - **Repeated failure on same task** → STOP solo, switch to multi-agent.
 - Default initial fan-out: `planner`, `researcher` or `docs-researcher`, and `architect`. Add `test-writer`, `reviewer`, `debugger`, or `verifier` when the phase needs them.
+- **Exploration Gate (HARD):**
+  - [ ] CEO has NOT read any source files — only `Harness/` docs, `CLAUDE.md`, and subagent returns. This is the #1 rule. **Exception**: if subagents are genuinely unavailable, fall back to bounded-pass emulation and record `Fallback: subagents unavailable` in PLAN.md.
+  - [ ] CEO overrides model per-agent: default `sonnet` for real code understanding; `haiku` only for shallow scans (directory listing, file counts); `opus` if user requests.
+  - [ ] ≥3 distinct agent types, each with ONE specific question.
+  - [ ] All spawned in ONE message block.
+  - [ ] Agent count ≥ max(3, ceil(estimated_dirs / 2)) — estimate from prompt/docs; run a second wave if returns reveal more.
 - Record every dispatch or bounded-pass fallback in `Harness/tasks/<task-id>/PLAN.md#Subagent Dispatch`.
 - If subagents are unavailable, emulate the same roles as separate bounded passes and record why the fallback was used.
 

@@ -3,7 +3,6 @@ name: verifier
 description: Use to run verification commands, inspect results, and record evidence before marking work Done or Verified.
 tools: Read, Grep, Glob, Bash
 model: sonnet
-skills: harness-build-loop
 ---
 
 # Verifier

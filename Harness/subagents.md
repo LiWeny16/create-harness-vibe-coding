@@ -72,7 +72,7 @@ Then add phase-specific agents:
 - `context-master` before closeout for knowledge extraction
 - `memory-master` after repeated failures and during closeout for consolidation
 
-The default decision ratio is a 7:3 collaboration bias: choose multi-agent collaboration for substantial or uncertain work about 70% of the time; choose solo mode only for clearly local, low-risk work that is not explicitly in WF/WK mode.
+Collaboration mode is determined by concrete conditions, not a fixed ratio. See `Harness/WF.md#Multi-Subagent Requirement` for the full decision tree. Summary: explicit WF/WK mode → always multi-agent. 3+ files or cross-layer → multi-agent. 1-2 local files, well-understood, not in WF mode → solo acceptable. Repeated failure → stop solo, switch to multi-agent.
 
 ## Efficiency Ladder
 
@@ -111,10 +111,12 @@ Use this shape for `/wf`, long tasks, multi-file changes, architecture work, mig
 /wf max orchestration shape:
 controller intake
 -> wave 0: max-parallel exploration (4-14 read-only agents)
--> controller synthesis: dependency graph + write-set coloring
--> wave 1: N parallel implementers (disjoint file claims)
--> wave 1 review: parallel spec/code/security reviewers
--> wave 2+: dependent implementers (if any)
+-> E-GATE: Exploration Gate — all questions answered, findings synthesized (per WF-MAX.md)
+-> wave 1: architecture — 3 parallel architects → boundary decisions + interface contract
+-> D-GATE: Write Decomposition Gate — Dispatch Table + Self-Audit for write-set (MANDATORY, per WF-MAX.md)
+-> wave 2: N parallel implementers (disjoint file claims, ALL spawned in ONE message)
+-> wave 2 review: parallel spec/code/security reviewers
+-> wave 3+: dependent implementers (if any; re-run D-GATE if write-set changed)
 -> integration verifier
 -> closeout with evidence
 ```

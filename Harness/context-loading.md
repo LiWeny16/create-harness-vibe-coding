@@ -32,6 +32,8 @@ Load other docs only by trigger.
 | research, competitors, stack choice | `Harness/research/README.md`, `Harness/research/research-results.md` |
 | task split, owner, write set | `Harness/tasks/<task-id>/PROGRESS.md`, `Harness/tasks/<task-id>/PLAN.md`, `Harness/agent-workflow.md` |
 | parallel agents, dispatch, worktree decision | `Harness/subagents.md`, `Harness/dispatch.md`, `Harness/tasks/<task-id>/PLAN.md` |
+| `/wf` mode, long task, multi-file, multi-agent | `Harness/WF.md`, `Harness/subagents.md`, `Harness/dispatch.md`, `Harness/tasks/<task-id>/PLAN.md` |
+| `/wf max`, 5+ disjoint files, maximum parallelism | `Harness/WF-MAX.md`, `Harness/subagents.md`, `Harness/dispatch.md`, `Harness/tasks/<task-id>/PLAN.md` |
 | memory, repeated tool failure, repeated user correction, reusable lesson | `Harness/MEMORY.md`, the relevant `Harness/memory/*.md` file |
 | subagent spawn | `Harness/subagents.md`, this file plus the role pack below |
 

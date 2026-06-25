@@ -25,17 +25,8 @@ name: stack-agent-name
 description: Use when ...
 tools: Read, Grep, Glob
 model: sonnet
-skills: harness-context
 ---
 ```
-
-Choose one harness skill:
-
-| Agent Type | Skill |
-| --- | --- |
-| research, docs, API lookup | `harness-research` |
-| planning, architecture, context split | `harness-context` |
-| tests, implementation, debugging, review, verification | `harness-build-loop` |
 
 Agent body must state:
 

@@ -3,7 +3,6 @@ name: test-writer
 description: Use to define or write failing tests and manual verification steps before implementation.
 tools: Read, Grep, Glob, Write, Edit, MultiEdit, Bash
 model: sonnet
-skills: harness-build-loop
 ---
 
 # Test Writer

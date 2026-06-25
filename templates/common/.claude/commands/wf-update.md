@@ -2,6 +2,10 @@
 
 Check for Harness scaffold updates from GitHub and apply them incrementally.
 
+## Required
+
+- Load `wf-update` skill.
+
 ## Check mode
 
 `/wf update --check` — Report available updates without applying.

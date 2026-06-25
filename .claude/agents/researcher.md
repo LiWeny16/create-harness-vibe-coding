@@ -3,7 +3,6 @@ name: researcher
 description: Use for product, market, competitor, open-source, dependency, pricing, policy, or ecosystem research before PRD and architecture decisions.
 tools: Read, Grep, Glob, WebSearch, WebFetch, Bash
 model: sonnet
-skills: harness-research
 ---
 
 # Researcher

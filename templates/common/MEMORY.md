@@ -21,14 +21,9 @@ Stack-specific agents can be added after the product shape is known.
 
 ## Skills (Workflows)
 
-- [harness-router](../.claude/skills/harness-router/SKILL.md) — start-of-task routing to the smallest useful doc set.
-- [harness-lifecycle](../.claude/skills/harness-lifecycle/SKILL.md) — idea, PRD, scope, lifecycle, and feedback loops.
-- [harness-research](../.claude/skills/harness-research/SKILL.md) — market, product, stack, dependency, API, and open-source research.
-- [harness-context](../.claude/skills/harness-context/SKILL.md) — context splitting, subagent packs, and dispatch preparation.
-- [harness-build-loop](../.claude/skills/harness-build-loop/SKILL.md) — implementation, debugging, review, verification, and closeout.
-- [wf-mode](../.claude/skills/wf-mode/SKILL.md) — long-task workflow: exploration, second plan, implementation, review, verification, heartbeat, and recovery loop.
+- [WF Mode](WF.md) — long-task workflow: exploration, second plan, implementation, review, verification, heartbeat, and recovery loop.
 - [subagent-orchestrator](../.claude/skills/subagent-orchestrator/SKILL.md) — controller-led subagent orchestration, parallel read-only passes, review gates, and recovery handoffs.
-- [readme-optimizer](../.claude/skills/readme-optimizer/SKILL.md) — README preservation, append-only development sections, structured tables, and approved architecture diagrams.
+- [wf-readme](../.claude/skills/wf-readme/SKILL.md) — README preservation, append-only development sections, structured tables, and approved architecture diagrams.
 - [wf-review](../.claude/skills/wf-review/SKILL.md) — cross-model peer review: invoke the other agent CLI (Codex/Claude) for independent review.
 - [wf-update](../.claude/skills/wf-update/SKILL.md) — GitHub-based incremental harness update, checksum comparison, and safe in-place updates.
 - [wf-learn](../.claude/skills/wf-learn/SKILL.md) — force memory learning cycle: context-master -> memory-master -> project + global memory.
