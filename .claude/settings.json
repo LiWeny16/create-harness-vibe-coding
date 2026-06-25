@@ -18,6 +18,7 @@
       "WebSearch"
     ],
     "deny": [
+      "EnterPlanMode",
       "Bash(rm -rf *)",
       "Bash(sudo *)",
       "Bash(curl *)",

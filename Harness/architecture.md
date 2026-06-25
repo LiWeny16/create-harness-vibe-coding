@@ -53,7 +53,7 @@ State in this repo should be explicit, serializable, and owned by one layer.
 - Filesystem state is authoritative only through existence/type checks and write results.
 - Optional selection state comes from CLI flags plus `templates/optional/catalog.json`; do not duplicate it in template prose.
 - Release state lives in `package.json`, npm, git tags, and GitHub; document commands in `README.md`, not `CLAUDE.md`.
-- Long-running agent work records resumable status in `Harness/PLAN.md#Heartbeat`.
+- Long-running agent work records resumable status in `Harness/tasks/<task-id>/PLAN.md#Heartbeat`.
 
 ## 4. Core Components
 

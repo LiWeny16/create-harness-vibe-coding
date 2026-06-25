@@ -20,7 +20,7 @@ Cross-model peer review. Invokes the OTHER agent CLI to review changes from a fr
 - Check `which codex && echo CODEX || echo NO_CODEX` to detect Codex
 - Check `which claude && echo CLAUDE || echo NO_CLAUDE` to detect Claude
 - Use the OTHER CLI — the one NOT running this session. Never self-review.
-- If only one CLI is available: warn, then use it (single-model review is better than none).
+- If only one CLI is available: warn the user, suggest installing the other CLI. Do NOT proceed with self-review.
 
 ## Flow
 

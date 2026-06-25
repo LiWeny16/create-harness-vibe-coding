@@ -6,7 +6,7 @@ Purpose: guide agent research. Record conclusions in [research-results.md](resea
 
 Use this before PRD, stack choice, external API use, public dependency choice, pricing/legal/security assumptions, or any fact likely to change.
 
-Skip only when the task is local, narrow, and fully answerable from existing project files. Record the skip reason in `Harness/PLAN.md`.
+Skip only when the task is local, narrow, and fully answerable from existing project files. Record the skip reason in `Harness/tasks/<task-id>/PLAN.md`.
 
 ## Research Agent
 
@@ -21,7 +21,7 @@ Built-in agents:
 - `.claude/agents/researcher.md`: product, market, open-source, dependency, pricing, policy, and ecosystem research.
 - `.claude/agents/docs-researcher.md`: official docs, API, SDK, config, limits, errors, and examples verification.
 
-For multi-agent research plus build work, create the dispatch table in `Harness/PLAN.md` and follow `Harness/dispatch.md`.
+For multi-agent research plus build work, create the dispatch table in `Harness/tasks/<task-id>/PLAN.md` and follow `Harness/dispatch.md`.
 
 Research Agent input:
 
@@ -104,7 +104,7 @@ Use these patterns when turning research into PRD or feature docs:
 
 ## Write Target
 
-- Research process, queries, and limitations: this file or `Harness/PLAN.md`.
+- Research process, queries, and limitations: this file or `Harness/tasks/<task-id>/PLAN.md`.
 - Final research decisions: [research-results.md](research-results.md).
 - Product scope: [PRD.md](PRD.md).
 - Architecture consequences: `Harness/architecture.md` and `Harness/domain/ports.md`.

@@ -14,7 +14,7 @@ Cross-model peer review via the OTHER agent CLI. Fresh eyes on your changes.
 
 ## How It Works
 
-1. **Detect runtime**: Check `which codex` and `which claude`
+1. **Detect available CLIs**: Check `which codex` and `which claude`. Use the OTHER CLI — never the one running this session.
 2. **Prepare context**: Gather diff (`git diff`), relevant architecture docs, the specific question
 3. **Invoke the OTHER CLI** — the one we're NOT currently running under
 4. **Read and synthesize**: Present the raw output, then add analysis
@@ -25,7 +25,7 @@ Cross-model peer review via the OTHER agent CLI. Fresh eyes on your changes.
 |---|---|
 | Claude → Codex | `git diff \| codex exec "..."` (include full diff, not just commit message) |
 | Codex → Claude | `git diff \| claude -p "..."` |
-| Either (fallback) | try the other CLI; if only one installed, use it (still better than self-review) |
+| Either (fallback) | warn user, suggest installing the other CLI. Do NOT proceed with same-model review. |
 
 **Anti-self-review rule**: Detect which runtime we're in, then use the OTHER one. Never invoke the same CLI that's running the session.
 

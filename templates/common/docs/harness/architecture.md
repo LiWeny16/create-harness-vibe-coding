@@ -1,114 +1,126 @@
-# Harness Architecture — {{projectName}}
+# Harness Architecture - create-harness-vibe-coding
 
-> **Responsibility**: Defines the system layering structure, component overview, and key design decisions.
-> **Does NOT cover**: Code details (AI can read code), API documentation (placed in docstrings).
->
-> Philosophical sources: arc42 Chapter 5 (Building Block View) + C4 Model Level 3 (Component) + matklad's lightweight ARCHITECTURE.md.
+> **Responsibility**: Define the repository structure and scaffold generation boundaries.
+> **Does NOT cover**: Generated target-project business architecture.
 
 ---
 
 ## 1. Layering Rules
 
-<!-- This is the hardest constraint in the entire architecture. Each layer's "allowed dependencies" must be explicit. -->
+```text
+bin/
+  CLI executable shim. Calls src/index.js.
 
-```
-┌──────────────────────────┐
-│     interfaces/          │  ← User entry (CLI / API / UI)
-│     May depend on: harness│
-├──────────────────────────┤
-│     harness/             │  ← Generic runtime shell: orchestration,
-│     May depend on:        │     security, auditing, scheduling
-│       application         │     Contains no business rules
-├──────────────────────────┤
-│     application/         │  ← Business use-case orchestration
-│     May depend on: domain │
-├──────────────────────────┤
-│     domain/              │  ← Pure business objects + port protocols
-│     Only depends on:      │     Depends on no external implementations
-│       standard library    │
-├──────────────────────────┤
-│     infrastructure/      │  ← Adapter implementations (data sources,
-│     Implements domain     │     external services)
-│       ports               │
-└──────────────────────────┘
+src/
+  CLI orchestration and scaffold generation logic.
+  May read templates/ and write the chosen target directory.
+
+templates/
+  Source of generated scaffold assets.
+  Must stay declarative: markdown, skill files, agent files, scripts, and optional workflow docs.
+
+Harness/ and .claude/
+  Dogfood runtime for this repository's own agent work.
+  Must not be treated as package source unless intentionally copied into templates/.
+
+tests/
+  Node test suite for CLI behavior, generator behavior, package contents, and generated harness validation.
 ```
 
-**Hard Constraints**:
-- domain must never import infrastructure/ or interfaces/
-- application only depends on domain
-- harness coordinates workflows but contains no domain business rules
-- All cross-layer communication goes through port protocols defined in domain
+Hard constraints:
 
----
+- `templates/common/**` and `templates/optional/**` are the source of generated output.
+- Root `Harness/**` is this repository's operating harness; changing it does not change generated projects.
+- Generated output paths are normalized by `harnessDest()` in `src/generator.js`.
+- Existing-project safety is owned by conflict planning in `src/generator.js`, not by template prose alone.
+- Package publication is constrained by `package.json#files`; root dogfood files are not package contents.
 
 ## 2. Interface Decoupling
 
-Use interfaces or ports to protect real boundaries, not to create abstraction for its own sake.
+Use interfaces and module boundaries to protect real seams in the generator, not to decorate straightforward code.
 
-- Define a port when code crosses a layer, process, network, storage, SDK, browser, or permission boundary.
-- Keep domain and application logic independent from infrastructure adapters.
-- Pass data through explicit contracts instead of reaching into another feature's internals.
-- Prefer direct calls inside the same cohesive module when there is only one caller, one implementation, and no boundary to protect.
-- Avoid speculative abstraction: do not add factories, plugin systems, service locators, generic repositories, or config layers until the feature has a concrete second use or a real testability/replacement need.
-
----
+- `src/index.js` owns CLI/user interaction; `src/generator.js` owns planning and file writes.
+- Template files are declarative inputs; source code should not depend on root dogfood `Harness/**`.
+- Optional catalog structure is the extension contract for presets and optional skills.
+- Avoid speculative abstraction: do not add plugin systems, generic runners, extra config layers, or service containers until a real second use or testability boundary exists.
+- When a boundary is real, express it with a small data contract and test it through generated output behavior.
 
 ## 3. State Design
 
-State must have one owner, legal transitions, and observable recovery behavior.
+State in this repo should be explicit, serializable, and owned by one layer.
 
-- Identify durable state, runtime cache, derived UI state, external system state, and audit/event history separately.
-- Name the owner of each state slice; do not let UI, application services, and infrastructure all mutate the same state directly.
-- Model long-running workflows with explicit states, guards, and failure transitions in `Harness/state-machines.md`.
-- Store resumable progress and recovery decisions in `Harness/tasks/<task-id>/PROGRESS.md#Heartbeat` or project-owned durable storage, not only in chat.
-- Keep state minimal: derive values when cheap, persist only what must survive reload, retry, or handoff.
+- Generator plan state is computed in memory and returned as `plan`/`summary`; file writes consume that plan instead of re-deciding conflicts.
+- Filesystem state is authoritative only through existence/type checks and write results.
+- Optional selection state comes from CLI flags plus `templates/optional/catalog.json`; do not duplicate it in template prose.
+- Release state lives in `package.json`, npm, git tags, and GitHub; document commands in `README.md`, not `CLAUDE.md`.
+- Long-running agent work records resumable status in `Harness/tasks/<task-id>/PLAN.md#Heartbeat`.
 
----
+## 4. Core Components
 
-## 4. Harness Core Components
+### 4.1 CLI Entry
 
-### 4.1 Runner / Loop
+- **Location**: `bin/create-harness-vibe-coding.js`, `src/index.js`
+- **Responsibility**: Parse flags, handle interactive/non-interactive modes, print plans/results, and call the generator.
+- **Does NOT handle**: Template walking, conflict classification, or file writing internals.
 
-- **Responsibility**: Drives a task from input to completion: loading context, calling application use-cases, handling stop conditions.
-- **Design Decision**:
-  - Runner only orchestrates, does not interpret domain meaning — Rationale: keeps harness reusable across different business domains
-  - Stop conditions are explicitly modeled — Rationale: prevents agent loops from running indefinitely or silently half-completing
-- **Does NOT handle**: Business rules, domain object creation details, external service implementations
+### 4.2 Prompt Layer
 
-### 4.2 Permission Policy
+- **Location**: `src/prompts.js`
+- **Responsibility**: Ask basic interactive npx questions: project name and target directory.
+- **Does NOT handle**: Agent-link install intake. That matrix is read by coding agents from `README.md` and `Harness/SETUP.md`.
 
-- **Responsibility**: Decides whether a given tool, file, network, or external action is allowed to execute.
-- **Design Decision**:
-  - High-risk actions are denied by default, allow rules are explicitly declared — Rationale: the platform must first guarantee security boundaries
-- **Does NOT handle**: Judging whether a business action is correct
+### 4.3 Generator Core
 
-### 4.3 Event Bus / Audit Trail
+- **Location**: `src/generator.js`
+- **Responsibility**: Resolve optional selections, map template paths to destination paths, detect conflicts, render templates, register optional workflows, and write files.
+- **Critical functions**:
+  - `harnessDest()` maps legacy template source paths such as `docs/harness/*` into generated root `Harness/*`.
+  - `createPlan()` and `addFileActions()` classify directories and file actions before writes.
+  - `registerOptionalContent()` updates generated router/memory docs when optional workflows are selected.
 
-- **Responsibility**: Records task lifecycle, tool invocations, failures, human approvals, and final results.
-- **Design Decision**:
-  - Events are append-only, audit records cannot be overwritten in place — Rationale: facilitates replay, debugging, and post-mortem analysis
-- **Does NOT handle**: Saving final data on behalf of business systems
+### 4.4 Template Assets
 
-### 4.4 State / Checkpoint Store
+- **Location**: `templates/common/**`, `templates/optional/**`
+- **Responsibility**: Define generated `CLAUDE.md`, `AGENTS.md`, `README.md`, `Harness/**`, `.claude/**`, optional skills, and optional workflows.
+- **Does NOT handle**: Existing-project decisions. Templates state contracts; generator and agents apply them safely.
 
-- **Responsibility**: Saves recoverable state, context summaries, task progress, and interrupt points.
-- **Design Decision**:
-  - State format must be serializable — Rationale: enables replay, resume, testing, and migration
-- **Does NOT handle**: Long-term business database modeling
+### 4.5 Validator
 
-### 4.5 Tool Registry
+- **Source template**: `templates/common/scripts/validate-harness.mjs`
+- **Generated location**: `Harness/scripts/validate-harness.mjs`
+- **Responsibility**: Validate required scaffold files, skill/agent registrations, router invariants, optional workflow registrations, and strict project-fact placeholders.
 
-- **Responsibility**: Registers callable tools along with their input/output contracts, permission labels, and error semantics.
-- **Design Decision**:
-  - Tool contracts explicitly specify input, output, errors, and side effects — Rationale: reduces the probability of agent tool misuse
-- **Does NOT handle**: Internal business implementation of tools
+### 4.6 Dogfood Runtime
 
----
+- **Location**: root `Harness/**`, `.claude/**`, `CLAUDE.md`, `AGENTS.md`, `MEMORY.md`
+- **Responsibility**: Govern future AI-agent work in this repository.
+- **Does NOT handle**: Changing package output unless edits are made to `templates/**` or source code.
 
-## 5. Architectural Constraints (Non-Negotiable)
+## 5. Data Flow
 
-- `domain/` only defines business models, business invariants, and port protocols; does not import `harness/`, `infrastructure/`, or `interfaces/`.
-- `harness/` may orchestrate workflows, security gates, auditing, and stop conditions, but must not determine business meaning.
-- All cross-layer external capabilities are expressed through `domain` ports; adapter implementations live in `infrastructure/`.
-- Rejections and failures must be testable or documented with manual verification steps in the feature doc.
-- Audit events are append-only, never overwritten in place.
+```text
+CLI args / prompts
+-> src/index.js parse and display
+-> src/generator.js resolve optional catalog
+-> walk templates/common and selected templates/optional
+-> harnessDest maps source paths to generated destinations
+-> createPlan/addFileActions classify create/skip/backup/overwrite/conflict
+-> renderTemplate substitutes projectName
+-> registerOptionalContent updates generated Harness router/memory
+-> write files or return dry-run/json plan
+-> tests and generated validator verify behavior
+```
+
+## 6. Architectural Constraints
+
+- Do not add generated-output behavior by editing only root `Harness/`; edit `templates/common/**` or `templates/optional/**`.
+- Do not add user-facing CLI behavior without tests in `tests/cli-smoke.test.js` or `tests/generator.test.js`.
+- Do not add required generated files without updating `templates/common/scripts/validate-harness.mjs` and relevant tests.
+- Do not write Harness docs into generated `docs/`; `Harness/` is the generated root for harness-owned docs.
+- Do not make root `CLAUDE.md` a dumping ground for build commands, architecture, or release process.
+
+## 7. Known Follow-Up Risks
+
+- Interactive confirmation currently happens before full conflict-plan display in interactive mode.
+- Some README tests assert exact prose and can be made more structural.
+- `wf-mode` and `subagent-orchestrator` routing priority should continue to be tightened in templates.

@@ -103,7 +103,7 @@ Routing priority: if a request explicitly says `/wf <task>`, `/wf-max [task]`, `
 ```text
 Harness/README.md                  router only
 Harness/MEMORY.md                  resource index
-Harness/PLAN.md                    active project plan
+Harness/PLAN.md                    project-level plan (redirects to tasks/<id>/PLAN.md)
 Harness/SETUP.md                   install/bootstrap contract
 Harness/PROGRESS.md                global task index and cross-task decisions
 Harness/tasks/<id>/PROGRESS.md     per-task progress, phase, heartbeat
