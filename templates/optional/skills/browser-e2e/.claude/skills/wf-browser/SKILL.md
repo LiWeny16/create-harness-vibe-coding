@@ -76,6 +76,36 @@ If you see `UnicodeEncodeError: 'gbk' codec can't encode character`, the install
 set PYTHONIOENCODING=utf-8
 ```
 
+### Windows Daemon Patches
+
+Browser Use v0.13.1 has two known issues on Windows that are auto-patched on install. If `browser-use open` fails with "Failed to start daemon" or socket timeout, re-apply:
+
+```bash
+python -c "
+import browser_use.skill_cli.main as m
+p = m.__file__
+c = open(p, encoding='utf-8').read()
+# Patch 1: auto-clean stale state on dead PID
+c = c.replace(
+    'probe = _probe_session(session)\n\n\t# Socket reachable',
+    'probe = _probe_session(session)\n\n\t# Auto-clean stale state\n\tif not probe.socket_reachable and not probe.pid_alive and probe.phase:\n\t\t_clean_session_files(session)\n\t\tprobe = _probe_session(session)\n\n\t# Socket reachable'
+)
+# Patch 2: auto-recover from stale session instead of erroring
+c = c.replace(
+    \"f'Error: Session {session!r} is alive (phase={probe.phase}) but socket unreachable.\",\"
+    \"f'Warning: Session {session!r} has stale state (phase={probe.phase}), auto-cleaning...\",\"
+)
+c = c.replace(
+    \"sys.exit(1)\n\n\t\telif probe.phase == 'shutting_down'\",
+    \"_terminate_pid(probe.pid)\n\t\t\t_clean_session_files(session)\n\n\t\telif probe.phase == 'shutting_down'\"
+)
+# Patch 3: extend daemon startup timeout (15s -> 30s)
+c = c.replace('deadline = time.time() + 15', 'deadline = time.time() + 30')
+open(p, 'w', encoding='utf-8').write(c)
+print('Patches applied')
+"
+```
+
 ### Requirements
 
 | Requirement | Version | Check |
