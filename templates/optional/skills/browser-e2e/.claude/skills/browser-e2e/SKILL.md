@@ -12,7 +12,7 @@ Use this skill when a change affects browser-visible behavior, navigation, forms
 ## Docs To Load
 
 - `Harness/workflows/browser-e2e.md`
-- `Harness/PLAN.md`
+- `Harness/PROGRESS.md` and current task `tasks/<id>/PLAN.md`
 - Existing project test, build, and run instructions.
 
 ## Required Inputs
@@ -26,16 +26,16 @@ Use this skill when a change affects browser-visible behavior, navigation, forms
 
 - Browser test files in the project's existing test locations.
 - Evidence artifacts such as screenshots, traces, or reports in existing artifact folders.
-- Notes in `Harness/PLAN.md` when the active task asks for plan tracking.
+- Notes in current task plan when the active task asks for plan tracking.
 
 ## Output Format
 
 Return changed files, commands run, browser evidence paths, verified flows, failures, and follow-up risks.
 Include the selectors used for CDP/Playwright/manual verification.
 
-## PLAN.md Updates
+## PROGRESS.md & Task PLAN.md Updates
 
-Update `Harness/PLAN.md` only when executing a tracked plan item or recording evidence requested by the current task.
+Update `Harness/tasks/<task-id>/PLAN.md` only when executing a tracked plan item or recording evidence requested by the current task.
 
 ## dispatch.md Usage
 

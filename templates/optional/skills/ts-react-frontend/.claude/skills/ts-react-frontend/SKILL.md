@@ -13,7 +13,7 @@ For user-visible changes, typecheck, build, and unit tests are not enough; inclu
 ## Docs To Load
 
 - `Harness/workflows/ts-react-frontend.md`
-- `Harness/PLAN.md`
+- `Harness/PROGRESS.md` and current task `tasks/<id>/PLAN.md`
 - Existing frontend README, package scripts, design system, and test setup.
 
 ## Required Inputs
@@ -27,16 +27,16 @@ For user-visible changes, typecheck, build, and unit tests are not enough; inclu
 
 - Frontend source, styles, tests, and focused docs in task scope.
 - Generated evidence such as screenshots or test reports in existing artifact paths.
-- `Harness/PLAN.md` when tracking a plan item.
+- Current task `tasks/<id>/PLAN.md` when tracking a plan item.
 
 ## Output Format
 
 Return changed files, UI behavior summary, commands run, browser or test evidence, and unresolved risks.
 Include selectors added or verified for CDP/Playwright/manual checks.
 
-## PLAN.md Updates
+## PROGRESS.md & Task PLAN.md Updates
 
-Update `Harness/PLAN.md` only when executing a tracked task or recording required validation evidence.
+Update `Harness/tasks/<task-id>/PLAN.md` only when executing a tracked task or recording required validation evidence.
 
 ## dispatch.md Usage
 

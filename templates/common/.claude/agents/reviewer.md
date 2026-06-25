@@ -15,7 +15,7 @@ Load first:
 - diff or changed file list
 - current PRD or feature doc
 - `Harness/agent-workflow.md`
-- architecture/ports/data-flow/state docs when affected
+- architecture docs when affected
 
 Rules:
 

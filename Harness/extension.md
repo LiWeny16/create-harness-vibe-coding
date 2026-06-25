@@ -12,7 +12,7 @@ Extensions must preserve project and harness ownership boundaries.
 - Treat existing project config as project fact. Read it before adding assets, then adapt new assets to the project instead of replacing the project.
 - Register added agents, skills, workflows, rules, and hooks in `Harness/MEMORY.md` and this docs router where applicable.
 - Added assets may extend `.claude/skills/`, `.claude/agents/`, `.claude/rules/`, or `Harness/workflows/`, but they must not replace core harness docs.
-- Core harness docs are `Harness/README.md`, `Harness/PLAN.md`, `Harness/subagents.md`, `Harness/context-loading.md`, `Harness/dispatch.md`, `Harness/agent-workflow.md`, and this file.
+- Core harness docs are `Harness/README.md`, `Harness/PROGRESS.md`, `Harness/subagents.md`, `Harness/context-loading.md`, `Harness/dispatch.md`, `Harness/agent-workflow.md`, and this file.
 - If an optional workflow needs a new command or tool, document the command and fallback in `Harness/workflows/<name>.md` instead of changing core harness behavior.
 
 ## Agent Contract
@@ -55,7 +55,7 @@ Every added skill must state:
 - required inputs
 - allowed writes
 - output format
-- whether to update `Harness/PLAN.md`
+- whether to update `Harness/PROGRESS.md` and task files
 - whether to use [subagents.md](subagents.md) and [dispatch.md](dispatch.md)
 
 Skills should extend the harness. They should not replace `Harness/README.md`, `PLAN.md`, `subagents.md`, `context-loading.md`, `dispatch.md`, or `agent-workflow.md`.
@@ -75,5 +75,5 @@ After adding assets:
 - list agents in `Harness/MEMORY.md#Agents`
 - list skills in `Harness/MEMORY.md#Skills`
 - list workflows by path in `Harness/MEMORY.md` or `Harness/README.md`
-- update `Harness/PLAN.md` when the asset affects current work
+- update `Harness/PROGRESS.md` and `Harness/tasks/<task-id>/PROGRESS.md` when the asset affects current work
 - run `node Harness/scripts/validate-harness.mjs`

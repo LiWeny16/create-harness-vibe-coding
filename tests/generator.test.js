@@ -197,7 +197,7 @@ test('generated scaffold stores harness-owned payload under root Harness directo
     'Harness/README.md',
     'Harness/SETUP.md',
     'Harness/MEMORY.md',
-    'Harness/PLAN.md',
+    'Harness/PROGRESS.md',
     'Harness/WF.md',
     'Harness/subagents.md',
     'Harness/architecture.md',
@@ -291,7 +291,7 @@ test('generated scaffold stores harness-owned payload under root Harness directo
   assert.match(readmeSkill, /Full rewrite/);
   assert.match(readmeSkill, /Mermaid or ASCII architecture diagrams/);
 
-  const plan = readRel(targetDir, 'Harness/PLAN.md');
+  const plan = readRel(targetDir, 'Harness/PROGRESS.md');
   assert.match(plan, /DEPRECATED/);
   assert.match(plan, /## Legacy Content/);
 });
@@ -541,7 +541,7 @@ test('generated web workflows require stable accessible selectors and test hooks
 
   const browserWorkflow = readRel(targetDir, 'Harness/workflows/browser-e2e.md');
   const reactWorkflow = readRel(targetDir, 'Harness/workflows/ts-react-frontend.md');
-  const featureTemplate = readRel(targetDir, 'Harness/features/_template.md');
+  const featureTemplate = readRel(targetDir, 'Harness/tasks/_template/PLAN.md');
 
   for (const body of [browserWorkflow, reactWorkflow]) {
     assert.match(body, /data-testid/);

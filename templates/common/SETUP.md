@@ -37,10 +37,9 @@ Claude must follow this order:
 2. Ask up to 3 blocking product questions. If not blocked, record assumptions in `Harness/tasks/<task-id>/PLAN.md`.
 3. Fill `Harness/research/PRD.md` with MVP, non-goals, and acceptance criteria.
 4. Read `Harness/research/README.md`, then fill `Harness/research/research-results.md` with adopted/rejected research choices.
-5. Fill `Harness/architecture.md`. Optionally sketch one port in `Harness/domain/ports.md` if the slice crosses a layer boundary.
+5. Fill `Harness/architecture.md`.
 6. Create a task capsule from `Harness/tasks/_template/` and fill the first vertical-slice plan in `Harness/tasks/<task-id>/PLAN.md`.
 7. Use `Harness/subagents.md`, `Harness/context-loading.md`, and `Harness/dispatch.md` when explicit WF/WK mode or any spawned subagents are involved.
-8. Fill `Harness/data-flow.md` or `Harness/state-machines.md` only when the slice changes runtime flow, failure behavior, or state.
 9. Implement only after a failing test or manual verification step is defined.
 10. Run `node Harness/scripts/validate-harness.mjs --strict`.
 11. Record final verification and next feedback step in `Harness/tasks/<task-id>/PROGRESS.md`. If repeated tool failures, repeated user corrections, or reusable review/debug lessons appeared, record the concise reflection in the relevant `Harness/memory/` file.
@@ -51,7 +50,7 @@ When adding this harness to a project that already has source code, docs, CI, or
 
 1. Scan existing project facts first: `README.md`, package files (`package.json`, `pyproject.toml`, `go.mod`, etc.), test commands, app entry points, CI files, existing docs, and current run/build scripts.
 2. Record discovered facts and open questions in `Harness/tasks/<task-id>/PROGRESS.md` before changing harness docs.
-3. Fill `Harness/research/PRD.md`, `Harness/research/research-results.md`, `Harness/architecture.md`, and `Harness/domain/ports.md` from observed project facts plus explicit user input.
+3. Fill `Harness/research/PRD.md`, `Harness/research/research-results.md`, `Harness/architecture.md` from observed project facts plus explicit user input.
 4. Existing configuration is project fact. Do not overwrite `CLAUDE.md`, `AGENTS.md`, `.claude/`, `.gitignore`, settings, hooks, package files, CI, docs routers, or workflow docs unless the user explicitly approves that exact overwrite.
 5. When a harness file conflicts with an existing file, preserve the existing file and register any missing harness guidance manually using `Harness/extension.md`.
 6. Run `node Harness/scripts/validate-harness.mjs` after registration, then run `node Harness/scripts/validate-harness.mjs --strict` only after project-fact placeholders have been resolved or intentionally recorded as open.
@@ -129,7 +128,6 @@ The harness validator checks for specific structural invariants. When comparing 
 | `Harness/SETUP.md` | Only meaningful for fresh projects. If the project has its own onboarding docs, skip this file entirely (it is temporary). If kept, ensure the "Existing Project Bootstrap Sequence" is present. |
 | `Harness/workflows/browser-e2e.md` (if installed as optional) | `data-testid`, `accessible labels/roles`, and `inputs, buttons, filters, rows, empty/error/loading states` requirement |
 | `Harness/workflows/ts-react-frontend.md` (if installed as optional) | Same UI selector contract as above |
-| `Harness/features/_template.md` | `## 1.5 UI Automation Hooks` with `data-testid` table |
 
 **Files that do NOT need manual merge when the path does not already exist (auto-created by harness):**
 
@@ -139,9 +137,8 @@ The harness validator checks for specific structural invariants. When comparing 
 - `.claude/commands/update.md` — /wf update command bridge
 - `.claude/rules/ecc/common.md` — universal rules (unless the project has custom rules in this file)
 - `.claude/settings.json` — harness settings
-- `Harness/WF.md`, `Harness/lifecycle.md`, `Harness/subagents.md`, `Harness/agent-workflow.md`, `Harness/architecture.md`, `Harness/data-flow.md`, `Harness/state-machines.md` — harness runtime docs
+- `Harness/WF.md`, `Harness/lifecycle.md`, `Harness/subagents.md`, `Harness/agent-workflow.md`, `Harness/architecture.md` — harness runtime docs
 - `Harness/research/*.md` — research protocol and templates
-- `Harness/domain/ports.md` — port contract template
 - `AGENTS.md` — agent registry; if it already exists, ask for user consent before merging or replacing it
 - `Harness/scripts/validate-harness.mjs` and `tests/.gitkeep` — tooling
 
@@ -178,71 +175,6 @@ Each template doc contains `{{PLACEHOLDER}}` markers. Below is what every placeh
 - `Harness Core Components`: describe each core component (Runner, Permission Policy, Event Bus, State Store, Tool Registry) in project-specific terms.
 - `Architectural Constraints`: add project-specific non-negotiables. Keep the domain/harness purity rules.
 
-**`Harness/domain/ports.md`** — Cross-layer contracts. One driving port + one driven port from the first slice:
-- `{{INBOUND_PORT_1}}`: the first inbound port (e.g., "CreateOrderPort").
-- `{{OUTBOUND_PORT_1}}`: the first outbound port (e.g., "OrderRepository").
-- For each port: fill Purpose, Preconditions, Postconditions, Error Semantics, Idempotency.
-- Leave remaining rows as `{{...}}` until more slices add ports.
-
-**`Harness/PROGRESS.md`** — Global task index. Update at session start and task closeout:
-- `## Active Task`: current active task ID.
-- `## Task History`: closed tasks with date, result, and archive path.
-
-**`Harness/tasks/<id>/PROGRESS.md`** — Per-task progress state. Update continuously:
-- `## Current Goal`: one sentence, what this iteration achieves.
-- `## Phase`: current lifecycle phase (Idea/Research/PRD/Architecture/Plan/Build/Verify/Feedback).
-- `## Heartbeat`: last beat time, mode, blocker, recovery action.
-
-**`Harness/tasks/<id>/PLAN.md`** — Per-task implementation plan and evidence. Update continuously:
-- `## Success Criteria`: verifiable outcomes for this iteration.
-- `## Tasks`: numbered tasks with owner, write set, and verify command.
-- `## Parallel Dispatch`: only when spawning subagents — fill agent roles, read/write boundaries.
-- `## Verification`: record test results, review findings, docs sync checklist.
-
-**`Harness/memory/`** — Durable self-evolution notes:
-- `Harness/memory/tool-usage-reflections.md`: repeated tool failures, better command patterns, environment-specific fixes.
-- `Harness/memory/user-corrections-preferences.md`: repeated user corrections, durable preferences, common-sense course corrections.
-- `Harness/memory/agent-lessons-patterns.md`: reusable lessons from review, debugging, validation, and handoff loops.
-
-**`Harness/data-flow.md`** — Runtime event paths (only when first slice has async/multi-step flow):
-- `{{EVENT_1}}`: the first event type with producer, consumers, payload fields, delivery semantics.
-- Happy Path: fill the Mermaid sequence diagram with actual ports and actions.
-- Failure Paths: for each failure point, document trigger, system behavior, event, caller perception, recovery.
-- If the first slice is synchronous and stateless, leave this doc as `{{...}}` and note in `Harness/tasks/<task-id>/PLAN.md`.
-
-**`Harness/state-machines.md`** — State transitions (only when first slice has stateful entities):
-- Define states, transitions, guards, and illegal transitions for the first stateful entity.
-- If no stateful entity exists in the first slice, leave as `{{...}}` and note in `Harness/tasks/<task-id>/PLAN.md`.
-
-**General rules for all templates**:
-- Replace `create-harness-vibe-coding` with the actual project name immediately.
-- Never invent content for a `{{...}}` marker. If you lack facts, ask the user or leave the marker.
-- `<!-- HTML comments -->` in templates are instructions to you. Read them. Delete them after filling the section.
-- After filling all templates in a phase, run `node Harness/scripts/validate-harness.mjs --strict`. Any remaining `{{...}}` in project-fact files will be flagged.
-
-## Architecture Research (Dynamic)
-
-Do not guess the architecture. Use `Harness/research/README.md` as the protocol and the high-star repos below as seed references. Search within them; do not read them whole.
-
-### Seed Repositories (High-Star, High-Trust)
-
-| Repository | Stars | Use For |
-|-----------|-------|---------|
-| [donnemartin/system-design-primer](https://github.com/donnemartin/system-design-primer) | 266k+ | System design fundamentals, trade-off frameworks |
-| [ByteByteGoHq/system-design-101](https://github.com/ByteByteGoHq/system-design-101) | 65k+ | Visual system design, protocol/DB patterns |
-| [DovAmir/awesome-design-patterns](https://github.com/DovAmir/awesome-design-patterns) | 47k+ | General arch, cloud, serverless, microservices, front-end, security |
-| [mehdihadeli/awesome-software-architecture](https://github.com/mehdihadeli/awesome-software-architecture) | high | CQRS, Outbox, Saga, Circuit Breaker, BFF, scaling |
-| [greatfrontend/awesome-front-end-system-design](https://github.com/greatfrontend/awesome-front-end-system-design) | high | Front-end system design patterns |
-| [adr.github.io](https://adr.github.io) | — | ADR templates and tooling |
-
-### Architecture Fill Protocol
-
-After research, fill these docs in order:
-
-1. `Harness/research/research-results.md` — Record candidate architectures with Adopt / Reject / Watch decisions. Use the `## Candidate References` template.
-2. `Harness/architecture.md` — Fill the layering diagram, core components, and constraints. Do NOT add speculative layers. One layer per proven need.
-3. `Harness/domain/ports.md` — Define ONE driving port and ONE driven port from the first vertical slice. More ports come with more slices.
-4. `Harness/data-flow.md` — Fill the happy path for the first slice only. Add failure paths when they differ from the happy path.
 
 **Constraint**: If the research does not give you enough confidence to fill a section, leave the `{{...}}` placeholder and record the open question in `Harness/tasks/<task-id>/PLAN.md`. The strict validator will catch it.
 

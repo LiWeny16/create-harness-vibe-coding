@@ -9,7 +9,7 @@ Use when starting a new product, clarifying a vague idea, or deciding the next p
 | Idea | user intent | problem, target user, non-goals | unclear points asked or assumptions recorded |
 | Research | problem and constraints | `research/research-results.md` | `research/README.md` followed; at least 3 references or explicit reason not possible |
 | PRD | research decision | `research/PRD.md` | MVP, non-goals, acceptance criteria are verifiable |
-| Architecture | PRD | `Harness/architecture.md` (+ `Harness/domain/ports.md` if cross-layer contracts needed) | boundaries and first ports are defined |
+| Architecture | PRD | `Harness/architecture.md` | boundaries and first ports are defined |
 | Plan | PRD and architecture | `Harness/tasks/<task-id>/PLAN.md`, optional `Harness/dispatch.md` | tasks have owners, write sets, verification |
 | Build | plan and tests | minimal vertical slice | tests or manual checks prove behavior |
 | Verify | implementation | review findings, test evidence | no unresolved critical/high findings |
@@ -29,5 +29,5 @@ Small edits may skip full lifecycle when all are true:
 
 - user intent is clear
 - one file or one narrow behavior
-- no architecture, port, data-flow, state, permission, or public API change
+- no architecture, permission, or public API change
 - one verification command or one manual check is enough

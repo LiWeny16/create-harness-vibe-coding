@@ -33,7 +33,7 @@ Cross-model peer review via the OTHER agent CLI. Fresh eyes on your changes.
 
 For a good review, pipe or include:
 - `git diff` or `git diff --cached`
-- Relevant `Harness/` docs (architecture.md, domain/ports.md if filled)
+- Relevant `Harness/` docs (architecture.md)
 - The specific focus: "find bugs", "critique architecture from 4+ dimensions", "fix this bug", "check for security issues"
 
 ## Rules

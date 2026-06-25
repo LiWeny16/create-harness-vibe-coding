@@ -14,7 +14,6 @@ Load first:
 
 - `Harness/research/README.md`
 - `Harness/architecture.md` when boundaries may change
-- `Harness/domain/ports.md` when APIs cross layers
 - `Harness/tasks/<task-id>/PROGRESS.md` and `Harness/tasks/<task-id>/PLAN.md` when available
 
 Inputs you must receive:

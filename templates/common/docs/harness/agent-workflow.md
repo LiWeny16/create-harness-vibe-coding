@@ -14,8 +14,6 @@ If context grows, load [context-loading.md](context-loading.md) and split the wo
 
 Every PRD scope item must be covered by a task plan at `Harness/tasks/<task-id>/PLAN.md`
 created from `Harness/tasks/_template/PLAN.md` (the primary work tracking system).
-`Harness/features/_template.md` is a legacy alternative; prefer tasks/ for new work.
-
 **Cohesion rule**: if multiple PRD scope items share the same write set, the same
 test/verification path, and the same review boundary, group them into a single
 feature doc. The PRD owns scope decomposition; the feature doc owns the
@@ -89,7 +87,7 @@ Close only when:
 
 - acceptance criteria are satisfied
 - verification evidence is recorded
-- architecture, ports, data-flow, or state docs are synced if affected
+- architecture docs are synced if affected
 - no unresolved critical/high review findings remain
 - any optimistic UI mutation has a declared and verified rollback path
 - any file declared as DONE in PLAN.md or PROGRESS.md exists on disk (chat output is not durable evidence)

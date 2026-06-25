@@ -11,7 +11,7 @@ const projectFacts = [
   'Harness/research/PRD.md',
   'Harness/research/research-results.md',
   'Harness/architecture.md',
-  'Harness/domain/ports.md',
+  'Harness/architecture.md',
 ];
 
 function tmpdir() {
@@ -53,7 +53,7 @@ None
 
 ${planGoal}
 `);
-  writeRel(targetDir, 'Harness/PLAN.md', `# PLAN.md — DEPRECATED
+  writeRel(targetDir, 'Harness/PROGRESS.md', `# PROGRESS.md — DEPRECATED
 
 ## Subagent Synthesis
 
@@ -109,7 +109,7 @@ State has one owner and explicit recovery behavior.
 Avoid speculative abstraction unless there is a concrete second use or testability need.
 `);
 
-  writeRel(targetDir, 'Harness/domain/ports.md', `# Port Contracts - validated
+  writeRel(targetDir, 'Harness/architecture.md', `# Port Contracts - validated
 
 ## 1. Port Classification
 

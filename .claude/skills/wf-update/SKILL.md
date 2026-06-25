@@ -24,7 +24,7 @@ GitHub-based incremental harness update. Pulls latest template files and compare
    - Compare against the local stored checksum in `Harness/.harness-version`.
 4. Classify each difference:
    - **SAFE** (TIER 1): Harness runtime files. If local checksum matches stored -> file is unmodified -> safe to overwrite with fetched version.
-   - **PRESERVE** (TIER 2): User data files. Never overwrite. (`Harness/PROGRESS.md`, `Harness/tasks/**`, `Harness/memory/**`, `Harness/research/PRD.md`, `Harness/research/research-results.md`, `Harness/architecture.md`, `Harness/domain/ports.md`, `Harness/features/**`, root `README.md`, `.gitignore`)
+   - **PRESERVE** (TIER 2): User data files. Never overwrite. (`Harness/PROGRESS.md`, `Harness/tasks/**`, `Harness/memory/**`, `Harness/research/PRD.md`, `Harness/research/research-results.md`, `Harness/architecture.md`, root `README.md`, `.gitignore`)
    - **MERGE** (TIER 3): Dual-purpose files. If local checksum matches stored -> safe to overwrite. If mismatch -> user modified -> report as merge candidate, never auto-overwrite. (`CLAUDE.md`, `Harness/MEMORY.md`, `Harness/README.md`)
 5. For files in the GitHub repo NOT in local checksums: classify as NEW, plan to create.
 6. Report update plan: `updated/N, merge/N, created/N, skipped/N`

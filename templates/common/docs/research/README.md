@@ -107,11 +107,11 @@ Use these patterns when turning research into PRD or feature docs:
 - Research process, queries, and limitations: this file or `Harness/tasks/<task-id>/PLAN.md`.
 - Final research decisions: [research-results.md](research-results.md).
 - Product scope: [PRD.md](PRD.md).
-- Architecture consequences: `Harness/architecture.md` and `Harness/domain/ports.md`.
+- Architecture consequences: `Harness/architecture.md`.
 
 ## Architecture Decision References
 
-When filling `Harness/architecture.md`, `Harness/domain/ports.md`, and `Harness/research/research-results.md`, use these high-trust sources as starting points. Search within them; do not read them whole.
+When filling `Harness/architecture.md` and `Harness/research/research-results.md`, use these high-trust sources as starting points. Search within them; do not read them whole.
 
 ### System Design & Architecture Patterns
 

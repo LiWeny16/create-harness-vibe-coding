@@ -12,7 +12,7 @@ Use this skill when reviewing a GitHub pull request, responding to PR feedback, 
 ## Docs To Load
 
 - `Harness/workflows/github-pr-review.md`
-- `Harness/PLAN.md`
+- `Harness/PROGRESS.md` and current task `tasks/<id>/PLAN.md`
 - Repository contribution, test, and review guidelines.
 
 ## Required Inputs
@@ -25,15 +25,15 @@ Use this skill when reviewing a GitHub pull request, responding to PR feedback, 
 
 - Local files needed to address approved review feedback.
 - Review notes or evidence in existing docs only when requested.
-- `Harness/PLAN.md` when tracking review work.
+- Current task `tasks/<id>/PLAN.md` when tracking review work.
 
 ## Output Format
 
 Return findings first by severity with file and line references, then open questions, tests/checks run, and change summary if edits were made.
 
-## PLAN.md Updates
+## PROGRESS.md & Task PLAN.md Updates
 
-Update `Harness/PLAN.md` only when the PR review is part of a tracked implementation plan.
+Update `Harness/tasks/<task-id>/PLAN.md` only when the PR review is part of a tracked implementation plan.
 
 ## dispatch.md Usage
 

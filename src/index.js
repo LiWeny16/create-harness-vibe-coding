@@ -100,7 +100,7 @@ if (argName || skipPrompts) {
   console.log(pc.dim('────────────────────────────────────────────'));
   console.log(`  Project     ${pc.green(projectName)}`);
   console.log(`  Directory   ${pc.green(targetDir)}`);
-  console.log(`  Creates     ${pc.cyan('CLAUDE.md, README.md, Harness/PLAN.md, Harness/, .claude/, tests/')}`);
+  console.log(`  Creates     ${pc.cyan('CLAUDE.md, README.md, Harness/PROGRESS.md, Harness/, .claude/, tests/')}`);
   if (generationOptions.dryRun) {
     console.log(`  Mode        ${pc.yellow('dry-run')}`);
   }
@@ -142,7 +142,7 @@ if (argName || skipPrompts) {
   console.log(pc.dim('────────────────────────────────────────────'));
   console.log(`  Project     ${pc.green(projectName)}`);
   console.log(`  Directory   ${pc.green(targetDir)}`);
-  console.log(`  Creates     ${pc.cyan('CLAUDE.md, README.md, Harness/PLAN.md, Harness/, .claude/, tests/')}`);
+  console.log(`  Creates     ${pc.cyan('CLAUDE.md, README.md, Harness/PROGRESS.md, Harness/, .claude/, tests/')}`);
   console.log(`  Conflicts   ${pc.cyan(generationOptions.onConflict)}`);
   console.log(pc.dim('────────────────────────────────────────────'));
   console.log('');

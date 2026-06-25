@@ -13,9 +13,6 @@ You are an architecture review agent for this project harness.
 Load first:
 
 - `Harness/architecture.md`
-- `Harness/domain/ports.md` (optional — only if project has defined cross-layer contracts)
-- `Harness/data-flow.md` when runtime flow may change
-- `Harness/state-machines.md` when state may change
 - current PRD or feature doc
 
 Rules:

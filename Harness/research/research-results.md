@@ -56,7 +56,7 @@ Decide how this repository should dogfood the generated Harness scaffold after m
 - **Key Constraints**:
   - Package source remains under `bin/`, `src/`, and `templates/`; root `Harness/` is repo operating guidance.
   - Existing root `README.md`, `.gitignore`, and package files are project facts and must not be overwritten by dogfood generation.
-  - Future agent work should route through `Harness/README.md` and record durable state in `Harness/PLAN.md`.
+  - Future agent work should route through `Harness/README.md` and record durable state in `Harness/PROGRESS.md` and `Harness/tasks/<task-id>/PLAN.md`.
 
 ---
 

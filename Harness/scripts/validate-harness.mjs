@@ -64,7 +64,6 @@ const required = [
   ...commonSkills.map(skill => `.claude/skills/${skill}/SKILL.md`),
   'Harness/README.md',
   'Harness/PROGRESS.md',
-  'Harness/PLAN.md',
   'Harness/lifecycle.md',
   'Harness/subagents.md',
   'Harness/dispatch.md',
@@ -72,13 +71,9 @@ const required = [
   'Harness/context-loading.md',
   'Harness/agent-workflow.md',
   'Harness/architecture.md',
-  'Harness/data-flow.md',
-  'Harness/state-machines.md',
-  'Harness/features/_template.md',
   'Harness/research/README.md',
   'Harness/research/research-results.md',
   'Harness/research/PRD.md',
-  'Harness/domain/ports.md',
   '.claude/skills/wf-update/SKILL.md',
   '.claude/commands/update.md',
   'Harness/.harness-version',
@@ -89,7 +84,6 @@ const projectFacts = [
   'Harness/research/PRD.md',
   'Harness/research/research-results.md',
   'Harness/architecture.md',
-  'Harness/domain/ports.md',
 ];
 
 const contextPacks = [
@@ -277,10 +271,6 @@ if (progress) {
 }
 
 // Legacy PLAN.md deprecation check (it exists as stub, no longer requires active task headings)
-const plan = read('Harness/PLAN.md');
-if (plan) {
-  if (!plan.includes('DEPRECATED')) {
-    errors.push('Harness/PLAN.md should be a deprecation stub; see Harness/PROGRESS.md');
   }
 }
 
@@ -356,7 +346,6 @@ function requireUiSelectorContract(rel) {
 
 requireUiSelectorContract('Harness/workflows/browser-e2e.md');
 requireUiSelectorContract('Harness/workflows/ts-react-frontend.md');
-requireUiSelectorContract('Harness/features/_template.md');
 
 for (const skill of commonSkills) {
   const rel = `.claude/skills/${skill}/SKILL.md`;

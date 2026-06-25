@@ -12,7 +12,7 @@ Use this skill when changing Python API routes, service logic, persistence bound
 ## Docs To Load
 
 - `Harness/workflows/python-backend.md`
-- `Harness/PLAN.md`
+- `Harness/PROGRESS.md` and current task `tasks/<id>/PLAN.md`
 - Project backend README, API docs, dependency files, and test configuration.
 
 ## Required Inputs
@@ -25,15 +25,15 @@ Use this skill when changing Python API routes, service logic, persistence bound
 
 - Python source, tests, fixtures, and backend docs in the task scope.
 - Local evidence artifacts such as test output snippets.
-- `Harness/PLAN.md` when the task requires plan tracking.
+- Current task `tasks/<id>/PLAN.md` when the task requires plan tracking.
 
 ## Output Format
 
 Return files changed, API or behavior summary, tests run, important logs, migration/config notes, and remaining risks.
 
-## PLAN.md Updates
+## PROGRESS.md & Task PLAN.md Updates
 
-Update `Harness/PLAN.md` only when executing a tracked plan item or recording required validation evidence.
+Update `Harness/tasks/<task-id>/PLAN.md` only when executing a tracked plan item or recording required validation evidence.
 
 ## dispatch.md Usage
 
