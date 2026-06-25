@@ -37,7 +37,7 @@ Claude must follow this order:
 2. Ask up to 3 blocking product questions. If not blocked, record assumptions in `Harness/tasks/<task-id>/PLAN.md`.
 3. Fill `Harness/research/PRD.md` with MVP, non-goals, and acceptance criteria.
 4. Read `Harness/research/README.md`, then fill `Harness/research/research-results.md` with adopted/rejected research choices.
-5. Fill minimum architecture: `Harness/architecture.md` and one port in `Harness/domain/ports.md`.
+5. Fill `Harness/architecture.md`. Optionally sketch one port in `Harness/domain/ports.md` if the slice crosses a layer boundary.
 6. Create a task capsule from `Harness/tasks/_template/` and fill the first vertical-slice plan in `Harness/tasks/<task-id>/PLAN.md`.
 7. Use `Harness/subagents.md`, `Harness/context-loading.md`, and `Harness/dispatch.md` when explicit WF/WK mode or any spawned subagents are involved.
 8. Fill `Harness/data-flow.md` or `Harness/state-machines.md` only when the slice changes runtime flow, failure behavior, or state.
@@ -215,7 +215,7 @@ Each template doc contains `{{PLACEHOLDER}}` markers. Below is what every placeh
 - If no stateful entity exists in the first slice, leave as `{{...}}` and note in `Harness/tasks/<task-id>/PLAN.md`.
 
 **General rules for all templates**:
-- Replace `{{projectName}}` with the actual project name immediately.
+- Replace `create-harness-vibe-coding` with the actual project name immediately.
 - Never invent content for a `{{...}}` marker. If you lack facts, ask the user or leave the marker.
 - `<!-- HTML comments -->` in templates are instructions to you. Read them. Delete them after filling the section.
 - After filling all templates in a phase, run `node Harness/scripts/validate-harness.mjs --strict`. Any remaining `{{...}}` in project-fact files will be flagged.

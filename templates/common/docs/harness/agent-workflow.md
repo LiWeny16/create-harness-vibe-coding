@@ -22,17 +22,18 @@ feature doc. The PRD owns scope decomposition; the feature doc owns the
 implementation unit. The number of feature docs should reflect the number of
 distinguishable implementation units, not the number of PRD checkboxes.
 
-**Minimum bar**: a feature doc is still required when the implementation touches
-more than one file or changes user-visible behavior. Only skip a feature doc
-entirely when the work is a single-file fix with no behavior change — in that
-case, record the change in `Harness/tasks/<task-id>/PLAN.md` instead.
+**Minimum bar**: a task plan is required when the implementation touches more than one
+file or changes user-visible behavior. Record the plan in `Harness/tasks/<task-id>/PLAN.md`.
+For single-file fixes with no behavior change, a brief note in `PROGRESS.md` is enough.
 
-**New vs iterate**: if a PRD scope item has >=85% overlap with an existing feature doc, open the existing doc, bump `Version`, and add a `## Changelog` entry. Only create a new file when the scope is substantially different. When unsure, ask.
+**New vs iterate**: if a PRD scope item overlaps with an existing task, reopen the existing
+task capsule and append to its `PROGRESS.md`. Only create a new task capsule when the
+scope is substantially different. When unsure, ask.
 
 ## Standard Build Loop
 
 ```text
-PRD/feature packet
+PRD/task plan
 -> failing test or manual check
 -> minimal implementation
 -> verification

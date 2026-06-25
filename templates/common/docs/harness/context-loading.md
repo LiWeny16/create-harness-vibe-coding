@@ -31,7 +31,7 @@ Load other docs only by trigger.
 | idea, scope, MVP | `Harness/lifecycle.md`, `Harness/research/PRD.md` |
 | research, competitors, stack choice | `Harness/research/README.md`, `Harness/research/research-results.md` |
 | official docs, API, SDK, version, limits | `Harness/research/README.md`, `Harness/architecture.md`, `Harness/domain/ports.md` as needed |
-| layer, dependency, module boundary | `Harness/architecture.md`, `Harness/domain/ports.md` |
+| layer, dependency, module boundary | `Harness/architecture.md` (+ `Harness/domain/ports.md` if ports are defined) |
 | task split, owner, write set | `Harness/tasks/<task-id>/PROGRESS.md`, `Harness/tasks/<task-id>/PLAN.md`, `Harness/agent-workflow.md` |
 | parallel agents, dispatch, worktree decision | `Harness/subagents.md`, `Harness/dispatch.md`, `Harness/tasks/<task-id>/PLAN.md` |
 | memory, repeated tool failure, repeated user correction, reusable lesson | `Harness/MEMORY.md`, the relevant `Harness/memory/*.md` file |
