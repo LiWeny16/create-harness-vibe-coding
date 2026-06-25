@@ -21,12 +21,13 @@ Cross-model peer review via the OTHER agent CLI. Fresh eyes on your changes.
 
 ## CLI Commands
 
-| Current Runtime | Review Command |
+| Runtime | Review Command |
 |---|---|
-| Claude Code | `git diff \| codex exec "review prompt"` |
-| Claude Code (commit) | `codex exec "review this commit: $(git log -1 --format=%B)"` |
-| Codex | `git diff \| claude -p "review prompt"` |
-| Either | fallback: try the other CLI, warn if neither available |
+| Claude → Codex | `git diff \| codex exec "..."` (include full diff, not just commit message) |
+| Codex → Claude | `git diff \| claude -p "..."` |
+| Either (fallback) | try the other CLI; if only one installed, use it (still better than self-review) |
+
+**Anti-self-review rule**: Detect which runtime we're in, then use the OTHER one. Never invoke the same CLI that's running the session.
 
 ## Context to Include
 

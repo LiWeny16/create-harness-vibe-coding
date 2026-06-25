@@ -115,7 +115,7 @@ Harness/WF-MAX.md                  max-parallelism workflow with wave dispatch
 .claude/skills/wf-review/SKILL.md  cross-model peer review skill
 .claude/commands/wf-max.md         /wf-max slash command bridge
 .claude/commands/learn.md          /wf-learn slash command bridge
-.claude/commands/review.md         /wf-review slash command bridge
+.claude/commands/wf-review.md      /wf-review slash command bridge
 Harness/lifecycle.md               0-1 product flow
 Harness/subagents.md               controller-led subagent orchestration
 Harness/context-loading.md         dynamic loading and subagent packs

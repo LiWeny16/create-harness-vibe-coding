@@ -2,7 +2,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const pkg = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../package.json'), 'utf8'));
 const TEMPLATES_DIR = path.resolve(__dirname, '..', 'templates', 'common');
 const OPTIONAL_DIR = path.resolve(__dirname, '..', 'templates', 'optional');
 const OPTIONAL_CATALOG = path.join(OPTIONAL_DIR, 'catalog.json');
@@ -327,7 +329,11 @@ export function generate({
 
   // Resolve targetDir relative to cwd
   const resolvedDir = path.resolve(process.cwd(), targetDir);
-  const vars = { projectName };
+  const vars = {
+    projectName,
+    generatorVersion: pkg.version,
+    generatedTimestamp: new Date().toISOString(),
+  };
 
   const optional = resolveOptionalSelection({ withOptions, withoutOptions, preset });
   const fileSpecs = [

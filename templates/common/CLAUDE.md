@@ -73,3 +73,4 @@ Root entry for Claude Code. Keep this file short.
 
 - Never call `EnterPlanMode` — delegate planning to `planner` subagents (see `Harness/WF.md`).
 - Never write code directly in `/wf` or `/wf-max` mode — delegate all implementation to subagents (see `Harness/WF-MAX.md`).
+- **Enforcement**: `.claude/settings.json` hooks prevent `EnterPlanMode` calls. Settings include `allowTools: ["!EnterPlanMode"]` for the main session.

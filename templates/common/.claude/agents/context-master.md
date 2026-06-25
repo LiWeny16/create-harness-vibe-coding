@@ -1,7 +1,7 @@
 ---
 name: context-master
 description: Use when context exceeds ~85% of the window, or during WF closeout to extract durable knowledge before compression. Read-only analysis except for writing compression suggestions to PROGRESS.md#Heartbeat.
-tools: Read, Grep, Glob
+tools: Read, Grep, Glob, Write
 model: haiku
 skills: harness-context
 ---

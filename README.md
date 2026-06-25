@@ -26,7 +26,7 @@ Follow the README at https://github.com/zingspark/create-harness-vibe-coding to 
 
 That's it. Two paths into the harness — you type `npx`, or your agent reads the sentence.
 
-[README-CN.md](README-CN.md) (中文)
+Chinese README: [README-CN.md](README-CN.md)
 
 ---
 

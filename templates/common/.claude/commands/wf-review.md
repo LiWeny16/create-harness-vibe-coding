@@ -17,9 +17,10 @@ Cross-model peer review. Invokes the OTHER agent CLI to review changes from a fr
 
 ## CLI Detection
 
-- If `codex` is available: use `codex exec` for code review
-- If only `claude` is available: use `claude -p` for code review
-- Try `codex exec` first, fall back to `claude -p`
+- Check `which codex && echo CODEX || echo NO_CODEX` to detect Codex
+- Check `which claude && echo CLAUDE || echo NO_CLAUDE` to detect Claude
+- Use the OTHER CLI — the one NOT running this session. Never self-review.
+- If only one CLI is available: warn, then use it (single-model review is better than none).
 
 ## Flow
 
