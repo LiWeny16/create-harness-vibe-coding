@@ -21,6 +21,7 @@ Stack-specific agents can be added after the product shape is known.
 
 ## Skills (Workflows)
 
+- [harness-router](../.claude/skills/harness-router/SKILL.md) — start-of-task routing to the smallest useful doc set.
 - [harness-lifecycle](../.claude/skills/harness-lifecycle/SKILL.md) — idea, PRD, scope, lifecycle, and feedback loops.
 - [harness-research](../.claude/skills/harness-research/SKILL.md) — market, product, stack, dependency, API, and open-source research.
 - [harness-context](../.claude/skills/harness-context/SKILL.md) — context splitting, subagent packs, and dispatch preparation.
@@ -30,7 +31,9 @@ Stack-specific agents can be added after the product shape is known.
 - [readme-optimizer](../.claude/skills/readme-optimizer/SKILL.md) — README preservation, append-only development sections, structured tables, and approved architecture diagrams.
 - [wf-review](../.claude/skills/wf-review/SKILL.md) — cross-model peer review: invoke the other agent CLI (Codex/Claude) for independent review.
 - [wf-update](../.claude/skills/wf-update/SKILL.md) — GitHub-based incremental harness update, checksum comparison, and safe in-place updates.
+- [wf-learn](../.claude/skills/wf-learn/SKILL.md) — force memory learning cycle: context-master -> memory-master -> project + global memory.
 - [wf-max](../.claude/skills/wf-max/SKILL.md) — maximum-parallelism workflow: write-set coloring, wave dispatch, parallel review per dimension.
+- learn: /wf-learn
 - [wf-browser](../.claude/skills/wf-browser/SKILL.md) — AI-driven browser automation via Browser Use (89.1% WebVoyager): E2E testing, form filling, screenshots, web scraping. CLI mode (~50ms) + Python Agent API.
 - [browser-use](~/.claude/skills/browser-use/SKILL.md) — external user-level skill (auto-installed via `pip install browser-use[cli]`): CLI commands, browser profiles, cloud browsers, daemon management.
 - [browser-e2e](workflows/browser-e2e.md) — optional workflow contract: install guide, evidence contract, integration points, fallback paths.

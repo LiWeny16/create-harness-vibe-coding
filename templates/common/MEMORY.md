@@ -1,4 +1,4 @@
-# MEMORY.md - {{projectName}} Project Resource Index
+# MEMORY.md - create-harness-vibe-coding Project Resource Index
 
 > The project fact source is reached via `CLAUDE.md -> Harness/README.md`. This file persists cross-session context: resource index, user preferences, tool usage standards.
 > Detailed memory lives in `Harness/memory/`. Keep entries short, newest first, and free of secrets.
@@ -30,9 +30,13 @@ Stack-specific agents can be added after the product shape is known.
 - [subagent-orchestrator](../.claude/skills/subagent-orchestrator/SKILL.md) — controller-led subagent orchestration, parallel read-only passes, review gates, and recovery handoffs.
 - [readme-optimizer](../.claude/skills/readme-optimizer/SKILL.md) — README preservation, append-only development sections, structured tables, and approved architecture diagrams.
 - [wf-review](../.claude/skills/wf-review/SKILL.md) — cross-model peer review: invoke the other agent CLI (Codex/Claude) for independent review.
-- [wf-learn](../.claude/skills/wf-learn/SKILL.md) — force memory learning cycle: context-master → memory-master → project + global memory.
 - [wf-update](../.claude/skills/wf-update/SKILL.md) — GitHub-based incremental harness update, checksum comparison, and safe in-place updates.
+- [wf-learn](../.claude/skills/wf-learn/SKILL.md) — force memory learning cycle: context-master -> memory-master -> project + global memory.
 - [wf-max](../.claude/skills/wf-max/SKILL.md) — maximum-parallelism workflow: write-set coloring, wave dispatch, parallel review per dimension.
+- learn: /wf-learn
+- [wf-browser](../.claude/skills/wf-browser/SKILL.md) — AI-driven browser automation via Browser Use (89.1% WebVoyager): E2E testing, form filling, screenshots, web scraping. CLI mode (~50ms) + Python Agent API.
+- [browser-use](~/.claude/skills/browser-use/SKILL.md) — external user-level skill (auto-installed via `pip install browser-use[cli]`): CLI commands, browser profiles, cloud browsers, daemon management.
+- [browser-e2e](workflows/browser-e2e.md) — optional workflow contract: install guide, evidence contract, integration points, fallback paths.
 
 Stack-specific skills can be added after the product shape is known.
 
@@ -45,8 +49,6 @@ Located under `.claude/rules/ecc/`, auto-loaded by the CC engine:
 
 ## Harness (Runtime)
 
-- [Global progress](PROGRESS.md)
-- [Task directory](tasks/)
 - [Docs router](README.md)
 - [WF mode](WF.md)
 - [WF Max mode](WF-MAX.md)
