@@ -1,6 +1,6 @@
 ---
 name: subagent-orchestrator
-description: Use when work needs bounded subagent coordination, parallel read-only exploration, independent review gates, broad context partitioning, or controlled handoffs after wf-mode has been selected when applicable.
+description: Use when work needs bounded subagent coordination, parallel read-only exploration, independent review gates, broad context partitioning, or controlled handoffs after wf-mode has been selected.
 ---
 
 # Subagent Orchestrator

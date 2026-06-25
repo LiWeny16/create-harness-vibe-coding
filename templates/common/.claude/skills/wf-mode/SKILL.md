@@ -25,7 +25,7 @@ intake + 95% confidence gate
 -> bounded implementation
 -> review
 -> verification
--> debugger recovery loop when verification fails (dispatch memory-master after 3 same-class failures)
+-> debugger recovery loop when verification fails (dispatch context-master then memory-master, or use /wf-learn)
 -> context-master session analysis + knowledge extraction
 -> memory-master consolidation
 -> close with evidence

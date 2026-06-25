@@ -13,7 +13,7 @@ Enter maximum-parallelism workflow mode with an optional task description. Split
 
 ```text
 intake
--> max-parallel exploration (5-14 read-only agents)
+-> max-parallel exploration (5-10 read-only agents)
 -> synthesis + write-set coloring → dependency graph
 -> wave 1: N parallel implementers (disjoint file claims)
 -> wave 1 review: parallel spec/code/security reviewers
