@@ -1,42 +1,63 @@
 # Browser E2E Workflow
 
-## Required Evidence
+Optional workflow for browser-visible testing and automation. Installed when `browser-use` CLI is available.
 
-- App start command and URL.
-- Real-browser load of the changed app before any web/UI acceptance claim.
-- Console, runtime, and network check result, including whether React/Vite/client startup errors or failed requests appeared.
-- Stable accessible labels/roles and stable test hooks such as `data-testid` are required for critical UI controls and states: inputs, buttons, filters, rows, empty/error/loading states.
-- CDP, Playwright, and manual verification must target those selectors for the critical interaction path instead of brittle DOM paths.
-- Viewports and browsers checked.
-- Screenshot, trace, video, or documented manual screenshot artifact for each critical UI flow.
-- Final pass/fail result with exact command output summary.
+## When Active
 
-## Chrome DevTools / CDP / MCP Checklist
+This workflow is active when:
+1. `browser-use` CLI is installed and `browser-use doctor` passes
+2. `Harness/workflows/browser-e2e.md` exists (this file)
+3. A task explicitly references `/wf-browser` or browser E2E testing
 
-- Start the app with the project command and record the URL and port.
-- Open a real browser target through available CDP, MCP, browser automation, or manual tooling.
-- Wait for a stable app selector, route, or page-ready state, not just HTTP 200.
-- Capture runtime exceptions, console errors, and failed network requests before and after the flow.
-- Interact through stable accessible labels/roles or `data-testid`, not brittle DOM paths.
-- Verify at least one critical flow end-to-end in the real browser target.
-- Save screenshot, trace, video, or result artifact paths and record them in `Harness/PLAN.md` or the feature doc.
-- Clean up any dev server or browser processes started for verification.
+## Contract
 
-## Common Commands
+Browser evidence in this project follows the contract:
 
-```powershell
-npm run dev
-npx playwright test
-npx playwright test --headed
-npx playwright show-report
+1. **Every browser claim needs real-browser evidence** — screenshot, state snapshot, or console output
+2. **CLI mode is preferred for deterministic steps** — use `browser-use open/state/click/screenshot` for predictable flows
+3. **Agent mode is for dynamic exploration** — use Browser Use Agent API when the page structure is unknown or changing
+4. **Evidence goes to the task directory** — `Harness/tasks/<task-id>/evidence/*.png`
+
+## Quick Install
+
+```bash
+# One-time setup
+pip install "browser-use[cli]"
+browser-use install
+browser-use doctor
+
+# Windows: if you see GBK encoding errors, set:
+set PYTHONIOENCODING=utf-8
+
+# Verify
+browser-use open https://example.com
+browser-use state
+browser-use screenshot test.png
+browser-use close
 ```
-
-If Playwright is not installed, prefer an existing browser test command from `package.json`. Chrome DevTools/CDP, manual screenshot evidence, or framework-specific tools are acceptable when the method, URL, flow, console/runtime/network result, and artifacts are documented.
 
 ## Fallback
 
-When no browser automation is available, run the app locally in a real browser, inspect critical flows manually, capture screenshots, and report console or network errors. Do not claim web/UI acceptance from typecheck, build, or unit tests alone. Do not install new dependencies unless the user approves.
+If `browser-use` is not installed, fall back to:
 
-## Windows Notes
+1. Playwright/Puppeteer MCP server (if configured)
+2. Chrome DevTools Protocol (CDP) manual inspection
+3. `Harness/WF.md#Browser And API Evidence` manual check contract
 
-Use PowerShell syntax for environment variables, for example `$env:PORT='3000'; npm run dev`. Quote paths that contain spaces.
+## Integration Points
+
+- **wf-mode**: references this file at line 16 and 42 of `.claude/skills/wf-mode/SKILL.md`
+- **wf-browser**: the `/wf-browser` slash command loads this workflow + the skill via `.claude/commands/wf-browser.md`
+- **MEMORY.md**: registered as optional workflow skill
+- **README.md**: routing table row "Browser E2E testing or automation" → browser-e2e
+
+## File Locations
+
+| File | Purpose |
+|------|---------|
+| `.claude/skills/wf-browser/SKILL.md` | Skill definition |
+| `.claude/commands/wf-browser.md` | Slash command bridge |
+| `Harness/workflows/browser-e2e.md` | This file — workflow contract and install guide |
+| `~/.claude/skills/browser-use/SKILL.md` | Official Browser Use skill (user-level, auto-downloaded) |
+| `pip show browser-use \| findstr Location` | Python package install location (run to find) |
+| `~/.browser-use/` | Daemon state and browser profiles |
