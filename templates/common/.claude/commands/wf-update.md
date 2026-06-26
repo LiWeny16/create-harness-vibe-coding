@@ -1,15 +1,17 @@
-# /wf update
+# /wf-update
 
-Check for Harness scaffold updates from GitHub and apply them incrementally.
+Check for Harness scaffold updates from GitHub and apply them incrementally. Script-driven for speed — comparison happens in milliseconds, only conflicts need user decision.
 
 ## Required
 
 - Load `wf-update` skill.
+- Run `node Harness/scripts/wf-update-check.mjs` first (instant plan).
+- For CONFLICT files: user decides [M]erge (recommended) / [O]verwrite / [K]eep.
 
 ## Check mode
 
-`/wf update --check` — Report available updates without applying.
+`/wf-update --check` — Report available updates without applying.
 
 ## Full update
 
-`/wf update` — Fetch latest templates, compare checksums, apply safe updates, report merge candidates.
+`/wf-update` — Script compares → AI resolves conflicts → Script applies SAFE+NEW.

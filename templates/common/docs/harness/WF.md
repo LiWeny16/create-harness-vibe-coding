@@ -15,6 +15,11 @@ Enter WF mode when any of these are true:
 - The same command, test, tool, or approach fails twice.
 - The user explicitly says `/wf-max [task]` or `wf max` (for maximum-parallelism mode, see [WF-MAX.md](WF-MAX.md)).
 
+**Two distinct trigger classes — do not conflate them:**
+
+- **Explicit invocation** (`/wf`, `wf mode`, `workflow mode`, `wk mode`, `/wf-max`): subagent fan-out is **mandatory and unconditional**. File count, task size, and subsystem count are IRRELEVANT — a 1-file task typed with `/wf` still fans out to ≥3 subagents before the second plan. There is no "too small for WF" exception once the user types the command.
+- **Auto-triggering** (the file-count / multi-subsystem / repeated-failure bullets above): these decide whether the harness enters WF mode *on its own*. They are the ONLY place file count matters, and they can only ESCALATE into WF — never downgrade an explicit command out of it.
+
 ## Multi-Subagent Requirement
 
 WF mode requires multi-subagent orchestration by default.

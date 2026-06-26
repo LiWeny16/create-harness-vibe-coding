@@ -133,8 +133,7 @@ The harness validator checks for specific structural invariants. When comparing 
 
 - `Harness/memory/tool-usage-reflections.md`, `Harness/memory/user-corrections-preferences.md`, `Harness/memory/agent-lessons-patterns.md` — these are new empty files
 - `.claude/agents/*.md` — all 9 common agents
-- `.claude/skills/harness-*/SKILL.md`, `.claude/skills/wf-update/SKILL.md`, and `.claude/skills/subagent-orchestrator/SKILL.md` — core harness skills and subagent orchestration
-- `.claude/commands/update.md` — /wf update command bridge
+- `.claude/skills/wf-update/SKILL.md` and `.claude/skills/subagent-orchestrator/SKILL.md` — core harness skills and subagent orchestration
 - `.claude/rules/ecc/common.md` — universal rules (unless the project has custom rules in this file)
 - `.claude/settings.json` — harness settings
 - `Harness/WF.md`, `Harness/lifecycle.md`, `Harness/subagents.md`, `Harness/agent-workflow.md`, `Harness/architecture.md` — harness runtime docs

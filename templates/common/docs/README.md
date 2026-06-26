@@ -126,6 +126,6 @@ Harness/scripts/validate-harness.mjs lightweight harness gate
 .claude/skills/wf-readme/SKILL.md README preservation and optional structure pass
 .claude/commands/wf.md             slash command bridge into WF mode
 .claude/skills/wf-update/SKILL.md   GitHub-based harness update
-.claude/commands/update.md           /wf update slash command bridge
+.claude/commands/wf-update.md        /wf-update slash command bridge
 Harness/.harness-version             scaffold version and file checksums
 ```

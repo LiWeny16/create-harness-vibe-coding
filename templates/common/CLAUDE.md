@@ -13,7 +13,7 @@ This repository dogfoods the generated Harness scaffold. Scaffold source files l
 - If work spans more than one step, create a task capsule from `Harness/tasks/_template/` and update `Harness/tasks/<task-id>/PROGRESS.md`.
 - Use `/wf <task>`, `/wf-review [focus]`, `wf mode`, `workflow mode`, or `wk mode` for long, difficult, uncertain, multi-file, or repeated-failure work.
 - Use `subagent-orchestrator` and `Harness/subagents.md` when coordinating multiple subagents.
-- Use `/wf update` to check for and apply scaffold updates from GitHub. See `.claude/skills/wf-update/SKILL.md`.
+- Use `/wf-update` to check for and apply scaffold updates from GitHub. See `.claude/skills/wf-update/SKILL.md`.
 - Subagents are readers and reporters. Only the main agent writes to `Harness/tasks/<task-id>/PROGRESS.md` and `Harness/tasks/<task-id>/PLAN.md`.
 - For memory writing and consolidation (repeated failures, user corrections, closeout), dispatch `memory-master`.
 - For context analysis and compression alerts (~85% window), dispatch `context-master`.

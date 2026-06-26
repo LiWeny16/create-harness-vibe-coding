@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { generate } from '../src/generator.js';
+import { generate, harnessDest } from '../src/generator.js';
 
 function tmpdir() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'harness-generator-'));
@@ -607,4 +607,91 @@ test('generated browser workflow includes Chrome DevTools CDP MCP checklist', ()
   assert.match(browserWorkflow, /critical flow end-to-end/);
   assert.match(browserWorkflow, /screenshot, trace, video, or result artifact paths/);
   assert.match(browserWorkflow, /Clean up any dev server or browser processes/);
+});
+
+// ============================================================================
+// Scaffolding Infrastructure Tests (build-version, harnessDest, .harness-version)
+// ============================================================================
+
+test('harnessDest maps scripts/ prefix to Harness/scripts/', () => {
+  // The harnessDest function should map any scripts/ path to Harness/scripts/
+  assert.equal(harnessDest('scripts/foo.mjs'), 'Harness/scripts/foo.mjs');
+  assert.equal(harnessDest('scripts/validate-harness.mjs'), 'Harness/scripts/validate-harness.mjs');
+  assert.equal(harnessDest('scripts/scan-clean.mjs'), 'Harness/scripts/scan-clean.mjs');
+  assert.equal(harnessDest('scripts/subdir/nested.mjs'), 'Harness/scripts/subdir/nested.mjs');
+});
+
+test('build-version produces valid semver and populated checksums/sources', async () => {
+  const { execSync } = await import('node:child_process');
+  const pkgPath = path.join(process.cwd(), 'package.json');
+  const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+  const harnessVersionPath = path.join(process.cwd(), 'templates', 'common', '.harness-version');
+
+  // Read the current .harness-version file (it should already be populated from release)
+  const harnessVersion = JSON.parse(fs.readFileSync(harnessVersionPath, 'utf8'));
+
+  // Assert generator version matches package.json version (real semver, not placeholder)
+  assert.equal(harnessVersion.generator, pkg.version, 'generator version should match package.json version');
+  assert.match(harnessVersion.generator, /^\d+\.\d+\.\d+/, 'generator should be a real semver');
+
+  // Assert checksums is populated with >0 keys (all non-PRESERVE files)
+  const checksumKeys = Object.keys(harnessVersion.checksums);
+  assert.ok(checksumKeys.length > 0, 'checksums should have at least one entry');
+
+  // Assert sources is populated with >0 keys and includes remapped paths
+  const sourceKeys = Object.keys(harnessVersion.sources);
+  assert.ok(sourceKeys.length > 0, 'sources should have at least one entry');
+
+  // Specifically assert that docs/harness/WF.md maps to Harness/WF.md
+  assert.equal(
+    harnessVersion.sources['Harness/WF.md'],
+    'docs/harness/WF.md',
+    'Harness/WF.md should be mapped from docs/harness/WF.md'
+  );
+
+  // Specifically assert that scripts/scan-clean.mjs maps to Harness/scripts/scan-clean.mjs
+  assert.equal(
+    harnessVersion.sources['Harness/scripts/scan-clean.mjs'],
+    'scripts/scan-clean.mjs',
+    'Harness/scripts/scan-clean.mjs should be mapped from scripts/scan-clean.mjs'
+  );
+
+  // Verify scripts/ prefix mapping for other script files
+  assert.equal(
+    harnessVersion.sources['Harness/scripts/validate-harness.mjs'],
+    'scripts/validate-harness.mjs',
+    'Harness/scripts/validate-harness.mjs should be mapped from scripts/validate-harness.mjs'
+  );
+});
+
+test('generated project has populated .harness-version with matching version and timestamps', () => {
+  const root = tmpdir();
+  const targetDir = path.join(root, 'version-check');
+  const pkgPath = path.join(process.cwd(), 'package.json');
+  const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+
+  const result = generate({ projectName: 'version-check', targetDir });
+
+  assert.equal(result.success, true);
+
+  const harnessVersionPath = path.join(targetDir, 'Harness', '.harness-version');
+  assert.ok(fs.existsSync(harnessVersionPath), 'Harness/.harness-version should be generated');
+
+  const harnessVersion = JSON.parse(fs.readFileSync(harnessVersionPath, 'utf8'));
+
+  // Assert generator matches package.json version
+  assert.equal(harnessVersion.generator, pkg.version, 'generated .harness-version generator should match package.json version');
+
+  // Assert checksums is populated (non-empty, >0 keys)
+  const checksumKeys = Object.keys(harnessVersion.checksums);
+  assert.ok(checksumKeys.length > 0, 'generated .harness-version checksums should have entries');
+
+  // Assert generated is a valid ISO timestamp
+  assert.match(harnessVersion.generated, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/, 'generated should be a valid ISO timestamp');
+
+  // Verify the timestamp is recent (within the last minute)
+  const generatedDate = new Date(harnessVersion.generated);
+  const now = new Date();
+  const diffMs = now - generatedDate;
+  assert.ok(diffMs >= 0 && diffMs < 60000, 'generated timestamp should be recent');
 });

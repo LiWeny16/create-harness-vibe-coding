@@ -1,6 +1,41 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createHash } from 'node:crypto';
+
+/** PRESERVE patterns — files excluded from checksums (user data). Mirror of wf-update-check.mjs. */
+const CHECKSUM_EXCLUDE = [
+  /^Harness\/PROGRESS\.md$/,
+  /^Harness\/tasks\//,
+  /^Harness\/memory\//,
+  /^Harness\/research\/PRD\.md$/,
+  /^Harness\/research\/research-results\.md$/,
+  /^Harness\/architecture\.md$/,
+  /^README\.md$/,
+  /^\.gitignore$/,
+  /^package\.json$/,
+  /^package-lock\.json$/,
+  /^Harness\/\.harness-version$/,
+];
+
+export function isChecksumExcluded(dest) {
+  return CHECKSUM_EXCLUDE.some(p => p.test(dest));
+}
+
+/**
+ * Compute LF-normalized SHA-256 checksums for a list of generated files.
+ * @param {Array<{dest: string, content: string}>} files - dest is POSIX harnessDest path
+ * @returns {Object} sorted map of dest -> "sha256-<hex>"
+ */
+export function computeChecksums(files) {
+  const checksums = {};
+  for (const { dest, content } of files) {
+    if (isChecksumExcluded(dest)) continue;
+    const normalized = content.replace(/\r\n/g, '\n');
+    checksums[dest] = 'sha256-' + createHash('sha256').update(normalized).digest('hex');
+  }
+  return Object.fromEntries(Object.keys(checksums).sort().map(k => [k, checksums[k]]));
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -14,11 +49,11 @@ const EMPTY_DIRS = [
   'tests',
 ];
 
-function harnessDest(file) {
+export function harnessDest(file) {
   if (file === '.harness-version') return 'Harness/.harness-version';
   if (file === 'SETUP.md') return 'Harness/SETUP.md';
   if (file === 'MEMORY.md') return 'Harness/MEMORY.md';
-  if (file === 'scripts/validate-harness.mjs') return 'Harness/scripts/validate-harness.mjs';
+  if (file.startsWith('scripts/')) return `Harness/${file}`;
   if (file.startsWith('memory/')) return `Harness/${file}`;
   if (file === 'docs/README.md') return 'Harness/README.md';
   if (file.startsWith('docs/harness/')) return file.replace(/^docs\/harness\//, 'Harness/');
@@ -430,7 +465,15 @@ export function generate({
       ...plan.backup,
     ];
 
+    const generatedFiles = [];
+    const HARNESS_VERSION_DEST = 'Harness/.harness-version';
+    let harnessVersionSpec = null;
+
     for (const file of writableFiles) {
+      if (file === HARNESS_VERSION_DEST) {
+        harnessVersionSpec = specsByDest.get(file);
+        continue;
+      }
       const spec = specsByDest.get(file);
       const destPath = path.join(resolvedDir, ...file.split('/'));
       let content = spec.type === 'empty'
@@ -441,6 +484,27 @@ export function generate({
       fs.mkdirSync(path.dirname(destPath), { recursive: true });
       fs.writeFileSync(destPath, content, 'utf-8');
       created.push(file);
+      generatedFiles.push({ dest: file, content });
+    }
+
+    if (harnessVersionSpec) {
+      const rendered = renderTemplate(harnessVersionSpec.src, vars);
+      let parsed;
+      try {
+        parsed = JSON.parse(rendered);
+      } catch {
+        parsed = {};
+      }
+      parsed.generator = vars.generatorVersion;
+      parsed.generated = vars.generatedTimestamp;
+      parsed.options = optional.selectedSkills.map(s => s.id);
+      parsed.autoCheck = true;
+      parsed.checksums = computeChecksums(generatedFiles);
+      const hvContent = JSON.stringify(parsed, null, 2) + '\n';
+      const hvDestPath = path.join(resolvedDir, ...HARNESS_VERSION_DEST.split('/'));
+      fs.mkdirSync(path.dirname(hvDestPath), { recursive: true });
+      fs.writeFileSync(hvDestPath, hvContent, 'utf-8');
+      created.push(HARNESS_VERSION_DEST);
     }
 
     return {

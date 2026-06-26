@@ -7,6 +7,12 @@
 - parallelismScore = (files × avgLines × 3 / 800) × independenceFactor
   - spawn ≥2.0 | maybe 1.0-2.0 | skip <1.0 (degrade to /wf)
 
+## Explicit Invocation Is an Absolute Fan-Out Mandate
+
+When the user types `/wf-max` (or `wf max`), spawning subagents is **mandatory and unconditional**. File count, task size, line count, and overhead estimates DO NOT apply to explicit invocation — they govern ONLY auto-triggering (whether the harness enters wf-max on its own). A 1-file task invoked with `/wf-max` still fans out to parallel subagents.
+
+"Degrade to /wf" changes the **organization** (flat vs CEO→Manager→Worker), never the **fact** of fan-out: `/wf` itself requires ≥3 subagents before second planning. There is no path from an explicitly typed command to a solo main-thread pass. If you find yourself reading source files and editing them directly after the user typed `/wf-max`, you have violated this mandate — stop and dispatch.
+
 ## Companion Docs
 
 - [subagents.md](subagents.md) — agent roster, controller role, efficiency ladder
@@ -195,6 +201,8 @@ overhead(depth) = 0.10 (depth≤2) | 0.20 (depth=3) | 0.35 (depth≥4)
 - independenceFactor: 1.0 (no deps) | 0.3-0.7 (shared imports)
 
 ## When NOT to use /wf-max
+
+These conditions govern **auto-trigger degradation only** (wf-max → /wf). They never apply when the user explicitly types `/wf-max`, and "degrade" always means the flat /wf multi-subagent loop, never a solo pass.
 
 - files < 5 → use /wf
 - all changes share single interface → serial dependency

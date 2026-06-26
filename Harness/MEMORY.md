@@ -28,6 +28,7 @@ Stack-specific agents can be added after the product shape is known.
 - [wf-update](../.claude/skills/wf-update/SKILL.md) — GitHub-based incremental harness update, checksum comparison, and safe in-place updates.
 - [wf-learn](../.claude/skills/wf-learn/SKILL.md) — force memory learning cycle: context-master -> memory-master -> project + global memory.
 - [wf-max](../.claude/skills/wf-max/SKILL.md) — maximum-parallelism workflow: write-set coloring, wave dispatch, parallel review per dimension.
+	- [wf-remove](../.claude/skills/wf-remove/SKILL.md) — Safely remove Harness framework files (SAFE/MODIFIED/USER classes), auto-prune empty directories, backup option.
 - learn: /wf-learn
 - [wf-browser](../.claude/skills/wf-browser/SKILL.md) — AI-driven browser automation via Browser Use (89.1% WebVoyager): E2E testing, form filling, screenshots, web scraping. CLI mode (~50ms) + Python Agent API.
 - [browser-e2e](workflows/browser-e2e.md) — optional workflow contract: install guide, evidence contract, integration points, fallback paths.

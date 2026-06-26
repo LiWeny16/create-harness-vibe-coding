@@ -36,6 +36,7 @@ const commonSkills = [
   'wf-learn',
   'subagent-orchestrator',
   'wf-readme',
+  'wf-remove',
 ];
 
 const memoryFiles = [
@@ -72,6 +73,10 @@ const required = [
   'Harness/research/PRD.md',
   '.claude/skills/wf-update/SKILL.md',
   '.claude/commands/wf-update.md',
+  'Harness/scripts/wf-update-check.mjs',
+  'Harness/scripts/wf-remove.mjs',
+  'Harness/scripts/scan-clean.mjs',
+  '.claude/commands/wf-remove.md',
   'Harness/.harness-version',
 ];
 

@@ -14,8 +14,10 @@ description: Use for /wf max or maximum parallelism. Three-tier CEO→Manager→
 
 ## Trigger & When NOT to Use
 
+**Explicit invocation always fans out — no file-count escape.** When the user types `/wf-max`, spawning subagents is mandatory and unconditional. File count, task size, and overhead DO NOT apply to explicit invocation — they govern only AUTO-triggering. A 1-file `/wf-max` still fans out. "Degrade to /wf" changes the organization (flat vs CEO→Manager→Worker), never the fact of fan-out — `/wf` itself requires ≥3 subagents. There is NO path from an explicitly typed `/wf-max` to a solo main-thread pass.
+
 - **Trigger**: `/wf-max [task]`, or auto when write-set ≥5 files AND clear disjoint boundaries (parallelismScore ≥2.0)
-- **Degrade to /wf**: files <5, all changes share single interface (serial dependency), import/re-export refactor (global consistency needed), overhead >0.30
+- **Auto-trigger degradation only** (never applies to explicit `/wf-max`): files <5, all changes share single interface (serial dependency), import/re-export refactor (global consistency needed), overhead >0.30
 - **Leaf conditions** (stop splitting): files ≤ span×2, avgLines <50, overhead >0.30
 
 ## Hard Constraints
