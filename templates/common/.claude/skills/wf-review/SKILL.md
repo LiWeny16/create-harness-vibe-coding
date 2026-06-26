@@ -7,6 +7,18 @@ description: Cross-model peer review. Invokes the other agent CLI (Codex or Clau
 
 **Anti-Self-Review Guard:** Use the OTHER CLI. Claude→Codex, Codex→Claude. Never self-review.
 
+## When to Ask the User (AskUserQuestion)
+
+BEFORE invoking the other CLI, use `AskUserQuestion` to clarify:
+
+- Review focus ambiguous → "Which dimension should I prioritize?"
+- Multiple changes to review → "Review all files or specific module?"
+- User said "review this" without specifics → ask scope
+
+Format: 2-3 options with trade-off descriptions.
+
+**Codex fallback** (no AskUserQuestion tool): output numbered options in markdown, wait for user reply.
+
 ## CLI Detection & Invocation
 
 | Runtime | Command |

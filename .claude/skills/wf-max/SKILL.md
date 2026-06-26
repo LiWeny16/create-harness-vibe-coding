@@ -44,6 +44,25 @@ If tempted to edit source → STOP. Spawn a Worker.
 5. **Manager MUST spawn ≥2 Workers or dissolve.** 0-1 Workers = Phantom Manager (AP5).
 6. **Overhead > 0.30 → degrade to /wf.** Record the decision in PLAN.md.
 
+## When to Ask the User (AskUserQuestion)
+
+CEO MUST use the `AskUserQuestion` tool when:
+
+- Intent ambiguous after exploration (≥2 valid interpretations)
+- Scope trade-off needs user decision (e.g. "full rewrite vs minimal fix")
+- Architecture direction has ≥2 viable approaches with different trade-offs
+- User gave vague request like "improve performance" or "clean up code"
+- D-GATE reveals >7 files — ask user to narrow scope
+
+Format: 2-4 options per question, `multiSelect: false` for exclusive choices. Each option must include a `description` explaining the trade-off. Example:
+
+```
+Q: "Auth refactor scope?"
+[1] "Minimal" — fix token validation only, 1 file
+[2] "Standard" — extract middleware + add tests, 3-5 files  
+[3] "Full" — new auth module with pluggable providers, 8-12 files
+```
+
 ## Manager Synthesis (retry/escalation)
 
 ```
