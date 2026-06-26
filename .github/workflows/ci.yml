@@ -32,5 +32,8 @@ jobs:
         with:
           node-version: 18
 
+      - name: Install dependencies
+        run: npm install
+
       - name: Run all tests
-        run: node --test tests/*.test.js
+        run: npm test
