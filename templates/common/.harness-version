@@ -1,6 +1,6 @@
 {
-  "generator": "0.7.1",
-  "generated": "2026-06-26T10:23:27.954Z",
+  "generator": "0.7.2",
+  "generated": "2026-06-26T10:23:43.805Z",
   "options": [],
   "autoCheck": true,
   "source": "https://raw.githubusercontent.com/zingspark/create-harness-vibe-coding/main/templates/common/",
