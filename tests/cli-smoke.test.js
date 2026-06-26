@@ -71,7 +71,7 @@ test('existing project default conflict exits non-zero and preserves file', () =
   assert.equal(fs.readFileSync(path.join(target, 'CLAUDE.md'), 'utf8'), 'legacy\n');
 });
 
-test('interactive fallback previews computed conflict plan before generation failure', () => {
+test('interactive fallback previews computed conflict plan before generation failure', { skip: !process.stdout.isTTY }, () => {
   const root = tmpdir();
   const target = path.join(root, 'my-vibe-project');
   fs.mkdirSync(target, { recursive: true });
