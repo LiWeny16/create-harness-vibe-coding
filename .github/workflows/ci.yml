@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  harness-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Verify harness-version is up to date
+        run: node scripts/build-version.mjs --check
+
+      - name: Validate harness scaffold
+        run: node templates/common/scripts/validate-harness.mjs --strict
+
+  test:
+    needs: harness-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Run all tests
+        run: node --test tests/*.test.js
