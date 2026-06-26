@@ -1,6 +1,6 @@
 {
   "generator": "0.7.0",
-  "generated": "2026-06-26T09:06:07.341Z",
+  "generated": "2026-06-26T10:20:05.155Z",
   "options": [],
   "autoCheck": true,
   "source": "https://raw.githubusercontent.com/zingspark/create-harness-vibe-coding/main/templates/common/",
@@ -35,7 +35,9 @@
     ".claude/skills/wf-remove/SKILL.md": "sha256-4057d8f0672ad44990354670aeb6c5be0c3d1f934781b26f776323f070f4a984",
     ".claude/skills/wf-review/SKILL.md": "sha256-7e599bd8cbbfc7f6e55aac4c19844317a1e3efd5cc4cf1513091721f671a22b0",
     ".claude/skills/wf-update/SKILL.md": "sha256-9c40d89ef52762793d97461da36709148af4a03222c352fde40f0193d0dddb58",
-    "AGENTS.md": "sha256-209c4043ce56f52268a91f9b5e2c4320f8425417c6fd2f245e2eaee21bfb9ea7",
+    ".codex/config.toml": "sha256-d37497c3278121598a663564ab38b53f658969717f78decb661ddd11c66551ea",
+    ".codex/hooks.json": "sha256-6d8d237b4a038a48fbadbdd087d9a68dba024bcfd748f59968252ebae7cc2e96",
+    "AGENTS.md": "sha256-bbc17b119ff579e500dcd36e78f9cf600ccda27fa7b32903f233ad96a97058ff",
     "CLAUDE.md": "sha256-432bd4dc9bdf9958d79ae697f72d1c9723be23fb156d43889ede84e305ed5e70",
     "Harness/MEMORY.md": "sha256-368bba7ae0a63b931dc547c013dd4c361e597ca5a54affa662778cd0f441d788",
     "Harness/README.md": "sha256-9ac42a3ad00890bfefba8cb658c5eb1d4ad086075d0fa70492e01c8b95dea770",
@@ -55,7 +57,9 @@
     "Harness/scripts/wf-statusline.ps1": "sha256-53c2e0178e9a0826516731b1145f96f55ff6c57fb1f31bf6f1a7210a8502ca65",
     "Harness/scripts/wf-statusline.sh": "sha256-053908cd4d53dea162252077c6cc5544ccd164455739f6edfbf254945f06ea2f",
     "Harness/scripts/wf-update-check.mjs": "sha256-8c3fa219e902056c20c55b2abfa5152349d9e00f4faa5bef646f78bfb71c486f",
-    "Harness/subagents.md": "sha256-e66f4bef8ce6c118cf0ec8c511f727a8c2c40bce25dcf5b754489d89915a47ba"
+    "Harness/subagents.md": "sha256-e66f4bef8ce6c118cf0ec8c511f727a8c2c40bce25dcf5b754489d89915a47ba",
+    "commands/wf-max.toml": "sha256-89818556f93d51cfe508a0c92de171f0f46be65d8001eb3eac68e46f18ddf783",
+    "commands/wf-review.toml": "sha256-d2b58f3892d2f7c5c689baa9e3361c1e355fae72bf632a6ed61f1a16743848f9"
   },
   "sources": {
     ".claude/agents/architect-manager.md": ".claude/agents/architect-manager.md",
@@ -88,6 +92,8 @@
     ".claude/skills/wf-remove/SKILL.md": ".claude/skills/wf-remove/SKILL.md",
     ".claude/skills/wf-review/SKILL.md": ".claude/skills/wf-review/SKILL.md",
     ".claude/skills/wf-update/SKILL.md": ".claude/skills/wf-update/SKILL.md",
+    ".codex/config.toml": ".codex/config.toml",
+    ".codex/hooks.json": ".codex/hooks.json",
     ".gitignore": ".gitignore",
     "AGENTS.md": "AGENTS.md",
     "CLAUDE.md": "CLAUDE.md",
@@ -122,6 +128,8 @@
     "Harness/tasks/_template/NOTES.md": "docs/tasks/_template/NOTES.md",
     "Harness/tasks/_template/PLAN.md": "docs/tasks/_template/PLAN.md",
     "Harness/tasks/_template/PROGRESS.md": "docs/tasks/_template/PROGRESS.md",
-    "README.md": "README.md"
+    "README.md": "README.md",
+    "commands/wf-max.toml": "commands/wf-max.toml",
+    "commands/wf-review.toml": "commands/wf-review.toml"
   }
 }
