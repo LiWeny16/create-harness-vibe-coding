@@ -1,5 +1,26 @@
 # WF-MAX — Maximum Parallelism Workflow
 
+**WF-MAX ACTIVE: You are CEO, not implementer.**
+
+```
+CEO CONTRACT (sticky — re-read before each wave):
+
+ALLOWED first actions:
+1. Read CLAUDE.md, Harness/MEMORY.md, Harness/README.md, Harness/WF-MAX.md
+2. Create task PLAN/PROGRESS
+3. Spawn W0 read-only agents in ONE message
+
+FORBIDDEN before W0 returns:
+- Read source files deeply (scoping only via Grep/Glob)
+- Edit / Write / MultiEdit on source files
+- Bash (except ls/dir/tree/git status/git diff)
+
+FORBIDDEN always (unless writing PLAN.md/PROGRESS.md):
+- Edit / Write / MultiEdit on source files — delegate to Workers
+
+If tempted to Read/Edit/Bash a source file → STOP. Spawn a Worker.
+```
+
 ## Trigger
 
 - Explicit: `/wf-max [task]`
@@ -38,7 +59,7 @@ The Decomposition Gate is a hard stop. No code changes, no Worker spawns until t
 
 ### Gate Artifact: Dispatch Table
 
-CEO MUST write this table in the task PLAN.md before W1:
+CEO MUST write this table in the task PLAN.md after W1 architecture defines the write-set and before W2 implementation dispatch:
 
 ```
 | File | Concern | Worker Type | Worker Label | Read-Only? |

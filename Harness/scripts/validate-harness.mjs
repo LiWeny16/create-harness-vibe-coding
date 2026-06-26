@@ -27,6 +27,10 @@ const commonAgents = [
   'verifier',
   'memory-master',
   'context-master',
+  'explore-manager',
+  'architect-manager',
+  'implement-manager',
+  'review-manager',
 ];
 
 const commonSkills = [

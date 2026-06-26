@@ -62,11 +62,12 @@ Routing priority: if a request explicitly says `/wf <task>`, `wf mode`, `workflo
 | Need WF mode | wf, /wf, wf mode, workflow mode, wk mode, long task, difficult, stuck, repeated failure | [WF.md](WF.md), [PROGRESS.md](PROGRESS.md), the current task `tasks/<id>/PROGRESS.md` and `tasks/<id>/PLAN.md` | exploration plan, second plan, heartbeat, recovery loop; explicit WF/WK loads subagent docs immediately |
 | Need perpetual auto-optimization | /wf-auto, wf auto, auto mode, never stop, self-improve, continuous optimize | [WF-AUTO.md](WF-AUTO.md), [subagents.md](subagents.md), [dispatch.md](dispatch.md) | perpetual loop, 8-angle scan, spark search, intent checkpoint, evidence ledger; CEO never writes code |
 | Need spark-augmented auto mode | /wf-auto-spark, wf auto spark, spark mode, external inspiration, discover mode | [WF-AUTO.md](WF-AUTO.md), [subagents.md](subagents.md) | spark-augmented W0: external sources active from cycle 1, Value Gate scored ≥18/25 |
-| Need peer review | /wf-review, peer review, second opinion, cross-check, stuck | `.claude/skills/wf-review/SKILL.md`, `Harness/README.md` | cross-model review via other CLI (Codex/Claude) |
+| Need WF-MAX mode | /wf-max, wf max, maximum parallelism, CEO, Manager, Worker, fan-out | [WF-MAX.md](WF-MAX.md), [subagents.md](subagents.md), [dispatch.md](dispatch.md) | CEO-only dispatch, W0 fan-out, D-GATE, wave evidence |
+| Need peer review | /wf-review, peer review, second opinion, cross-check, stuck | `.claude/skills/wf-review/SKILL.md`, `Harness/README.md` | cross-model multi-dimension review with severity classification |
 | Adding harness to existing project | existing project, onboarding, migrate, bootstrap, preserve, conflict | [extension.md](extension.md), [PROGRESS.md](PROGRESS.md), root `README.md` and package/CI files | discovered project facts, preserved config, manual registration plan |
 | README optimization | README, docs, quickstart, install docs, architecture diagram, command table, documentation polish | root `README.md`, `.claude/skills/wf-readme/SKILL.md`, [PROGRESS.md](PROGRESS.md), [architecture.md](architecture.md) as needed | approved README mode, preserved sections, proposed diff plan |
 | Need implementation plan | plan, task, write set, verify, milestone, progress | [PROGRESS.md](PROGRESS.md), the current task `tasks/<id>/PROGRESS.md` and `tasks/<id>/PLAN.md`, [agent-workflow.md](agent-workflow.md) | tasks, write set, verification commands |
-| Browser E2E testing or automation | /wf-browser, browser, e2e, web automation, form fill, screenshot verify, page test, browser test, Playwright AI, Browser Use | [workflows/browser-e2e.md](workflows/browser-e2e.md), `.claude/skills/wf-browser/SKILL.md`, `~/.claude/skills/browser-use/` (user-level) | CLI commands, screenshots, agent history, verification pass/fail evidence |
+| Browser E2E testing or automation | /wf-browser, browser, e2e, web automation, form fill, screenshot verify, page test, browser test, Playwright AI, Browser Use | browser-e2e workflow, wf-browser skill, Browser Use skill | CLI commands, screenshots, agent history, verification pass/fail evidence |
 | Optional workflow installed | workflow, optional, ui-ux-review, github-pr-review, python-backend, ts-react-frontend | matching `workflows/*.md` (if installed), [extension.md](extension.md) | workflow-specific evidence, commands, fallback path |
 | Need durable memory or reflection | memory, remember, preference, correction, tool failure, lesson, reflection | [MEMORY.md](MEMORY.md), `Harness/memory/tool-usage-reflections.md`, `Harness/memory/user-corrections-preferences.md`, `Harness/memory/agent-lessons-patterns.md` | concise newest-first memory entry or no-op rationale |
 | Need subagents | subagent, role pack, context, inject, return format, orchestrator | [subagents.md](subagents.md), [context-loading.md](context-loading.md), [dispatch.md](dispatch.md) | controller plan, role-specific context pack, dispatch pack |
@@ -81,6 +82,9 @@ Routing priority: if a request explicitly says `/wf <task>`, `wf mode`, `workflo
 - Move phases in order unless the user asks for a fast lane.
 - Use `/wf <task>`, `/wf-max [task]`, `wf mode`, `workflow mode`, or `wk mode` when a task is long, difficult, uncertain, multi-file, or repeatedly failing.
 - Use `/wf-auto` for perpetual self-directed optimization that never stops until 8-angle exhaustion.
+- **WF-MAX CEO Contract**: CEO never writes source code. Edit/Write/MultiEdit blocked by PreToolUse hook. Spawn Workers for all file changes. Only exception: `Harness/tasks/<id>/PLAN.md` and `PROGRESS.md`. See `CLAUDE.md` §1a.
+- **WF-REVIEW Anti-Self-Review**: Must invoke the OTHER CLI (Codex↔Claude). Same-model simulation is forbidden.
+- Mode state persists in `Harness/.runtime/current-mode.json` (gitignored). SessionStart hook injects CEO role into system context. Per-turn reinforcement prevents drift after compression.
 - Do not code before the PRD has MVP, non-goals, and acceptance criteria.
 - Unsure whether to open a task? Read [agent-workflow.md](agent-workflow.md) Section 1.
 - Do not spawn a subagent without a role, read boundary, write boundary, and return contract.
@@ -88,10 +92,12 @@ Routing priority: if a request explicitly says `/wf <task>`, `wf mode`, `workflo
 - Before coordinating multiple agents, fill `Harness/tasks/<task-id>/PLAN.md#Subagent Dispatch` and follow `subagents.md` plus `dispatch.md`; if the work also matches WF triggers, enter WF mode first.
 - In WF mode, update `Harness/tasks/<task-id>/PROGRESS.md#Heartbeat` before long commands, after failures, and at closeout.
 - In WF Max mode, never dispatch two implementers with overlapping file claims. Verify disjointness before each wave.
+- In WF Max mode, D-GATE (Dispatch Table + Self-Audit Checklist) is mandatory before W2 implementation dispatch.
 - Do not add stack-specific agents or skills without following `extension.md`.
 - Do not close work without tests or recorded manual verification.
 - Do not mark work `Verified` until evidence is recorded in the current task's `tasks/<id>/PROGRESS.md` and `tasks/<id>/PLAN.md` or the feature doc.
 - Run `node Harness/scripts/validate-harness.mjs` for scaffold structure; run `node Harness/scripts/validate-harness.mjs --strict` after bootstrap and before release.
+- Run `node tests/e2e-wf-hooks.test.mjs` to verify hook enforcement works before deploying WF-MAX.
 - If a doc still has `{{...}}`, treat that section as a template, not project fact.
 
 ## Doc Map
@@ -114,6 +120,18 @@ Harness/WF-AUTO.md                 perpetual auto-optimization workflow with 8-a
 .claude/commands/wf-auto-spark.md   /wf-auto-spark slash command bridge
 .claude/commands/wf-learn.md       /wf-learn slash command bridge
 .claude/commands/wf-review.md      /wf-review slash command bridge
+.claude/agents/explore-manager.md  WF-MAX W0 exploration Manager
+.claude/agents/architect-manager.md WF-MAX W1 architecture Manager
+.claude/agents/implement-manager.md WF-MAX W2 implementation Manager
+.claude/agents/review-manager.md   WF-MAX W2R review Manager
+Harness/.runtime/current-mode.json persistent mode state (gitignored, managed by hooks)
+Harness/scripts/wf-mode-hook.mjs   3-layer hook: SessionStart/UserPromptSubmit/PreToolUse
+Harness/scripts/wf-statusline.sh   terminal badge [WF-MAX] / [WF-REVIEW] (Unix)
+Harness/scripts/wf-statusline.ps1  terminal badge [WF-MAX] / [WF-REVIEW] (Windows)
+Harness/scripts/validate-harness.mjs scaffold validator
+Harness/scripts/wf-update-check.mjs checksum-based update checker
+Harness/scripts/wf-remove.mjs      safe harness removal
+Harness/scripts/scan-clean.mjs     template scan utility
 Harness/lifecycle.md               0-1 product flow
 Harness/subagents.md               controller-led subagent orchestration
 Harness/context-loading.md         dynamic loading and subagent packs

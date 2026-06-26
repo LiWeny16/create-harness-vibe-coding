@@ -17,6 +17,18 @@ Browser evidence in this project follows the contract:
 2. **CLI mode is preferred for deterministic steps** — use `browser-use open/state/click/screenshot` for predictable flows
 3. **Agent mode is for dynamic exploration** — use Browser Use Agent API when the page structure is unknown or changing
 4. **Evidence goes to the task directory** — `Harness/tasks/<task-id>/evidence/*.png`
+5. **Stable UI selector contract** — Stable accessible labels/roles and stable test hooks such as `data-testid` are required for critical UI controls and states: inputs, buttons, filters, rows, empty/error/loading states.
+
+## Chrome DevTools / CDP / MCP Checklist
+
+- [ ] record the URL and port
+- [ ] Verify available CDP, MCP, browser automation, or manual tooling
+- [ ] Check not just HTTP 200
+- [ ] Verify no runtime exceptions, console errors, and failed network requests
+- [ ] Confirm stable accessible labels/roles or `data-testid` on interactive elements
+- [ ] Test critical flow end-to-end
+- [ ] Capture screenshot, trace, video, or result artifact paths
+- [ ] Clean up any dev server or browser processes
 
 ## Quick Install
 

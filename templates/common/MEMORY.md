@@ -16,6 +16,10 @@
 - [verifier](../.claude/agents/verifier.md) — verification commands and evidence.
 - [memory-master](../.claude/agents/memory-master.md) — memory writing, dedup, consolidation, and cross-project knowledge extraction.
 - [context-master](../.claude/agents/context-master.md) — context analysis, compression alerts, and session knowledge extraction for memory-master.
+- [explore-manager](../.claude/agents/explore-manager.md) — WF-MAX W0 exploration: spawn 5-10 read-only researchers, synthesize, report to CEO.
+- [architect-manager](../.claude/agents/architect-manager.md) — WF-MAX W1 architecture: spawn 3 architects, synthesize interface contracts, report to CEO.
+- [implement-manager](../.claude/agents/implement-manager.md) — WF-MAX W2 implementation: spawn 5-7 implementers (one file_claim each), merge, report to CEO.
+- [review-manager](../.claude/agents/review-manager.md) — WF-MAX W2R review: spawn 3-4 reviewers (spec/code/security/perf), deduplicate, classify severity, report to CEO.
 
 Stack-specific agents can be added after the product shape is known.
 
@@ -30,9 +34,6 @@ Stack-specific agents can be added after the product shape is known.
 - [wf-max](../.claude/skills/wf-max/SKILL.md) — maximum-parallelism workflow: write-set coloring, wave dispatch, parallel review per dimension.
 	- [wf-remove](../.claude/skills/wf-remove/SKILL.md) — Safely remove Harness framework files (SAFE/MODIFIED/USER classes), auto-prune empty directories, backup option.
 - learn: /wf-learn
-- [wf-browser](../.claude/skills/wf-browser/SKILL.md) — AI-driven browser automation via Browser Use (89.1% WebVoyager): E2E testing, form filling, screenshots, web scraping. CLI mode (~50ms) + Python Agent API.
-- [browser-use](~/.claude/skills/browser-use/SKILL.md) — external user-level skill (auto-installed via `pip install browser-use[cli]`): CLI commands, browser profiles, cloud browsers, daemon management.
-- [browser-e2e](workflows/browser-e2e.md) — optional workflow contract: install guide, evidence contract, integration points, fallback paths.
 
 Stack-specific skills can be added after the product shape is known.
 

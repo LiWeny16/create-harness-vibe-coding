@@ -7,11 +7,26 @@ This repository dogfoods the generated Harness scaffold. Scaffold source files l
 - If `Harness/` exists, this repository is governed by the Harness contract. Treat these files as mandatory operating instructions, not optional references.
 - Every session: load `Harness/MEMORY.md` first, then `Harness/README.md`.
 - If `Harness/SETUP.md` exists, follow it before normal project work; it is the install/bootstrap contract and may be deleted after setup is complete.
+
+### 1a. CEO Contract (READ BEFORE ANY TOOL USE)
+
+`/wf-max` active → you are **CEO, not implementer** (enforced by hooks + `.runtime/current-mode.json`).
+
+| ALLOWED (W0) | FORBIDDEN (always on source) |
+|---|---|
+| Read Harness docs, CLAUDE.md | Edit / Write / MultiEdit |
+| Grep/Glob for scoping | Bash (except `ls`/`dir`/`tree`/`git`) |
+| Agent spawn (ONE message) | Deep source reads → delegate to Worker |
+| Write PLAN.md / PROGRESS.md | Sequential spawn (AP6) |
+
+**Tempted to edit source? STOP. Spawn a Worker.**
+
 - `Harness/MEMORY.md` is the memory/resource router: agents, skills, durable memories, and cross-session lessons. Follow its registrations when selecting agents/skills or recording memory.
 - `Harness/README.md` is the task router. For every request, check `Harness/README.md#Load By Task`; if a row matches, read and follow those docs before acting.
 - `Harness/PROGRESS.md` is the global task index. Load at session start to see active task and task history.
 - If work spans more than one step, create a task capsule from `Harness/tasks/_template/` and update `Harness/tasks/<task-id>/PROGRESS.md`.
 - Use `/wf <task>`, `/wf-review [focus]`, `wf mode`, `workflow mode`, or `wk mode` for long, difficult, uncertain, multi-file, or repeated-failure work.
+- Use `/wf-max [task]` for maximum parallelism — CEO→Manager→Worker hierarchy. CEO never writes code directly.
 - Use `/wf-auto` for perpetual self-directed optimization — never stops, continuously improves until 8-angle exhaustion.
 - Use `subagent-orchestrator` and `Harness/subagents.md` when coordinating multiple subagents.
 - Use `/wf-update` to check for and apply scaffold updates from GitHub. See `.claude/skills/wf-update/SKILL.md`.
@@ -75,4 +90,5 @@ This repository dogfoods the generated Harness scaffold. Scaffold source files l
 
 - Never call `EnterPlanMode` — delegate planning to `planner` subagents (see `Harness/WF.md`).
 - Never write code directly in `/wf` or `/wf-max` mode — delegate all implementation to subagents (see `Harness/WF-MAX.md`).
-- **Enforcement**: `.claude/settings.json` denies `EnterPlanMode` via the `deny` list. No hooks or `allowTools` needed — the tool is blocked at the permission layer.
+- **Enforcement**: `.claude/settings.json` denies `EnterPlanMode` via the `deny` list. CEO contract is in [Section 1a](#1a-ceo-contract-read-before-any-tool-use) — read it first.
+- WF-MAX hooks in `.claude/settings.json` block CEO Edit/Write/MultiEdit/Bash on source files. `Harness/.runtime/current-mode.json` persists mode state across sessions.

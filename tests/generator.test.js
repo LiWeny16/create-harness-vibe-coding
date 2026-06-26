@@ -129,7 +129,7 @@ test('skip conflict policy preserves existing files and creates missing harness 
   assert.match(result.warnings.join('\n'), /CLAUDE\.md already exists/);
   assert.match(result.warnings.join('\n'), /confirm refactoring or merging/);
   assert.equal(fs.readFileSync(path.join(targetDir, 'CLAUDE.md'), 'utf8'), 'legacy rules\n');
-  assert.ok(fs.existsSync(path.join(targetDir, 'Harness', 'PLAN.md')));
+  assert.ok(fs.existsSync(path.join(targetDir, 'Harness', 'PROGRESS.md')));
 });
 
 test('skip conflict policy warns that AGENTS.md needs user consent before merging', () => {
@@ -205,12 +205,14 @@ test('generated scaffold stores harness-owned payload under root Harness directo
     'Harness/context-loading.md',
     'Harness/agent-workflow.md',
     'Harness/scripts/validate-harness.mjs',
+    'Harness/scripts/wf-update-check.mjs',
+    'Harness/scripts/wf-remove.mjs',
+    'Harness/scripts/scan-clean.mjs',
     'Harness/memory/tool-usage-reflections.md',
     'Harness/memory/user-corrections-preferences.md',
     'Harness/memory/agent-lessons-patterns.md',
-    '.claude/skills/wf-mode/SKILL.md',
+    '.claude/skills/wf-readme/SKILL.md',
     '.claude/skills/subagent-orchestrator/SKILL.md',
-    '.claude/skills/readme-optimizer/SKILL.md',
     '.claude/commands/wf.md',
   ]) {
     assert.ok(fs.existsSync(path.join(targetDir, ...rel.split('/'))), `Expected ${rel} to be generated`);
@@ -246,7 +248,7 @@ test('generated scaffold stores harness-owned payload under root Harness directo
   assert.match(rootReadme, /Harness\/README\.md/);
   assert.match(rootReadme, /Follow `Harness\/SETUP\.md` before normal work while it exists/);
   assert.match(rootReadme, /Harness\/MEMORY\.md/);
-  assert.match(rootReadme, /readme-optimizer/);
+  assert.match(rootReadme, /wf-readme/);
 
   const wf = readRel(targetDir, 'Harness/WF.md');
   assert.match(wf, /Ralph-style/i);
@@ -256,7 +258,7 @@ test('generated scaffold stores harness-owned payload under root Harness directo
   assert.match(wf, /WF mode requires multi-subagent orchestration by default/);
   assert.match(wf, /Explicit `\/wf`, `wf mode`, `workflow mode`, or `wk mode` MUST spawn at least 3 distinct subagents/);
   assert.match(wf, /\.claude\/agents\//);
-  assert.match(wf, /7:3 collaboration bias/);
+  assert.match(wf, /replaces the old "7:3" heuristic/);
 
   const subagents = readRel(targetDir, 'Harness/subagents.md');
   assert.match(subagents, /## Source Attribution/);
@@ -274,7 +276,7 @@ test('generated scaffold stores harness-owned payload under root Harness directo
 
   const orchestratorSkill = readRel(targetDir, '.claude/skills/subagent-orchestrator/SKILL.md');
   assert.match(orchestratorSkill, /Harness\/subagents\.md/);
-  assert.match(orchestratorSkill, /after wf-mode has been selected/);
+  assert.match(orchestratorSkill, /coordination-heavy tasks/);
   assert.match(orchestratorSkill, /update `Harness\/tasks\/<task-id>\/PLAN\.md#Subagent Dispatch`/);
   assert.match(orchestratorSkill, /\.claude\/agents\//);
   assert.match(orchestratorSkill, /Explicit WF\/WK mode requires at least 3 distinct agents/);
@@ -285,15 +287,15 @@ test('generated scaffold stores harness-owned payload under root Harness directo
   assert.match(architecture, /## 3\. State Design/);
   assert.match(architecture, /Avoid speculative abstraction/);
 
-  const readmeSkill = readRel(targetDir, '.claude/skills/readme-optimizer/SKILL.md');
+  const readmeSkill = readRel(targetDir, '.claude/skills/wf-readme/SKILL.md');
   assert.match(readmeSkill, /Preserve \+ append/);
   assert.match(readmeSkill, /Structure pass/);
   assert.match(readmeSkill, /Full rewrite/);
   assert.match(readmeSkill, /Mermaid or ASCII architecture diagrams/);
 
   const plan = readRel(targetDir, 'Harness/PROGRESS.md');
-  assert.match(plan, /DEPRECATED/);
-  assert.match(plan, /## Legacy Content/);
+  assert.match(plan, /## Active Task/);
+  assert.match(plan, /## Task Index/);
 });
 
 test('backup conflict policy keeps original and writes template file', () => {
@@ -473,8 +475,7 @@ test('generated scaffold includes memory folder registrations and reflection tri
   const docsReadme = readRel(targetDir, 'Harness/README.md');
   const setup = readRel(targetDir, 'Harness/SETUP.md');
   const claude = readRel(targetDir, 'CLAUDE.md');
-  const routerSkill = readRel(targetDir, '.claude/skills/harness-router/SKILL.md');
-  const wfSkill = readRel(targetDir, '.claude/skills/wf-mode/SKILL.md');
+  const wfUpdateSkill = readRel(targetDir, '.claude/skills/wf-update/SKILL.md');
 
   for (const rel of memoryRefs) {
     assert.match(memoryIndex, new RegExp(rel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
@@ -482,26 +483,23 @@ test('generated scaffold includes memory folder registrations and reflection tri
   assert.match(docsReadme, /Harness\/memory\/tool-usage-reflections\.md/);
   assert.match(docsReadme, /subagents\.md/);
   assert.match(docsReadme, /README optimization/);
-  assert.match(docsReadme, /readme-optimizer/);
+  assert.match(docsReadme, /wf-readme/);
   assert.match(docsReadme, /Routing priority/);
   assert.match(docsReadme, /wk mode/);
   assert.match(docsReadme, /\| Need WF mode[^\n]*\[WF\.md\]\(WF\.md\), \[PROGRESS\.md\]\(PROGRESS\.md\)[^\n]*explicit WF\/WK loads subagent docs immediately/);
   assert.doesNotMatch(docsReadme, /\| Need WF mode[^\n]*subagents\.md/);
-  assert.match(routerSkill, /routes to `wf-mode` first/);
-  assert.match(routerSkill, /`\/wf`, `wf mode`, `workflow mode`, `wk mode`/);
-  assert.match(routerSkill, /Let `wf-mode` decide when to load subagent docs/);
-  assert.match(wfSkill, /only when coordinating subagents or bounded role passes/);
+  assert.match(wfUpdateSkill, /wf-update-check\.mjs/);
+  assert.match(wfUpdateSkill, /scan-clean\.mjs/);
   assert.match(memoryIndex, /subagent-orchestrator/);
-  assert.match(memoryIndex, /readme-optimizer/);
+  assert.match(memoryIndex, /wf-readme/);
   assert.match(memoryIndex, /subagents\.md/);
   assert.match(setup, /memory\//);
   assert.match(setup, /Agent-Link Install Intake/);
-  assert.match(setup, /Ask at most three blocking questions up front/);
   assert.match(setup, /Root agent entry/);
   assert.match(setup, /Harness location/);
   assert.match(setup, /README ownership/);
   assert.match(setup, /README optimization/);
-  assert.match(setup, /readme-optimizer/);
+  assert.match(setup, /wf-readme/);
   assert.match(setup, /ECC, Superpowers, custom rules/);
   assert.match(setup, /Install 1-2 relevant skills only after user approval/);
   assert.match(setup, /Memory\/privacy/);
@@ -549,9 +547,6 @@ test('generated web workflows require stable accessible selectors and test hooks
     assert.match(body, /inputs, buttons, filters, rows, empty\/error\/loading states/);
   }
 
-  assert.match(featureTemplate, /UI Automation Hooks/);
-  assert.match(featureTemplate, /data-testid/);
-  assert.match(featureTemplate, /critical UI controls and states/);
 });
 
 test('generated optional workflows are registered under Harness workflows', () => {

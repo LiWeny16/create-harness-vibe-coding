@@ -57,6 +57,10 @@ Goal
 | `verifier` | Parallel Read | run checks and record evidence |
 | `memory-master` | Serial Write | write/consolidate memory entries, dedup, cross-project extraction |
 | `context-master` | Parallel Read | analyze context usage, recommend compression, extract session knowledge |
+| `explore-manager` | Parallel Read | WF-MAX W0: spawn 5-10 researchers, synthesize, report to CEO |
+| `architect-manager` | Parallel Read | WF-MAX W1: spawn 3 architects, synthesize interface contracts |
+| `implement-manager` | Serial Write | WF-MAX W2: spawn implementers (one file_claim each), merge results |
+| `review-manager` | Parallel Read | WF-MAX W2R: spawn 3-4 reviewers, deduplicate, classify severity |
 
 ## Dispatch Rules
 

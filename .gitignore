@@ -29,6 +29,9 @@ temp/
 *.key
 *.pem
 
+# Runtime mode state (managed by wf-mode-hook.mjs)
+Harness/.runtime/
+
 # Local agent/editor state
 .claude/settings.local.json
 CLAUDE.local.md

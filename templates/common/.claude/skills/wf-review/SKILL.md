@@ -1,50 +1,72 @@
 ---
 name: wf-review
-description: Cross-model peer review. Invokes the other agent CLI (Codex or Claude) to independently review changes, architecture, or bug fixes. Use for /wf-review, peer review, second opinion, or when stuck.
+description: Cross-model peer review. Invokes the other agent CLI (Codex or Claude) to independently review changes across 5 dimensions with severity classification. Use for /wf-review, peer review, second opinion, or when stuck.
 ---
 
-# WF Review
+# WF Review — Cross-Model Peer Review
 
-Cross-model peer review via the OTHER agent CLI. Fresh eyes on your changes.
+**Anti-Self-Review Guard:** Use the OTHER CLI. Claude→Codex, Codex→Claude. Never self-review.
 
-## Load
+## CLI Detection & Invocation
 
-- `Harness/README.md` for project context
-- Current diff or target files
-
-## How It Works
-
-1. **Detect available CLIs**: Check `which codex` and `which claude`. Use the OTHER CLI — never the one running this session.
-2. **Prepare context**: Gather diff (`git diff`), relevant architecture docs, the specific question
-3. **Invoke the OTHER CLI** — the one we're NOT currently running under
-4. **Read and synthesize**: Present the raw output, then add analysis
-
-## CLI Commands
-
-| Runtime | Review Command |
+| Runtime | Command |
 |---|---|
-| Claude → Codex | `git diff \| codex exec "..."` (include full diff, not just commit message) |
-| Codex → Claude | `git diff \| claude -p "..."` |
-| Either (fallback) | warn user, suggest installing the other CLI. Do NOT proceed with same-model review. |
+| Claude → Codex | `git diff \| codex exec "<5-dimension review prompt>"` |
+| Codex → Claude | `git diff \| claude -p "<5-dimension review prompt>"` |
+| Only one CLI | Warn user. Do NOT self-review. |
 
-**Anti-self-review rule**: Detect which runtime we're in, then use the OTHER one. Never invoke the same CLI that's running the session.
+## 5 Mandatory Review Dimensions
 
-## Context to Include
+Construct the prompt covering ALL 5:
 
-For a good review, pipe or include:
-- `git diff` or `git diff --cached`
-- Relevant `Harness/` docs (architecture.md)
-- The specific focus: "find bugs", "critique architecture from 4+ dimensions", "fix this bug", "check for security issues"
+| # | Dimension | Key Questions |
+|---|-----------|---------------|
+| 1 | **Correctness** | Bugs, edge cases, race conditions, null/undefined, logic flaws? |
+| 2 | **Security** | Injection, auth bypass, data exposure, input validation, unsafe deps? |
+| 3 | **Architecture** | Boundary violations, coupling, state ownership, interface contract breaks? |
+| 4 | **Performance** | Algorithmic complexity, N+1 queries, memory leaks, unnecessary allocations? |
+| 5 | **Tests** | Coverage gaps, missing edge cases, test quality, CI regressions? |
+
+## Context
+
+Include: `git diff` (or `git diff --cached`), relevant `Harness/` docs (architecture.md), the 5-dimension table above.
+
+**Size guard:** diff >500 lines → warn + suggest narrower scope or split review.
+
+## Severity Classification
+
+| Severity | Criteria | Action |
+|----------|----------|--------|
+| **Critical** | Security vuln, data loss, crash, data corruption | Must fix before merge |
+| **High** | Bug, regression, spec violation, broken contract | Should fix before merge |
+| **Medium** | Maintainability, duplication, test gap, perf concern | May defer with written justification |
+| **Low** | Style, naming, minor optimization, nit | Optional |
 
 ## Rules
 
-- Never simulate or fake the review. The Bash tool MUST invoke the other CLI.
-- If both CLIs fail, report the error — don't silently skip.
-- Present the raw review output to the user before adding your own analysis.
-- Distinguish between: the peer's findings (authoritative) and your interpretation (supplementary).
+- Bash MUST invoke the other CLI — never simulate.
+- Both CLIs fail → report error, don't skip.
+- Raw output first, then your classified synthesis.
+- Peer findings = authoritative; your classification = supplementary.
 
-## Return
+## CEO Synthesis Output
 
-- Which CLI was used for review
-- Raw review output
-- CEO's synthesis and action items
+```
+Review CLI: [Codex / Claude]
+Dimensions: Correctness, Security, Architecture, Performance, Tests
+
+Critical (must fix):
+- [file:line] description → fix
+
+High (should fix):
+- [file:line] description → fix
+
+Medium (may defer):
+- [file:line] description → note
+
+Low (optional):
+- [file:line] description
+
+Verdict: APPROVE / APPROVE_WITH_FIXES / REJECT
+Actions: 1. ... 2. ...
+```

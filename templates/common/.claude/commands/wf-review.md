@@ -1,32 +1,25 @@
 # /wf-review [focus]
 
-Cross-model peer review. Invokes the OTHER agent CLI to review changes from a fresh perspective.
+Cross-model peer review. Invokes the OTHER agent CLI for independent multi-dimension review.
 
-## How it works
+## Anti-Self-Review Guard
 
-1. Detect which runtime we're running under
-2. Prepare context: diff, relevant files, architecture docs, problem description
-3. Pipe to the OTHER CLI for independent review
-4. Synthesize the response
+**Use the OTHER CLI.** Claude → `codex exec`. Codex → `claude -p`. Only one CLI? Warn user, do NOT self-review.
 
 ## Required
 
-- Load `wf-review` skill.
-- MUST use `Bash` to invoke the other CLI — never simulate or fake the review.
-- Present the raw review output to the user, then add your own analysis.
-
-## CLI Detection
-
-- Check `which codex && echo CODEX || echo NO_CODEX` to detect Codex
-- Check `which claude && echo CLAUDE || echo NO_CLAUDE` to detect Claude
-- Use the OTHER CLI — the one NOT running this session. Never self-review.
-- If only one CLI is available: warn the user, suggest installing the other CLI. Do NOT proceed with self-review.
+- Load `wf-review` skill (authoritative: dimensions, severity, synthesis format).
+- Detect CLI: `which codex` / `which claude`. Use the one NOT running this session.
+- `Bash` invoke the other CLI — never simulate.
+- Present raw output + classified synthesis.
 
 ## Flow
 
 ```text
-CEO prepares context (diff + architecture docs + focus prompt)
-→ Bash: codex exec "..."  (or claude -p "...")
-→ CEO reads output
-→ CEO presents findings + own analysis
+diff + architecture docs + 5-dimension prompt (from skill)
+→ Bash: codex exec "..." or claude -p "..."
+→ classify findings (Critical/High/Medium/Low per skill severity table)
+→ raw output + synthesis + action items
 ```
+
+Context guard: if `git diff` >500 lines, warn and suggest narrowing scope.

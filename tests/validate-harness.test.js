@@ -53,25 +53,6 @@ None
 
 ${planGoal}
 `);
-  writeRel(targetDir, 'Harness/PROGRESS.md', `# PROGRESS.md — DEPRECATED
-
-## Subagent Synthesis
-
-Agents used: none
-Findings accepted: none
-Findings rejected: none
-Conflicts: none
-Decisions: none
-Next write set: none
-Verification path: npm test
-Residual risk: none
-
-## Verification
-
-| Check | Result | Notes |
-| --- | --- | --- |
-| \`npm test\` | Pass | includes literal \`{{...}}\` syntax documentation |
-`);
 
   writeRel(targetDir, 'Harness/research/PRD.md', `# PRD: validated
 
@@ -107,11 +88,8 @@ Use ports only for real boundaries.
 State has one owner and explicit recovery behavior.
 
 Avoid speculative abstraction unless there is a concrete second use or testability need.
-`);
 
-  writeRel(targetDir, 'Harness/architecture.md', `# Port Contracts - validated
-
-## 1. Port Classification
+## 4. Port Classification
 
 No project-specific ports are required for the first validation slice.
 
