@@ -37,6 +37,30 @@ export function computeChecksums(files) {
   return Object.fromEntries(Object.keys(checksums).sort().map(k => [k, checksums[k]]));
 }
 
+/**
+ * Build a sources map: dest → template-relative POSIX path.
+ * Maps each generated file back to its source under templates/common/ or templates/optional/.
+ * @param {Array<{dest: string, src: string, type: string}>} fileSpecs
+ * @returns {Object} sorted map of dest → templateRelPath
+ */
+export function computeSources(fileSpecs) {
+  const sources = {};
+  for (const spec of fileSpecs) {
+    if (spec.type === 'empty') continue;
+    if (!spec.src) continue;
+    let rel;
+    if (spec.type === 'common') {
+      rel = normalizePath(path.relative(TEMPLATES_DIR, spec.src));
+    } else if (spec.type === 'optional') {
+      rel = normalizePath(path.relative(OPTIONAL_DIR, spec.src));
+    } else {
+      continue;
+    }
+    sources[spec.dest] = rel;
+  }
+  return Object.fromEntries(Object.keys(sources).sort().map(k => [k, sources[k]]));
+}
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const pkg = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../package.json'), 'utf8'));
@@ -500,6 +524,11 @@ export function generate({
       parsed.options = optional.selectedSkills.map(s => s.id);
       parsed.autoCheck = true;
       parsed.checksums = computeChecksums(generatedFiles);
+      // Build sources map from fileSpecs (all writable files, not just generatedFiles)
+      const allWritableSpecs = writableFiles
+        .map(f => specsByDest.get(f))
+        .filter(Boolean);
+      parsed.sources = computeSources(allWritableSpecs);
       const hvContent = JSON.stringify(parsed, null, 2) + '\n';
       const hvDestPath = path.join(resolvedDir, ...HARNESS_VERSION_DEST.split('/'));
       fs.mkdirSync(path.dirname(hvDestPath), { recursive: true });

@@ -1,6 +1,6 @@
 {
   "generator": "0.6.5",
-  "generated": "2026-06-26T04:44:55.347Z",
+  "generated": "2026-06-26T07:02:12.112Z",
   "options": [],
   "autoCheck": true,
   "source": "https://raw.githubusercontent.com/zingspark/create-harness-vibe-coding/main/templates/common/",
@@ -33,8 +33,8 @@
     ".claude/skills/wf-update/SKILL.md": "sha256-9c40d89ef52762793d97461da36709148af4a03222c352fde40f0193d0dddb58",
     "AGENTS.md": "sha256-209c4043ce56f52268a91f9b5e2c4320f8425417c6fd2f245e2eaee21bfb9ea7",
     "CLAUDE.md": "sha256-f7c0f4b8bd00b17d4b05ecefcde4fbba3d969c4d494481fc67b6eabd861ca274",
-    "Harness/MEMORY.md": "sha256-604d3f03e340b90c0027619a68df16a9432491be66d3d150c53d48100e53b615",
-    "Harness/README.md": "sha256-51f1733ef84febbbe0b95197faaec0a9aa732f1694d7614cd879a37e7fac04b3",
+    "Harness/MEMORY.md": "sha256-4fb31617f0a4d216605369a2b5be8c43d555943794a00724eb82039d306da586",
+    "Harness/README.md": "sha256-9ac42a3ad00890bfefba8cb658c5eb1d4ad086075d0fa70492e01c8b95dea770",
     "Harness/SETUP.md": "sha256-7487bfbcf13c29d138589ad533163c2112fc37c3b791397e4cfe6a32efd24d4e",
     "Harness/WF-MAX.md": "sha256-0757431f8c985c7ee39f391e410ea20d852a5bd58fe0935d2e41067b4af72f5a",
     "Harness/WF.md": "sha256-3acd410f420a99a4237ddcb702502888538e09caaf2295789ef1358a15feb75f",
@@ -47,7 +47,7 @@
     "Harness/scripts/scan-clean.mjs": "sha256-66d42f5cbc6374c826cd488bd0b2fcef11eb22d60ac7995e3585c7de5cb2cb44",
     "Harness/scripts/validate-harness.mjs": "sha256-9f5ec0809f3313402381b39c2364d148e8331f92b91a16a32637db8158a3ac1f",
     "Harness/scripts/wf-remove.mjs": "sha256-e0a3cc9a9546484b8d8b26d0ffd6af24a9d4521d2a61c728d16756981e4c36fc",
-    "Harness/scripts/wf-update-check.mjs": "sha256-52e02ea299944594c594abb80fa4362c4fc184c206a8c323b69d06df6b435a5c",
+    "Harness/scripts/wf-update-check.mjs": "sha256-8c3fa219e902056c20c55b2abfa5152349d9e00f4faa5bef646f78bfb71c486f",
     "Harness/subagents.md": "sha256-e66f4bef8ce6c118cf0ec8c511f727a8c2c40bce25dcf5b754489d89915a47ba"
   },
   "sources": {

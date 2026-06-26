@@ -103,8 +103,19 @@ const checksumCount = Object.keys(checksums).length;
 
 if (CHECK_MODE) {
   const currentRaw = fs.readFileSync(HARNESS_VERSION_PATH, 'utf8');
-  if (currentRaw === output) {
-    console.log(`[build-version] --check: file is already up to date (${fileCount} checksummed files, ${sourceCount} sources).`);
+  // Compare without 'generated' timestamp for idempotent CI checks
+  let currentObj, newObj;
+  try { currentObj = JSON.parse(currentRaw); } catch { currentObj = {}; }
+  try { newObj = JSON.parse(output); } catch { newObj = {}; }
+  // Normalize: strip 'generated' field before comparison
+  delete currentObj.generated;
+  delete newObj.generated;
+  const currentStable = JSON.stringify(currentObj);
+  const newStable = JSON.stringify(newObj);
+
+  if (currentStable === newStable) {
+    console.log(`[build-version] --check: file is already up to date (${checksumCount} checksums, ${sourceCount} sources).`);
+    process.exit(0);
   } else {
     console.log(`[build-version] --check: file WOULD change.`);
     console.log(`  generator: ${generatorVersion}`);
@@ -112,8 +123,10 @@ if (CHECK_MODE) {
     console.log(`  sources entries: ${sourceCount}`);
     console.log(`  checksums entries: ${checksumCount}`);
     console.log('  (run without --check to apply)');
+    process.exit(1);
+    // Note: exit(1) so CI can detect staleness.
+    // 'generated' timestamp is excluded from comparison for idempotency.
   }
-  process.exit(0);
 }
 
 fs.writeFileSync(HARNESS_VERSION_PATH, output, 'utf8');

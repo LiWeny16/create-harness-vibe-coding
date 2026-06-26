@@ -116,9 +116,40 @@ async function main() {
   const args = process.argv.slice(2);
   const apply = args.includes('--apply');
   const jsonOut = args.includes('--json');
+  const ignoreVersion = args.includes('--ignore-version') || args.includes('--force-check');
 
   // 1. Read local state
-  const localVersion = JSON.parse(readFileSync(VERSION_FILE, 'utf-8'));
+  if (!existsSync(VERSION_FILE)) {
+    if (jsonOut) {
+      console.log(JSON.stringify({ status: 'error', message: 'Local Harness/.harness-version not found.' }));
+    } else {
+      console.error('ERROR: Harness/.harness-version not found. Is Harness installed?');
+    }
+    return;
+  }
+
+  let localVersion;
+  try {
+    localVersion = JSON.parse(readFileSync(VERSION_FILE, 'utf-8'));
+  } catch (e) {
+    if (jsonOut) {
+      console.log(JSON.stringify({ status: 'error', message: 'Failed to parse Harness/.harness-version: ' + e.message }));
+    } else {
+      console.error('ERROR: Failed to parse Harness/.harness-version:', e.message);
+      console.error('  The file may be corrupted. If this is an old project, try reinstalling the harness.');
+    }
+    return;
+  }
+
+  if (!localVersion || typeof localVersion !== 'object') {
+    if (jsonOut) {
+      console.log(JSON.stringify({ status: 'error', message: 'Invalid Harness/.harness-version structure.' }));
+    } else {
+      console.error('ERROR: Harness/.harness-version has unexpected structure.');
+    }
+    return;
+  }
+
   const localChecksums = localVersion.checksums || {};
 
   // 2. Fetch remote version file
@@ -147,22 +178,32 @@ async function main() {
   }
 
   // Compare versions — warn if remote is older (downgrade prevention)
-  function parseSemver(v) { return v.replace(/^[^0-9]*/, '').split('-')[0].split('.').map(Number); }
+  function parseSemver(v) {
+    if (!v || typeof v !== 'string') return [0, 0, 0];
+    return v.replace(/^[^0-9]*/, '').split('-')[0].split('.').map(Number);
+  }
   function cmpSemver(a, b) {
     const va = parseSemver(a), vb = parseSemver(b);
     for (let i = 0; i < 3; i++) { if ((va[i]||0) > (vb[i]||0)) return 1; if ((va[i]||0) < (vb[i]||0)) return -1; }
     return 0;
   }
 
-  if (cmpSemver(remoteVersion.generator, localVersion.generator) <= 0) {
+  const localGen = localVersion.generator || '0.0.0';
+  const remoteGen = remoteVersion.generator || '0.0.0';
+
+  if (!ignoreVersion && cmpSemver(remoteGen, localGen) <= 0) {
     if (jsonOut) {
-      console.log(JSON.stringify({ status: 'up-to-date', version: localVersion.generator, remote: remoteVersion.generator }));
-    } else if (cmpSemver(remoteVersion.generator, localVersion.generator) < 0) {
-      console.log(`⚠ Remote (v${remoteVersion.generator}) is OLDER than local (v${localVersion.generator}). Downgrade refused.`);
+      console.log(JSON.stringify({ status: 'up-to-date', version: localGen, remote: remoteGen }));
+    } else if (cmpSemver(remoteGen, localGen) < 0) {
+      console.log(`⚠ Remote (v${remoteGen}) is OLDER than local (v${localGen}). Downgrade refused.`);
     } else {
-      console.log(`✅ Already up to date (v${localVersion.generator})`);
+      console.log(`✅ Already up to date (v${localGen})`);
     }
     return;
+  }
+
+  if (ignoreVersion) {
+    if (!jsonOut) console.log('🔧 Version check bypassed (--ignore-version). Comparing files anyway.');
   }
 
   const remoteChecksums = remoteVersion.checksums || {};
@@ -235,8 +276,8 @@ async function main() {
   if (jsonOut) {
     console.log(JSON.stringify({
       status: 'update-available',
-      from: localVersion.generator,
-      to: remoteVersion.generator,
+      from: localGen,
+      to: remoteGen,
       updated: plan.updated.length,
       created: plan.created.length,
       conflict: plan.conflict.length,
@@ -246,7 +287,7 @@ async function main() {
     return;
   }
 
-  console.log(`\n🔄 Update: v${localVersion.generator} → v${remoteVersion.generator}`);
+  console.log(`\n🔄 Update: v${localGen} → v${remoteGen}`);
   console.log(`   ${plan.updated.length} safe update, ${plan.created.length} new, ${plan.conflict.length} conflict, ${plan.skipped.length} skipped\n`);
 
   // Show conflicts (these need AI/user decision)
@@ -331,7 +372,7 @@ async function main() {
 
     // Only update version on complete success
     if (failed === 0) {
-      localVersion.generator = remoteVersion.generator;
+      localVersion.generator = remoteGen;
       localVersion.generated = new Date().toISOString();
       for (const u of plan.updated) localVersion.checksums[u.file] = u.remoteHash;
       for (const c of plan.created) localVersion.checksums[c.file] = c.remoteHash;
