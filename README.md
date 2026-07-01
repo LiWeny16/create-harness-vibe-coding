@@ -21,7 +21,7 @@ npx create-harness-vibe-coding@latest my-project
 Already have a project? **Don't read the docs**. Paste this sentence. Your agent handles the rest.
 
 ```text
-Follow the README at https://github.com/zingspark/create-harness-vibe-coding to configure this project with create-harness-vibe-coding; before editing, ask the Agent-link install intake questions; for a new project run the 0-1 bootstrap, and for an existing project or legacy architecture run a dry-run first, preserve existing files, merge only missing Harness guidance, then follow Harness/SETUP.md.
+Follow the README at https://github.com/zingspark/create-harness-vibe-coding to configure this project with create-harness-vibe-coding; before editing, scan the project root and ask the Agent-link install intake questions; if Harness/ already exists, ask how to handle it before writing; for a new project run the 0-1 bootstrap, and for an existing project or legacy architecture run a dry-run first, preserve existing files, merge only missing Harness guidance, then follow Harness/SETUP.md.
 ```
 
 That's it. Two paths into the harness — you type `npx`, or your agent reads the sentence.
@@ -36,15 +36,15 @@ Chinese README: [README-CN.md](README-CN.md)
 |---------|---------------|
 | `CLAUDE.md` + `Harness/README.md` | Starts with a router, not a novel |
 | `Harness/tasks/` + `Harness/PROGRESS.md` | Tracks work across sessions |
-| `/wf` workflow + heartbeat | Finishes long tasks without getting lost |
-| `/wf update` | Pulls scaffold fixes from GitHub |
+| `/wf` / `$wf` workflow + heartbeat | Finishes long tasks without getting lost |
+| `/wf-update` / `$wf-update` | Pulls scaffold fixes from GitHub |
 | `subagent-orchestrator` | Runs parallel agents without collision |
 | `memory-master` + `context-master` | Learns from failures, compresses when full |
 | PRD + Research templates | Asks "what" and "why" before coding |
 | 11 built-in agents | Research, plan, architect, test, build, review, debug, verify |
 | Architecture docs | Knows where boundaries live |
 | Context-loading protocol | Loads only the docs each agent needs |
-| `.claude/` skeleton | Agents, skills, commands, hooks — ready to go |
+| `.claude/` + `.agents/skills/` | Claude Code and Codex skill adapters over the same Harness docs |
 
 ---
 
@@ -59,7 +59,7 @@ Most AI coding projects fail before anyone writes a line of bad code. The agent 
 | Subagent gets a vague "fix it" | Context pack: role, boundary, return format |
 | Drift invisible until demo | Validator flags missing pieces |
 | Long task stalls, context explodes | `/wf` heartbeat + recovery loop |
-| Scaffold rots | `/wf update` pulls latest from GitHub |
+| Scaffold rots | `/wf-update` or `$wf-update` pulls latest from GitHub |
 
 ---
 
@@ -76,7 +76,7 @@ PRD → Research → Architecture → first task capsule
     ↓
 Build → Test → Review → Verify → Feedback
     ↓
-/wf update keeps the harness current
+/wf-update or $wf-update keeps the harness current
 ```
 
 ```mermaid
@@ -89,7 +89,7 @@ graph TD
     F -->| No | G[ Debug → Fix → Loop ]
     G --> E
     F -->| Yes | H[ Closeout: memory + context ]
-    H --> I[ /wf update ]
+    H --> I[ /wf-update or $wf-update ]
 ```
 
 ---
@@ -114,6 +114,8 @@ npx create-harness-vibe-coding@latest my-app . -y --dry-run
 npx create-harness-vibe-coding@latest my-app . -y --on-conflict skip
 ```
 
+`npx` is an install and safe-merge entry, not an update engine for an already installed Harness. Once `Harness/` exists, use `/wf-update` in Claude Code, `$wf-update` in Codex, or `node Harness/scripts/wf-update-check.mjs`; root entry conflicts such as `CLAUDE.md`, `AGENTS.md`, `.claude/`, `.agents/`, `.codex/`, and local Harness docs need agent-mediated merge decisions.
+
 | Flag | Does |
 |------|------|
 | `-y` | Skip prompts |
@@ -123,13 +125,17 @@ npx create-harness-vibe-coding@latest my-app . -y --on-conflict skip
 | `--on-conflict overwrite` | Replace (destructive) |
 | `--list-options` | Show optional workflows |
 | `--with <ids>` | Add workflow by id |
+| `--recommend <ids>` | Record recommendation-only external capabilities |
 | `--preset <name>` | Add `web-app` or `fullstack` preset |
+
+Without `-y`, interactive mode offers checkbox selection for optional workflows and external recommendations.
 
 ### Optional workflows
 
 ```bash
 npx create-harness-vibe-coding@latest my-app -y --with browser-e2e
 npx create-harness-vibe-coding@latest my-app -y --preset web-app
+npx create-harness-vibe-coding@latest my-app -y --recommend superpowers,codegraph
 ```
 
 | Workflow | For |
@@ -140,22 +146,36 @@ npx create-harness-vibe-coding@latest my-app -y --preset web-app
 | `python-backend` | FastAPI, pytest |
 | `github-pr-review` | PR diff review + CI evidence |
 
+External recommendations are recorded in `Harness/SETUP.md` but not installed automatically:
+
+| Recommendation | For |
+|----------------|-----|
+| `superpowers` | Community skill registry and agent workflows |
+| `caveman` | Strict low-abstraction workflow/style capability |
+| `agent-research` | Broader product, dependency, and ecosystem research agents |
+| `codegraph` | Code graph or repository-map tooling |
+
 ### Agent-link intake
 
-When your agent reads the one-sentence prompt above, it asks **at most 3 questions** before touching files:
+When your agent reads the one-sentence prompt above, it must first scan the project root, then ask **at most 3 blocking questions** before touching files.
 
-- Is `CLAUDE.md` or `AGENTS.md` already there? → merge, don't replace
-- Is `docs/` used for product docs? → puts harness in `Harness/`, not `docs/`
-- What stack? → installs matching optional workflows
+Root scan checklist: list top-level files, detect `CLAUDE.md`, `AGENTS.md`, `.claude/`, `.agents/`, `.codex/`, `Harness/`, package files, CI files, docs folders, and obvious app entry points.
 
-If a file already exists, the agent asks first. The default is always **preserve**.
+Ask these only when they affect writes:
+
+- If `CLAUDE.md` or `AGENTS.md` already exists, should missing Harness guidance be merged, kept separate, or skipped?
+- If `Harness/` already exists, should the agent run update/dry-run, merge missing files, keep it untouched, or remove/reinstall after approval?
+- Which optional capabilities should be enabled: local workflows (`browser-e2e`, `ui-ux-review`, `ts-react-frontend`, `python-backend`, `github-pr-review`) and recommendation-only external options (`Superpowers`, `Caveman`, `agent research`, `code graph`)?
+
+Harness docs always live in root `Harness/`; do not route Harness files through `docs/`. If a file already exists, the agent asks first. The default is always **preserve**.
 
 ### After scaffolding
 
 ```text
 "Read Harness/SETUP.md. Bootstrap this project."
-"Use /wf for this migration."
-"/wf update — pull latest harness improvements."
+"Use /wf for this migration."          # Claude Code
+"Use $wf for this migration."          # Codex
+"/wf-update" or "$wf-update"           # pull latest harness improvements
 ```
 
 ### Verify
@@ -186,13 +206,16 @@ my-project/
 │   └── scripts/               ← Validator
 ├── .claude/
 │   ├── agents/               ← 11 common agents
-│   ├── skills/               ← Harness loaders
-│   ├── commands/             ← /wf, /wf update
+│   ├── skills/               ← Claude Code skill commands
 │   └── rules/                ← Universal coding rules
+├── .agents/
+│   └── skills/               ← Codex repo skills
+├── .codex/
+│   └── hooks.json             ← Codex hook bridge
 └── tests/
 ```
 
-`Harness/` holds all harness docs. `.claude/` stays at root — that's where Claude Code discovers agents, skills, and commands.
+`Harness/` holds all harness docs. Tool-discovery folders stay at root: `.claude/` for Claude Code, `.agents/skills/` for Codex repo skills, and `.codex/` for Codex config/hooks.
 
 ---
 

@@ -1,42 +1,47 @@
 ---
 name: subagent-orchestrator
-description: Use when work needs bounded subagent coordination, parallel read-only exploration, independent review gates, broad context partitioning, or controlled handoffs for coordination-heavy tasks.
+description: Use when work needs bounded subagent coordination, parallel read-only exploration, independent review gates, broad context partitioning, or controlled handoffs.
 ---
 
 # Subagent Orchestrator
 
-Load:
+This skill is runtime-neutral. Claude Code and Codex expose different
+subagent surfaces; follow the same Harness role contract either way.
+
+## Load
 
 - `Harness/subagents.md`
 - `Harness/dispatch.md`
 - `Harness/context-loading.md`
-- `Harness/PROGRESS.md`
-- `Harness/tasks/<task-id>/PROGRESS.md` and `Harness/tasks/<task-id>/PLAN.md` when active
 - `Harness/agent-workflow.md`
-- `Harness/WF.md` when in `/wf`, `wf mode`, `workflow mode`, `wk mode`, or recovery loop
-- `.claude/agents/` roster names before choosing roles
+- `Harness/PROGRESS.md`
+- Active `Harness/tasks/<task-id>/PROGRESS.md` and `PLAN.md`, when present
+- `Harness/WF.md` when in `/wf`, `wf mode`, `workflow mode`, or `wk mode`
 
-Follow:
+## Runtime Mapping
 
-- The main agent is the controller. It decomposes work, writes `Harness/tasks/<task-id>/PROGRESS.md` and `Harness/tasks/<task-id>/PLAN.md`, integrates returns, and owns final verification.
-- Subagents are readers and reporters. Only the controller writes to task state files.
-- **CEO Exploration Rule**: The controller MUST NOT read source files during exploration. Delegate ALL codebase reading to subagents. Default model is `sonnet` — exploration requires real code understanding. Use `haiku` only for shallow scans (directory listing, file counts). Use `opus` if the user requests. The CEO's instinct to "just check one file" is the #1 cause of failed parallelism. CEO reads only `Harness/` docs, `CLAUDE.md`, and subagent returns until the plan is written.
-- Use the efficiency ladder in `Harness/subagents.md`: solo pass -> single reviewer -> parallel read-only -> serial build lane -> isolated lanes.
-- Explicit WF/WK mode requires at least 3 distinct agents from `.claude/agents/` before second planning.
-- Prefer the built-in roles `planner`, `researcher`, `docs-researcher`, `architect`, `test-writer`, `implementer`, `reviewer`, `debugger`, and `verifier` before inventing custom roles.
-- Every subagent dispatch needs a complete dispatch pack: role, goal, mode, read set, write set, forbidden scope, injected docs, dependencies, expected evidence, stop condition, and return format.
-- Prefer parallel read-only exploration first. Run writing agents serially unless write sets are disjoint and isolated.
-- Use two review gates after implementation: spec review first, then code-quality or architecture review.
-- If verification fails, dispatch debugger/fixer with the smallest reproduced failure, then re-review and re-verify.
-- If subagents are unavailable, emulate the same roles as separate bounded passes and record that fallback.
-- When used outside WF mode, update `Harness/tasks/<task-id>/PLAN.md#Subagent Dispatch`; update `Harness/tasks/<task-id>/PROGRESS.md#Heartbeat` only if an active heartbeat/recovery loop exists.
+- Claude Code: use the `.claude/agents/` role roster and the available
+  subagent/task tool.
+- Codex: use the available subagent tool or role mechanism in the current
+  surface. If unavailable, emulate the same roles as separate bounded passes.
+- In every runtime, record fallback and role coverage in the task plan.
 
-Return:
+## Rules
 
-- agents or bounded passes used
-- dispatch table status
-- accepted/rejected findings
-- conflicts and decisions
-- commands and evidence
-- remaining risks
-- updated heartbeat or next recovery action
+- The main agent is the controller. It decomposes work, writes task state,
+  integrates returns, and owns final verification.
+- Subagents or bounded passes are readers and reporters unless a write set is
+  explicitly assigned and disjoint.
+- Explicit WF/WK mode requires at least three distinct role passes before the
+  second plan.
+- Every dispatch needs role, goal, mode, read set, write set, forbidden scope,
+  injected docs, dependencies, evidence, stop condition, and return format.
+- Prefer parallel read-only exploration first. Serialize writers unless write
+  sets are disjoint and isolated.
+- After implementation, run a spec review gate and a code/architecture review
+  gate before final verification.
+
+## Return
+
+Report roles or bounded passes used, dispatch table status, accepted/rejected
+findings, conflicts, decisions, commands, evidence, and remaining risks.

@@ -13,15 +13,15 @@ This scaffold is a 0-1 product harness:
 - `Harness/MEMORY.md` plus a `Harness/memory/` folder for durable self-learning, user corrections, and tool reflections
 - built-in common agents
 - subagent orchestration and context-loading protocol
-- skill-style dynamic loaders in `.claude/skills/`
+- skill-style dynamic loaders in `.claude/skills/` for Claude Code and `.agents/skills/` for Codex
 - lightweight harness validator
 - test/review/feedback loop
 
-It does not guess your stack or business domain. Claude Code should fill those through the lifecycle.
+It does not guess your stack or business domain. Claude Code or Codex should fill those through the lifecycle.
 
 ## Bootstrap Prompt
 
-Start Claude Code, then say:
+Start Claude Code or Codex, then say:
 
 ```text
 Read Harness/SETUP.md. Bootstrap this project as a 0-1 product harness.
@@ -48,25 +48,29 @@ Claude must follow this order:
 
 When adding this harness to a project that already has source code, docs, CI, or tool configuration, treat the existing project as the source of truth before filling harness docs.
 
-1. Scan existing project facts first: `README.md`, package files (`package.json`, `pyproject.toml`, `go.mod`, etc.), test commands, app entry points, CI files, existing docs, and current run/build scripts.
+1. Scan existing project facts first: top-level files, `CLAUDE.md`, `AGENTS.md`, `.claude/`, `.agents/`, `.codex/`, `Harness/`, `README.md`, package files (`package.json`, `pyproject.toml`, `go.mod`, etc.), test commands, app entry points, CI files, existing docs, and current run/build scripts.
 2. Record discovered facts and open questions in `Harness/tasks/<task-id>/PROGRESS.md` before changing harness docs.
 3. Fill `Harness/research/PRD.md`, `Harness/research/research-results.md`, `Harness/architecture.md` from observed project facts plus explicit user input.
-4. Existing configuration is project fact. Do not overwrite `CLAUDE.md`, `AGENTS.md`, `.claude/`, `.gitignore`, settings, hooks, package files, CI, docs routers, or workflow docs unless the user explicitly approves that exact overwrite.
+4. Existing configuration is project fact. Do not overwrite `CLAUDE.md`, `AGENTS.md`, `.claude/`, `.agents/`, `.codex/`, `.gitignore`, settings, hooks, package files, CI, docs routers, or workflow docs unless the user explicitly approves that exact overwrite.
 5. When a harness file conflicts with an existing file, preserve the existing file and register any missing harness guidance manually using `Harness/extension.md`.
 6. Run `node Harness/scripts/validate-harness.mjs` after registration, then run `node Harness/scripts/validate-harness.mjs --strict` only after project-fact placeholders have been resolved or intentionally recorded as open.
 
+`npx create-harness-vibe-coding` is an install/safe-merge entry, not an update engine for a project that already has an installed Harness. If `Harness/` already exists, use `/wf-update` or `node Harness/scripts/wf-update-check.mjs`; root entry files and user-modified Harness docs require agent-mediated merge decisions.
+
 ### Agent-Link Install Intake
 
-When the user installs by pasting the GitHub link into an agent, ask intake questions before editing. Ask only questions that affect writes, architecture, security, or workflow. Ask at most three blocking questions up front, record safe defaults for the rest, and ask follow-ups only when that choice becomes active.
+When the user installs by pasting the GitHub link into an agent, scan the project root before editing or asking generic questions. Summarize what exists, then ask only questions that affect writes, architecture, security, or workflow. Ask at most three blocking questions up front, record safe defaults for the rest, and ask follow-ups only when that choice becomes active.
 
 | Topic | Ask When | Default If Unanswered |
 | --- | --- | --- |
-| Root agent entry | `CLAUDE.md`, `AGENTS.md`, `.claude/`, or other agent entry files already exist | Preserve files; ask before merging the Harness entry contract |
-| Harness location | `docs/` is already used for GitHub Pages, product docs, or generated docs | Use root `Harness/`; do not write harness docs into `docs/` |
+| Root agent entry | `CLAUDE.md`, `AGENTS.md`, `.claude/`, `.agents/`, `.codex/`, or other agent entry files already exist | Preserve files; ask before merging the Harness entry contract |
+| Existing Harness | `Harness/` already exists | Stop and ask whether to run `/wf-update`, dry-run merge missing files, keep it untouched, or remove/reinstall after approval |
+| Harness location | Always | Use root `Harness/`; do not write harness docs into `docs/` |
 | README ownership | root `README.md` is a public product page, package docs, or heavily customized | Preserve existing README and propose a minimal Development section |
 | README optimization | existing README is stale, sparse, missing command tables, or the user asks for diagrams/polished docs | Offer `wf-readme`; default to append-only Development notes until the user approves a structure pass or full rewrite |
 | Extensions | ECC, Superpowers, custom rules, or stack-specific skills may be useful | Recommend first; install only after user approval |
-| Skills | stack is known and optional skills could improve testing, frontend, backend, review, or browser evidence | Install 1-2 relevant skills only after user approval |
+| Optional capabilities | stack is known or the user wants setup guidance | Offer local workflows plus recommendation-only external options: Superpowers, Caveman, agent research, and code graph |
+| Skills | stack is known and optional skills could improve testing, frontend, backend, review, or browser evidence | Install 1-2 relevant local workflows only after user approval |
 | CI/CD | CI config exists or the project lacks a test/build gate | Document existing commands first; add CI/CD only after user approval |
 | Verification depth | browser-visible, API, database, auth, payment, or deployment behavior is affected | Require real command evidence; require browser/API evidence when relevant |
 | Memory/privacy | repo contains sensitive domain data, customer data, secrets, or private workflows | Enable memory index only; never record secrets or private data |
@@ -113,10 +117,10 @@ The harness validator checks for specific structural invariants. When comparing 
 | `CLAUDE.md` | Must be merged only after user confirmation when it already exists. Required contract: `## 1. Harness Binding & Startup` with the `Harness/SETUP.md` bootstrap contract line; `## 6. Memory & Self-Learning` section; the tool reflection trigger text (`same tool/use pattern fails 3+ times`); the user correction trigger text (`user corrects the same assumption/pattern 2+ times`); `Never bulk-read Harness/` in Startup |
 | `AGENTS.md` | Root agent entry points to `CLAUDE.md` and `Harness/README.md`; for existing projects, merge only after explicit user consent |
 | `README.md` | Existing README is project-owned. Preserve by default; ask whether to append only Development notes or run `wf-readme` for a structure pass with tables/diagrams before broad edits |
-| `Harness/MEMORY.md` | All 9 common agents registered under `## Agents`; all common harness skills registered under `## Skills`; all 3 `Harness/memory/` files registered under `## Memory Folder`; `Harness/memory/` folder usage guidance; `Project Resource Index` in title |
+| `Harness/MEMORY.md` | All common agents registered under `## Agents`; all common harness skills registered under `## Skills`; all 3 `Harness/memory/` files registered under `## Memory Folder`; `Harness/memory/` folder usage guidance; `Project Resource Index` in title |
 | `.claude/rules/ecc/common.md` | `## Context` section with the durable communication invariant (`project files are the only durable communication channel`); `## Memory` section with three reflection file entries; `## Security` section |
 | `Harness/README.md` | `## Keyword Routing` heading; `## Load By Task` table with at minimum the rows: "Need WF mode", "Adding harness to existing project", "Need implementation plan", "Need parallel agents", "Need subagents", "Need durable memory or reflection"; WF routing keywords include `/wf`, `wf mode`, `workflow mode`, and `wk mode`; explicit WF/WK output says subagent docs load immediately; `## Doc Map` with `memory/` and `subagents.md` entries; the durable communication invariant text; `Harness/README.md is the primary router` |
-| `Harness/WF.md` | `WF mode requires multi-subagent orchestration by default`; explicit `/wf`, `wf mode`, `workflow mode`, or `wk mode` requires at least 3 distinct `.claude/agents/` subagents before second planning; `collaboration decision tree`; `Heartbeat Protocol` |
+| `Harness/WF.md` | `WF mode requires multi-subagent orchestration by default`; explicit `/wf`, `$wf`, `wf mode`, `workflow mode`, or `wk mode` requires at least 3 distinct role passes before second planning; `collaboration decision tree`; `Heartbeat Protocol` |
 | `Harness/extension.md` | `## Non-Invasive Extension Rules` section with the "Preserve existing" rule; `## Agent Contract` section; `## Registration` section |
 | `Harness/dispatch.md` | The durable communication invariant; common agent entries for all 9 agents; `## Handoff Format` heading |
 | `Harness/context-loading.md` | The durable communication invariant; `Harness/README.md is the primary router`; all 10 subagent context packs (Explorer Pass, Planner, Researcher, Docs Researcher, Architect, Test Writer, Implementer, Reviewer, Debugger, Verifier) |
@@ -133,7 +137,7 @@ The harness validator checks for specific structural invariants. When comparing 
 
 - `Harness/memory/tool-usage-reflections.md`, `Harness/memory/user-corrections-preferences.md`, `Harness/memory/agent-lessons-patterns.md` — these are new empty files
 - `.claude/agents/*.md` — all 9 common agents
-- `.claude/skills/wf-update/SKILL.md` and `.claude/skills/subagent-orchestrator/SKILL.md` — core harness skills and subagent orchestration
+- `.claude/skills/*.md` and mirrored `.agents/skills/*.md` — Claude Code and Codex skill adapters over the same Harness docs
 - `.claude/rules/ecc/common.md` — universal rules (unless the project has custom rules in this file)
 - `.claude/settings.json` — harness settings
 - `Harness/WF.md`, `Harness/lifecycle.md`, `Harness/subagents.md`, `Harness/agent-workflow.md`, `Harness/architecture.md` — harness runtime docs
@@ -146,7 +150,10 @@ Optional workflow examples:
 ```bash
 npx create-harness-vibe-coding@latest my-app ./my-app -y --with browser-e2e,ts-react-frontend
 npx create-harness-vibe-coding@latest my-app ./my-app -y --preset web-app
+npx create-harness-vibe-coding@latest my-app ./my-app -y --recommend superpowers,codegraph
 ```
+
+`--recommend` records recommendation-only external capabilities in this file. It does not install third-party skills or plugins.
 
 ### Template Fill Guide
 
@@ -193,7 +200,7 @@ False confidence is worse than a question. If you catch yourself thinking "this 
 
 ## How to Find Proper Skills
 
-After the architecture stage reveals your stack, install matching agent skills. Skills teach Claude Code domain-specific patterns, testing conventions, and design rules.
+After the architecture stage reveals your stack, install matching agent skills. Skills teach Claude Code and Codex domain-specific patterns, testing conventions, and design rules.
 
 **Built-in route**: invoke the `/find-skills` skill (or say "help me find skills for X"). Examples:
 
@@ -219,13 +226,13 @@ npx skills search "python api"
 2. Superpowers registry — broad community coverage.
 3. GitHub search — when the first two miss niche domains.
 
-**What to install**: after finding skills, add them to `.claude/skills/<name>/SKILL.md`. Follow `Harness/extension.md` for compatibility. Start with 1-2 skills per stack area; more is not better.
+**What to install**: after finding skills, add the canonical copy to `.claude/skills/<name>/SKILL.md` and mirror the same file to `.agents/skills/<name>/SKILL.md` when Codex should discover it. Follow `Harness/extension.md` for compatibility. Start with 1-2 skills per stack area; more is not better.
 
-This scaffold includes built-in harness skills (`.claude/skills/harness-*`). Keep those. Add stack-specific ones alongside them.
+This scaffold includes built-in harness skills in `.claude/skills/*` and mirrored Codex repo skills in `.agents/skills/*`. Keep those. Add stack-specific ones alongside them.
 
 ## Optional Agent Assets
 
-After the product shape is known, Claude may also install or copy stack-specific agents, rules, and hooks into `.claude/`. Follow `Harness/extension.md` for every added asset.
+After the product shape is known, Claude Code may also install or copy stack-specific agents, rules, and hooks into `.claude/`. Codex-discoverable workflow skills belong in `.agents/skills/`. Follow `Harness/extension.md` for every added asset.
 
 Examples:
 

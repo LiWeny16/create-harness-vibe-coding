@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { generate, harnessDest } from '../src/generator.js';
+import { generate, getOptionalCatalog, harnessDest } from '../src/generator.js';
 
 function tmpdir() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'harness-generator-'));
@@ -33,7 +33,12 @@ test('package README stays English and links to Chinese README', () => {
   assert.match(readme, /Your Agent Knows/);
   assert.match(readme, /npx create-harness-vibe-coding/);
   assert.match(readme, /Agent-link install/);
-  assert.match(readme, /before editing, ask the Agent-link install intake questions/);
+  assert.match(readme, /before editing, scan the project root and ask the Agent-link install intake questions/);
+  assert.match(readme, /scan the project root/i);
+  assert.match(readme, /Harness\/ already exists/i);
+  assert.match(readme, /optional capabilities/i);
+  assert.match(readme, /Superpowers/);
+  assert.match(readme, /code graph/i);
   assert.match(readme, /new project run the 0-1 bootstrap/i);
   assert.match(readme, /existing project or legacy architecture/i);
   assert.match(readme, /dry-run first/i);
@@ -47,22 +52,28 @@ test('package README stays English and links to Chinese README', () => {
   assert.match(readme, /The default is always \*\*preserve\*\*/);
 });
 
-test('package README-CN gives Chinese one-sentence universal install prompt', () => {
-  const readmeCn = fs.readFileSync(path.join(process.cwd(), 'README-CN.md'), 'utf8');
+test('template source stores harness docs under templates/common/Harness instead of docs', () => {
+  assert.equal(fs.existsSync(path.join(process.cwd(), 'templates', 'common', 'docs')), false);
+  assert.ok(fs.existsSync(path.join(process.cwd(), 'templates', 'common', 'Harness', 'README.md')));
+  assert.ok(fs.existsSync(path.join(process.cwd(), 'templates', 'common', 'Harness', 'WF.md')));
+  assert.ok(fs.existsSync(path.join(process.cwd(), 'templates', 'common', 'Harness', 'tasks', '_template', 'PLAN.md')));
 
-  assert.match(readmeCn, /一条命令。搞定/);
-  assert.match(readmeCn, /一句话交给你的 Agent/);
-  assert.match(readmeCn, /不用读文档/);
-  assert.match(readmeCn, /Agent-link 安装前置问题/);
-  assert.match(readmeCn, /就两条路/);
-  assert.match(readmeCn, /你能得到什么/);
-  assert.match(readmeCn, /\/wf update/);
-  assert.match(readmeCn, /验证/);
-  assert.match(readmeCn, /https:\/\/github\.com\/zingspark\/create-harness-vibe-coding/);
-  assert.match(readmeCn, /新项目走 0-1 bootstrap/);
-  assert.match(readmeCn, /老项目或老架构升级先 dry-run/);
-  assert.match(readmeCn, /只合并缺失的 Harness 规范/);
-  assert.match(readmeCn, /遵循 Harness\/SETUP\.md/);
+  assert.equal(fs.existsSync(path.join(process.cwd(), 'templates', 'optional', 'skills', 'browser-e2e', 'docs')), false);
+  assert.ok(fs.existsSync(path.join(process.cwd(), 'templates', 'optional', 'skills', 'browser-e2e', 'Harness', 'workflows', 'browser-e2e.md')));
+});
+
+test('optional catalog includes recommendation-only external capability choices', () => {
+  const catalog = getOptionalCatalog();
+  const ids = catalog.externalRecommendations.map(item => item.id);
+
+  assert.ok(ids.includes('superpowers'));
+  assert.ok(ids.includes('caveman'));
+  assert.ok(ids.includes('agent-research'));
+  assert.ok(ids.includes('codegraph'));
+  for (const item of catalog.externalRecommendations) {
+    assert.equal(item.installMode, 'recommend-only');
+    assert.equal(item.files, undefined);
+  }
 });
 
 test('dry run reports existing project conflicts in the plan without writing files', () => {
@@ -211,9 +222,18 @@ test('generated scaffold stores harness-owned payload under root Harness directo
     'Harness/memory/tool-usage-reflections.md',
     'Harness/memory/user-corrections-preferences.md',
     'Harness/memory/agent-lessons-patterns.md',
+    '.codex/config.toml',
+    '.codex/hooks.json',
+    '.claude/skills/wf/SKILL.md',
+    '.agents/skills/wf/SKILL.md',
+    '.claude/skills/wf-max/SKILL.md',
+    '.agents/skills/wf-max/SKILL.md',
+    '.claude/skills/wf-update/SKILL.md',
+    '.agents/skills/wf-update/SKILL.md',
     '.claude/skills/wf-readme/SKILL.md',
+    '.agents/skills/wf-readme/SKILL.md',
     '.claude/skills/subagent-orchestrator/SKILL.md',
-    '.claude/commands/wf.md',
+    '.agents/skills/subagent-orchestrator/SKILL.md',
   ]) {
     assert.ok(fs.existsSync(path.join(targetDir, ...rel.split('/'))), `Expected ${rel} to be generated`);
   }
@@ -249,6 +269,10 @@ test('generated scaffold stores harness-owned payload under root Harness directo
   assert.match(rootReadme, /Follow `Harness\/SETUP\.md` before normal work while it exists/);
   assert.match(rootReadme, /Harness\/MEMORY\.md/);
   assert.match(rootReadme, /wf-readme/);
+  assert.match(rootReadme, /Codex/);
+  assert.match(rootReadme, /\.agents\/skills/);
+  assert.match(rootReadme, /\.codex\/hooks\.json/);
+  assert.doesNotMatch(rootReadme, /commands\/wf\.toml/);
 
   const wf = readRel(targetDir, 'Harness/WF.md');
   assert.match(wf, /Ralph-style/i);
@@ -256,7 +280,7 @@ test('generated scaffold stores harness-owned payload under root Harness directo
   assert.match(wf, /Chrome DevTools|CDP|Playwright/);
   assert.match(wf, /Harness\/subagents\.md/);
   assert.match(wf, /WF mode requires multi-subagent orchestration by default/);
-  assert.match(wf, /Explicit `\/wf`, `wf mode`, `workflow mode`, or `wk mode` MUST spawn at least 3 distinct subagents/);
+  assert.match(wf, /Explicit `\/wf`, `\$wf`, `wf mode`, `workflow mode`, or `wk mode` MUST use at least 3 distinct role passes/);
   assert.match(wf, /\.claude\/agents\//);
   assert.match(wf, /replaces the old "7:3" heuristic/);
 
@@ -276,11 +300,15 @@ test('generated scaffold stores harness-owned payload under root Harness directo
 
   const orchestratorSkill = readRel(targetDir, '.claude/skills/subagent-orchestrator/SKILL.md');
   assert.match(orchestratorSkill, /Harness\/subagents\.md/);
-  assert.match(orchestratorSkill, /coordination-heavy tasks/);
-  assert.match(orchestratorSkill, /update `Harness\/tasks\/<task-id>\/PLAN\.md#Subagent Dispatch`/);
+  assert.match(orchestratorSkill, /runtime-neutral/);
+  assert.match(orchestratorSkill, /bounded passes/);
   assert.match(orchestratorSkill, /\.claude\/agents\//);
-  assert.match(orchestratorSkill, /Explicit WF\/WK mode requires at least 3 distinct agents/);
+  assert.match(orchestratorSkill, /at least three distinct role passes/);
   assert.doesNotMatch(orchestratorSkill, /^description:.*repeated failures/m);
+  assert.equal(
+    readRel(targetDir, '.agents/skills/subagent-orchestrator/SKILL.md'),
+    orchestratorSkill,
+  );
 
   const architecture = readRel(targetDir, 'Harness/architecture.md');
   assert.match(architecture, /## 2\. Interface Decoupling/);
@@ -410,10 +438,15 @@ test('without options subtract from preset and explicit optional skills', () => 
 
   assert.equal(result.success, true);
   assert.ok(fs.existsSync(path.join(targetDir, '.claude', 'skills', 'ts-react-frontend', 'SKILL.md')));
+  assert.ok(fs.existsSync(path.join(targetDir, '.agents', 'skills', 'ts-react-frontend', 'SKILL.md')));
   assert.ok(fs.existsSync(path.join(targetDir, '.claude', 'skills', 'browser-e2e', 'SKILL.md')));
+  assert.ok(fs.existsSync(path.join(targetDir, '.agents', 'skills', 'browser-e2e', 'SKILL.md')));
   assert.ok(fs.existsSync(path.join(targetDir, '.claude', 'skills', 'ui-ux-review', 'SKILL.md')));
+  assert.ok(fs.existsSync(path.join(targetDir, '.agents', 'skills', 'ui-ux-review', 'SKILL.md')));
   assert.equal(fs.existsSync(path.join(targetDir, '.claude', 'skills', 'python-backend', 'SKILL.md')), false);
+  assert.equal(fs.existsSync(path.join(targetDir, '.agents', 'skills', 'python-backend', 'SKILL.md')), false);
   assert.equal(fs.existsSync(path.join(targetDir, '.claude', 'skills', 'github-pr-review', 'SKILL.md')), false);
+  assert.equal(fs.existsSync(path.join(targetDir, '.agents', 'skills', 'github-pr-review', 'SKILL.md')), false);
 });
 
 test('without options accept known unselected ids as no-op', () => {
@@ -429,7 +462,79 @@ test('without options accept known unselected ids as no-op', () => {
 
   assert.equal(result.success, true);
   assert.ok(fs.existsSync(path.join(targetDir, '.claude', 'skills', 'ts-react-frontend', 'SKILL.md')));
+  assert.ok(fs.existsSync(path.join(targetDir, '.agents', 'skills', 'ts-react-frontend', 'SKILL.md')));
   assert.equal(fs.existsSync(path.join(targetDir, '.claude', 'skills', 'python-backend', 'SKILL.md')), false);
+  assert.equal(fs.existsSync(path.join(targetDir, '.agents', 'skills', 'python-backend', 'SKILL.md')), false);
+});
+
+test('package README-CN gives Chinese install prompt and Harness-only docs contract', () => {
+  const readmeCn = fs.readFileSync(path.join(process.cwd(), 'README-CN.md'), 'utf8');
+  assert.doesNotMatch(readmeCn, /涓€/);
+  assert.doesNotMatch(readmeCn, /鏂伴/);
+  assert.match(readmeCn, /一条命令/);
+  assert.match(readmeCn, /一句话交给 Agent/);
+  assert.match(readmeCn, /扫描项目根目录/);
+  assert.match(readmeCn, /如果 Harness\/ 已存在/);
+  assert.match(readmeCn, /Agent-link 安装前置问题/);
+  assert.match(readmeCn, /不要把 Harness 文件放进 `docs\/`/);
+  assert.match(readmeCn, /--recommend superpowers,codegraph/);
+  assert.match(readmeCn, /外部建议只写入 `Harness\/SETUP\.md`/);
+  assert.match(readmeCn, /不是已安装 Harness 的同步更新器/);
+  assert.match(readmeCn, /验证/);
+  assert.match(readmeCn, /https:\/\/github\.com\/zingspark\/create-harness-vibe-coding/);
+  assert.match(readmeCn, /新项目走 0-1 bootstrap/);
+  assert.match(readmeCn, /老项目或老架构升级先 dry-run/);
+  assert.match(readmeCn, /只合并缺失的 Harness 规范/);
+  assert.match(readmeCn, /遵循 Harness\/SETUP\.md/);
+  assert.match(readmeCn, /\.agents\/skills/);
+  assert.match(readmeCn, /\$wf/);
+  assert.doesNotMatch(readmeCn, /commands\/wf\.toml/);
+});
+
+test('package README-CN contains required Chinese install contract clauses', () => {
+  const readmeCn = fs.readFileSync(path.join(process.cwd(), 'README-CN.md'), 'utf8');
+
+  assert.match(readmeCn, /\u4e00\u6761\u547d\u4ee4/u);
+  assert.match(readmeCn, /\u4e00\u53e5\u8bdd\u4ea4\u7ed9 Agent/u);
+  assert.match(readmeCn, /\u626b\u63cf\u9879\u76ee\u6839\u76ee\u5f55/u);
+  assert.match(readmeCn, /\u5982\u679c Harness\/ \u5df2\u5b58\u5728/u);
+  assert.match(readmeCn, /Agent-link \u5b89\u88c5\u524d\u7f6e\u95ee\u9898/u);
+  assert.match(readmeCn, /\u4e0d\u8981\u628a Harness \u6587\u4ef6\u653e\u8fdb `docs\/`/u);
+  assert.match(readmeCn, /--recommend superpowers,codegraph/);
+  assert.match(readmeCn, /\u5916\u90e8\u5efa\u8bae\u53ea\u5199\u5165 `Harness\/SETUP\.md`/u);
+  assert.match(readmeCn, /\u4e0d\u662f\u5df2\u5b89\u88c5 Harness \u7684\u540c\u6b65\u66f4\u65b0\u5668/u);
+  assert.match(readmeCn, /\u9a8c\u8bc1/u);
+  assert.match(readmeCn, /https:\/\/github\.com\/zingspark\/create-harness-vibe-coding/);
+  assert.match(readmeCn, /\u65b0\u9879\u76ee\u8d70 0-1 bootstrap/u);
+  assert.match(readmeCn, /\u8001\u9879\u76ee\u6216\u8001\u67b6\u6784\u5347\u7ea7\u5148 dry-run/u);
+  assert.match(readmeCn, /\u53ea\u5408\u5e76\u7f3a\u5931\u7684 Harness \u89c4\u8303/u);
+  assert.match(readmeCn, /\u9075\u5faa Harness\/SETUP\.md/u);
+});
+
+test('external recommendations are recorded without installing third-party skills', () => {
+  const root = tmpdir();
+  const targetDir = path.join(root, 'external-recommendations');
+
+  const result = generate({
+    projectName: 'external-recommendations',
+    targetDir,
+    externalOptions: ['superpowers,codegraph'],
+  });
+
+  assert.equal(result.success, true);
+
+  const setup = readRel(targetDir, 'Harness/SETUP.md');
+  assert.match(setup, /Selected External Recommendations/);
+  assert.match(setup, /superpowers/);
+  assert.match(setup, /codegraph/);
+  assert.match(setup, /recommendation only/i);
+  assert.equal(fs.existsSync(path.join(targetDir, '.claude', 'skills', 'superpowers', 'SKILL.md')), false);
+  assert.equal(fs.existsSync(path.join(targetDir, '.agents', 'skills', 'superpowers', 'SKILL.md')), false);
+  assert.equal(fs.existsSync(path.join(targetDir, '.claude', 'skills', 'codegraph', 'SKILL.md')), false);
+  assert.equal(fs.existsSync(path.join(targetDir, '.agents', 'skills', 'codegraph', 'SKILL.md')), false);
+
+  const harnessVersion = JSON.parse(readRel(targetDir, 'Harness/.harness-version'));
+  assert.deepEqual(harnessVersion.externalRecommendations, ['superpowers', 'codegraph']);
 });
 
 test('unknown without options fail with list-options guidance', () => {
@@ -501,7 +606,7 @@ test('generated scaffold includes memory folder registrations and reflection tri
   assert.match(setup, /README optimization/);
   assert.match(setup, /wf-readme/);
   assert.match(setup, /ECC, Superpowers, custom rules/);
-  assert.match(setup, /Install 1-2 relevant skills only after user approval/);
+  assert.match(setup, /Install 1-2 relevant local workflows only after user approval/);
   assert.match(setup, /Memory\/privacy/);
   assert.match(setup, /Branch\/worktree/);
   assert.match(setup, /Package manager\/stack/);
@@ -564,6 +669,7 @@ test('generated optional workflows are registered under Harness workflows', () =
   const harnessReadme = readRel(targetDir, 'Harness/README.md');
   const memoryIndex = readRel(targetDir, 'Harness/MEMORY.md');
   const browserSkill = readRel(targetDir, '.claude/skills/browser-e2e/SKILL.md');
+  const browserCodexSkill = readRel(targetDir, '.agents/skills/browser-e2e/SKILL.md');
 
   for (const rel of [
     'Harness/workflows/browser-e2e.md',
@@ -576,6 +682,7 @@ test('generated optional workflows are registered under Harness workflows', () =
   assert.match(harnessReadme, /\]\(workflows\/browser-e2e\.md\)/);
   assert.match(memoryIndex, /workflows\/browser-e2e\.md/);
   assert.match(browserSkill, /Harness\/workflows\/browser-e2e\.md/);
+  assert.equal(browserCodexSkill, browserSkill);
   assert.equal(fs.existsSync(path.join(targetDir, 'docs', 'workflows', 'browser-e2e.md')), false);
 });
 
@@ -637,11 +744,11 @@ test('build-version produces valid semver and populated checksums/sources', asyn
   const sourceKeys = Object.keys(harnessVersion.sources);
   assert.ok(sourceKeys.length > 0, 'sources should have at least one entry');
 
-  // Specifically assert that docs/harness/WF.md maps to Harness/WF.md
+  // Specifically assert that Harness/WF.md maps directly from templates/common/Harness/WF.md
   assert.equal(
     harnessVersion.sources['Harness/WF.md'],
-    'docs/harness/WF.md',
-    'Harness/WF.md should be mapped from docs/harness/WF.md'
+    'Harness/WF.md',
+    'Harness/WF.md should be mapped from Harness/WF.md'
   );
 
   // Specifically assert that scripts/scan-clean.mjs maps to Harness/scripts/scan-clean.mjs

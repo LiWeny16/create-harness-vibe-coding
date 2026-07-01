@@ -39,5 +39,39 @@
   "presets": {
     "web-app": ["ts-react-frontend", "browser-e2e", "ui-ux-review"],
     "fullstack": ["ts-react-frontend", "python-backend", "browser-e2e", "github-pr-review"]
-  }
+  },
+  "externalRecommendations": [
+    {
+      "id": "superpowers",
+      "title": "Superpowers",
+      "description": "Community skill registry for agent workflows and reusable coding skills.",
+      "installMode": "recommend-only",
+      "installHint": "run skill discovery first, then install only the selected Superpowers skills after user approval",
+      "tags": ["skills", "community", "subagents"]
+    },
+    {
+      "id": "caveman",
+      "title": "Caveman",
+      "description": "External workflow/style capability to evaluate for strict, low-abstraction implementation behavior.",
+      "installMode": "recommend-only",
+      "installHint": "search the configured skill/plugin sources for Caveman and install only after checking provenance",
+      "tags": ["workflow", "implementation", "style"]
+    },
+    {
+      "id": "agent-research",
+      "title": "Agent Research",
+      "description": "External research-agent capability for broader product, dependency, and ecosystem investigation.",
+      "installMode": "recommend-only",
+      "installHint": "use available skill/plugin discovery for agent research and record the chosen source in Harness/MEMORY.md",
+      "tags": ["research", "agents", "discovery"]
+    },
+    {
+      "id": "codegraph",
+      "title": "Code Graph",
+      "description": "External code graph or repository map capability for dependency and architecture exploration.",
+      "installMode": "recommend-only",
+      "installHint": "use available code graph tooling only after confirming it supports the project language and privacy constraints",
+      "tags": ["code graph", "architecture", "analysis"]
+    }
+  ]
 }

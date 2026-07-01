@@ -45,8 +45,9 @@ const PRESERVE_PATTERNS = [
 const FRAMEWORK_DIRS = [
   '.claude/agents',
   '.claude/skills',
-  '.claude/commands',
   '.claude/rules',
+  '.agents/skills',
+  '.codex',
   'Harness/scripts',
   'Harness/workflows',
 ];

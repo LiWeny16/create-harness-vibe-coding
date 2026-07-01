@@ -69,8 +69,12 @@ const mockFiles = {
   'CLAUDE.md': 'Harness binding content here\n## 1. Harness Binding & Startup\n- Use `/wf` for long tasks.\n## 2. Think Before Coding\n',
   'AGENTS.md': 'Agent instructions here.',
   '.claude/agents/planner.md': 'planner agent definition.',
+  '.codex/config.toml': 'sandbox_mode = "workspace-write"\n',
+  '.codex/hooks.json': '{"hooks":[]}\n',
+  '.claude/skills/wf/SKILL.md': 'wf skill.',
+  '.agents/skills/wf/SKILL.md': 'wf skill.',
   '.claude/skills/wf-update/SKILL.md': 'wf-update skill.',
-  '.claude/commands/wf.md': '/wf command bridge.',
+  '.agents/skills/wf-update/SKILL.md': 'wf-update skill.',
   '.claude/rules/ecc/common.md': 'Universal rules.',
   'Harness/WF.md': 'WF mode spec.',
   'Harness/dispatch.md': 'Dispatch protocol.',
@@ -175,7 +179,15 @@ for (const eu of expectedUser) {
 // This is by design — non-harness files are invisible to the scanner.
 
 // Test 6: Unmodified framework files are in SAFE
-const expectedSafe = ['AGENTS.md', 'tests/.gitkeep', '.claude/rules/ecc/common.md'];
+const expectedSafe = [
+  'AGENTS.md',
+  'tests/.gitkeep',
+  '.codex/config.toml',
+  '.codex/hooks.json',
+  '.claude/rules/ecc/common.md',
+  '.claude/skills/wf/SKILL.md',
+  '.agents/skills/wf/SKILL.md',
+];
 for (const es of expectedSafe) {
   assert(safeFiles.includes(es), `Expected SAFE: ${es}`);
 }

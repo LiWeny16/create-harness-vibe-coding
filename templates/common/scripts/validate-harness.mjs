@@ -34,6 +34,7 @@ const commonAgents = [
 ];
 
 const commonSkills = [
+  'wf',
   'wf-update',
   'wf-max',
   'wf-review',
@@ -57,12 +58,13 @@ const required = [
   'Harness/WF.md',
   'Harness/WF-MAX.md',
   ...memoryFiles,
+  '.codex/config.toml',
+  '.codex/hooks.json',
   '.claude/settings.json',
-  '.claude/commands/wf.md',
-  '.claude/commands/wf-max.md',
   '.claude/rules/ecc/common.md',
   ...commonAgents.map(agent => `.claude/agents/${agent}.md`),
   ...commonSkills.map(skill => `.claude/skills/${skill}/SKILL.md`),
+  ...commonSkills.map(skill => `.agents/skills/${skill}/SKILL.md`),
   'Harness/README.md',
   'Harness/PROGRESS.md',
   'Harness/lifecycle.md',
@@ -75,12 +77,9 @@ const required = [
   'Harness/research/README.md',
   'Harness/research/research-results.md',
   'Harness/research/PRD.md',
-  '.claude/skills/wf-update/SKILL.md',
-  '.claude/commands/wf-update.md',
   'Harness/scripts/wf-update-check.mjs',
   'Harness/scripts/wf-remove.mjs',
   'Harness/scripts/scan-clean.mjs',
-  '.claude/commands/wf-remove.md',
   'Harness/.harness-version',
 ];
 
@@ -162,7 +161,7 @@ function unresolvedTemplatePlaceholders(text) {
 
 function registeredSkillFiles(...texts) {
   const files = new Set();
-  const pattern = /(?:\.\.\/)?(\.claude\/skills\/[a-z0-9-]+\/SKILL\.md)/g;
+  const pattern = /(?:\.\.\/)?((?:\.claude|\.agents)\/skills\/[a-z0-9-]+\/SKILL\.md)/g;
 
   for (const text of texts) {
     for (const match of text.matchAll(pattern)) {
@@ -358,6 +357,15 @@ for (const skill of commonSkills) {
   if (!frontmatterField(text, 'description')) errors.push(`${rel} missing frontmatter field: description`);
 }
 
+for (const skill of commonSkills) {
+  const claudeRel = `.claude/skills/${skill}/SKILL.md`;
+  const codexRel = `.agents/skills/${skill}/SKILL.md`;
+  const claudeText = read(claudeRel);
+  const codexText = read(codexRel);
+  if (!claudeText || !codexText) continue;
+  if (claudeText !== codexText) errors.push(`${codexRel} must mirror ${claudeRel}`);
+}
+
 for (const skill of listDirectories('.claude/skills')) {
   if (commonSkills.includes(skill)) continue;
 
@@ -367,6 +375,20 @@ for (const skill of listDirectories('.claude/skills')) {
 
   if (frontmatterField(text, 'name') !== skill) errors.push(`${rel} frontmatter name does not match directory`);
   if (!frontmatterField(text, 'description')) errors.push(`${rel} missing frontmatter field: description`);
+}
+
+for (const skill of listDirectories('.agents/skills')) {
+  const rel = `.agents/skills/${skill}/SKILL.md`;
+  const text = read(rel);
+  if (!text) continue;
+
+  if (frontmatterField(text, 'name') !== skill) errors.push(`${rel} frontmatter name does not match directory`);
+  if (!frontmatterField(text, 'description')) errors.push(`${rel} missing frontmatter field: description`);
+
+  const claudeMirror = `.claude/skills/${skill}/SKILL.md`;
+  if (fs.existsSync(path.join(root, claudeMirror)) && text !== read(claudeMirror)) {
+    errors.push(`${rel} must mirror ${claudeMirror}`);
+  }
 }
 
 for (const agent of commonAgents) {
@@ -398,17 +420,17 @@ requireText('Harness/research/README.md', 'research-results.md');
 requireText('Harness/WF.md', 'Ralph-style harness loop', 'WF loop description');
 requireText('Harness/WF.md', 'Heartbeat Protocol', 'heartbeat protocol');
 requireText('Harness/WF.md', 'WF mode requires multi-subagent orchestration by default', 'WF multi-subagent default');
-requireText('Harness/WF.md', 'Explicit `/wf`, `wf mode`, `workflow mode`, or `wk mode` MUST spawn at least 3 distinct subagents', 'explicit WF/WK subagent minimum');
+requireText('Harness/WF.md', 'Explicit `/wf`, `$wf`, `wf mode`, `workflow mode`, or `wk mode` MUST use at least 3 distinct role passes', 'explicit WF/WK role-pass minimum');
 requireText('Harness/WF.md', '.claude/agents/', 'WF built-in agent roster path');
 requireText('Harness/WF.md', 'Collaboration decision tree', 'WF decision tree');
 requireText('Harness/WF.md', 'Harness/tasks/', 'WF task directory reference');
 requireText('Harness/README.md', '`wf mode`, `workflow mode`, or `wk mode`', 'WF/WK router aliases');
 requireText('Harness/README.md', 'explicit WF/WK loads subagent docs immediately', 'explicit WF/WK router output');
-// harness-* wrapper skills removed — routing table in README.md is the single source
-// wf-mode skill removed — WF rules now live directly in Harness/WF.md and .claude/commands/wf.md
+requireText('.claude/skills/wf/SKILL.md', 'Harness/WF.md', 'wf skill loads core WF doc');
+requireText('.agents/skills/wf/SKILL.md', 'Harness/WF.md', 'Codex wf skill loads core WF doc');
 requireText('.claude/skills/subagent-orchestrator/SKILL.md', 'Harness/subagents.md', 'subagent-orchestrator loads subagents doc');
 requireText('.claude/skills/subagent-orchestrator/SKILL.md', '.claude/agents/', 'subagent-orchestrator built-in agent roster path');
-requireText('.claude/skills/subagent-orchestrator/SKILL.md', '`workflow mode`, `wk mode`', 'subagent-orchestrator WF/WK aliases');
+requireText('.claude/skills/subagent-orchestrator/SKILL.md', '`workflow mode`, or `wk mode`', 'subagent-orchestrator WF/WK aliases');
 requireText('.claude/skills/wf-readme/SKILL.md', 'README.md', 'wf-readme loads README');
 requireText('.claude/skills/wf-readme/SKILL.md', 'Harness/architecture.md', 'wf-readme links architecture docs');
 requireText('Harness/subagents.md', '## Source Attribution', 'subagent source attribution');

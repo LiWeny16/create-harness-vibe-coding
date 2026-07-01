@@ -74,6 +74,14 @@ for (const rawRel of walkFiles(TEMPLATES_DIR)) {
 
   const content = fs.readFileSync(path.join(TEMPLATES_DIR, ...rel.split('/')), 'utf8');
   accumulatedFiles.push({ dest, content });
+
+  if (rel.startsWith('.claude/skills/')) {
+    const mirrorDest = rel.replace(/^\.claude\/skills\//, '.agents/skills/');
+    sources[mirrorDest] = rel;
+    if (!isChecksumExcluded(mirrorDest)) {
+      accumulatedFiles.push({ dest: mirrorDest, content });
+    }
+  }
 }
 
 const checksums = computeChecksums(accumulatedFiles);

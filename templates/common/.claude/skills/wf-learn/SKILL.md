@@ -1,11 +1,14 @@
 ---
 name: wf-learn
-description: Use for /wf-learn or when the user wants to force a learning cycle from repeated errors, patterns, or session history. Dispatches context-master → memory-master pipeline to extract and consolidate durable knowledge.
+description: Use for /wf-learn in Claude Code, $wf-learn or /skills wf-learn in Codex, or when the user wants a learning cycle from repeated errors, corrections, patterns, or session history.
 ---
 
-# WF Learn
+# WF Learn Adapter
 
-Force a memory learning cycle. Context-master analyzes, memory-master consolidates. Writes to project-level `Harness/memory/*` and cross-project global memory.
+Force a memory learning cycle. Context-master analyzes; memory-master
+consolidates. Use the active runtime's available subagent mechanism when
+present, otherwise emulate the same roles as bounded passes and record that
+fallback.
 
 ## Load
 
@@ -13,34 +16,16 @@ Force a memory learning cycle. Context-master analyzes, memory-master consolidat
 - `Harness/memory/tool-usage-reflections.md`
 - `Harness/memory/user-corrections-preferences.md`
 - `Harness/memory/agent-lessons-patterns.md`
-- Current `Harness/PROGRESS.md` for active task context
+- Current `Harness/PROGRESS.md` and active task capsule, if any
 
 ## Flow
 
-```text
-1. context-master: analyze session, extract patterns
-2. memory-master: categorize + deduplicate + write to memory files
-3. CEO: commit memory files
-```
-
-## Write Targets
-
-| Scope | Path | When |
-|---|---|---|
-| Project | `Harness/memory/tool-usage-reflections.md` | tool/command patterns found |
-| Project | `Harness/memory/user-corrections-preferences.md` | user preferences found |
-| Project | `Harness/memory/agent-lessons-patterns.md` | review/debug lessons found |
-| Global | `<user>/.claude/projects/*/memory/` | cross-project patterns |
-
-## Rules
-
-- Never auto-write without context-master analysis first.
-- Memory-master handles dedup — if existing entry covers the same ground, update instead of creating duplicate.
-- If no new patterns found, report "nothing to learn" — don't force empty writes.
-- Subagents are readers and reporters. CEO writes the final memory files.
+1. Analyze the session for repeated failures, durable user corrections, and
+   reusable review/debug lessons.
+2. Deduplicate against existing memory.
+3. Write only concise, durable, non-secret lessons to `Harness/memory/*`.
 
 ## Return
 
-- Files written or updated
-- Patterns extracted (one-line each)
-- Skipped (with reason)
+Report files updated, patterns extracted, skipped candidates, and why each
+memory entry should survive context loss.

@@ -18,7 +18,9 @@ test('--help documents existing-project flags and optional skills', () => {
   assert.match(output, /--with/);
   assert.match(output, /--without/);
   assert.match(output, /--preset/);
+  assert.match(output, /--recommend/);
   assert.match(output, /--list-options/);
+  assert.match(output, /interactive mode offers checkbox selection/i);
 });
 
 test('--dry-run prints plan and does not create target', () => {
@@ -122,6 +124,23 @@ test('--list-options prints built-in optional catalog', () => {
   assert.match(output, /browser-e2e/);
   assert.match(output, /ts-react-frontend/);
   assert.match(output, /web-app/);
+  assert.match(output, /External recommendations/);
+  assert.match(output, /superpowers/);
+  assert.match(output, /codegraph/);
+});
+
+test('--recommend records external recommendations without installing them', () => {
+  const root = tmpdir();
+  const target = path.join(root, 'recommended');
+
+  execFileSync(process.execPath, [bin, 'recommended', target, '-y', '--recommend', 'superpowers,codegraph'], { encoding: 'utf8' });
+
+  const setup = fs.readFileSync(path.join(target, 'Harness', 'SETUP.md'), 'utf8');
+  assert.match(setup, /Selected External Recommendations/);
+  assert.match(setup, /superpowers/);
+  assert.match(setup, /codegraph/);
+  assert.equal(fs.existsSync(path.join(target, '.claude', 'skills', 'superpowers', 'SKILL.md')), false);
+  assert.equal(fs.existsSync(path.join(target, '.agents', 'skills', 'superpowers', 'SKILL.md')), false);
 });
 
 test('--with copies optional skills and workflows', () => {
@@ -131,8 +150,14 @@ test('--with copies optional skills and workflows', () => {
   execFileSync(process.execPath, [bin, 'web', target, '-y', '--with', 'ts-react-frontend,browser-e2e'], { encoding: 'utf8' });
 
   assert.ok(fs.existsSync(path.join(target, '.claude', 'skills', 'ts-react-frontend', 'SKILL.md')));
+  assert.ok(fs.existsSync(path.join(target, '.agents', 'skills', 'ts-react-frontend', 'SKILL.md')));
   assert.ok(fs.existsSync(path.join(target, '.claude', 'skills', 'browser-e2e', 'SKILL.md')));
+  assert.ok(fs.existsSync(path.join(target, '.agents', 'skills', 'browser-e2e', 'SKILL.md')));
   assert.ok(fs.existsSync(path.join(target, 'Harness', 'workflows', 'browser-e2e.md')));
+  assert.equal(
+    fs.readFileSync(path.join(target, '.agents', 'skills', 'browser-e2e', 'SKILL.md'), 'utf8'),
+    fs.readFileSync(path.join(target, '.claude', 'skills', 'browser-e2e', 'SKILL.md'), 'utf8'),
+  );
   assert.match(fs.readFileSync(path.join(target, 'Harness', 'MEMORY.md'), 'utf8'), /ts-react-frontend/);
   const docsReadme = fs.readFileSync(path.join(target, 'Harness', 'README.md'), 'utf8');
   const workflowLinks = [...docsReadme.matchAll(/\]\((workflows\/[^)]+)\)/g)].map(match => match[1]);
@@ -158,8 +183,11 @@ test('--preset web-app expands optional skills', () => {
   execFileSync(process.execPath, [bin, 'web-preset', target, '-y', '--preset', 'web-app'], { encoding: 'utf8' });
 
   assert.ok(fs.existsSync(path.join(target, '.claude', 'skills', 'ts-react-frontend', 'SKILL.md')));
+  assert.ok(fs.existsSync(path.join(target, '.agents', 'skills', 'ts-react-frontend', 'SKILL.md')));
   assert.ok(fs.existsSync(path.join(target, '.claude', 'skills', 'browser-e2e', 'SKILL.md')));
+  assert.ok(fs.existsSync(path.join(target, '.agents', 'skills', 'browser-e2e', 'SKILL.md')));
   assert.ok(fs.existsSync(path.join(target, '.claude', 'skills', 'ui-ux-review', 'SKILL.md')));
+  assert.ok(fs.existsSync(path.join(target, '.agents', 'skills', 'ui-ux-review', 'SKILL.md')));
 });
 
 test('--preset equals form expands optional workflows', () => {
@@ -182,10 +210,15 @@ test('--without subtracts optional workflows after preset and with', () => {
   );
 
   assert.ok(fs.existsSync(path.join(target, '.claude', 'skills', 'ts-react-frontend', 'SKILL.md')));
+  assert.ok(fs.existsSync(path.join(target, '.agents', 'skills', 'ts-react-frontend', 'SKILL.md')));
   assert.ok(fs.existsSync(path.join(target, '.claude', 'skills', 'browser-e2e', 'SKILL.md')));
+  assert.ok(fs.existsSync(path.join(target, '.agents', 'skills', 'browser-e2e', 'SKILL.md')));
   assert.ok(fs.existsSync(path.join(target, '.claude', 'skills', 'ui-ux-review', 'SKILL.md')));
+  assert.ok(fs.existsSync(path.join(target, '.agents', 'skills', 'ui-ux-review', 'SKILL.md')));
   assert.equal(fs.existsSync(path.join(target, '.claude', 'skills', 'python-backend', 'SKILL.md')), false);
+  assert.equal(fs.existsSync(path.join(target, '.agents', 'skills', 'python-backend', 'SKILL.md')), false);
   assert.equal(fs.existsSync(path.join(target, '.claude', 'skills', 'github-pr-review', 'SKILL.md')), false);
+  assert.equal(fs.existsSync(path.join(target, '.agents', 'skills', 'github-pr-review', 'SKILL.md')), false);
 });
 
 test('--without equals form accepts known unselected optional ids as no-op', () => {
@@ -195,7 +228,9 @@ test('--without equals form accepts known unselected optional ids as no-op', () 
   execFileSync(process.execPath, [bin, 'web-trimmed-equals', target, '-y', '--preset=web-app', '--without=python-backend'], { encoding: 'utf8' });
 
   assert.ok(fs.existsSync(path.join(target, '.claude', 'skills', 'ts-react-frontend', 'SKILL.md')));
+  assert.ok(fs.existsSync(path.join(target, '.agents', 'skills', 'ts-react-frontend', 'SKILL.md')));
   assert.equal(fs.existsSync(path.join(target, '.claude', 'skills', 'python-backend', 'SKILL.md')), false);
+  assert.equal(fs.existsSync(path.join(target, '.agents', 'skills', 'python-backend', 'SKILL.md')), false);
 });
 
 test('unknown optional skill id exits with readable error', () => {
@@ -220,7 +255,7 @@ test('unknown without skill id exits with readable error', () => {
 });
 
 test('flags requiring values fail readably without creating project', () => {
-  for (const flag of ['--with', '--without', '--preset', '--on-conflict', '--with=', '--without=', '--preset=', '--on-conflict=']) {
+  for (const flag of ['--with', '--without', '--recommend', '--preset', '--on-conflict', '--with=', '--without=', '--recommend=', '--preset=', '--on-conflict=']) {
     const root = tmpdir();
     const target = path.join(root, 'bad');
     const result = spawnSync(process.execPath, [bin, 'bad', target, '-y', flag, '--dry-run'], { encoding: 'utf8' });
@@ -263,6 +298,7 @@ test('--json --dry-run outputs valid JSON plan without decorative text', () => {
   assert.equal(data.dryRun, true);
   assert.ok(Array.isArray(data.plan.create));
   assert.ok(data.plan.create.includes('CLAUDE.md'));
+  assert.ok(data.plan.create.includes('.agents/skills/wf/SKILL.md'));
   assert.equal(data.summary.created, data.plan.create.length);
   // Verify no decorative text leaked into stdout
   assert.doesNotMatch(output, /Generation complete/);
@@ -327,6 +363,7 @@ test('--json mode is non-interactive and uses defaults', () => {
   assert.ok(data.plan.create.includes('CLAUDE.md'));
   assert.ok(data.plan.create.includes('Harness/SETUP.md'));
   assert.ok(data.plan.create.includes('Harness/MEMORY.md'));
+  assert.ok(data.plan.create.includes('.agents/skills/wf/SKILL.md'));
   // Verify no interactive text leaked
   assert.doesNotMatch(output, /Generation complete/);
   assert.doesNotMatch(output, /Confirm/);

@@ -7,7 +7,7 @@ Optional workflow for browser-visible testing and automation. Installed when `br
 This workflow is active when:
 1. `browser-use` CLI is installed and `browser-use doctor` passes
 2. `Harness/workflows/browser-e2e.md` exists (this file)
-3. A task explicitly references `/wf-browser` or browser E2E testing
+3. A task explicitly references `/wf-browser`, `$wf-browser`, or browser E2E testing
 
 ## Contract
 
@@ -83,7 +83,7 @@ If `browser-use` is not installed, fall back to:
 ## Integration Points
 
 - **WF mode**: when browser-visible changes are made, follow the evidence contract in `Harness/WF.md#Browser And API Evidence`
-- **wf-browser**: the `/wf-browser` slash command loads this workflow + the skill via `.claude/commands/wf-browser.md`
+- **wf-browser**: Claude Code uses `.claude/skills/wf-browser/SKILL.md`; Codex uses `.agents/skills/wf-browser/SKILL.md`. Both load this workflow.
 - **MEMORY.md**: registered as optional workflow skill
 - **README.md**: routing table row "Browser E2E testing or automation" → browser-e2e
 
@@ -91,8 +91,8 @@ If `browser-use` is not installed, fall back to:
 
 | File | Purpose |
 |------|---------|
-| `.claude/skills/wf-browser/SKILL.md` | Skill definition |
-| `.claude/commands/wf-browser.md` | Slash command bridge |
+| `.claude/skills/wf-browser/SKILL.md` | Claude Code skill adapter |
+| `.agents/skills/wf-browser/SKILL.md` | Codex repo skill adapter |
 | `Harness/workflows/browser-e2e.md` | This file — workflow contract and install guide |
 | `~/.claude/skills/browser-use/SKILL.md` | Official Browser Use skill (user-level, auto-downloaded) |
 | `pip show browser-use \| findstr Location` | Python package install location (run to find) |

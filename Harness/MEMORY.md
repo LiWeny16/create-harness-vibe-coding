@@ -26,6 +26,7 @@ Stack-specific agents can be added after the product shape is known.
 ## Skills (Workflows)
 
 - [WF Mode](WF.md) — long-task workflow: exploration, second plan, implementation, review, verification, heartbeat, and recovery loop.
+- [wf](../.claude/skills/wf/SKILL.md) — Claude Code WF skill command; mirrored for Codex at `../.agents/skills/wf/SKILL.md`.
 - [subagent-orchestrator](../.claude/skills/subagent-orchestrator/SKILL.md) — controller-led subagent orchestration, parallel read-only passes, review gates, and recovery handoffs.
 - [wf-readme](../.claude/skills/wf-readme/SKILL.md) — README preservation, append-only development sections, structured tables, and approved architecture diagrams.
 - [wf-review](../.claude/skills/wf-review/SKILL.md) — cross-model peer review: invoke the other agent CLI (Codex/Claude) for independent review.
@@ -33,7 +34,8 @@ Stack-specific agents can be added after the product shape is known.
 - [wf-learn](../.claude/skills/wf-learn/SKILL.md) — force memory learning cycle: context-master -> memory-master -> project + global memory.
 - [wf-max](../.claude/skills/wf-max/SKILL.md) — maximum-parallelism workflow: write-set coloring, wave dispatch, parallel review per dimension.
 	- [wf-remove](../.claude/skills/wf-remove/SKILL.md) — Safely remove Harness framework files (SAFE/MODIFIED/USER classes), auto-prune empty directories, backup option.
-- learn: /wf-learn
+
+Codex repo-skill mirrors live under `../.agents/skills/` with the same skill names.
 
 - [browser-e2e](workflows/browser-e2e.md)
 

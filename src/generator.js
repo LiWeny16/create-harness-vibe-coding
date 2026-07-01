@@ -79,13 +79,7 @@ export function harnessDest(file) {
   if (file === 'MEMORY.md') return 'Harness/MEMORY.md';
   if (file.startsWith('scripts/')) return `Harness/${file}`;
   if (file.startsWith('memory/')) return `Harness/${file}`;
-  if (file === 'docs/README.md') return 'Harness/README.md';
-  if (file.startsWith('docs/harness/')) return file.replace(/^docs\/harness\//, 'Harness/');
-  if (file.startsWith('docs/research/')) return file.replace(/^docs\/research\//, 'Harness/research/');
-  if (file.startsWith('docs/domain/')) return file.replace(/^docs\/domain\//, 'Harness/domain/');
-  if (file.startsWith('docs/features/')) return file.replace(/^docs\/features\//, 'Harness/features/');
-  if (file.startsWith('docs/workflows/')) return file.replace(/^docs\/workflows\//, 'Harness/workflows/');
-  if (file.startsWith('docs/tasks/')) return file.replace(/^docs\/tasks\//, 'Harness/tasks/');
+  if (file.startsWith('Harness/')) return file;
   return file;
 }
 
@@ -127,7 +121,7 @@ function normalizePath(filePath) {
 
 export function getOptionalCatalog() {
   if (!fs.existsSync(OPTIONAL_CATALOG)) {
-    return { skills: [], presets: {} };
+    return { skills: [], presets: {}, externalRecommendations: [] };
   }
 
   return JSON.parse(fs.readFileSync(OPTIONAL_CATALOG, 'utf-8'));
@@ -142,9 +136,21 @@ function normalizeOptionList(value) {
     .filter(Boolean);
 }
 
-function resolveOptionalSelection({ withOptions = [], withoutOptions = [], preset = undefined }) {
+function externalRecommendations(catalog) {
+  return Array.isArray(catalog.externalRecommendations)
+    ? catalog.externalRecommendations
+    : [];
+}
+
+function resolveOptionalSelection({
+  withOptions = [],
+  withoutOptions = [],
+  preset = undefined,
+  externalOptions = [],
+}) {
   const catalog = getOptionalCatalog();
   const skillsById = new Map(catalog.skills.map(skill => [skill.id, skill]));
+  const recommendationsById = new Map(externalRecommendations(catalog).map(item => [item.id, item]));
   const selected = [];
   const errors = [];
 
@@ -171,12 +177,20 @@ function resolveOptionalSelection({ withOptions = [], withoutOptions = [], prese
     }
   }
 
+  const recommendationIds = [...new Set(normalizeOptionList(externalOptions))];
+  for (const id of recommendationIds) {
+    if (!recommendationsById.has(id)) {
+      errors.push(`Unknown external recommendation "${id}". Run --list-options to see available options.`);
+    }
+  }
+
   const withoutSet = new Set(withoutIds);
   const selectedIds = ids.filter(id => !withoutSet.has(id));
 
   return {
     catalog,
     selectedSkills: errors.length ? [] : selectedIds.map(id => skillsById.get(id)),
+    selectedRecommendations: errors.length ? [] : recommendationIds.map(id => recommendationsById.get(id)),
     errors,
   };
 }
@@ -191,6 +205,7 @@ function createCoreFileSpecs() {
       type: 'common',
     }));
 
+  specs.push(...createCodexSkillMirrors(specs));
   specs.push({ dest: 'tests/.gitkeep', src: undefined, type: 'empty' });
   return specs;
 }
@@ -212,7 +227,17 @@ function createOptionalFileSpecs(selectedSkills) {
     }
   }
 
+  specs.push(...createCodexSkillMirrors(specs));
   return specs;
+}
+
+function createCodexSkillMirrors(fileSpecs) {
+  return fileSpecs
+    .filter(spec => spec.dest.startsWith('.claude/skills/'))
+    .map(spec => ({
+      ...spec,
+      dest: spec.dest.replace(/^\.claude\/skills\//, '.agents/skills/'),
+    }));
 }
 
 function duplicateDests(fileSpecs) {
@@ -330,7 +355,7 @@ function registerOptionalContent(file, content, selectedSkills) {
 
   if (file === 'Harness/MEMORY.md') {
     const lines = selectedSkills.map(skill => (
-      `- [${skill.id}](../.claude/skills/${skill.id}/SKILL.md) - ${skill.description} Workflow: [workflows/${skill.id}.md](workflows/${skill.id}.md)`
+      `- [${skill.id}](../.claude/skills/${skill.id}/SKILL.md) - ${skill.description} Codex mirror: [${skill.id}](../.agents/skills/${skill.id}/SKILL.md). Workflow: [workflows/${skill.id}.md](workflows/${skill.id}.md)`
     ));
     return content.replace(
       'Stack-specific skills can be added after the product shape is known.',
@@ -346,6 +371,16 @@ function registerOptionalContent(file, content, selectedSkills) {
   }
 
   return content;
+}
+
+function registerExternalRecommendations(file, content, selectedRecommendations) {
+  if (!selectedRecommendations.length || file !== 'Harness/SETUP.md') return content;
+
+  const lines = selectedRecommendations.map(item => (
+    `- \`${item.id}\` - ${item.description} Recommendation only; not installed by this scaffold. Use the discovery/install hint: ${item.installHint}`
+  ));
+
+  return `${content.trimEnd()}\n\n## Selected External Recommendations\n\n${lines.join('\n')}\n`;
 }
 
 function registrationWarnings(plan, selectedSkills) {
@@ -381,6 +416,7 @@ export function generate({
   withOptions = [],
   withoutOptions = [],
   preset = undefined,
+  externalOptions = [],
 }) {
   const created = [];
   const errors = [];
@@ -394,7 +430,7 @@ export function generate({
     generatedTimestamp: new Date().toISOString(),
   };
 
-  const optional = resolveOptionalSelection({ withOptions, withoutOptions, preset });
+  const optional = resolveOptionalSelection({ withOptions, withoutOptions, preset, externalOptions });
   const fileSpecs = [
     ...createCoreFileSpecs(),
     ...createOptionalFileSpecs(optional.selectedSkills),
@@ -504,6 +540,7 @@ export function generate({
         ? ''
         : renderTemplate(spec.src, vars);
       content = registerOptionalContent(file, content, optional.selectedSkills);
+      content = registerExternalRecommendations(file, content, optional.selectedRecommendations);
 
       fs.mkdirSync(path.dirname(destPath), { recursive: true });
       fs.writeFileSync(destPath, content, 'utf-8');
@@ -522,6 +559,7 @@ export function generate({
       parsed.generator = vars.generatorVersion;
       parsed.generated = vars.generatedTimestamp;
       parsed.options = optional.selectedSkills.map(s => s.id);
+      parsed.externalRecommendations = optional.selectedRecommendations.map(item => item.id);
       parsed.autoCheck = true;
       parsed.checksums = computeChecksums(generatedFiles);
       // Build sources map from fileSpecs (all writable files, not just generatedFiles)

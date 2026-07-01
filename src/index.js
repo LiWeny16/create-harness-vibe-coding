@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 import * as p from '@clack/prompts';
+import fs from 'node:fs';
+import path from 'node:path';
 import pc from 'picocolors';
-import { askProjectName, askTargetDir } from './prompts.js';
+import { askConflictPolicy, askOptionalSelections, askProjectName, askTargetDir } from './prompts.js';
 import { generate, getOptionalCatalog } from './generator.js';
 
 // ── CLI flags ──────────────────────────────────────────────
@@ -9,6 +11,7 @@ const raw = process.argv.slice(2);
 const parsed = parseArgs(raw);
 const showHelp = parsed.flags.help || parsed.flags.h;
 const skipPrompts = parsed.flags.yes || parsed.flags.y;
+const conflictPolicyProvided = parsed.flags.onConflict !== undefined;
 
 if (parsed.errors.length > 0) {
   for (const err of parsed.errors) {
@@ -35,9 +38,12 @@ if (showHelp) {
   console.log('    --on-conflict <policy>       fail, skip, backup, or overwrite (default: fail)');
   console.log('    --with <id,id>               Add optional local workflow skills');
   console.log('    --without <id,id>            Remove optional workflow skills selected by --preset or --with');
+  console.log('    --recommend <id,id>          Record recommendation-only external capabilities');
   console.log('    --preset <name>              Add a built-in optional workflow preset');
   console.log('    --list-options               Print optional workflow skills and presets');
   console.log('    --json                       Output machine-readable JSON (use with --dry-run for planning)');
+  console.log('');
+  console.log('  Interactive mode offers checkbox selection for optional workflows and external recommendations.');
   console.log('');
   console.log('  Examples:');
   console.log('    npx create-harness-vibe-coding@latest');
@@ -67,6 +73,7 @@ const generationOptions = {
   onConflict: parsed.flags.onConflict || 'fail',
   withOptions: parsed.flags.with || [],
   withoutOptions: parsed.flags.without || [],
+  externalOptions: parsed.flags.recommend || [],
   preset: parsed.flags.preset,
   json: Boolean(parsed.flags.json),
 };
@@ -100,7 +107,7 @@ if (argName || skipPrompts) {
   console.log(pc.dim('────────────────────────────────────────────'));
   console.log(`  Project     ${pc.green(projectName)}`);
   console.log(`  Directory   ${pc.green(targetDir)}`);
-  console.log(`  Creates     ${pc.cyan('CLAUDE.md, README.md, Harness/PROGRESS.md, Harness/, .claude/, tests/')}`);
+  console.log(`  Creates     ${pc.cyan('CLAUDE.md, README.md, Harness/PROGRESS.md, Harness/, .claude/, .agents/, tests/')}`);
   if (generationOptions.dryRun) {
     console.log(`  Mode        ${pc.yellow('dry-run')}`);
   }
@@ -110,6 +117,9 @@ if (argName || skipPrompts) {
   }
   if (generationOptions.withoutOptions.length > 0) {
     console.log(`  Without     ${pc.cyan(generationOptions.withoutOptions.join(','))}`);
+  }
+  if (generationOptions.externalOptions.length > 0) {
+    console.log(`  Recommend   ${pc.cyan(generationOptions.externalOptions.join(','))}`);
   }
   if (generationOptions.preset) {
     console.log(`  Preset      ${pc.cyan(generationOptions.preset)}`);
@@ -138,12 +148,47 @@ if (argName || skipPrompts) {
     console.log(pc.dim(`  Directory: ${targetDir} (default)`));
   }
 
+  const scan = scanTarget(targetDir);
+  printScan(scan);
+
+  if (!generationOptions.dryRun && !conflictPolicyProvided && scan.needsConflictPolicy) {
+    try {
+      generationOptions.onConflict = await askConflictPolicy(scan);
+    } catch {
+      generationOptions.onConflict = 'skip';
+      console.log(pc.dim('  Conflicts: skip (preserve existing files default)'));
+    }
+  }
+
+  const optionFlagsProvided = generationOptions.withOptions.length > 0
+    || generationOptions.withoutOptions.length > 0
+    || generationOptions.externalOptions.length > 0
+    || generationOptions.preset;
+
+  if (!optionFlagsProvided) {
+    try {
+      const selected = await askOptionalSelections(getOptionalCatalog());
+      generationOptions.withOptions = selected.withOptions;
+      generationOptions.externalOptions = selected.externalOptions;
+    } catch {
+      generationOptions.withOptions = [];
+      generationOptions.externalOptions = [];
+      console.log(pc.dim('  Optional: none (default)'));
+    }
+  }
+
   console.log('');
   console.log(pc.dim('────────────────────────────────────────────'));
   console.log(`  Project     ${pc.green(projectName)}`);
   console.log(`  Directory   ${pc.green(targetDir)}`);
-  console.log(`  Creates     ${pc.cyan('CLAUDE.md, README.md, Harness/PROGRESS.md, Harness/, .claude/, tests/')}`);
+  console.log(`  Creates     ${pc.cyan('CLAUDE.md, README.md, Harness/PROGRESS.md, Harness/, .claude/, .agents/, tests/')}`);
   console.log(`  Conflicts   ${pc.cyan(generationOptions.onConflict)}`);
+  if (generationOptions.withOptions.length > 0) {
+    console.log(`  Optional    ${pc.cyan(generationOptions.withOptions.join(','))}`);
+  }
+  if (generationOptions.externalOptions.length > 0) {
+    console.log(`  Recommend   ${pc.cyan(generationOptions.externalOptions.join(','))}`);
+  }
   console.log(pc.dim('────────────────────────────────────────────'));
   console.log('');
 
@@ -207,7 +252,8 @@ function printResult(result, targetDir) {
     console.log(pc.bold('Next steps:'));
     console.log(`  ${pc.cyan(`cd ${targetDir}`)}`);
     console.log(`  ${pc.cyan('claude')}                          # Start Claude Code`);
-    console.log(`  Tell Claude: "${pc.yellow('Read Harness/SETUP.md. Bootstrap this project from idea to first vertical slice.')}"`);
+    console.log(`  ${pc.cyan('codex')}                           # Or start Codex`);
+    console.log(`  Tell your agent: "${pc.yellow('Read Harness/SETUP.md. Bootstrap this project from idea to first vertical slice.')}"`);
     console.log('');
     console.log(pc.dim('  Harness/SETUP.md is temporary. Delete it after initialization.'));
     console.log('');
@@ -283,6 +329,19 @@ function parseArgs(args) {
     } else if (arg.startsWith('--without=')) {
       const value = readEqualsValue('--without', arg.slice('--without='.length));
       if (value !== undefined) flags.without.push(value);
+    } else if (arg === '--recommend') {
+      const parsedValue = readValue('--recommend', i);
+      if (parsedValue.value !== undefined) {
+        if (!flags.recommend) flags.recommend = [];
+        flags.recommend.push(parsedValue.value);
+      }
+      i = parsedValue.nextIndex;
+    } else if (arg.startsWith('--recommend=')) {
+      const value = readEqualsValue('--recommend', arg.slice('--recommend='.length));
+      if (value !== undefined) {
+        if (!flags.recommend) flags.recommend = [];
+        flags.recommend.push(value);
+      }
     } else if (arg === '--preset') {
       const parsedValue = readValue('--preset', i);
       flags.preset = parsedValue.value;
@@ -312,6 +371,14 @@ function printOptions() {
   console.log(pc.bold('Presets:'));
   for (const [name, skills] of Object.entries(catalog.presets)) {
     console.log(`  ${pc.cyan(name)} - ${skills.join(', ')}`);
+  }
+
+  if (catalog.externalRecommendations?.length) {
+    console.log('');
+    console.log(pc.bold('External recommendations:'));
+    for (const item of catalog.externalRecommendations) {
+      console.log(`  ${pc.cyan(item.id)} - ${item.description} (${item.installMode})`);
+    }
   }
   console.log('');
 }
@@ -352,4 +419,47 @@ function printJsonResult(result) {
   if (!result.success) {
     process.exit(1);
   }
+}
+
+function scanTarget(targetDir) {
+  const resolvedDir = path.resolve(process.cwd(), targetDir);
+  const exists = fs.existsSync(resolvedDir);
+  const isDirectory = exists && fs.statSync(resolvedDir).isDirectory();
+  const entries = isDirectory
+    ? fs.readdirSync(resolvedDir)
+    : [];
+  const hasHarness = isDirectory && fs.existsSync(path.join(resolvedDir, 'Harness'));
+
+  return {
+    resolvedDir,
+    exists,
+    isDirectory,
+    entries,
+    hasHarness,
+    hasClaude: isDirectory && fs.existsSync(path.join(resolvedDir, 'CLAUDE.md')),
+    hasAgents: isDirectory && fs.existsSync(path.join(resolvedDir, 'AGENTS.md')),
+    hasAgentSkills: isDirectory && fs.existsSync(path.join(resolvedDir, '.agents')),
+    hasCodex: isDirectory && fs.existsSync(path.join(resolvedDir, '.codex')),
+    hasDocs: isDirectory && fs.existsSync(path.join(resolvedDir, 'docs')),
+    needsConflictPolicy: exists && (!isDirectory || entries.length > 0 || hasHarness),
+  };
+}
+
+function printScan(scan) {
+  if (!scan.exists) return;
+
+  console.log('');
+  console.log(pc.bold('Root scan:'));
+  console.log(`  Directory   ${pc.dim(scan.resolvedDir)}`);
+  if (!scan.isDirectory) {
+    console.log(`  Conflict    ${pc.yellow('target path exists and is not a directory')}`);
+    return;
+  }
+  console.log(`  Entries     ${pc.cyan(scan.entries.length)}`);
+  if (scan.hasHarness) console.log(`  Harness     ${pc.yellow('exists')}`);
+  if (scan.hasClaude) console.log(`  CLAUDE.md   ${pc.yellow('exists')}`);
+  if (scan.hasAgents) console.log(`  AGENTS.md   ${pc.yellow('exists')}`);
+  if (scan.hasAgentSkills) console.log(`  .agents/    ${pc.yellow('exists')}`);
+  if (scan.hasCodex) console.log(`  .codex/     ${pc.yellow('exists')}`);
+  if (scan.hasDocs) console.log(`  docs/       ${pc.dim('project-owned; Harness stays in Harness/')}`);
 }

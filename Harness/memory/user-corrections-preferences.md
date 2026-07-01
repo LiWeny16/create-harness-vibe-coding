@@ -20,6 +20,13 @@ Entry format, newest first:
 
 Do not record ordinary chat. If the preference is ambiguous, ask before writing it. Never store secrets.
 
+## 2026-07-01 - Do Not Use docs For Harness Files
+
+- Correction/preference: Scaffold-owned Harness documentation and workflow files must live under root `Harness/` and template source `templates/common/Harness/` or optional `templates/optional/**/Harness/workflows/`; do not place Harness files under `docs/`.
+- Trigger: User corrected the install-scaffold design: "docs directly abandon, do not put it under docs folder."
+- Apply when: Creating, moving, generating, packaging, or documenting Harness scaffold files.
+- Avoid: Do not over-apply to project-owned `docs/` folders in target applications; those remain project facts to preserve, but Harness should not write there.
+
 ## 2026-06-26 - Explicit /wf and /wf-max ALWAYS fan out subagents
 
 - Correction/preference: When the user explicitly types `/wf`, `/wf-max`, `wf mode`, or `wk mode`, subagent fan-out is MANDATORY and UNCONDITIONAL. File count, task size, and overhead are IRRELEVANT for explicit invocation — they govern only AUTO-triggering. A 1-file `/wf-max` still fans out. "Degrade to /wf" changes organization (flat vs CEO→Manager→Worker), never the fact of fan-out. There is NO path from an explicitly typed command to a solo main-thread pass. The CEO must also NOT do W0 exploration itself by reading source files — dispatch read-only explorers in one batch.
