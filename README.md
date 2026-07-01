@@ -120,12 +120,14 @@ Root scan must include top-level files, `CLAUDE.md`, `AGENTS.md`, `.claude/`, `.
 ### Existing project — safe merge
 
 ```bash
-# Preview first. Always.
-npx create-harness-vibe-coding@latest my-app . -y --dry-run
+# Machine-readable preview first. Always.
+npx create-harness-vibe-coding@latest my-app . -y --dry-run --json
 
 # Add only what's missing. Never overwrite.
-npx create-harness-vibe-coding@latest my-app . -y --on-conflict skip
+npx create-harness-vibe-coding@latest my-app . -y --on-conflict skip --json
 ```
+
+The JSON output is the agent's install report: `scan` replaces hand-written root probes, `plan.create` is script-owned, and `agent.aiMergeRequired` is the only list that needs semantic AI review. Do not read package source or templates unless `agent.aiMergeRequired` names a conflicting file.
 
 `npx` is an install and safe-merge entry, not an update engine for an already installed Harness. Once `Harness/` exists, use `/wf-update` in Claude Code, `$wf-update` in Codex, or `node Harness/scripts/wf-update-check.mjs`; root entry conflicts such as `CLAUDE.md`, `AGENTS.md`, `.claude/`, `.agents/`, `.codex/`, and local Harness docs need agent-mediated merge decisions.
 
@@ -172,9 +174,13 @@ These are links for the user's agent to evaluate. The scaffold does not maintain
 
 ### Agent-link intake
 
-When your agent reads the one-sentence prompt above, it must first scan the project root, then ask **at most 3 blocking questions** before touching files.
+When your agent reads the one-sentence prompt above, it should get the machine-readable install report before asking broad questions:
 
-Root scan checklist: list top-level files, detect `CLAUDE.md`, `AGENTS.md`, `.claude/`, `.agents/`, `.codex/`, `Harness/`, package files, CI files, docs folders, obvious app entry points, test/build commands, and installed skills/plugins/rules.
+```bash
+npx create-harness-vibe-coding@latest my-app . -y --dry-run --json
+```
+
+Use `scan.markers` instead of manual top-level probes. Ask **at most 3 blocking questions** before touching files. Files in `plan.create` are handled by the script; only files in `agent.aiMergeRequired` need AI comparison and user-supervised merge decisions.
 
 Ask these only when they affect writes:
 
@@ -196,8 +202,11 @@ Harness docs always live in root `Harness/`; do not route Harness files through 
 ### Verify
 
 ```bash
+# In this package repo
 npm test
-node Harness/scripts/validate-harness.mjs
+
+# In a generated project after bootstrap
+node Harness/scripts/validate-harness.mjs --strict
 ```
 
 ---

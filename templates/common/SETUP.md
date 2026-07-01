@@ -57,18 +57,18 @@ Before writing, identify the project state:
 
 When adding this harness to a project that already has source code, docs, CI, or tool configuration, treat the existing project as the source of truth before filling harness docs.
 
-1. Scan existing project facts first: top-level files, `CLAUDE.md`, `AGENTS.md`, `.claude/`, `.agents/`, `.codex/`, `Harness/`, `README.md`, package files (`package.json`, `pyproject.toml`, `go.mod`, etc.), test commands, app entry points, CI files, existing docs, current run/build scripts, and already-installed skills/plugins/rules.
+1. Get the machine-readable install report first with `npx create-harness-vibe-coding@latest <project-name> <target-dir> -y --dry-run --on-conflict skip --json`. Use `scan.markers` and `agent.aiMergeRequired` instead of hand-written root probes for install decisions. Do manual project-fact reading only after the script has created missing Harness files.
 2. Record discovered facts and open questions in `Harness/tasks/<task-id>/PROGRESS.md` before changing harness docs.
 3. Fill `Harness/research/PRD.md`, `Harness/research/research-results.md`, `Harness/architecture.md` from observed project facts plus explicit user input.
 4. Existing configuration is project fact. Do not overwrite `CLAUDE.md`, `AGENTS.md`, `.claude/`, `.agents/`, `.codex/`, `.gitignore`, settings, hooks, package files, CI, docs routers, workflow docs, or installed skills/plugins/rules unless the user explicitly approves that exact overwrite.
 5. When a harness file conflicts with an existing file, preserve the existing file and register any missing harness guidance manually using `Harness/extension.md`.
-6. Run `node Harness/scripts/validate-harness.mjs` after registration, then run `node Harness/scripts/validate-harness.mjs --strict` only after project-fact placeholders have been resolved or intentionally recorded as open.
+6. Run `node Harness/scripts/validate-harness.mjs --strict` after project-fact placeholders have been resolved or intentionally recorded as open. Use the non-strict validator only for early structural checks.
 
 `npx create-harness-vibe-coding` is an install/safe-merge entry, not an update engine for a project that already has an installed Harness. If `Harness/` already exists, use `/wf-update`, `$wf-update`, or `node Harness/scripts/wf-update-check.mjs`; root entry files and user-modified Harness docs require agent-mediated merge decisions.
 
 ### Agent-Link Install Intake
 
-When the user installs by pasting the GitHub link into an agent, scan the project root before editing or asking generic questions. Summarize what exists, then ask only questions that affect writes, architecture, security, or workflow. Ask at most three blocking questions up front, record safe defaults for the rest, and ask follow-ups only when that choice becomes active.
+When the user installs by pasting the GitHub link into an agent, get the JSON install report before editing or asking generic questions. Summarize `scan.markers`, then ask only questions that affect writes, architecture, security, or workflow. Ask at most three blocking questions up front, record safe defaults for the rest, and ask follow-ups only when that choice becomes active.
 
 | Topic | Ask When | Default If Unanswered |
 | --- | --- | --- |
@@ -88,23 +88,23 @@ When the user installs by pasting the GitHub link into an agent, scan the projec
 
 ### Agent Conflict Resolution Protocol
 
-When `--on-conflict skip` leaves existing files untouched, the agent resolves each conflict with user supervision.
+When `--on-conflict skip` leaves existing files untouched, the script still owns file creation and the agent resolves only the files named in `agent.aiMergeRequired`.
 
 **Workflow:**
 
 1. Run the harness tool in planning mode to get the conflict list:
    ```
-   npx create-harness-vibe-coding@latest . . -y --dry-run --json
+   npx create-harness-vibe-coding@latest . . -y --dry-run --on-conflict skip --json
    ```
-   Parse the JSON output. Files in `plan.skip[]` need attention. Files in `plan.create[]` are handled automatically.
+   Parse the JSON output. Files in `plan.create[]` are handled automatically by the script. If `agent.aiMergeRequired[]` is empty, do not read package source or templates; run the safe merge command from `agent.safeMergeCommand`.
 
-2. For each skipped file, locate the harness template counterpart:
-   - From npm: `node_modules/create-harness-vibe-coding/templates/common/<path>`
-   - From GitHub: `https://raw.githubusercontent.com/zingspark/create-harness-vibe-coding/main/templates/common/<path>`
+2. For each file in `agent.aiMergeRequired[]`, use its `templateHint` to locate the harness template counterpart only when semantic comparison is needed:
+   - From npm: `node_modules/create-harness-vibe-coding/<templateHint>`
+   - From GitHub: `https://raw.githubusercontent.com/zingspark/create-harness-vibe-coding/main/<templateHint>`
 
 3. For each skipped file:
    - Read the existing project file.
-   - Read the harness template counterpart.
+   - Read the harness template counterpart only for that file.
    - Compare sections and headings. Identify structural sections, registration entries, and required text patterns that exist in the template but are missing from the existing file.
    - If the skipped file is `CLAUDE.md`, tell the user that it is the root agent entry contract. Ask whether they consent to refactor or merge it before editing. Preserve project-specific rules while adding the Harness startup, memory, router, workflow, and subagent orchestration contract.
    - If the skipped file is `AGENTS.md`, tell the user that it is part of the root agent entry contract and ask whether they consent to merge or replace it before editing.
@@ -115,7 +115,7 @@ When `--on-conflict skip` leaves existing files untouched, the agent resolves ea
 
 4. For Merge: use Edit (not Write) to add missing content. Only insert sections, headings, and text that are structurally required. Do not reorder or modify existing content. Do not remove custom project-specific registrations.
 
-5. After all merges, run `node Harness/scripts/validate-harness.mjs`. Fix any remaining validation errors, then run `node Harness/scripts/validate-harness.mjs --strict` only after project-fact placeholders are resolved.
+5. After all merges, run `node Harness/scripts/validate-harness.mjs --strict` once after project-fact placeholders are resolved. Run the non-strict validator earlier only when you need a quick structural check before bootstrap is complete.
 
 **File-specific gap checklists:**
 
@@ -275,16 +275,16 @@ After both steps, `Harness/SETUP.md` is fully isolated — no file references it
 If you are an AI agent running `create-harness-vibe-coding` to scaffold your own project harness, use non-interactive mode:
 
 ```bash
-npx create-harness-vibe-coding@latest <project-name> <target-dir> -y
+npx create-harness-vibe-coding@latest <project-name> <target-dir> -y --on-conflict skip --json
 ```
 
 Example:
 
 ```bash
-npx create-harness-vibe-coding@latest my-agent-project ./my-agent-project -y
+npx create-harness-vibe-coding@latest my-agent-project ./my-agent-project -y --on-conflict skip --json
 ```
 
-After scaffolding, bootstrap the harness yourself:
+After scaffolding, use the JSON output first. Files in `plan.create[]` were handled by the script; only files in `agent.aiMergeRequired[]` need AI merge work. Then bootstrap the harness yourself:
 
 1. Read `CLAUDE.md`, `Harness/MEMORY.md`, and `Harness/README.md`.
 2. Follow the Required Bootstrap Sequence above.

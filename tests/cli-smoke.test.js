@@ -316,15 +316,33 @@ test('--json --dry-run reports existing project conflicts in structured plan', (
   const target = path.join(root, 'json-legacy');
   fs.mkdirSync(target, { recursive: true });
   fs.writeFileSync(path.join(target, 'CLAUDE.md'), 'legacy\n');
+  fs.mkdirSync(path.join(target, 'docs'), { recursive: true });
+  fs.writeFileSync(path.join(target, 'package.json'), '{"name":"legacy"}\n');
 
   const output = execFileSync(process.execPath, [bin, 'json-legacy', target, '--json', '--dry-run'], { encoding: 'utf8' });
   const data = JSON.parse(output.trim());
 
   assert.equal(data.success, true);
+  assert.equal(data.scan.markers.hasClaude, true);
+  assert.equal(data.scan.markers.hasDocs, true);
+  assert.equal(data.scan.markers.hasPackageJson, true);
+  assert.ok(data.scan.topLevelEntries.includes('CLAUDE.md'));
   assert.ok(Array.isArray(data.plan.conflict));
   assert.ok(data.plan.conflict.includes('CLAUDE.md'));
   assert.ok(Array.isArray(data.plan.create));
   assert.equal(data.summary.conflicts, data.plan.conflict.length);
+  assert.match(data.agent.sourceOfTruth, /Do not read package source/);
+  assert.match(data.agent.safeMergeCommand, /--on-conflict skip/);
+  assert.deepEqual(
+    data.agent.aiMergeRequired.find(item => item.file === 'CLAUDE.md'),
+    {
+      file: 'CLAUDE.md',
+      templateHint: 'templates/common/CLAUDE.md',
+      requiresUserConsent: true,
+      defaultAction: 'preserve',
+      reason: 'Root agent entry contract. Preserve project rules and ask before merging Harness startup guidance.',
+    },
+  );
   // Verify legacy file untouched
   assert.equal(fs.readFileSync(path.join(target, 'CLAUDE.md'), 'utf8'), 'legacy\n');
 });
@@ -345,6 +363,8 @@ test('--json with --on-conflict skip outputs structured result', () => {
   assert.ok(Array.isArray(data.plan.create));
   assert.ok(data.plan.create.includes('Harness/SETUP.md'));
   assert.equal(data.summary.skipped, data.plan.skip.length);
+  assert.ok(data.agent.aiMergeRequired.some(item => item.file === 'CLAUDE.md'));
+  assert.ok(data.agent.next.some(item => item.action === 'ai-merge'));
   // Verify legacy file preserved and new files created
   assert.equal(fs.readFileSync(path.join(target, 'CLAUDE.md'), 'utf8'), 'legacy\n');
   assert.ok(fs.existsSync(path.join(target, 'Harness', 'SETUP.md')));

@@ -84,7 +84,15 @@ const DEFAULT_NAME = 'my-vibe-project';
 if (generationOptions.json) {
   const projectName = argName || DEFAULT_NAME;
   const targetDir = argDir || `./${projectName}`;
+  const scan = scanTarget(targetDir);
   const result = generate({ projectName, targetDir, ...generationOptions });
+  result.scan = createJsonScan(scan);
+  result.agent = createAgentGuidance(result, {
+    projectName,
+    targetDir,
+    options: generationOptions,
+    scan,
+  });
   printJsonResult(result);
   // printJsonResult exits with 1 on failure; we only reach here on success
   process.exit(0);
@@ -429,6 +437,17 @@ function scanTarget(targetDir) {
     ? fs.readdirSync(resolvedDir)
     : [];
   const hasHarness = isDirectory && fs.existsSync(path.join(resolvedDir, 'Harness'));
+  const hasClaude = isDirectory && fs.existsSync(path.join(resolvedDir, 'CLAUDE.md'));
+  const hasAgents = isDirectory && fs.existsSync(path.join(resolvedDir, 'AGENTS.md'));
+  const hasAgentSkills = isDirectory && fs.existsSync(path.join(resolvedDir, '.agents'));
+  const hasCodex = isDirectory && fs.existsSync(path.join(resolvedDir, '.codex'));
+  const hasDocs = isDirectory && fs.existsSync(path.join(resolvedDir, 'docs'));
+  const hasReadme = isDirectory && fs.existsSync(path.join(resolvedDir, 'README.md'));
+  const hasPackageJson = isDirectory && fs.existsSync(path.join(resolvedDir, 'package.json'));
+  const hasPyproject = isDirectory && fs.existsSync(path.join(resolvedDir, 'pyproject.toml'));
+  const hasGoMod = isDirectory && fs.existsSync(path.join(resolvedDir, 'go.mod'));
+  const hasGithub = isDirectory && fs.existsSync(path.join(resolvedDir, '.github'));
+  const hasGitignore = isDirectory && fs.existsSync(path.join(resolvedDir, '.gitignore'));
 
   return {
     resolvedDir,
@@ -436,13 +455,194 @@ function scanTarget(targetDir) {
     isDirectory,
     entries,
     hasHarness,
-    hasClaude: isDirectory && fs.existsSync(path.join(resolvedDir, 'CLAUDE.md')),
-    hasAgents: isDirectory && fs.existsSync(path.join(resolvedDir, 'AGENTS.md')),
-    hasAgentSkills: isDirectory && fs.existsSync(path.join(resolvedDir, '.agents')),
-    hasCodex: isDirectory && fs.existsSync(path.join(resolvedDir, '.codex')),
-    hasDocs: isDirectory && fs.existsSync(path.join(resolvedDir, 'docs')),
+    hasClaude,
+    hasAgents,
+    hasAgentSkills,
+    hasCodex,
+    hasDocs,
+    hasReadme,
+    hasPackageJson,
+    hasPyproject,
+    hasGoMod,
+    hasGithub,
+    hasGitignore,
     needsConflictPolicy: exists && (!isDirectory || entries.length > 0 || hasHarness),
   };
+}
+
+function createJsonScan(scan) {
+  const topLevelEntries = scan.entries.slice(0, 50);
+
+  return {
+    resolvedDir: scan.resolvedDir,
+    exists: scan.exists,
+    isDirectory: scan.isDirectory,
+    entryCount: scan.entries.length,
+    topLevelEntries,
+    topLevelEntriesTruncated: scan.entries.length > topLevelEntries.length,
+    needsConflictPolicy: scan.needsConflictPolicy,
+    markers: {
+      hasHarness: scan.hasHarness,
+      hasClaude: scan.hasClaude,
+      hasAgents: scan.hasAgents,
+      hasAgentSkills: scan.hasAgentSkills,
+      hasCodex: scan.hasCodex,
+      hasDocs: scan.hasDocs,
+      hasReadme: scan.hasReadme,
+      hasPackageJson: scan.hasPackageJson,
+      hasPyproject: scan.hasPyproject,
+      hasGoMod: scan.hasGoMod,
+      hasGithub: scan.hasGithub,
+      hasGitignore: scan.hasGitignore,
+    },
+  };
+}
+
+function createAgentGuidance(result, { projectName, targetDir, options, scan }) {
+  const attentionFiles = [...new Set([
+    ...(result.plan?.conflict || []),
+    ...(result.plan?.skip || []),
+  ])].sort();
+  const aiMergeRequired = attentionFiles.map(file => createFileGuidance(file));
+  const hasBlockingConflicts = (result.plan?.conflict || []).length > 0;
+  const safeMergeCommand = commandFor(projectName, targetDir, {
+    ...options,
+    dryRun: false,
+    onConflict: 'skip',
+    json: true,
+  });
+  const previewCommand = commandFor(projectName, targetDir, {
+    ...options,
+    dryRun: true,
+    json: true,
+  });
+  const next = [];
+
+  if (scan.hasHarness) {
+    next.push({
+      action: 'stop',
+      reason: 'Harness already exists; use wf-update or Harness/scripts/wf-update-check.mjs instead of reinstalling blindly.',
+    });
+  } else if (result.dryRun && !hasBlockingConflicts) {
+    next.push({
+      action: 'install',
+      command: safeMergeCommand,
+      reason: 'Dry-run has no blocking conflicts; let the script create missing files.',
+    });
+  } else if (result.dryRun && hasBlockingConflicts) {
+    next.push({
+      action: 'safe-merge',
+      command: safeMergeCommand,
+      reason: 'Default dry-run found existing files; rerun with --on-conflict skip so the script creates missing files and preserves existing ones.',
+    });
+  } else if (result.success) {
+    next.push({
+      action: 'bootstrap',
+      command: 'Read Harness/SETUP.md and use this JSON plan before opening any package templates.',
+      reason: 'Scaffold files were written; bootstrap project facts from local evidence.',
+    });
+  } else {
+    next.push({
+      action: 'inspect-errors',
+      reason: 'Generation failed before safe scaffold output was available.',
+    });
+  }
+
+  if (aiMergeRequired.length > 0) {
+    next.push({
+      action: 'ai-merge',
+      files: aiMergeRequired.map(item => item.file),
+      reason: 'Only these existing/conflicting files need semantic review. Files in plan.create are script-owned.',
+    });
+  }
+
+  return {
+    sourceOfTruth: 'Use this JSON scan/plan first. Do not read package source or templates unless aiMergeRequired lists a file.',
+    previewCommand,
+    safeMergeCommand,
+    scriptHandled: {
+      create: result.plan?.create?.length || 0,
+      mkdir: result.plan?.mkdir?.length || 0,
+      backup: result.plan?.backup?.length || 0,
+      overwrite: result.plan?.overwrite?.length || 0,
+    },
+    aiMergeRequired,
+    next,
+  };
+}
+
+function createFileGuidance(file) {
+  const normalized = file.replace(/\\/g, '/');
+  const guidance = {
+    file: normalized,
+    templateHint: templateHintFor(normalized),
+    requiresUserConsent: false,
+    defaultAction: 'preserve',
+    reason: 'Existing file or path needs semantic review before any merge.',
+  };
+
+  if (normalized.endsWith('/')) {
+    return {
+      ...guidance,
+      templateHint: null,
+      defaultAction: 'stop',
+      reason: 'A file blocks a required scaffold directory. Stop and ask before moving or replacing it.',
+    };
+  }
+
+  if (normalized === 'CLAUDE.md' || normalized === 'AGENTS.md') {
+    return {
+      ...guidance,
+      requiresUserConsent: true,
+      reason: 'Root agent entry contract. Preserve project rules and ask before merging Harness startup guidance.',
+    };
+  }
+
+  if (normalized === 'README.md') {
+    return {
+      ...guidance,
+      reason: 'Project-owned public/development documentation. Preserve by default; append development notes only after review.',
+    };
+  }
+
+  if (normalized === 'Harness/README.md' || normalized === 'Harness/MEMORY.md') {
+    return {
+      ...guidance,
+      reason: 'Harness router/registry conflict. Merge only missing routing or registration entries.',
+    };
+  }
+
+  return guidance;
+}
+
+function templateHintFor(file) {
+  if (file === 'Harness/SETUP.md') return 'templates/common/SETUP.md';
+  return `templates/common/${file}`;
+}
+
+function commandFor(projectName, targetDir, options) {
+  const args = [
+    'npx',
+    'create-harness-vibe-coding@latest',
+    projectName,
+    targetDir,
+    '-y',
+  ];
+
+  if (options.dryRun) args.push('--dry-run');
+  if (options.onConflict) args.push('--on-conflict', options.onConflict);
+  if (options.withOptions?.length) args.push('--with', options.withOptions.join(','));
+  if (options.withoutOptions?.length) args.push('--without', options.withoutOptions.join(','));
+  if (options.externalOptions?.length) args.push('--recommend', options.externalOptions.join(','));
+  if (options.preset) args.push('--preset', options.preset);
+  if (options.json) args.push('--json');
+
+  return args.map(shellQuoteArg).join(' ');
+}
+
+function shellQuoteArg(arg) {
+  if (/^[A-Za-z0-9@._/\\:-]+$/.test(arg)) return arg;
+  return JSON.stringify(arg);
 }
 
 function printScan(scan) {

@@ -15,6 +15,8 @@ Global task index. Load at session start to see what is active and what was done
 | progress-restructure | Replace monolithic PLAN.md with PROGRESS.md + tasks/ capsules | Build | - |
 | wf-update-mechanism | Fix PLAN.md refs + implement /wf update | Build | - |
 | install-intake-improvements | Improve install intake, root scan, optional selections, and Codex support | Verified | 2026-07-01 |
+| install-flow-log-analysis | Analyze Codex install log and add script-first JSON install guidance | Verified | 2026-07-01 |
+| remove-flow-log-analysis | Analyze removal/update logs and add script-first cleanup/update guidance | Verified | 2026-07-01 |
 
 ## Cross-Task Decisions
 

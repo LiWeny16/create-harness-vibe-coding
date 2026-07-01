@@ -17,14 +17,21 @@ description: Use for /wf-remove in Claude Code, $wf-remove or /skills wf-remove 
 
 ## Flow
 
-1. Run `node Harness/scripts/wf-remove.mjs` for a dry-run plan.
+1. Run `node Harness/scripts/wf-remove.mjs --json` for the machine-readable
+   plan.
 2. Auto-remove only SAFE files that still match stored checksums.
 3. Ask the user before every MODIFIED or uncertain file.
-4. Never remove USER DATA files.
-5. Run `node Harness/scripts/wf-remove.mjs --apply` only after the plan is
-   understood and modified-file decisions are clear.
+4. Preserve USER DATA by default. For an explicit thorough uninstall, use
+   `--purge-user-data` (alias `--purge`); add `--keep-tasks` when the user wants task records
+   retained while project-fact Harness docs are removed.
+5. Run the script, not manual deletes:
+   - safe default: `node Harness/scripts/wf-remove.mjs --apply --yes`
+   - thorough but keep tasks: `node Harness/scripts/wf-remove.mjs --apply --yes --purge-user-data --keep-tasks`
+   - exact modified decisions: add `--delete-modified <path>` for each
+     user-approved MODIFIED file.
 
 ## Return
 
 Report SAFE removals, MODIFIED keep/delete decisions, preserved USER DATA,
-directory cleanup, CLAUDE/AGENTS status, and `git status` guidance.
+PURGE removals, directory cleanup, CLAUDE/AGENTS status, `.harness-version`
+status, and `git status` guidance.

@@ -13,6 +13,8 @@
  *   node Harness/scripts/wf-remove.mjs --yes              # auto-yes for SAFE only (non-interactive)
  *   node Harness/scripts/wf-remove.mjs --json             # JSON plan for AI consumption
  *   node Harness/scripts/wf-remove.mjs --apply --yes      # auto-apply SAFE, skip MODIFIED, report
+ *   node Harness/scripts/wf-remove.mjs --apply --yes --purge-user-data --keep-tasks
+ *                                                         # remove Harness project facts, keep task records
  */
 
 import { readFileSync, writeFileSync, existsSync, unlinkSync, rmdirSync, readdirSync, lstatSync } from 'fs';
@@ -60,12 +62,40 @@ const USER_DATA_PATTERNS = [
   /^package-lock\.json$/,
 ];
 
+/** Harness user-data paths that can be removed only with explicit purge flags. */
+const PURGEABLE_HARNESS_DATA_PATTERNS = [
+  /^Harness\/PROGRESS\.md$/,
+  /^Harness\/tasks\//,
+  /^Harness\/memory\//,
+  /^Harness\/research\/PRD\.md$/,
+  /^Harness\/research\/research-results\.md$/,
+  /^Harness\/architecture\.md$/,
+  /^Harness\/workflows\//,
+  /^Harness\/features\//,
+  /^Harness\/domain\//,
+];
+
+/** Framework task scaffolding is not a real task record. */
+const FRAMEWORK_TASK_PATTERNS = [
+  /^Harness\/tasks\/_template\//,
+  /^Harness\/tasks\/auto\//,
+];
+
 function isUserData(file) {
   return USER_DATA_PATTERNS.some(p => p.test(file));
 }
 
 function isHarnessOwned(file) {
   return HARNESS_PREFIXES.some(p => file.startsWith(p));
+}
+
+function isFrameworkTaskFile(file) {
+  return FRAMEWORK_TASK_PATTERNS.some(p => p.test(file));
+}
+
+function isPurgeableHarnessData(file, { keepTasks }) {
+  if (keepTasks && /^Harness\/tasks\//.test(file) && !isFrameworkTaskFile(file)) return false;
+  return PURGEABLE_HARNESS_DATA_PATTERNS.some(p => p.test(file));
 }
 
 /** Framework files that should always exist (not part of removal). */
@@ -134,6 +164,73 @@ function sha256File(path) {
   return 'sha256-' + createHash('sha256').update(content).digest('hex');
 }
 
+function addExistingFile(allFiles, file, scanIssues = []) {
+  const diskPath = safePath(file);
+  if (!diskPath || !existsSync(diskPath)) return;
+  try {
+    if (!lstatSync(diskPath).isDirectory()) {
+      allFiles.add(file);
+    }
+  } catch (e) {
+    scanIssues.push({ file, reason: `scan failed: ${e.message}` });
+  }
+}
+
+function addFilesUnder(allFiles, dir, scanIssues = []) {
+  const diskPath = safePath(dir);
+  if (!diskPath || !existsSync(diskPath)) return;
+
+  let entries;
+  try {
+    if (!lstatSync(diskPath).isDirectory()) return;
+    entries = readdirSync(diskPath);
+  } catch (e) {
+    scanIssues.push({ file: dir, reason: `scan failed: ${e.message}` });
+    return;
+  }
+
+  for (const entry of entries) {
+    const rel = `${dir}/${entry}`.replace(/\\/g, '/').replace(/\/+/g, '/');
+    const full = safePath(rel);
+    if (!full) continue;
+    let stat;
+    try {
+      stat = lstatSync(full);
+    } catch (e) {
+      scanIssues.push({ file: rel, reason: `scan failed: ${e.message}` });
+      continue;
+    }
+    if (stat.isDirectory() && !stat.isSymbolicLink()) {
+      addFilesUnder(allFiles, rel, scanIssues);
+    } else if (!stat.isDirectory()) {
+      allFiles.add(rel);
+    }
+  }
+}
+
+function parseRepeatedFlag(args, flagName) {
+  const values = [];
+  for (let i = 0; i < args.length; i += 1) {
+    const arg = args[i];
+    if (arg === flagName && args[i + 1] && !args[i + 1].startsWith('--')) {
+      values.push(args[i + 1]);
+      i += 1;
+    } else if (arg.startsWith(`${flagName}=`)) {
+      values.push(arg.slice(flagName.length + 1));
+    }
+  }
+  return values.map(v => v.replace(/\\/g, '/').replace(/\/+/g, '/'));
+}
+
+function removePlannedFile(file) {
+  const diskPath = safePath(file);
+  if (!diskPath) return { ok: false, reason: 'path traversal rejected' };
+  if (!existsSync(diskPath)) return { ok: false, reason: 'not on disk' };
+  if (lstatSync(diskPath).isDirectory()) return { ok: false, reason: 'is directory' };
+  unlinkSync(diskPath);
+  return { ok: true };
+}
+
 function removeEmptyDirs(startDir) {
   if (!existsSync(startDir)) return;
   try {
@@ -168,6 +265,9 @@ async function main() {
   const apply = args.includes('--apply');
   const yes = args.includes('--yes');
   const jsonOut = args.includes('--json');
+  const purgeUserData = args.includes('--purge-user-data') || args.includes('--purge');
+  const keepTasks = args.includes('--keep-tasks');
+  const deleteModified = new Set(parseRepeatedFlag(args, '--delete-modified'));
 
   // 1. Build file inventory
   const localVersion = existsSync(VERSION_FILE)
@@ -177,6 +277,26 @@ async function main() {
 
   // All files from checksums + known framework patterns
   const allFiles = new Set(Object.keys(storedChecksums));
+  const scanIssues = [];
+
+  // Preserve/purge candidates may be excluded from checksums, so discover them
+  // from disk. This keeps JSON plans honest about what will remain.
+  for (const file of [
+    'Harness/PROGRESS.md',
+    'Harness/architecture.md',
+  ]) {
+    addExistingFile(allFiles, file, scanIssues);
+  }
+  for (const dir of [
+    'Harness/tasks',
+    'Harness/memory',
+    'Harness/research',
+    'Harness/workflows',
+    'Harness/features',
+    'Harness/domain',
+  ]) {
+    addFilesUnder(allFiles, dir, scanIssues);
+  }
 
   // Add framework files that might not be in checksums (newer additions)
   const extraPatterns = [
@@ -187,6 +307,10 @@ async function main() {
     'Harness/WF-AUTO.md',
     'Harness/tasks/auto/PROGRESS.md',
     'Harness/tasks/auto/PLAN.md',
+    'Harness/tasks/_template/ARTIFACTS.md',
+    'Harness/tasks/_template/NOTES.md',
+    'Harness/tasks/_template/PLAN.md',
+    'Harness/tasks/_template/PROGRESS.md',
     'Harness/scripts/wf-update-check.mjs',
     'Harness/scripts/wf-remove.mjs',
   ];
@@ -199,6 +323,8 @@ async function main() {
   const modified = []; // MODIFIED — user edited, must confirm
   const user = [];     // USER — never remove
   const skipped = [];  // File not on disk, traversal rejected, or framework-keep
+  const purge = [];    // Explicitly requested Harness user-data removal
+  skipped.push(...scanIssues);
 
   for (const file of [...allFiles].sort()) {
     // Canonical normalization for classification
@@ -210,6 +336,13 @@ async function main() {
     }
 
     if (isUserData(canonical)) {
+      if (purgeUserData && isPurgeableHarnessData(canonical, { keepTasks })) {
+        purge.push({
+          file,
+          reason: keepTasks && isFrameworkTaskFile(canonical) ? 'framework task scaffold' : 'purge requested',
+        });
+        continue;
+      }
       user.push({ file, reason: 'user data — NEVER removed' });
       continue;
     }
@@ -264,9 +397,30 @@ async function main() {
       safe: safe.map(s => s.file),
       modified: modified.map(m => m.file),
       user: user.map(u => u.file),
-      totalRemove: safe.length + modified.length,
+      purge: purge.map(p => p.file),
+      skipped: skipped.map(s => s.file),
+      options: {
+        purgeUserData,
+        keepTasks,
+        deleteModified: [...deleteModified],
+      },
+      agent: {
+        sourceOfTruth: 'Use this JSON plan first. Script handles safe/purge lists; AI decides modified files and whether purge-user-data is intended.',
+        safeRemoveCommand: 'node Harness/scripts/wf-remove.mjs --apply --yes',
+        thoroughRemoveCommand: 'node Harness/scripts/wf-remove.mjs --apply --yes --purge-user-data --keep-tasks',
+        deleteModifiedCommandExample: 'node Harness/scripts/wf-remove.mjs --apply --yes --delete-modified CLAUDE.md --delete-modified Harness/README.md',
+        aiDecisionRequired: modified.map(m => ({
+          file: m.file,
+          reason: m.reason,
+          defaultAction: 'keep',
+        })),
+        preservedByDefault: user.map(u => u.file),
+      },
+      totalRemove: safe.length + modified.length + purge.length,
       totalSafe: safe.length,
       totalModified: modified.length,
+      totalPurge: purge.length,
+      totalPreserved: user.length,
     }, null, 2));
     return;
   }
@@ -293,7 +447,13 @@ async function main() {
     console.log('');
   }
 
-  console.log(`Summary: ${safe.length} safe, ${modified.length} need confirm, ${user.length} preserved, ${skipped.length} skipped\n`);
+  if (purge.length > 0) {
+    console.log(`PURGE (${purge.length} files - explicit user-data cleanup):`);
+    for (const p of purge) console.log(`   x ${p.file}  [${p.reason}]`);
+    console.log('');
+  }
+
+  console.log(`Summary: ${safe.length} safe, ${modified.length} need confirm, ${purge.length} purge, ${user.length} preserved, ${skipped.length} skipped\n`);
 
   if (!apply) {
     console.log('DRY-RUN. Use --apply to execute the removal.\n');
@@ -302,13 +462,16 @@ async function main() {
 
   // 4. Apply — remove SAFE files automatically (rehash before unlink)
   let safeRemoved = 0;
+  let safeFailed = 0;
   for (const s of safe) {
     const diskPath = safePath(s.file);
-    if (!diskPath) { console.error(`   ✗ Traversal rejected: ${s.file}`); continue; }
+    if (!diskPath) { console.error(`   ✗ Traversal rejected: ${s.file}`); safeFailed++; continue; }
+    if (!existsSync(diskPath)) continue;
     // Re-verify hash hasn't changed since classification
     const currentHash = sha256File(diskPath);
     if (currentHash !== s.storedHash) {
       console.log(`   ⊘ Skipped (modified since classification): ${s.file}`);
+      safeFailed++;
       continue;
     }
     try {
@@ -316,6 +479,7 @@ async function main() {
       safeRemoved++;
     } catch (e) {
       console.error(`   ✗ Failed to remove: ${s.file} — ${e.message}`);
+      safeFailed++;
     }
   }
   console.log(`✓ Removed ${safeRemoved} safe files.`);
@@ -323,8 +487,21 @@ async function main() {
   // 5. Handle MODIFIED files — prompt user
   let modifiedRemoved = 0;
   let modifiedKept = 0;
+  let modifiedFailed = 0;
 
   for (const m of modified) {
+    const canonicalModified = m.file.replace(/\\/g, '/').replace(/\/+/g, '/');
+    if (deleteModified.has(canonicalModified)) {
+      const result = removePlannedFile(m.file);
+      if (result.ok) {
+        console.log(`   Deleted modified by decision: ${m.file}`);
+        modifiedRemoved++;
+      } else {
+        console.error(`   Failed modified decision: ${m.file} - ${result.reason}`);
+        modifiedFailed++;
+      }
+      continue;
+    }
     if (yes) {
       // Non-interactive mode: skip all modified
       console.log(`   ⊘ Skipped (modified): ${m.file}`);
@@ -339,17 +516,48 @@ async function main() {
     const answer = await askUser('   Choose [d/k]: ');
     if (answer === 'd' || answer === 'delete') {
       const diskPath = safePath(m.file);
-      if (!diskPath) { console.error(`   ✗ Traversal rejected: ${m.file}`); continue; }
+      if (!diskPath) { console.error(`   ✗ Traversal rejected: ${m.file}`); modifiedFailed++; continue; }
       try {
         unlinkSync(diskPath);
         console.log(`   ✓ Deleted: ${m.file}`);
         modifiedRemoved++;
       } catch (e) {
         console.error(`   ✗ Failed: ${m.file} — ${e.message}`);
+        modifiedFailed++;
       }
     } else {
       console.log(`   ⊘ Kept: ${m.file}`);
       modifiedKept++;
+    }
+  }
+
+  // 5.5 Handle explicit purge files. These are Harness-scoped user-data files
+  // only included when --purge-user-data was requested.
+  let purgeRemoved = 0;
+  let purgeKept = 0;
+  let purgeFailed = 0;
+  for (const p of purge) {
+    if (!purgeUserData) {
+      purgeKept++;
+      continue;
+    }
+    if (!yes) {
+      console.log(`\nPURGE ${p.file}`);
+      console.log(`   Reason: ${p.reason}`);
+      console.log(`   [D]elete  [K]eep (default)`);
+      const answer = await askUser('   Choose [d/k]: ');
+      if (!(answer === 'd' || answer === 'delete')) {
+        console.log(`   Kept purge candidate: ${p.file}`);
+        purgeKept++;
+        continue;
+      }
+    }
+    const result = removePlannedFile(p.file);
+    if (result.ok) {
+      purgeRemoved++;
+    } else {
+      console.error(`   Failed purge: ${p.file} - ${result.reason}`);
+      purgeFailed++;
     }
   }
 
@@ -365,7 +573,19 @@ async function main() {
   // 7. Remove version file if everything is gone
   if (existsSync(VERSION_FILE)) {
     const harPath = resolve(ROOT, 'Harness');
-    if (!existsSync(harPath) || (existsSync(harPath) && readdirSync(harPath).filter(f => f !== '.harness-version').length === 0)) {
+    const removalIncomplete = safeFailed > 0
+      || modifiedFailed > 0
+      || purgeFailed > 0
+      || modifiedKept > 0
+      || purgeKept > 0;
+    if (purgeUserData) {
+      if (removalIncomplete) {
+        console.log('Kept .harness-version because some planned removals failed or were kept.');
+      } else {
+        unlinkSync(VERSION_FILE);
+        console.log('Removed .harness-version (purge mode).');
+      }
+    } else if (!existsSync(harPath) || (existsSync(harPath) && readdirSync(harPath).filter(f => f !== '.harness-version').length === 0)) {
       unlinkSync(VERSION_FILE);
       console.log('✓ Removed .harness-version (Harness directory empty).');
     }

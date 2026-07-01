@@ -5,9 +5,10 @@
  * Only CONFLICT files need AI/user decision.
  *
  * Usage:
- *   node Harness/scripts/wf-update-check.mjs          # full plan
- *   node Harness/scripts/wf-update-check.mjs --apply  # apply SAFE+MERGE+NEW, report CONFLICT
- *   node Harness/scripts/wf-update-check.mjs --json   # JSON output for AI consumption
+ *   node Harness/scripts/wf-update-check.mjs              # full dry-run plan
+ *   node Harness/scripts/wf-update-check.mjs --json       # JSON output for AI consumption
+ *   node Harness/scripts/wf-update-check.mjs --apply-safe # apply SAFE+NEW, leave CONFLICT for AI
+ *   node Harness/scripts/wf-update-check.mjs --apply      # apply only when no CONFLICT exists
  */
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync, lstatSync } from 'fs';
@@ -18,7 +19,7 @@ import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = process.env.WF_ROOT ? resolve(process.env.WF_ROOT) : resolve(__dirname, '..', '..');
 const VERSION_FILE = resolve(ROOT, 'Harness', '.harness-version');
-const SOURCE_BASE = 'https://raw.githubusercontent.com/zingspark/create-harness-vibe-coding/main/templates/common/';
+const DEFAULT_SOURCE_BASE = 'https://raw.githubusercontent.com/zingspark/create-harness-vibe-coding/main/templates/common/';
 
 // ── Tier classification ──────────────────────────────────────────
 
@@ -64,6 +65,18 @@ function canonicalPath(file) {
   return file.replace(/\\/g, '/').replace(/\/+/g, '/');
 }
 
+function readFlagValue(args, flagName) {
+  const idx = args.indexOf(flagName);
+  if (idx === -1) return null;
+  const value = args[idx + 1];
+  if (!value || value.startsWith('--')) return null;
+  return value;
+}
+
+function normalizeSourceBase(sourceBase) {
+  return sourceBase.endsWith('/') ? sourceBase : sourceBase + '/';
+}
+
 /** Detect template placeholders in remote content. */
 function isTemplate(raw) {
   return /\{\{[a-zA-Z]+\}\}/.test(raw);
@@ -99,6 +112,10 @@ function classify(file, localHash, storedHash) {
 }
 
 async function fetchRemote(url, timeoutMs = 30000) {
+  if (url.startsWith('file://')) {
+    return readFileSync(fileURLToPath(url), 'utf-8');
+  }
+
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -115,8 +132,10 @@ async function fetchRemote(url, timeoutMs = 30000) {
 async function main() {
   const args = process.argv.slice(2);
   const apply = args.includes('--apply');
+  const applySafe = args.includes('--apply-safe') || args.includes('--safe-only');
   const jsonOut = args.includes('--json');
   const ignoreVersion = args.includes('--ignore-version') || args.includes('--force-check');
+  const sourceBase = normalizeSourceBase(readFlagValue(args, '--source-base') || process.env.WF_SOURCE_BASE || DEFAULT_SOURCE_BASE);
 
   // 1. Read local state
   if (!existsSync(VERSION_FILE)) {
@@ -155,7 +174,7 @@ async function main() {
   // 2. Fetch remote version file
   let remoteVersion;
   try {
-    const raw = await fetchRemote(SOURCE_BASE + '.harness-version');
+    const raw = await fetchRemote(sourceBase + '.harness-version');
     if (isTemplate(raw)) {
       if (jsonOut) {
         console.log(JSON.stringify({ status: 'template-remote', message: 'Remote .harness-version has not been generated yet.' }));
@@ -190,11 +209,17 @@ async function main() {
 
   const localGen = localVersion.generator || '0.0.0';
   const remoteGen = remoteVersion.generator || '0.0.0';
+  const versionCmp = cmpSemver(remoteGen, localGen);
 
-  if (!ignoreVersion && cmpSemver(remoteGen, localGen) <= 0) {
+  if (!ignoreVersion && versionCmp <= 0) {
     if (jsonOut) {
-      console.log(JSON.stringify({ status: 'up-to-date', version: localGen, remote: remoteGen }));
-    } else if (cmpSemver(remoteGen, localGen) < 0) {
+      console.log(JSON.stringify({
+        status: versionCmp < 0 ? 'downgrade-refused' : 'up-to-date',
+        version: localGen,
+        remote: remoteGen,
+        sourceBase,
+      }));
+    } else if (versionCmp < 0) {
       console.log(`⚠ Remote (v${remoteGen}) is OLDER than local (v${localGen}). Downgrade refused.`);
     } else {
       console.log(`✅ Already up to date (v${localGen})`);
@@ -212,6 +237,49 @@ async function main() {
   /** Resolve the remote template-relative path for a dest-keyed file. Falls back to the key itself for back-compat. */
   function remotePath(file) {
     return remoteSources[file] || file;
+  }
+
+  function withRemoteMeta(entry) {
+    if (!entry || !entry.file || !remoteChecksums[entry.file]) return entry;
+    const templateHint = remotePath(entry.file);
+    return {
+      ...entry,
+      templateHint,
+      remoteUrl: sourceBase + templateHint,
+    };
+  }
+
+  function withConflictActions(entry) {
+    return {
+      ...withRemoteMeta(entry),
+      choices: ['merge', 'keep-local', 'overwrite-from-template'],
+    };
+  }
+
+  function buildJsonPlan() {
+    return {
+      updated: plan.updated.map(withRemoteMeta),
+      created: plan.created.map(withRemoteMeta),
+      conflict: plan.conflict.map(withConflictActions),
+      skipped: plan.skipped.map(withRemoteMeta),
+    };
+  }
+
+  function buildAgentHints(jsonPlan) {
+    return {
+      mode: 'script-first-ai-conflicts',
+      dryRunJsonCommand: 'node Harness/scripts/wf-update-check.mjs --json',
+      safeApplyCommand: 'node Harness/scripts/wf-update-check.mjs --apply-safe',
+      strictApplyCommand: 'node Harness/scripts/wf-update-check.mjs --apply',
+      partialUpdate: localVersion.partialUpdate || null,
+      aiMergeRequired: jsonPlan.conflict,
+      aiMergeRequiredCount: jsonPlan.conflict.length,
+      conflictPolicy: 'Use the script for SAFE/NEW files. For each CONFLICT file, compare local content with templateHint/remoteUrl and choose merge, keep-local, or overwrite-from-template.',
+      postUpdateCommands: [
+        'node Harness/scripts/validate-harness.mjs --strict',
+        'node Harness/scripts/scan-clean.mjs',
+      ],
+    };
   }
 
   const allFiles = new Set([...Object.keys(localChecksums), ...Object.keys(remoteChecksums)]);
@@ -258,7 +326,11 @@ async function main() {
     if (tier === 'PRESERVE') {
       plan.skipped.push({ file, reason: 'PRESERVE — user data' });
     } else if (tier === 'SAFE') {
-      plan.updated.push({ file, remoteHash });
+      if (localHash === remoteHash) {
+        plan.skipped.push({ file, reason: 'already current' });
+      } else {
+        plan.updated.push({ file, remoteHash });
+      }
     } else if (tier === 'CONFLICT') {
       plan.conflict.push({
         file,
@@ -274,15 +346,19 @@ async function main() {
 
   // 3. Output
   if (jsonOut) {
+    const jsonPlan = buildJsonPlan();
     console.log(JSON.stringify({
-      status: 'update-available',
+      status: localVersion.partialUpdate ? 'partial-update' : 'update-available',
       from: localGen,
       to: remoteGen,
+      sourceBase,
+      partialUpdate: localVersion.partialUpdate || null,
       updated: plan.updated.length,
       created: plan.created.length,
       conflict: plan.conflict.length,
       skipped: plan.skipped.length,
-      plan,
+      plan: jsonPlan,
+      agent: buildAgentHints(jsonPlan),
     }, null, 2));
     return;
   }
@@ -296,6 +372,9 @@ async function main() {
     for (const c of plan.conflict) {
       console.log(`   📄 ${c.file}  [${c.reason}]`);
     }
+    if (plan.updated.length + plan.created.length > 0) {
+      console.log('   Tip: run --apply-safe to apply SAFE/NEW files first, then merge conflicts.');
+    }
     console.log('');
   }
 
@@ -308,12 +387,15 @@ async function main() {
   }
 
   // 4. Apply if requested
-  if (apply) {
+  if (apply || applySafe) {
     // Refuse to apply when conflicts exist — must resolve first
-    if (plan.conflict.length > 0) {
+    if (apply && !applySafe && plan.conflict.length > 0) {
       console.log(`❌ Cannot apply: ${plan.conflict.length} conflicts must be resolved first.`);
-      console.log('   Resolve conflicts manually, then re-run --apply.');
+      console.log('   Run --apply-safe to apply SAFE/NEW files first, or resolve conflicts manually then re-run --apply.');
       return plan;
+    }
+    if (applySafe && plan.conflict.length > 0) {
+      console.log(`Applying SAFE/NEW files only; ${plan.conflict.length} conflicts will remain for AI/user merge.`);
     }
 
     const lexists = existsSync;
@@ -328,7 +410,7 @@ async function main() {
         if (lexists(dest)) {
           try { if (lstatSync(dest).isSymbolicLink()) { console.error(`   ✗ Symlink rejected: ${u.file}`); failed++; continue; } } catch (_) {}
         }
-        const content = await fetchRemote(SOURCE_BASE + remotePath(u.file));
+        const content = await fetchRemote(sourceBase + remotePath(u.file));
         const normalized = content.replace(/\r\n/g, '\n');
         const fetchedHash = sha256(normalized);
         if (fetchedHash !== u.remoteHash) {
@@ -354,7 +436,7 @@ async function main() {
           console.error(`   ✗ File created since plan: ${c.file} — treating as CONFLICT`);
           failed++; continue;
         }
-        const content = await fetchRemote(SOURCE_BASE + remotePath(c.file));
+        const content = await fetchRemote(sourceBase + remotePath(c.file));
         const normalized = content.replace(/\r\n/g, '\n');
         const fetchedHash = sha256(normalized);
         if (fetchedHash !== c.remoteHash) {
@@ -370,14 +452,30 @@ async function main() {
       }
     }
 
-    // Only update version on complete success
+    // Only version-track applied files after complete script success.
     if (failed === 0) {
-      localVersion.generator = remoteGen;
-      localVersion.generated = new Date().toISOString();
+      const appliedAt = new Date().toISOString();
+      localVersion.checksums = localVersion.checksums || {};
       for (const u of plan.updated) localVersion.checksums[u.file] = u.remoteHash;
       for (const c of plan.created) localVersion.checksums[c.file] = c.remoteHash;
+      if (plan.conflict.length === 0) {
+        localVersion.generator = remoteGen;
+        localVersion.generated = appliedAt;
+        delete localVersion.partialUpdate;
+      } else {
+        localVersion.partialUpdate = {
+          targetGenerator: remoteGen,
+          updatedAt: appliedAt,
+          appliedFiles: [...plan.updated, ...plan.created].map(x => x.file),
+          conflicts: plan.conflict.map(x => x.file),
+        };
+      }
       writeFileSync(VERSION_FILE, JSON.stringify(localVersion, null, 2) + '\n', 'utf-8');
-      console.log(`✅ Applied ${applied} files. Version updated to ${remoteVersion.generator}.`);
+      if (plan.conflict.length === 0) {
+        console.log(`✅ Applied ${applied} files. Version updated to ${remoteVersion.generator}.`);
+      } else {
+        console.log(`✅ Applied ${applied} SAFE/NEW files. Version remains ${localGen}; ${plan.conflict.length} conflicts still need merge.`);
+      }
     } else {
       console.log(`❌ ${failed} failures. NO files were version-tracked. Fix and re-run.`);
     }

@@ -35,7 +35,9 @@ test('package README stays English and links to Chinese README', () => {
   assert.match(readme, /Read and follow https:\/\/github\.com\/zingspark\/create-harness-vibe-coding exactly/);
   assert.doesNotMatch(readme, /before editing, scan the project root and ask the Agent-link install intake questions/);
   assert.match(readme, /Install or Upgrade Path/);
-  assert.match(readme, /scan the project root/i);
+  assert.match(readme, /machine-readable install report/i);
+  assert.match(readme, /scan\.markers/);
+  assert.match(readme, /agent\.aiMergeRequired/);
   assert.match(readme, /Existing `Harness\/`/i);
   assert.match(readme, /optional capabilities/i);
   assert.match(readme, /Superpowers/);
@@ -479,7 +481,9 @@ test('package README-CN gives Chinese install prompt and Harness-only docs contr
   assert.match(readmeCn, /一句话交给 Agent/);
   assert.match(readmeCn, /完整阅读并严格遵循/);
   assert.match(readmeCn, /安装或升级路径/);
-  assert.match(readmeCn, /扫描根目录/);
+  assert.match(readmeCn, /机器可读安装报告/);
+  assert.match(readmeCn, /scan\.markers/);
+  assert.match(readmeCn, /agent\.aiMergeRequired/);
   assert.match(readmeCn, /已有 `Harness\/`/);
   assert.match(readmeCn, /Agent-link 安装前置问题/);
   assert.match(readmeCn, /不要把 Harness 文件放进 `docs\/`/);
@@ -508,7 +512,9 @@ test('package README-CN contains required Chinese install contract clauses', () 
   assert.match(readmeCn, /\u4e00\u53e5\u8bdd\u4ea4\u7ed9 Agent/u);
   assert.match(readmeCn, /\u5b8c\u6574\u9605\u8bfb\u5e76\u4e25\u683c\u9075\u5faa/u);
   assert.match(readmeCn, /\u5b89\u88c5\u6216\u5347\u7ea7\u8def\u5f84/u);
-  assert.match(readmeCn, /\u626b\u63cf\u6839\u76ee\u5f55/u);
+  assert.match(readmeCn, /\u673a\u5668\u53ef\u8bfb\u5b89\u88c5\u62a5\u544a/u);
+  assert.match(readmeCn, /scan\.markers/);
+  assert.match(readmeCn, /agent\.aiMergeRequired/);
   assert.match(readmeCn, /\u5df2\u6709 `Harness\/`/u);
   assert.match(readmeCn, /Agent-link \u5b89\u88c5\u524d\u7f6e\u95ee\u9898/u);
   assert.match(readmeCn, /\u4e0d\u8981\u628a Harness \u6587\u4ef6\u653e\u8fdb `docs\/`/u);
