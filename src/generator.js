@@ -377,7 +377,7 @@ function registerExternalRecommendations(file, content, selectedRecommendations)
   if (!selectedRecommendations.length || file !== 'Harness/SETUP.md') return content;
 
   const lines = selectedRecommendations.map(item => (
-    `- \`${item.id}\` - ${item.description} Recommendation only; not installed by this scaffold. Use the discovery/install hint: ${item.installHint}`
+    `- \`${item.id}\` - ${item.description} Recommendation only; not installed by this scaffold. Source: ${item.url}`
   ));
 
   return `${content.trimEnd()}\n\n## Selected External Recommendations\n\n${lines.join('\n')}\n`;

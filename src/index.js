@@ -377,7 +377,7 @@ function printOptions() {
     console.log('');
     console.log(pc.bold('External recommendations:'));
     for (const item of catalog.externalRecommendations) {
-      console.log(`  ${pc.cyan(item.id)} - ${item.description} (${item.installMode})`);
+      console.log(`  ${pc.cyan(item.id)} - ${item.description} (${item.installMode}) ${item.url || ''}`.trimEnd());
     }
   }
   console.log('');

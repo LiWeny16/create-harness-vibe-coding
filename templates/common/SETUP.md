@@ -44,18 +44,27 @@ Claude must follow this order:
 10. Run `node Harness/scripts/validate-harness.mjs --strict`.
 11. Record final verification and next feedback step in `Harness/tasks/<task-id>/PROGRESS.md`. If repeated tool failures, repeated user corrections, or reusable review/debug lessons appeared, record the concise reflection in the relevant `Harness/memory/` file.
 
-## Existing Project Bootstrap Sequence
+## Install or Upgrade Path
+
+Before writing, identify the project state:
+
+| Project state | Required action |
+| --- | --- |
+| Empty or new project | Run the scaffold, then follow this file for 0-1 bootstrap |
+| Existing project, no `Harness/` | Scan project facts first, run `--dry-run`, preserve existing files, merge only missing Harness guidance |
+| Legacy architecture or older project docs | Treat existing code/docs as source of truth, dry-run first, then fill PRD, research, architecture, and task plans from observed facts |
+| Existing `Harness/` | Do not use `npx` as an updater; ask whether to run `/wf-update`, `$wf-update`, `node Harness/scripts/wf-update-check.mjs`, keep untouched, or remove/reinstall after approval |
 
 When adding this harness to a project that already has source code, docs, CI, or tool configuration, treat the existing project as the source of truth before filling harness docs.
 
-1. Scan existing project facts first: top-level files, `CLAUDE.md`, `AGENTS.md`, `.claude/`, `.agents/`, `.codex/`, `Harness/`, `README.md`, package files (`package.json`, `pyproject.toml`, `go.mod`, etc.), test commands, app entry points, CI files, existing docs, and current run/build scripts.
+1. Scan existing project facts first: top-level files, `CLAUDE.md`, `AGENTS.md`, `.claude/`, `.agents/`, `.codex/`, `Harness/`, `README.md`, package files (`package.json`, `pyproject.toml`, `go.mod`, etc.), test commands, app entry points, CI files, existing docs, current run/build scripts, and already-installed skills/plugins/rules.
 2. Record discovered facts and open questions in `Harness/tasks/<task-id>/PROGRESS.md` before changing harness docs.
 3. Fill `Harness/research/PRD.md`, `Harness/research/research-results.md`, `Harness/architecture.md` from observed project facts plus explicit user input.
-4. Existing configuration is project fact. Do not overwrite `CLAUDE.md`, `AGENTS.md`, `.claude/`, `.agents/`, `.codex/`, `.gitignore`, settings, hooks, package files, CI, docs routers, or workflow docs unless the user explicitly approves that exact overwrite.
+4. Existing configuration is project fact. Do not overwrite `CLAUDE.md`, `AGENTS.md`, `.claude/`, `.agents/`, `.codex/`, `.gitignore`, settings, hooks, package files, CI, docs routers, workflow docs, or installed skills/plugins/rules unless the user explicitly approves that exact overwrite.
 5. When a harness file conflicts with an existing file, preserve the existing file and register any missing harness guidance manually using `Harness/extension.md`.
 6. Run `node Harness/scripts/validate-harness.mjs` after registration, then run `node Harness/scripts/validate-harness.mjs --strict` only after project-fact placeholders have been resolved or intentionally recorded as open.
 
-`npx create-harness-vibe-coding` is an install/safe-merge entry, not an update engine for a project that already has an installed Harness. If `Harness/` already exists, use `/wf-update` or `node Harness/scripts/wf-update-check.mjs`; root entry files and user-modified Harness docs require agent-mediated merge decisions.
+`npx create-harness-vibe-coding` is an install/safe-merge entry, not an update engine for a project that already has an installed Harness. If `Harness/` already exists, use `/wf-update`, `$wf-update`, or `node Harness/scripts/wf-update-check.mjs`; root entry files and user-modified Harness docs require agent-mediated merge decisions.
 
 ### Agent-Link Install Intake
 
@@ -68,8 +77,8 @@ When the user installs by pasting the GitHub link into an agent, scan the projec
 | Harness location | Always | Use root `Harness/`; do not write harness docs into `docs/` |
 | README ownership | root `README.md` is a public product page, package docs, or heavily customized | Preserve existing README and propose a minimal Development section |
 | README optimization | existing README is stale, sparse, missing command tables, or the user asks for diagrams/polished docs | Offer `wf-readme`; default to append-only Development notes until the user approves a structure pass or full rewrite |
-| Extensions | ECC, Superpowers, custom rules, or stack-specific skills may be useful | Recommend first; install only after user approval |
-| Optional capabilities | stack is known or the user wants setup guidance | Offer local workflows plus recommendation-only external options: Superpowers, Caveman, agent research, and code graph |
+| Extensions | ECC, custom rules, or stack-specific skills may be useful | Scan installed skills/plugins/rules first; recommend only missing capabilities; install only after user approval |
+| Optional capabilities | stack is known or the user wants setup guidance | Offer local workflows plus recommendation-only GitHub links: Superpowers, Caveman, agent research, and code graph; do not duplicate already-installed capabilities |
 | Skills | stack is known and optional skills could improve testing, frontend, backend, review, or browser evidence | Install 1-2 relevant local workflows only after user approval |
 | CI/CD | CI config exists or the project lacks a test/build gate | Document existing commands first; add CI/CD only after user approval |
 | Verification depth | browser-visible, API, database, auth, payment, or deployment behavior is affected | Require real command evidence; require browser/API evidence when relevant |
@@ -129,7 +138,7 @@ The harness validator checks for specific structural invariants. When comparing 
 | `Harness/PROGRESS.md` | global task index with Active Task and task history; cross-task decisions |
 | `Harness/tasks/<id>/PROGRESS.md` | `## Current Goal`, `## Phase`, `## Heartbeat`, `## Loaded Context` headings |
 | `Harness/tasks/<id>/PLAN.md` | `## Tasks`, `## Parallel Dispatch`, `## Subagent Synthesis`, `## Verification` headings |
-| `Harness/SETUP.md` | Only meaningful for fresh projects. If the project has its own onboarding docs, skip this file entirely (it is temporary). If kept, ensure the "Existing Project Bootstrap Sequence" is present. |
+| `Harness/SETUP.md` | Temporary install/bootstrap guide for new projects, existing projects, legacy upgrades, and Harness update decisions. If kept, ensure "Install or Upgrade Path" is present. |
 | `Harness/workflows/browser-e2e.md` (if installed as optional) | `data-testid`, `accessible labels/roles`, and `inputs, buttons, filters, rows, empty/error/loading states` requirement |
 | `Harness/workflows/ts-react-frontend.md` (if installed as optional) | Same UI selector contract as above |
 
@@ -153,7 +162,7 @@ npx create-harness-vibe-coding@latest my-app ./my-app -y --preset web-app
 npx create-harness-vibe-coding@latest my-app ./my-app -y --recommend superpowers,codegraph
 ```
 
-`--recommend` records recommendation-only external capabilities in this file. It does not install third-party skills or plugins.
+`--recommend` records recommendation-only external capability links in this file. It does not install third-party skills or plugins.
 
 ### Template Fill Guide
 
@@ -200,7 +209,7 @@ False confidence is worse than a question. If you catch yourself thinking "this 
 
 ## How to Find Proper Skills
 
-After the architecture stage reveals your stack, install matching agent skills. Skills teach Claude Code and Codex domain-specific patterns, testing conventions, and design rules.
+After the architecture stage reveals your stack, inspect existing `.claude/skills/`, `.agents/skills/`, plugins, hooks, and custom rules before recommending anything. Skills teach Claude Code and Codex domain-specific patterns, testing conventions, and design rules, but duplicate skills create routing noise.
 
 **Built-in route**: invoke the `/find-skills` skill (or say "help me find skills for X"). Examples:
 
@@ -211,20 +220,24 @@ After the architecture stage reveals your stack, install matching agent skills. 
 "I need a skill for PostgreSQL schema design."
 ```
 
-**Superpowers**: [Superpowers](https://github.com/obra/superpowers) is a community skill registry. Search it:
+**External recommendation links**:
 
-```bash
-# If superpowers CLI or MCP is configured
-npx skills search "react testing"
-npx skills search "python api"
-```
+| Recommendation | Source | Purpose |
+| --- | --- | --- |
+| Superpowers | <https://github.com/obra/Superpowers> | community skill registry and agent workflows |
+| Caveman | <https://github.com/JuliusBrussee/caveman> | terse, low-token agent behavior and memory compression |
+| Agent Research | <https://github.com/lingzhi227/agent-research-skills> | research-agent skills for literature, product, dependency, and ecosystem investigation |
+| CodeGraph | <https://github.com/colbymchenry/codegraph> | code graph or repository-map tooling |
+
+These are links for the user's agent to evaluate. This scaffold does not maintain third-party install steps. If a user selects one, first check whether an equivalent capability is already installed; then present the GitHub link and ask for approval before the user's agent follows that project's own README.
 
 **Manual discovery**: search GitHub and npm directly using patterns from `Harness/research/README.md#Architecture Decision References`.
 
 **Priority order**:
-1. `/find-skills` first — fastest discovery, respects your tool environment.
-2. Superpowers registry — broad community coverage.
-3. GitHub search — when the first two miss niche domains.
+1. Existing project skills/plugins/rules first - do not recommend duplicates.
+2. `/find-skills` or the runtime's local skill discovery - fastest and respects the user's tool environment.
+3. Selected external GitHub links - let the user's agent read that project's README and install only after approval.
+4. GitHub search - when the first three miss niche domains.
 
 **What to install**: after finding skills, add the canonical copy to `.claude/skills/<name>/SKILL.md` and mirror the same file to `.agents/skills/<name>/SKILL.md` when Codex should discover it. Follow `Harness/extension.md` for compatibility. Start with 1-2 skills per stack area; more is not better.
 

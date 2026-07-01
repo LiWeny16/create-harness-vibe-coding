@@ -127,6 +127,8 @@ test('--list-options prints built-in optional catalog', () => {
   assert.match(output, /External recommendations/);
   assert.match(output, /superpowers/);
   assert.match(output, /codegraph/);
+  assert.match(output, /https:\/\/github\.com\/obra\/Superpowers/);
+  assert.match(output, /https:\/\/github\.com\/colbymchenry\/codegraph/);
 });
 
 test('--recommend records external recommendations without installing them', () => {
@@ -139,6 +141,9 @@ test('--recommend records external recommendations without installing them', () 
   assert.match(setup, /Selected External Recommendations/);
   assert.match(setup, /superpowers/);
   assert.match(setup, /codegraph/);
+  assert.match(setup, /https:\/\/github\.com\/obra\/Superpowers/);
+  assert.match(setup, /https:\/\/github\.com\/colbymchenry\/codegraph/);
+  assert.doesNotMatch(setup, /install hint/i);
   assert.equal(fs.existsSync(path.join(target, '.claude', 'skills', 'superpowers', 'SKILL.md')), false);
   assert.equal(fs.existsSync(path.join(target, '.agents', 'skills', 'superpowers', 'SKILL.md')), false);
 });

@@ -73,7 +73,7 @@ export async function askOptionalSelections(catalog) {
   const externalOptions = (catalog.externalRecommendations || []).map(item => ({
     value: item.id,
     label: item.title,
-    hint: `${item.description} Recommendation only.`,
+    hint: item.url ? `${item.description} ${item.url}` : `${item.description} Recommendation only.`,
   }));
 
   const selectedLocal = localOptions.length

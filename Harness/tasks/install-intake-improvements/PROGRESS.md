@@ -4,7 +4,7 @@ Task-level progress and heartbeat. Main agent updates; subagents read only.
 
 ## Current Goal
 
-Find and fix why the scaffold install flow does not guide agents to scan the project root, ask enough optional install questions, handle an existing `Harness/` folder, and support Codex-friendly non-text selection.
+Find and fix why the scaffold install flow does not guide agents to scan the project root, ask enough optional install questions, handle an existing `Harness/` folder, support Codex-friendly non-text selection, and keep the agent-link install prompt short while moving detailed rules into README/SETUP.
 
 ## Phase
 
@@ -27,6 +27,7 @@ Recovery action: none
 | 2 | Add or update regression tests for intake/root-scan/optional choices | main agent | failing then passing tests | Done |
 | 3 | Implement scaffold/docs changes | main agent | npm test + validator | Done |
 | 4 | Review diff and record evidence | main agent | PLAN verification table | Done |
+| 5 | Refine agent-link prompt, install/upgrade path, and external recommendation links for 0.8.1 | main agent | npm test + validators + pack dry-run | Done |
 
 ## Agent Handoffs
 

@@ -14,6 +14,8 @@ Improve the scaffold so both agent-link usage and CLI usage guide installation t
 - [x] CLI interactive install offers checkbox-style optional workflow selection, not only typed `--with`.
 - [x] Optional install catalog can represent common external capability suggestions such as Superpowers, Caveman, agent research, and code graph without silently installing unknown packages.
 - [x] Existing tests cover the changed behavior and pass.
+- [x] Agent-link README prompt is short; detailed install, upgrade, root-scan, and optional recommendation rules live in README and `Harness/SETUP.md`.
+- [x] External recommendations use GitHub source links only; the scaffold does not maintain third-party install instructions.
 
 ## Scope
 
@@ -27,6 +29,7 @@ Allowed write set:
 - `tests/**`
 - `Harness/tasks/install-intake-improvements/**`
 - `Harness/PROGRESS.md`
+- `package.json` version field for patch release
 
 Forbidden:
 - unrelated package metadata churn
@@ -40,6 +43,8 @@ Forbidden:
 - `Harness/README.md`
 - `Harness/PROGRESS.md`
 - `Harness/WF.md`
+- `.agents/skills/wf/SKILL.md`
+- `.agents/skills/wf-readme/SKILL.md`
 - `.claude/skills/subagent-orchestrator/SKILL.md`
 - `Harness/extension.md`
 - root `README.md`
@@ -79,6 +84,8 @@ Decisions:
 - Add an `externalOptions`/`--recommend` path that records recommendations in `Harness/SETUP.md` and `.harness-version` without creating third-party files.
 - Move template source docs from `templates/common/docs/**` to `templates/common/Harness/**` and optional workflow sources from `docs/workflows` to `Harness/workflows`; remove new-scaffold reliance on `docs/**` mappings entirely.
 - Do not add `npx` update/sync for installed Harness projects. Existing-project updates need agent-mediated conflict handling for `CLAUDE.md`, `AGENTS.md`, `.claude/`, `.codex/`, and user-modified Harness docs, so the supported path remains `/wf-update` or `node Harness/scripts/wf-update-check.mjs`.
+- Keep the pasted agent-link prompt to a single short instruction and move the operational requirements into README/SETUP so downstream agents must read the guide instead of parsing a long sentence.
+- Treat Superpowers, Caveman, agent-research, and CodeGraph as recommendation-only GitHub links after scanning already-installed skills/plugins/rules; do not vendor or document third-party install commands.
 
 Residual risk:
 - Interactive prompt behavior is hard to fully automate without a TTY. Tests will cover static prompt wiring, CLI help/list output, and non-interactive recommendation behavior; manual CLI smoke remains useful after implementation.
@@ -99,3 +106,8 @@ Residual risk:
 | `node tests/e2e-wf-hooks.test.mjs` | Passed | 60/60 |
 | `rg` for template docs paths | Passed | No `templates/common/docs`, optional `docs/workflows`, or `docs/*` generator mappings remain outside historical task notes |
 | `node templates/common/scripts/validate-harness.mjs --strict` after memory write | Passed | Harness validation still passed after recording the `docs/` preference |
+| `npm test` after 0.8.1 refinement | Passed | 65 passed, 1 skipped |
+| `node scripts/build-version.mjs --check` after 0.8.1 refinement | Passed | `.harness-version` up to date: 56 checksums, 70 sources |
+| `node templates/common/scripts/validate-harness.mjs --strict` after 0.8.1 refinement | Passed | Harness validation passed strict |
+| `node Harness/scripts/validate-harness.mjs --strict` after 0.8.1 refinement | Passed | Dogfood Harness validation passed strict |
+| `npm pack --dry-run` after 0.8.1 refinement | Passed | Tarball preview for `create-harness-vibe-coding@0.8.1` included 80 files |

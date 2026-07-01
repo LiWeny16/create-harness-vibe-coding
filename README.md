@@ -21,7 +21,7 @@ npx create-harness-vibe-coding@latest my-project
 Already have a project? **Don't read the docs**. Paste this sentence. Your agent handles the rest.
 
 ```text
-Follow the README at https://github.com/zingspark/create-harness-vibe-coding to configure this project with create-harness-vibe-coding; before editing, scan the project root and ask the Agent-link install intake questions; if Harness/ already exists, ask how to handle it before writing; for a new project run the 0-1 bootstrap, and for an existing project or legacy architecture run a dry-run first, preserve existing files, merge only missing Harness guidance, then follow Harness/SETUP.md.
+Read and follow https://github.com/zingspark/create-harness-vibe-coding exactly to configure this project with create-harness-vibe-coding.
 ```
 
 That's it. Two paths into the harness — you type `npx`, or your agent reads the sentence.
@@ -104,6 +104,19 @@ cd my-project
 # Your agent reads Harness/SETUP.md. Done.
 ```
 
+### Install or Upgrade Path
+
+Before writing, the agent must identify which path applies:
+
+| Project state | Required action |
+|---------------|-----------------|
+| Empty or new project | Run the scaffold, then follow `Harness/SETUP.md` for 0-1 bootstrap |
+| Existing project, no `Harness/` | Scan project facts first, run `--dry-run`, preserve existing files, merge only missing Harness guidance |
+| Legacy architecture or older project docs | Treat existing code/docs as source of truth, dry-run first, then use `Harness/SETUP.md` to fill facts from observed project reality |
+| Existing `Harness/` | Do not use `npx` as an updater; ask whether to run `/wf-update`, `$wf-update`, `node Harness/scripts/wf-update-check.mjs`, keep untouched, or remove/reinstall after approval |
+
+Root scan must include top-level files, `CLAUDE.md`, `AGENTS.md`, `.claude/`, `.agents/`, `.codex/`, `Harness/`, package files, CI files, app entry points, test/build commands, existing docs, and already-installed skills/plugins/rules. Use that scan before recommending optional capabilities so you do not suggest duplicates.
+
 ### Existing project — safe merge
 
 ```bash
@@ -148,24 +161,26 @@ npx create-harness-vibe-coding@latest my-app -y --recommend superpowers,codegrap
 
 External recommendations are recorded in `Harness/SETUP.md` but not installed automatically:
 
-| Recommendation | For |
-|----------------|-----|
-| `superpowers` | Community skill registry and agent workflows |
-| `caveman` | Strict low-abstraction workflow/style capability |
-| `agent-research` | Broader product, dependency, and ecosystem research agents |
-| `codegraph` | Code graph or repository-map tooling |
+| Recommendation | For | Source |
+|----------------|-----|--------|
+| `superpowers` | Community skill registry and agent workflows | <https://github.com/obra/Superpowers> |
+| `caveman` | Terse, low-token agent behavior and memory compression | <https://github.com/JuliusBrussee/caveman> |
+| `agent-research` | Research-agent skills for literature, product, dependency, and ecosystem investigation | <https://github.com/lingzhi227/agent-research-skills> |
+| `codegraph` | Code graph or repository-map tooling | <https://github.com/colbymchenry/codegraph> |
+
+These are links for the user's agent to evaluate. The scaffold does not maintain third-party install steps; it only records selected recommendations after checking what is already installed.
 
 ### Agent-link intake
 
 When your agent reads the one-sentence prompt above, it must first scan the project root, then ask **at most 3 blocking questions** before touching files.
 
-Root scan checklist: list top-level files, detect `CLAUDE.md`, `AGENTS.md`, `.claude/`, `.agents/`, `.codex/`, `Harness/`, package files, CI files, docs folders, and obvious app entry points.
+Root scan checklist: list top-level files, detect `CLAUDE.md`, `AGENTS.md`, `.claude/`, `.agents/`, `.codex/`, `Harness/`, package files, CI files, docs folders, obvious app entry points, test/build commands, and installed skills/plugins/rules.
 
 Ask these only when they affect writes:
 
 - If `CLAUDE.md` or `AGENTS.md` already exists, should missing Harness guidance be merged, kept separate, or skipped?
 - If `Harness/` already exists, should the agent run update/dry-run, merge missing files, keep it untouched, or remove/reinstall after approval?
-- Which optional capabilities should be enabled: local workflows (`browser-e2e`, `ui-ux-review`, `ts-react-frontend`, `python-backend`, `github-pr-review`) and recommendation-only external options (`Superpowers`, `Caveman`, `agent research`, `code graph`)?
+- Which optional capabilities should be enabled, after excluding capabilities already installed: local workflows (`browser-e2e`, `ui-ux-review`, `ts-react-frontend`, `python-backend`, `github-pr-review`) and recommendation-only external links (`Superpowers`, `Caveman`, `agent research`, `code graph`)?
 
 Harness docs always live in root `Harness/`; do not route Harness files through `docs/`. If a file already exists, the agent asks first. The default is always **preserve**.
 

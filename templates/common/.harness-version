@@ -1,6 +1,6 @@
 {
-  "generator": "0.8.0",
-  "generated": "2026-07-01T04:31:49.043Z",
+  "generator": "0.8.1",
+  "generated": "2026-07-01T06:31:02.525Z",
   "options": [],
   "autoCheck": true,
   "source": "https://raw.githubusercontent.com/zingspark/create-harness-vibe-coding/main/templates/common/",
@@ -44,7 +44,7 @@
     "CLAUDE.md": "sha256-432bd4dc9bdf9958d79ae697f72d1c9723be23fb156d43889ede84e305ed5e70",
     "Harness/MEMORY.md": "sha256-68b3e2b68880814bad11aa6d444d6b736848ac14c2a758ec3225c688a2c1882e",
     "Harness/README.md": "sha256-6608f74400dbae1e73b838d6b74f02e73a0b0e54404e899628dde6ccfbf06cf4",
-    "Harness/SETUP.md": "sha256-742d37c31ed6caccd39db499dc316528ec293396fe9a1ac84c47e408f6ab9839",
+    "Harness/SETUP.md": "sha256-e0fdd6a7751595f62f15d4374e1f201fcd0aa8b8ac44528a39cbf5b04db0e3bd",
     "Harness/WF-MAX.md": "sha256-81c788ac56a0c1673a9e6bdf619efbcfa9c961ca7c5065c15b98760775f963a6",
     "Harness/WF.md": "sha256-7cce2568444295cb387fa958cd4ef9711a19697b60ce9cba0e142484e0a165ae",
     "Harness/agent-workflow.md": "sha256-1aff5e7dc1e082c559cb0a9086c4f93f6702905aff00ebb957300f463ea80b31",
