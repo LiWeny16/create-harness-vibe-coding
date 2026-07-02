@@ -271,27 +271,27 @@ const ssBad = runHook({ hook_event_name: 'SessionStart' });
 assert(!ssBad.stdout.includes('WF-MAX'), 'Corrupted JSON rejected silently');
 
 // Oversized mode file is rejected
-writeFileSync(modeFile, 'x'.repeat(5000));
+writeFileSync(modeFile, 'x'.repeat(17000));
 const ssBig = runHook({ hook_event_name: 'SessionStart' });
 assert(!ssBig.stdout.includes('WF-MAX'), 'Oversized file rejected silently');
 
 // Invalid mode value is rejected
-writeFileSync(modeFile, JSON.stringify({ active: true, mode: 'evil-mode', role: 'ceo' }));
+writeFileSync(modeFile, JSON.stringify({ active: true, mode: 'evil-mode', role: 'ceo', startedAt: new Date().toISOString() }));
 const ssBadMode = runHook({ hook_event_name: 'SessionStart' });
 assert(!ssBadMode.stdout.includes('WF-MAX'), 'Invalid mode value rejected');
 
 // Invalid phase value is rejected
-writeFileSync(modeFile, JSON.stringify({ active: true, mode: 'wf-max', role: 'ceo', phase: 'do_bad_things' }));
+writeFileSync(modeFile, JSON.stringify({ active: true, mode: 'wf-max', role: 'ceo', phase: 'do_bad_things', startedAt: new Date().toISOString() }));
 const ssBadPhase = runHook({ hook_event_name: 'SessionStart' });
 assert(!ssBadPhase.stdout.includes('WF-MAX'), 'Invalid phase rejected');
 
 // Non-boolean active is rejected
-writeFileSync(modeFile, JSON.stringify({ active: 'yes', mode: 'wf-max', role: 'ceo' }));
+writeFileSync(modeFile, JSON.stringify({ active: 'yes', mode: 'wf-max', role: 'ceo', startedAt: new Date().toISOString() }));
 const ssBadBool = runHook({ hook_event_name: 'SessionStart' });
 assert(!ssBadBool.stdout.includes('WF-MAX'), 'Non-boolean active rejected');
 
 // TaskId sanitization — special chars and tags stripped, safe text preserved
-writeFileSync(modeFile, JSON.stringify({ active: true, mode: 'wf-max', role: 'ceo', taskId: 'evil\n<script>alert(1)</script>' }));
+writeFileSync(modeFile, JSON.stringify({ active: true, mode: 'wf-max', role: 'ceo', startedAt: new Date().toISOString(), taskId: 'evil\n<script>alert(1)</script>' }));
 const ssSanitize = runHook({ hook_event_name: 'SessionStart' });
 assert(!ssSanitize.stdout.includes('<script>'), 'TaskId sanitized — script tag stripped');
 // The taskId line in output should be on a single line (no injected newline breaks it)
@@ -301,7 +301,7 @@ assert(taskIdLine && taskIdLine.includes('evilscriptalert1script'), 'TaskId kept
 
 // Extra-long taskId is truncated (not rejected)
 const longId = 'x'.repeat(200);
-writeFileSync(modeFile, JSON.stringify({ active: true, mode: 'wf-max', role: 'ceo', taskId: longId }));
+writeFileSync(modeFile, JSON.stringify({ active: true, mode: 'wf-max', role: 'ceo', startedAt: new Date().toISOString(), taskId: longId }));
 const ssLong = runHook({ hook_event_name: 'SessionStart' });
 assert(ssLong.stdout.includes('WF-MAX'), 'Long taskId session still activates');
 assert(ssLong.stdout.includes('Task: ' + 'x'.repeat(128)), 'TaskId truncated to MAX_TASKID_BYTES');
@@ -330,6 +330,256 @@ const evt3 = runHook({ type: 'SessionStart' });
 assert(evt3.stdout.includes('WF-MAX'), 'type format works');
 
 cleanupModeFile();
+
+// ═══════════════════════════════════════════════════════════════════════
+// Three-layer role architecture — Worker writeSet enforcement
+// ═══════════════════════════════════════════════════════════════════════
+
+console.log('\n── Worker writeSet Enforcement ──');
+
+// Worker with writeSet: allow write to file in writeSet
+{
+  const runtimeDir = join(ROOT, 'Harness', '.runtime');
+  mkdirSync(runtimeDir, { recursive: true });
+  writeFileSync(join(runtimeDir, 'current-mode.json'), JSON.stringify({
+    active: true,
+    mode: 'wf-max',
+    agentRole: 'worker',
+    role: 'worker',
+    taskId: 'test-worker',
+    phase: 'W2_IMPLEMENT',
+    writeSet: ['CLAUDE.md', 'AGENTS.md'],
+    startedAt: new Date().toISOString(),
+  }, null, 2));
+
+  const allowed = runHook({
+    hook_event_name: 'PreToolUse',
+    tool_name: 'Write',
+    tool_input: { file_path: join(ROOT, 'CLAUDE.md') },
+  });
+  assert(allowed.exit === 0, 'Worker Write to writeSet file ALLOWED', `exit=${allowed.exit} stderr=${allowed.stderr}`);
+
+  const blocked = runHook({
+    hook_event_name: 'PreToolUse',
+    tool_name: 'Write',
+    tool_input: { file_path: join(ROOT, 'Harness', 'WF-MAX.md') },
+  });
+  assert(blocked.exit === 2, 'Worker Write outside writeSet BLOCKED', `exit=${blocked.exit}`);
+  assert(blocked.stderr.includes('WORKER BLOCK'), 'Worker block message includes WORKER BLOCK');
+  assert(blocked.stderr.includes('outside writeSet'), 'Worker block message mentions writeSet');
+
+  cleanupModeFile();
+}
+
+// Worker with empty writeSet: all source writes blocked
+{
+  const runtimeDir = join(ROOT, 'Harness', '.runtime');
+  mkdirSync(runtimeDir, { recursive: true });
+  writeFileSync(join(runtimeDir, 'current-mode.json'), JSON.stringify({
+    active: true,
+    mode: 'wf-max',
+    agentRole: 'worker',
+    taskId: 'test-worker-no-ws',
+    phase: 'W2_IMPLEMENT',
+    writeSet: [],
+    startedAt: new Date().toISOString(),
+  }, null, 2));
+
+  const blocked = runHook({
+    hook_event_name: 'PreToolUse',
+    tool_name: 'Edit',
+    tool_input: { file_path: join(ROOT, 'CLAUDE.md') },
+  });
+  assert(blocked.exit === 2, 'Worker empty writeSet BLOCKED', `exit=${blocked.exit}`);
+
+  cleanupModeFile();
+}
+
+// Worker SessionStart injection
+{
+  const runtimeDir = join(ROOT, 'Harness', '.runtime');
+  mkdirSync(runtimeDir, { recursive: true });
+  writeFileSync(join(runtimeDir, 'current-mode.json'), JSON.stringify({
+    active: true,
+    mode: 'wf-max',
+    agentRole: 'worker',
+    taskId: 'test-session-worker',
+    phase: 'W2_IMPLEMENT',
+    writeSet: ['CLAUDE.md'],
+    startedAt: new Date().toISOString(),
+  }, null, 2));
+
+  const ss = runHook({ hook_event_name: 'SessionStart' });
+  assert(ss.stdout.includes('WF-MAX WORKER'), 'SessionStart injects Worker role');
+  assert(ss.stdout.includes('writeSet'), 'SessionStart Worker mentions writeSet');
+
+  cleanupModeFile();
+}
+
+// Manager SessionStart injection
+{
+  const runtimeDir = join(ROOT, 'Harness', '.runtime');
+  mkdirSync(runtimeDir, { recursive: true });
+  writeFileSync(join(runtimeDir, 'current-mode.json'), JSON.stringify({
+    active: true,
+    mode: 'wf-max',
+    agentRole: 'manager',
+    taskId: 'test-manager',
+    phase: 'W1_ARCHITECTURE',
+    startedAt: new Date().toISOString(),
+  }, null, 2));
+
+  const ss = runHook({ hook_event_name: 'SessionStart' });
+  assert(ss.stdout.includes('WF-MAX MANAGER'), 'SessionStart injects Manager role');
+
+  cleanupModeFile();
+}
+
+// Reviewer SessionStart injection
+{
+  const runtimeDir = join(ROOT, 'Harness', '.runtime');
+  mkdirSync(runtimeDir, { recursive: true });
+  writeFileSync(join(runtimeDir, 'current-mode.json'), JSON.stringify({
+    active: true,
+    mode: 'wf-max',
+    agentRole: 'reviewer',
+    taskId: 'test-reviewer',
+    phase: 'W2R_REVIEW',
+    startedAt: new Date().toISOString(),
+  }, null, 2));
+
+  const ss = runHook({ hook_event_name: 'SessionStart' });
+  assert(ss.stdout.includes('WF-MAX REVIEWER'), 'SessionStart injects Reviewer role');
+
+  cleanupModeFile();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// Missing role — source edits denied by default
+// ═══════════════════════════════════════════════════════════════════════
+
+console.log('\n── Missing Role Default Deny ──');
+
+{
+  const runtimeDir = join(ROOT, 'Harness', '.runtime');
+  mkdirSync(runtimeDir, { recursive: true });
+  writeFileSync(join(runtimeDir, 'current-mode.json'), JSON.stringify({
+    active: true,
+    mode: 'wf-max',
+    taskId: 'test-no-role',
+    phase: 'W0_EXPLORE',
+    startedAt: new Date().toISOString(),
+  }, null, 2));
+
+  const blocked = runHook({
+    hook_event_name: 'PreToolUse',
+    tool_name: 'Write',
+    tool_input: { file_path: join(ROOT, 'CLAUDE.md') },
+  });
+  assert(blocked.exit === 2, 'No agentRole Write BLOCKED', `exit=${blocked.exit}`);
+  assert(blocked.stderr.includes('no agentRole set'), 'Block message mentions missing agentRole');
+
+  // Harness meta writes still allowed without role
+  const metaOk = runHook({
+    hook_event_name: 'PreToolUse',
+    tool_name: 'Write',
+    tool_input: { file_path: join(ROOT, 'Harness', 'tasks', 'test', 'PLAN.md') },
+  });
+  assert(metaOk.exit === 0, 'No role Write PLAN.md ALLOWED (meta exception)', `exit=${metaOk.exit}`);
+
+  cleanupModeFile();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// SessionStart stale mode auto-clear (>30 min)
+// ═══════════════════════════════════════════════════════════════════════
+
+console.log('\n── SessionStart Stale Mode Auto-Clear ──');
+
+{
+  const runtimeDir = join(ROOT, 'Harness', '.runtime');
+  mkdirSync(runtimeDir, { recursive: true });
+  const modeFile = join(runtimeDir, 'current-mode.json');
+
+  // Write a mode file that is 31 minutes old
+  const staleTime = new Date(Date.now() - 31 * 60 * 1000).toISOString();
+  writeFileSync(modeFile, JSON.stringify({
+    active: true,
+    mode: 'wf-max',
+    agentRole: 'ceo',
+    taskId: 'stale-task',
+    phase: 'W0_EXPLORE',
+    startedAt: staleTime,
+  }, null, 2));
+
+  const ss = runHook({ hook_event_name: 'SessionStart' });
+  // Stale mode should NOT inject CEO context
+  assert(!ss.stdout.includes('WF-MAX MODE ACTIVE'), 'Stale mode (>30 min) does NOT inject CEO');
+  // Mode file should be cleared
+  const modeData = JSON.parse(readFileSync(modeFile, 'utf8'));
+  assert(modeData.active === false, 'Stale mode file cleared (active=false)');
+
+  cleanupModeFile();
+}
+
+// Fresh mode still activates
+{
+  setupModeFile('wf-max', true);
+  const ss = runHook({ hook_event_name: 'SessionStart' });
+  assert(ss.stdout.includes('WF-MAX MODE ACTIVE'), 'Fresh mode (<30 min) still injects CEO');
+  cleanupModeFile();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// Per-turn reinforcement for non-CEO roles
+// ═══════════════════════════════════════════════════════════════════════
+
+console.log('\n── Per-turn Reinforcement — Non-CEO Roles ──');
+
+{
+  const runtimeDir = join(ROOT, 'Harness', '.runtime');
+  mkdirSync(runtimeDir, { recursive: true });
+  writeFileSync(join(runtimeDir, 'current-mode.json'), JSON.stringify({
+    active: true,
+    mode: 'wf-max',
+    agentRole: 'worker',
+    taskId: 'test-pt-worker',
+    phase: 'W2_IMPLEMENT',
+    writeSet: ['CLAUDE.md'],
+    startedAt: new Date().toISOString(),
+  }, null, 2));
+
+  const result = runHook({
+    hook_event_name: 'UserPromptSubmit',
+    prompt: 'fix a bug',
+  });
+  const output = result.stdout;
+  assert(output.includes('WF-MAX WORKER'), 'Per-turn reinforces Worker role');
+  assert(output.includes('writeSet'), 'Per-turn Worker mentions writeSet');
+
+  cleanupModeFile();
+}
+
+{
+  const runtimeDir = join(ROOT, 'Harness', '.runtime');
+  mkdirSync(runtimeDir, { recursive: true });
+  writeFileSync(join(runtimeDir, 'current-mode.json'), JSON.stringify({
+    active: true,
+    mode: 'wf-max',
+    agentRole: 'manager',
+    taskId: 'test-pt-manager',
+    phase: 'W1_ARCHITECTURE',
+    startedAt: new Date().toISOString(),
+  }, null, 2));
+
+  const result = runHook({
+    hook_event_name: 'UserPromptSubmit',
+    prompt: 'review the plan',
+  });
+  assert(result.stdout.includes('WF-MAX MANAGER'), 'Per-turn reinforces Manager role');
+
+  cleanupModeFile();
+}
 
 // ═══════════════════════════════════════════════════════════════════════
 // Summary

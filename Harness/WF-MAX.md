@@ -1,9 +1,9 @@
 # WF-MAX — Maximum Parallelism Workflow
 
-**WF-MAX ACTIVE: You are CEO, not implementer.**
+**WF-MAX is a three-layer architecture: global mode (`wf-max`), agent role (`ceo|manager|worker|reviewer`), dispatch permission (`writeSet`, `forbidden`, `verification`). Global mode ≠ every agent is CEO.**
 
 ```
-CEO CONTRACT (sticky — re-read before each wave):
+CEO CONTRACT (top-level orchestrator only — Workers follow their dispatch packet):
 
 ALLOWED first actions:
 1. Read CLAUDE.md, Harness/MEMORY.md, Harness/README.md, Harness/WF-MAX.md
@@ -16,7 +16,10 @@ FORBIDDEN before W0 returns:
 - Bash (except ls/dir/tree/git status/git diff)
 
 FORBIDDEN always (unless writing PLAN.md/PROGRESS.md):
-- Edit / Write / MultiEdit on source files — delegate to Workers
+- Edit / Write / MultiEdit on source files — delegate to Workers with explicit writeSet
+
+Workers: edit only files in dispatch.writeSet. Outside writeSet → blocked.
+Managers: scope, coordinate. No source edits. Reviewers: read only.
 
 If tempted to Read/Edit/Bash a source file → STOP. Spawn a Worker.
 ```

@@ -82,9 +82,9 @@ Routing priority: if a request explicitly says `/wf <task>`, `$wf`, `wf mode`, `
 - Move phases in order unless the user asks for a fast lane.
 - Use `/wf <task>` in Claude Code, `$wf` in Codex, `/wf-max [task]` or `$wf-max`, `wf mode`, `workflow mode`, or `wk mode` when a task is long, difficult, uncertain, multi-file, or repeatedly failing.
 - Use `/wf-auto` for perpetual self-directed optimization that never stops until 8-angle exhaustion.
-- **WF-MAX CEO Contract**: CEO never writes source code. Edit/Write/MultiEdit blocked by PreToolUse hook. Spawn Workers for all file changes. Only exception: `Harness/tasks/<id>/PLAN.md` and `PROGRESS.md`. See `CLAUDE.md` §1a.
+- **WF-MAX Role Contract**: Three-layer architecture — global mode (`wf-max`), agent role (`ceo|manager|worker|reviewer`), dispatch permission (`writeSet`, `forbidden`, `verification`). CEO never writes source code. Workers edit only dispatch.writeSet. Edit/Write/MultiEdit enforced by PreToolUse hook per agentRole. See `CLAUDE.md` §1a.
 - **WF-REVIEW Anti-Self-Review**: Must invoke the OTHER CLI (Codex↔Claude). Same-model simulation is forbidden.
-- Mode state persists in `Harness/.runtime/current-mode.json` (gitignored). SessionStart hook injects CEO role into system context. Per-turn reinforcement prevents drift after compression.
+- Mode state persists in `Harness/.runtime/current-mode.json` (gitignored). SessionStart hook injects role-aware context (CEO/Worker/Manager/Reviewer). Stale modes (>30 min) auto-clear. Per-turn reinforcement prevents drift after compression.
 - Do not code before the PRD has MVP, non-goals, and acceptance criteria.
 - Unsure whether to open a task? Read [agent-workflow.md](agent-workflow.md) Section 1.
 - Do not spawn a subagent without a role, read boundary, write boundary, and return contract.

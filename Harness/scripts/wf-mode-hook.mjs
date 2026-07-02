@@ -1,58 +1,63 @@
 #!/usr/bin/env node
 /**
- * wf-mode-hook.mjs — Claude Code hook for WF-MAX / WF-REVIEW CEO enforcement
+ * wf-mode-hook.mjs — Claude Code hook for WF-MAX / WF-REVIEW enforcement
+ *
+ * Three-layer architecture:
+ *   Layer 1 — global mode:    mode = wf-max | wf-review | null
+ *   Layer 2 — agent role:     agentRole = ceo | manager | worker | reviewer | null
+ *   Layer 3 — dispatch perm:  writeSet / forbidden / verification
+ *
+ * Rules:
+ *   - Top-level orchestrator is CEO. CEO reads, plans, dispatches. No source edits.
+ *   - Manager scopes/reviews/coordinates. Default: no source edits.
+ *   - Worker may edit only files in dispatch.writeSet.
+ *   - Reviewer reads and reports. No writes.
+ *   - Missing role or writeSet → source edits denied by default.
  *
  * Hook events:
- *   SessionStart    → reads Harness/.runtime/current-mode.json, injects CEO role
- *   UserPromptSubmit→ detects /wf-max, /wf-review, writes mode state,
- *                      emits per-turn reinforcement (prevents drift after compression)
- *   PreToolUse      → blocks CEO Edit/Write/MultiEdit/Bash on source files
+ *   SessionStart    → reads mode file; auto-clears stale mode (>30 min old);
+ *                      injects context only for fresh/active mode
+ *   UserPromptSubmit→ detects /wf-max, /wf-review; writes mode state;
+ *                      emits per-turn role-aware reinforcement
+ *   PreToolUse      → enforces by agentRole + writeSet
  *
- * Inspired by caveman's hook architecture:
- *   - Symlink-safe I/O (O_NOFOLLOW, atomic rename, size cap, whitelist)
- *   - Per-turn reinforcement (model drifts without it post-compression)
- *   - Fail-silent (hook must never block session start)
- *
- * Designed to be invoked from .claude/settings.json hooks section.
- * Exit 0 = allow/continue. Exit 2 = block with stderr message.
+ * Security: symlink-safe I/O, atomic write, size caps, whitelist validation.
+ * Exit 0 = allow. Exit 2 = block with stderr message.
  */
 
 import { constants, openSync, readSync, writeSync, closeSync, readFileSync, writeFileSync, existsSync, mkdirSync, lstatSync, renameSync, unlinkSync } from 'node:fs';
-import { join, dirname, basename } from 'node:path';
+import { join, dirname, basename, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomBytes } from 'node:crypto';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const RUNTIME_DIR = join(__dirname, '..', '.runtime');
 const MODE_FILE = join(RUNTIME_DIR, 'current-mode.json');
-const MAX_MODE_BYTES = 4096; // JSON config, not a tiny flag — enough for the struct
+const MAX_MODE_BYTES = 16384; // Expanded for writeSet/forbidden/verification fields
+const STALE_MODE_MS = 30 * 60 * 1000; // 30 min — clear modes from prior sessions
 
 const VALID_MODES = ['wf-max', 'wf-review', null];
-const VALID_ROLES = ['ceo', null];
+const VALID_ROLES = ['ceo', 'manager', 'worker', 'reviewer', null];
 const VALID_PHASES = ['W0_EXPLORE', 'W1_ARCHITECTURE', 'W2_IMPLEMENT', 'W2R_REVIEW', 'W3_DEPENDENT', 'INTEGRATION', 'CLOSEOUT', 'REVIEW', null];
 const BLOCKED_TOOLS = ['Edit', 'Write', 'MultiEdit', 'Bash'];
-const MAX_TASKID_BYTES = 128; // Sanitize user-controlled strings injected into context
+const MAX_TASKID_BYTES = 128;
 
-// ── Symlink-safe I/O (from caveman: O_NOFOLLOW + atomic write + whitelist) ──
+// ── Symlink-safe I/O ───────────────────────────────────────────────────────
 
-// Resolve and verify path stays within the project's Harness directory.
-// Rejects symlinks at EVERY path component (not just the final file).
 function safeResolveHarnessPath(filePath) {
   try {
-    // Walk each component, resolving symlinks at every level
     const parts = filePath.replace(/\\/g, '/').split('/').filter(Boolean);
     let resolved = '';
     for (const part of parts) {
-      if (part === '..') return null; // Reject traversal
+      if (part === '..') return null;
       resolved = resolved ? join(resolved, part) : (resolved || part);
       try {
         const st = lstatSync(resolved);
-        if (st.isSymbolicLink()) return null; // Symlink at any component = reject
+        if (st.isSymbolicLink()) return null;
       } catch (e) {
         if (e.code === 'ENOENT' && part !== parts[parts.length - 1]) return null;
       }
     }
-    // Final component must be under Harness/ directory
     const normalized = resolved.replace(/\\/g, '/');
     if (!normalized.includes('Harness/')) return null;
     return resolved;
@@ -79,16 +84,38 @@ function safeReadJSON(filePath, maxBytes = MAX_MODE_BYTES) {
       const raw = buf.slice(0, n).toString('utf8').trim();
       if (!raw) return null;
       const parsed = JSON.parse(raw);
-      // Full whitelist validation — everything that touches LLM context must be validated
+      // Whitelist validation
       if (!VALID_MODES.includes(parsed.mode)) return null;
-      if (!VALID_ROLES.includes(parsed.role)) return null;
+      // Normalize: agentRole takes precedence; fall back to legacy 'role' field
+      if (parsed.agentRole !== undefined && parsed.agentRole !== '' && !VALID_ROLES.includes(parsed.agentRole)) return null;
+      if (parsed.role !== undefined && parsed.role !== '' && !VALID_ROLES.includes(parsed.role)) return null;
+      // Treat empty string agentRole as "not set"
+      if (parsed.agentRole === '') parsed.agentRole = undefined;
+      if (parsed.role === '') parsed.role = undefined;
+      if (!parsed.agentRole && parsed.role) {
+        parsed.agentRole = parsed.role;
+      }
+      // If no role at all, still allow the mode object — enforcement will deny source edits
+      if (parsed.agentRole === undefined && parsed.role === undefined) {
+        parsed.agentRole = null;
+      }
       if (parsed.active !== undefined && typeof parsed.active !== 'boolean') return null;
       if (parsed.phase !== undefined && !VALID_PHASES.includes(parsed.phase)) return null;
       if (parsed.explicitInvocation !== undefined && typeof parsed.explicitInvocation !== 'boolean') return null;
-      // Sanitize free-text fields injected into context
+      // Sanitize free-text fields
       if (parsed.taskId && typeof parsed.taskId === 'string') {
         parsed.taskId = parsed.taskId.replace(/[^\w-]/g, '').slice(0, MAX_TASKID_BYTES);
         if (!parsed.taskId) parsed.taskId = 'current';
+      }
+      // Validate writeSet if present
+      if (parsed.writeSet !== undefined) {
+        if (!Array.isArray(parsed.writeSet)) return null;
+        if (!parsed.writeSet.every(e => typeof e === 'string' && e.length > 0 && e.length < 1024)) return null;
+      }
+      // Validate forbidden if present
+      if (parsed.forbidden !== undefined) {
+        if (!Array.isArray(parsed.forbidden)) return null;
+        if (!parsed.forbidden.every(e => typeof e === 'string' && e.length < 1024)) return null;
       }
       return parsed;
     } finally {
@@ -103,14 +130,12 @@ function safeWriteJSON(filePath, obj) {
   try {
     mkdirSync(dirname(filePath), { recursive: true });
 
-    // Refuse if target is a symlink
     try {
       if (lstatSync(filePath).isSymbolicLink()) return;
     } catch (e) {
       if (e.code !== 'ENOENT') return;
     }
 
-    // Atomic write: temp file + rename (from caveman)
     const tmp = join(dirname(filePath),
       `.${basename(filePath)}.${process.pid}.${randomBytes(4).toString('hex')}.tmp`);
     const O_NOFOLLOW = typeof constants.O_NOFOLLOW === 'number' ? constants.O_NOFOLLOW : 0;
@@ -124,32 +149,73 @@ function safeWriteJSON(filePath, obj) {
     }
     renameSync(tmp, filePath);
   } catch {
-    // Silent-fail — mode state is best-effort
+    // Silent-fail
   }
 }
 
-// ── Validation helpers ────────────────────────────────────────────────────
+// ── Path normalization (fixed for Windows absolute paths) ──────────────────
+
+function getProjectRoot() {
+  // Walk up from __dirname to find the repo root (where CLAUDE.md lives)
+  try {
+    let dir = resolve(__dirname);
+    for (let i = 0; i < 10; i++) {
+      if (existsSync(join(dir, 'CLAUDE.md'))) return dir;
+      const parent = dirname(dir);
+      if (parent === dir) break;
+      dir = parent;
+    }
+  } catch {}
+  // Fallback: assume Harness/scripts/ is two levels below root
+  return resolve(__dirname, '..', '..');
+}
 
 function normalizePath(filePath) {
-  // Resolve, normalize separators, reject traversal
   try {
-    const resolved = join('/', filePath).replace(/\\/g, '/');
-    if (resolved.includes('..')) return null; // Reject traversal
-    return resolved;
+    // Resolve to absolute, then make relative to project root
+    const abs = resolve(filePath);
+    const root = getProjectRoot();
+    const rel = relative(root, abs).replace(/\\/g, '/');
+    if (rel.startsWith('..')) return null; // Outside project
+    if (rel.includes('..')) return null;   // Traversal
+    // Prefix with / so patterns match uniformly
+    return '/' + rel;
   } catch { return null; }
 }
 
 function isTaskFile(filePath) {
   const normalized = normalizePath(filePath);
   if (!normalized) return false;
-  // Must start with /Harness/tasks/ (after join above), end with allowed file
   return /^\/Harness\/tasks\/[^/]+\/(PLAN|PROGRESS|ARTIFACTS|NOTES)\.md$/.test(normalized);
 }
 
-function isHarnessMeta(filePath) {
+function isHarnessMeta(filePath, agentRole) {
   const normalized = normalizePath(filePath);
   if (!normalized) return false;
-  return /^\/Harness\/(memory\/|MEMORY\.md$|PROGRESS\.md$|\.runtime\/)/.test(normalized);
+  const isMeta = /^\/Harness\/(memory\/|MEMORY\.md$|PROGRESS\.md$|\.runtime\/)/.test(normalized);
+  if (!isMeta) return false;
+  // .runtime/ writes (current-mode.json) — CEO only (prevents privilege escalation)
+  if (/^\/Harness\/\.runtime\//.test(normalized) && agentRole !== 'ceo') return false;
+  return true;
+}
+
+/**
+ * Check if filePath is within the agent's writeSet.
+ * writeSet entries are relative paths from project root (e.g., "CLAUDE.md", "Harness/scripts/wf-mode-hook.mjs").
+ */
+function isInWriteSet(filePath, writeSet) {
+  if (!writeSet || writeSet.length === 0) return false;
+  try {
+    const abs = resolve(filePath);
+    const root = getProjectRoot();
+    const rel = relative(root, abs).replace(/\\/g, '/');
+    if (rel.startsWith('..')) return false;
+    return writeSet.some(entry => {
+      const normalizedEntry = entry.replace(/\\/g, '/');
+      // Exact match only — list each file explicitly (e.g., both "CLAUDE.md" and "templates/common/CLAUDE.md")
+      return rel === normalizedEntry;
+    });
+  } catch { return false; }
 }
 
 // ── stdin ─────────────────────────────────────────────────────────────────
@@ -164,27 +230,80 @@ async function readStdin() {
   try { return JSON.parse(raw); } catch { return {}; }
 }
 
-// ── event handlers ────────────────────────────────────────────────────────
+// ── Event handlers ─────────────────────────────────────────────────────────
 
 function handleSessionStart() {
   let mode;
-  try { mode = safeReadJSON(MODE_FILE); } catch { /* silent-fail */ }
+  try { mode = safeReadJSON(MODE_FILE); } catch {}
 
   if (!mode?.active) return;
 
+  // Auto-clear stale modes. Missing startedAt → treat as stale (legacy/manual mode files)
+  if (!mode.startedAt) {
+    safeWriteJSON(MODE_FILE, { active: false });
+    return;
+  }
+  try {
+    const age = Date.now() - new Date(mode.startedAt).getTime();
+    if (age > STALE_MODE_MS) {
+      safeWriteJSON(MODE_FILE, { active: false });
+      return;
+    }
+  } catch {
+    // Invalid date → treat as stale
+    safeWriteJSON(MODE_FILE, { active: false });
+    return;
+  }
+
+  const agentRole = mode.agentRole || mode.role || null;
+  // If no valid role, don't inject — enforcement will deny source edits
+  if (!agentRole) return;
+  const phase = mode.phase || 'W0_EXPLORE';
+
   if (mode.mode === 'wf-max') {
-    // Plain-text stdout → injected as hidden system context (same format as caveman)
-    process.stdout.write([
-      'WF-MAX MODE ACTIVE — You are CEO, not implementer.',
-      `Task: ${mode.taskId || 'current'} | Phase: ${mode.phase || 'W0_EXPLORE'}`,
-      '',
-      'CEO RULES:',
-      '1. Spawn read-only subagents in ONE message for exploration',
-      '2. NEVER Edit/Write/MultiEdit source files — delegate to Workers via Agent tool',
-      '3. Bash: only ls/dir/tree/git status/git diff, and harness scripts',
-      '4. PLAN.md and PROGRESS.md writes are your ONLY write exceptions',
-      '5. Any temptation to Read/Edit a source file → STOP. Spawn a Worker.',
-    ].join('\n'));
+    if (agentRole === 'ceo') {
+      process.stdout.write([
+        'WF-MAX MODE ACTIVE — Top-level orchestrator is CEO.',
+        `Task: ${mode.taskId || 'current'} | Phase: ${phase}`,
+        '',
+        'CEO RULES (delegated Workers follow their dispatch packet):',
+        '1. Spawn read-only subagents in ONE message for exploration',
+        '2. NEVER Edit/Write/MultiEdit source files — delegate to Workers via Agent tool',
+        '3. Bash: only ls/dir/tree/git status/git diff, and harness scripts',
+        '4. PLAN.md and PROGRESS.md writes are your ONLY write exceptions',
+        '5. Any temptation to Read/Edit a source file → STOP. Spawn a Worker.',
+      ].join('\n'));
+    } else if (agentRole === 'worker') {
+      const ws = mode.writeSet ? ` [writeSet: ${mode.writeSet.join(', ')}]` : ' [no writeSet]';
+      process.stdout.write([
+        `WF-MAX WORKER ACTIVE — Edit only assigned writeSet.${ws}`,
+        `Task: ${mode.taskId || 'current'} | Phase: ${phase}`,
+        '',
+        'WORKER RULES:',
+        '1. Edit only files in your dispatch writeSet.',
+        '2. Do NOT edit files outside writeSet.',
+        '3. If writeSet is empty/missing, source edits are blocked.',
+      ].join('\n'));
+    } else if (agentRole === 'manager') {
+      process.stdout.write([
+        'WF-MAX MANAGER ACTIVE — Scope, review, coordinate.',
+        `Task: ${mode.taskId || 'current'} | Phase: ${phase}`,
+        '',
+        'MANAGER RULES:',
+        '1. Partition domain, dispatch Workers, synthesize results.',
+        '2. Do NOT edit source files directly.',
+        '3. Report to CEO with synthesized findings.',
+      ].join('\n'));
+    } else if (agentRole === 'reviewer') {
+      process.stdout.write([
+        'WF-MAX REVIEWER ACTIVE — Read and report only.',
+        `Task: ${mode.taskId || 'current'} | Phase: ${phase}`,
+        '',
+        'REVIEWER RULES:',
+        '1. Read files, analyze, report findings.',
+        '2. Do NOT edit any files.',
+      ].join('\n'));
+    }
   } else if (mode.mode === 'wf-review') {
     process.stdout.write([
       'WF-REVIEW MODE ACTIVE — Cross-model peer review.',
@@ -204,7 +323,8 @@ function handleUserPromptSubmit(event) {
       safeWriteJSON(MODE_FILE, {
         active: true,
         mode: 'wf-max',
-        role: 'ceo',
+        agentRole: 'ceo',
+        role: 'ceo', // legacy compat
         taskId: 'wf-max-current-task',
         phase: 'W0_EXPLORE',
         explicitInvocation: true,
@@ -214,30 +334,39 @@ function handleUserPromptSubmit(event) {
       safeWriteJSON(MODE_FILE, {
         active: true,
         mode: 'wf-review',
-        role: 'ceo',
+        agentRole: 'ceo',
+        role: 'ceo', // legacy compat
         taskId: 'wf-review-current',
         phase: 'REVIEW',
         explicitInvocation: true,
         startedAt: new Date().toISOString(),
       });
     }
-  } catch { /* silent-fail */ }
+  } catch {}
 
-  // ── Per-turn reinforcement (from caveman: prevents drift after compression) ──
+  // ── Per-turn reinforcement ──
   try {
     const mode = safeReadJSON(MODE_FILE);
-    if (!mode?.active || mode.role !== 'ceo') return;
+    if (!mode?.active) return;
+
+    const agentRole = mode.agentRole || mode.role;
+    if (!agentRole) return;
 
     if (mode.mode === 'wf-max') {
-      // hookSpecificOutput = the standard Claude Code per-turn injection format
+      const roleText = agentRole === 'ceo'
+        ? `WF-MAX ACTIVE — Top-level orchestrator is CEO (${mode.phase || 'W0_EXPLORE'}). Spawn Workers. NEVER Edit/Write/MultiEdit source files. Bash only: ls/dir/tree/git. PLAN.md/PROGRESS.md writes allowed.`
+        : agentRole === 'worker'
+        ? `WF-MAX WORKER — Edit only files in dispatch writeSet${mode.writeSet ? ': ' + mode.writeSet.join(', ') : ' (none)'}.`
+        : agentRole === 'manager'
+        ? `WF-MAX MANAGER — Coordinate and synthesize. No source edits.`
+        : agentRole === 'reviewer'
+        ? `WF-MAX REVIEWER — Read and report only. No edits.`
+        : `WF-MAX ACTIVE — Role: ${agentRole}.`;
+
       process.stdout.write(JSON.stringify({
         hookSpecificOutput: {
           hookEventName: 'UserPromptSubmit',
-          additionalContext: [
-            'WF-MAX ACTIVE — You are CEO (' + (mode.phase || 'W0_EXPLORE') + ').',
-            'Spawn Workers. NEVER Edit/Write/MultiEdit source files.',
-            'Bash only: ls/dir/tree/git. PLAN.md/PROGRESS.md writes allowed.',
-          ].join(' '),
+          additionalContext: roleText,
         },
       }));
     } else if (mode.mode === 'wf-review') {
@@ -248,13 +377,13 @@ function handleUserPromptSubmit(event) {
         },
       }));
     }
-  } catch { /* silent-fail — never let per-turn reinforcement block the prompt */ }
+  } catch {}
 }
 
 function handlePreToolUse(event) {
   let mode;
-  try { mode = safeReadJSON(MODE_FILE); } catch { /* silent-fail — allow */ }
-  if (!mode?.active || mode.role !== 'ceo') return;
+  try { mode = safeReadJSON(MODE_FILE); } catch {}
+  if (!mode?.active) return;
 
   const toolName = event.tool_name || event.tool || '';
   if (!BLOCKED_TOOLS.includes(toolName)) return;
@@ -263,36 +392,115 @@ function handlePreToolUse(event) {
   const filePath = input.file_path || '';
   const command = input.command || '';
 
-  // ── Bash exceptions for CEO ──
-  if (toolName === 'Bash') {
-    const trimmed = command.trim();
-    // Reject newlines/control chars — can't reliably defend against multi-line injection
-    if (/[\r\n\0]/.test(trimmed)) {
-      process.stderr.write('[CEO BLOCK] Bash command contains newlines or control characters.\n');
-      process.exit(2);
+  const agentRole = mode.agentRole || mode.role || null;
+
+  // ── No role → deny source edits by default ──
+  if (!agentRole) {
+    if (filePath && (isTaskFile(filePath) || isHarnessMeta(filePath, agentRole))) return; // allow meta
+    if (toolName === 'Bash') {
+      const trimmed = command.trim();
+      if (/^((ls|dir|tree|git\s+status|git\s+diff|git\s+log|git\s+branch|node\s+Harness\/scripts\/[a-z0-9_.-]+\.mjs|which|echo|type|codex|claude)(\s+[^;&|>`$]*)?)$/.test(trimmed)) return;
     }
-    // Reject shell metacharacters that could chain commands or redirect output
-    if (/[;&|>`$]/.test(trimmed)) {
-      process.stderr.write('[CEO BLOCK] Bash command contains shell metacharacters. Use a Worker.\n');
-      process.exit(2);
-    }
-    // Anchored exact-command allowlist — no flexible git subcommands beyond safe ones
-    const allowed = /^(ls|dir|tree|git\s+status|git\s+diff|git\s+log|git\s+branch|node\s+Harness\/scripts\/[a-z0-9_.-]+\.mjs|which|echo|type|codex|claude)(\s+[^;&|>`$]*)?$/;
-    if (allowed.test(trimmed)) return; // allow
+    process.stderr.write(`[WF-MAX BLOCK] ${toolName} blocked: no agentRole set. Define agentRole and writeSet before editing.\n`);
+    process.exit(2);
   }
 
-  // ── Write exceptions ──
-  if (filePath) {
-    if (isTaskFile(filePath) || isHarnessMeta(filePath)) return; // allow
+  // ── CEO: block all source edits ──
+  if (agentRole === 'ceo') {
+    if (toolName === 'Bash') {
+      const trimmed = command.trim();
+      if (/[\r\n\0]/.test(trimmed)) {
+        process.stderr.write('[CEO BLOCK] Bash command contains newlines or control characters.\n');
+        process.exit(2);
+      }
+      if (/[;&|>`$]/.test(trimmed)) {
+        process.stderr.write('[CEO BLOCK] Bash command contains shell metacharacters. Use a Worker.\n');
+        process.exit(2);
+      }
+      const allowed = /^(ls|dir|tree|git\s+status|git\s+diff|git\s+log|git\s+branch|node\s+Harness\/scripts\/[a-z0-9_.-]+\.mjs|which|echo|type|codex|claude)(\s+[^;&|>`$]*)?$/;
+      if (allowed.test(trimmed)) return;
+    }
+
+    if (filePath) {
+      if (isTaskFile(filePath) || isHarnessMeta(filePath, agentRole)) return;
+    }
+
+    process.stderr.write(`[WF-MAX CEO BLOCK] ${toolName} on source files is forbidden for CEO. Delegate to a Worker via Agent tool. File: ${filePath || command}\n`);
+    process.exit(2);
   }
 
-  // ── Block ──
-  const blockMsg = mode.mode === 'wf-max'
-    ? `[WF-MAX CEO BLOCK] ${toolName} on source files is forbidden for CEO. Delegate to a Worker via Agent tool. File: ${filePath || command}`
-    : `[WF-REVIEW BLOCK] ${toolName} is forbidden during peer review. Use Bash to invoke the other CLI for review.`;
+  // ── Worker: allow writeSet files only ──
+  if (agentRole === 'worker') {
+    const writeSet = mode.writeSet || [];
 
-  process.stderr.write(blockMsg + '\n');
-  process.exit(2);
+    if (toolName === 'Bash') {
+      const trimmed = command.trim();
+      if (/[\r\n\0]/.test(trimmed)) {
+        process.stderr.write('[WORKER BLOCK] Bash command contains control characters.\n');
+        process.exit(2);
+      }
+      // Block shell chaining and redirects (same as CEO)
+      if (/[;&|>`$]/.test(trimmed)) {
+        process.stderr.write('[WORKER BLOCK] Bash command contains shell metacharacters.\n');
+        process.exit(2);
+      }
+      return; // Allow safe bash for workers (test running, build, etc.)
+    }
+
+    if (filePath) {
+      if (isTaskFile(filePath) || isHarnessMeta(filePath, agentRole)) return;
+      if (isInWriteSet(filePath, writeSet)) return;
+      process.stderr.write(`[WF-MAX WORKER BLOCK] ${toolName} on "${filePath}" is outside writeSet [${writeSet.join(', ')}].\n`);
+      process.exit(2);
+    }
+
+    // No filePath? Allow (tool call without file target)
+    return;
+  }
+
+  // ── Manager: no source edits (like CEO but can run more bash) ──
+  if (agentRole === 'manager') {
+    if (toolName === 'Bash') {
+      const trimmed = command.trim();
+      if (/[\r\n\0]/.test(trimmed)) {
+        process.stderr.write('[MANAGER BLOCK] Bash command contains control characters.\n');
+        process.exit(2);
+      }
+      if (/[;&|>`$]/.test(trimmed)) {
+        process.stderr.write('[MANAGER BLOCK] Bash command contains shell metacharacters.\n');
+        process.exit(2);
+      }
+      const allowed = /^(ls|dir|tree|git\s+status|git\s+diff|git\s+log|git\s+branch|node\s+Harness\/scripts\/[a-z0-9_.-]+\.mjs|which|echo|type|codex|claude)(\s+[^;&|>`$]*)?$/;
+      if (allowed.test(trimmed)) return;
+    }
+
+    if (filePath) {
+      if (isTaskFile(filePath) || isHarnessMeta(filePath, agentRole)) return;
+    }
+
+    process.stderr.write(`[WF-MAX MANAGER BLOCK] ${toolName} on source files is forbidden for Manager. Delegate to Workers.\n`);
+    process.exit(2);
+  }
+
+  // ── Reviewer: no edits at all ──
+  if (agentRole === 'reviewer') {
+    if (toolName === 'Bash') {
+      const trimmed = command.trim();
+      if (/[\r\n\0]/.test(trimmed)) {
+        process.stderr.write('[REVIEWER BLOCK] Bash command contains control characters.\n');
+        process.exit(2);
+      }
+      const allowed = /^(ls|dir|tree|git\s+status|git\s+diff|git\s+log|git\s+branch|which|echo|type)(\s+[^;&|>`$]*)?$/;
+      if (allowed.test(trimmed)) return;
+    }
+
+    if (filePath) {
+      if (isTaskFile(filePath) || isHarnessMeta(filePath, agentRole)) return;
+    }
+
+    process.stderr.write(`[WF-MAX REVIEWER BLOCK] ${toolName} is forbidden for Reviewer. Read and report only.\n`);
+    process.exit(2);
+  }
 }
 
 // ── main ───────────────────────────────────────────────────────────────────
@@ -311,7 +519,6 @@ switch (eventType) {
     handlePreToolUse(event);
     break;
   default:
-    // Unknown event — safe no-op
     break;
 }
 

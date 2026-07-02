@@ -26,8 +26,16 @@ This skill is a thin tool adapter. The authoritative workflow lives in
 
 ## Rules
 
-- Treat yourself as CEO, not implementer.
-- Do not edit production/source files directly while WF-MAX is active.
+WF-MAX is a three-layer architecture:
+1. Global mode (`wf-max`)
+2. Agent role (`ceo` | `manager` | `worker` | `reviewer`)
+3. Dispatch permission (`writeSet`, `forbidden`, `verification`)
+
+- Top-level orchestrator is CEO (reads, plans, dispatches). Delegated Workers follow dispatch packet with explicit writeSet. Global mode ≠ every agent is CEO.
+- CEO: never edit source files directly. Spawn Workers with writeSet.
+- Worker: edit only files in dispatch writeSet. Outside writeSet → blocked.
+- Manager: scope, review, coordinate. No source edits by default.
+- Reviewer: read and report only. No edits.
 - Use the D-GATE in `Harness/WF-MAX.md` before any implementation wave:
   dispatch table, self-audit, disjoint file claims, and reviewer plan.
 - Use real subagents when the runtime supports them; otherwise record a

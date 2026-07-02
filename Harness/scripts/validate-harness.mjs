@@ -449,6 +449,8 @@ requireText('Harness/architecture.md', 'Avoid speculative abstraction', 'anti-ov
 requireText('CLAUDE.md', 'Use explicit interfaces or state models only when they protect a real boundary', 'CLAUDE interface/state simplicity rule');
 requireText('CLAUDE.md', '/wf-update', 'wf update startup instruction');
 requireText('Harness/README.md', 'Need harness update', 'update routing row');
+requireText('Harness/WF-MAX.md', 'three-layer architecture', 'WF-MAX three-layer architecture');
+requireText('Harness/WF-MAX.md', 'agent role', 'WF-MAX agent role separation');
 requireText('Harness/WF-MAX.md', 'write-set coloring', 'WF-MAX coloring algorithm');
 requireText('Harness/WF-MAX.md', 'wave dispatch', 'WF-MAX wave dispatch');
 requireText('Harness/README.md', '/wf-max', 'wf max router alias');
@@ -457,6 +459,9 @@ requireText('Harness/subagents.md', 'Max parallelism', 'subagents max parallelis
 requireText('Harness/dispatch.md', 'Concurrency group', 'dispatch concurrency group field');
 requireText('Harness/dispatch.md', 'File claim', 'dispatch file claim field');
 requireText('CLAUDE.md', '/wf-max', 'wf max startup instruction');
+requireText('CLAUDE.md', 'three-layer architecture', 'CLAUDE.md three-layer role architecture');
+requireText('Harness/scripts/wf-mode-hook.mjs', 'agentRole', 'hook agentRole validation');
+requireText('Harness/scripts/wf-mode-hook.mjs', 'writeSet', 'hook writeSet enforcement');
 
 if (errors.length) {
   console.error(`Harness validation failed${strict ? ' (strict)' : ''}:`);

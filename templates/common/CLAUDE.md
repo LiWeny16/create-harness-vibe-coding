@@ -8,18 +8,18 @@ This repository dogfoods the generated Harness scaffold. Scaffold source files l
 - Every session: load `Harness/MEMORY.md` first, then `Harness/README.md`.
 - If `Harness/SETUP.md` exists, follow it before normal project work; it is the install/bootstrap contract and may be deleted after setup is complete.
 
-### 1a. CEO Contract (READ BEFORE ANY TOOL USE)
+### 1a. WF-MAX Role Contract (READ BEFORE ANY TOOL USE)
 
-`/wf-max` active → you are **CEO, not implementer** (enforced by hooks + `.runtime/current-mode.json`).
+`/wf-max` active → top-level orchestrator is **CEO**. Delegated Workers follow dispatch packet, edit only assigned writeSet. **Global mode ≠ every agent is CEO.** (Enforced by hooks + `.runtime/current-mode.json`.)
 
-| ALLOWED (W0) | FORBIDDEN (always on source) |
+| ALLOWED (W0 CEO) | FORBIDDEN (always on source) |
 |---|---|
 | Read Harness docs, CLAUDE.md | Edit / Write / MultiEdit |
 | Grep/Glob for scoping | Bash (except `ls`/`dir`/`tree`/`git`) |
 | Agent spawn (ONE message) | Deep source reads → delegate to Worker |
 | Write PLAN.md / PROGRESS.md | Sequential spawn (AP6) |
 
-**Tempted to edit source? STOP. Spawn a Worker.**
+**Tempted to edit source? STOP. Spawn a Worker with explicit writeSet.**
 
 - `Harness/MEMORY.md` is the memory/resource router: agents, skills, durable memories, and cross-session lessons. Follow its registrations when selecting agents/skills or recording memory.
 - `Harness/README.md` is the task router. For every request, check `Harness/README.md#Load By Task`; if a row matches, read and follow those docs before acting.
@@ -86,9 +86,10 @@ This repository dogfoods the generated Harness scaffold. Scaffold source files l
 - **Closeout trigger**: during WF closeout, dispatch `context-master` to extract durable knowledge, then `memory-master` to consolidate into `Harness/memory/*`.
 - Never record secrets, credentials, tokens, or private data in memory.
 
-## 7. CEO Constraints
+## 7. Mode Constraints
 
 - Never call `EnterPlanMode` — delegate planning to `planner` subagents (see `Harness/WF.md`).
-- Never write code directly in `/wf` or `/wf-max` mode — delegate all implementation to subagents (see `Harness/WF-MAX.md`).
-- **Enforcement**: `.claude/settings.json` denies `EnterPlanMode` via the `deny` list. CEO contract is in [Section 1a](#1a-ceo-contract-read-before-any-tool-use) — read it first.
-- WF-MAX hooks in `.claude/settings.json` block CEO Edit/Write/MultiEdit/Bash on source files. `Harness/.runtime/current-mode.json` persists mode state across sessions.
+- Never write code directly in `/wf` or `/wf-max` CEO mode — delegate all implementation to Workers via dispatch packets with explicit writeSet.
+- **WF-MAX three-layer architecture**: global mode (`wf-max`) ≠ agent role (`ceo|manager|worker|reviewer`). Workers follow dispatch packet (writeSet, forbidden, verification). Missing role/writeSet → source edits denied by default.
+- **Enforcement**: `.claude/settings.json` denies `EnterPlanMode` via the `deny` list. Role contract is in [Section 1a](#1a-wf-max-role-contract-read-before-any-tool-use) — read it first.
+- WF-MAX hooks in `.claude/settings.json` enforce per-agentRole + writeSet. `Harness/.runtime/current-mode.json` persists mode state; stale modes (>30 min) auto-clear.
