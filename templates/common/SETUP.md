@@ -225,12 +225,33 @@ After the architecture stage reveals your stack, inspect existing `.claude/skill
 
 | Recommendation | Source | Purpose |
 | --- | --- | --- |
-| Superpowers | <https://github.com/obra/Superpowers> | community skill registry and agent workflows |
+| Superpowers | <https://github.com/obra/Superpowers> | **[RECOMMENDED]** community skill registry for agent workflows. Installed alongside ECC — Superpowers teaches *how to execute*, ECC defines *what standards to meet*. |
 | Caveman | <https://github.com/JuliusBrussee/caveman> | terse, low-token agent behavior and memory compression |
 | Agent Research | <https://github.com/lingzhi227/agent-research-skills> | research-agent skills for literature, product, dependency, and ecosystem investigation |
 | CodeGraph | <https://github.com/colbymchenry/codegraph> | code graph or repository-map tooling |
 
 These are links for the user's agent to evaluate. This scaffold does not maintain third-party install steps. If a user selects one, first check whether an equivalent capability is already installed; then present the GitHub link and ask for approval before the user's agent follows that project's own README.
+
+### ECC (Rules) vs Superpowers (Skills) — Complementary, Not Redundant
+
+ECC and Superpowers overlap ~80% in topic coverage but serve different purposes:
+
+| | ECC Rules | Superpowers Skills |
+|---|------|------|
+| **Role** | Coding STANDARD (what to enforce) | Coding GUIDE (how to execute) |
+| **Enforcement** | Hooks (PreToolUse/PostToolUse), validator | Agent self-discipline |
+| **Scope** | Universal + per-language (TS/Python/Go/...) | Universal (no language specifics) |
+| **TDD** | `testing.md`: coverage ≥80%, AAA pattern | `test-driven-development`: red-green-refactor workflow |
+| **Code Review** | `code-review.md`: severity levels, checklist | `requesting-code-review`: dispatch reviewer subagent |
+| **Subagents** | `subagents.md` + `dispatch.md`: role packs, write sets | `subagent-driven-development`: two-stage review after each task |
+| **Verification** | `testing.md` + `agent-workflow.md`: evidence before claims | `verification-before-completion`: verification before claiming done |
+| **Unique** | Design quality, performance budgets, security CSP, per-language idioms, hooks | Brainstorming, git worktrees |
+
+**Installation rule:**
+1. **ECC is mandatory.** Install `common/` + stack-specific rules during bootstrap step 0. See `Harness/ECC-GUIDE.md`.
+2. **Superpowers is recommended.** Install after ECC. It adds ~14 workflow skills that teach agents *how* to execute ECC standards.
+3. **No duplicates from other sources.** If a Superpowers skill has an ECC equivalent, keep both — they don't conflict. ECC sets the bar, Superpowers shows the path.
+4. **Priority**: ECC rules take precedence when there's a conflict. ECC is the contract; Superpowers is the training manual.
 
 **Manual discovery**: search GitHub and npm directly using patterns from `Harness/research/README.md#Architecture Decision References`.
 

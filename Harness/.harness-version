@@ -1,6 +1,6 @@
 {
   "generator": "0.8.1",
-  "generated": "2026-07-02T02:57:24.897Z",
+  "generated": "2026-07-02T03:02:02.137Z",
   "options": [],
   "autoCheck": true,
   "source": "https://raw.githubusercontent.com/zingspark/create-harness-vibe-coding/main/templates/common/",
@@ -52,7 +52,7 @@
     "Harness/ECC-GUIDE.md": "sha256-d2db5565d015b8bceeb30d09086ed536ff953319219142abca94f2e62f798fe5",
     "Harness/MEMORY.md": "sha256-6e01795e787eb809f856cce8d90a15a118f8fac1ebbb71dd746a868f207a9457",
     "Harness/README.md": "sha256-6fdb2a219692e8e9307bb46df6be74e38a04cf82afaac0ecd03bf4f15c31a352",
-    "Harness/SETUP.md": "sha256-186fd5de15bd03b0b22352d353de356b259029c2d1440bfd733ca48281936601",
+    "Harness/SETUP.md": "sha256-2a59db4e5053faf5f82ceb402491df016fee93bd59449202d4c9e1e7388df977",
     "Harness/TDD-GUIDE.md": "sha256-cf812283b760363dadba80a46a1c08bcb71bcf740e79c10900eef9ec7ae5a66b",
     "Harness/WF-AUTO-SPARK.md": "sha256-48cc08e1a78cd4abb2ae9c2807ef1ac9a09544eb954220b9087b2032fabbd690",
     "Harness/WF-AUTO.md": "sha256-ac0ab13e11ca658cd2c5b6ce73f3d267bea6391a04e850c9f9a24d642f1ad350",
