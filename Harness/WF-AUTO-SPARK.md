@@ -212,12 +212,86 @@ Re-Anchor Gate (every preset interval)
   └── Never auto-stops
 ```
 
+## Task Capsule & Recording
+
+WF-AUTO-SPARK uses a dedicated task capsule at `Harness/tasks/auto/`. Shared with `/wf-auto` — same capsule, different operational mode.
+
+### Capsule Structure
+
+| File | Purpose | Updated |
+|------|---------|---------|
+| `Harness/tasks/auto/SPARK-ROADMAP.md` | North Star + milestones + deviation log | At startup + every milestone change |
+| `Harness/tasks/auto/PLAN.md` | Current cycle's change spec (write set, acceptance criteria) | Before each implementation |
+| `Harness/tasks/auto/PROGRESS.md` | Cycle log, value reflections, cumulative stats, evidence | After each cycle |
+| `Harness/PROGRESS.md` | Global task index — active spark session status | At session start, milestone, and stop |
+
+### Heartbeat Protocol (per cycle, in `PROGRESS.md`)
+
+```markdown
+## Cycle N — Spark Heartbeat
+**Timestamp**: <ISO>
+**Spark Source**: <1-8> — <what was searched>
+**Deviation Score**: <X>% — <brief reasoning>
+**Change**: <what was implemented, ≤3 files, ≤50 lines net>
+**Write Set**: <files changed>
+
+### Value Reflection
+**Why it matters**: <concrete impact>
+**Without this**: <consequence>
+**User would notice**: <evidence>
+
+### Milestone Progress
+- Current: M<N> — <X>% complete
+- Cumulative deviation (10-cycle): <X>%
+
+### Evidence
+- Build: <pass/fail>
+- Tests: <N passed / M failed>
+- Manual check: <what was verified>
+```
+
+### PLAN.md Format (per cycle)
+
+Before implementing, CEO writes one cycle plan:
+
+```markdown
+# Cycle N Plan
+**Date**: <ISO>
+**Mode**: wf-auto-spark
+**Spark Source**: <# and name>
+**Finding**: <what external search found>
+**Planned Change**: <concise description>
+**Write Set**: <≤3 files>
+**Acceptance Criteria**: <how to verify success>
+**Deviation Check**: <alignment score %> — <reasoning>
+```
+
+### Global PROGRESS.md Linkage
+
+`Harness/PROGRESS.md` is updated when:
+- **Session start**: add `| auto-spark | <task-id> | active | <North Star summary> |`
+- **Milestone complete**: update status with milestone result
+- **Session stop**: mark status with final milestone + reason (user stop / exhausted)
+
+### Stop / Resume Continuity
+
+When spark mode stops (user says stop, session ends, or crash):
+1. Last `PROGRESS.md` heartbeat is the checkpoint
+2. `SPARK-ROADMAP.md` preserves North Star + milestone state
+3. On resume: read SPARK-ROADMAP.md, read last heartbeat, continue from last milestone
+4. If `Harness/PROGRESS.md` shows session is still "active", auto-resume spark mode on SessionStart
+5. CEO checks: "Last session stopped at cycle N, milestone M<X> at Y%. Continue or adjust?"
+
+This replaces the broken `/wf-auto` auto-continue. No silent drift across sessions.
+
 ## Files
 
 | File | Purpose |
 |------|---------|
 | `Harness/WF-AUTO-SPARK.md` | This spec |
 | `Harness/tasks/auto/SPARK-ROADMAP.md` | Active roadmap (created at startup) |
-| `Harness/tasks/auto/PROGRESS.md` | Per-cycle evidence and value reflections |
+| `Harness/tasks/auto/PLAN.md` | Per-cycle change spec |
+| `Harness/tasks/auto/PROGRESS.md` | Cycle log, heartbeat, evidence ledger |
+| `Harness/PROGRESS.md` | Global task index linkage |
 | `.claude/skills/wf-auto-spark/SKILL.md` | Claude Code skill loader |
 | `.agents/skills/wf-auto-spark/SKILL.md` | Codex skill loader (mirror) |
