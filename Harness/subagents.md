@@ -123,23 +123,7 @@ controller intake
 
 ## Dispatch Pack
 
-Every subagent dispatch must be self-contained:
-
-```text
-Role:
-Goal:
-Mode: read-only | write
-Read set:
-Write set:
-Forbidden scope:
-Injected docs:
-Dependencies:
-Expected evidence:
-Stop condition:
-Return format:
-```
-
-Do not make a subagent rediscover the entire project or read the whole harness. Inject only the docs selected by `Harness/README.md` and `Harness/context-loading.md`.
+Use the canonical dispatch input and handoff format in `Harness/dispatch.md`. Every subagent dispatch must be self-contained — inject only the docs selected by `Harness/README.md` and `Harness/context-loading.md`.
 
 ## Parallelism Rules
 

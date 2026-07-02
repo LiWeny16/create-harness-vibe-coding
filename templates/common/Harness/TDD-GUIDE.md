@@ -27,66 +27,9 @@ IMPROVE: Refactor while keeping green
         → Coverage check (≥80%)
 ```
 
-## Coverage Requirements (from ECC common/testing.md)
+## ECC Testing Rules
 
-| Layer | Minimum Coverage | Tool |
-|-------|-----------------|------|
-| Unit tests (functions, utils, hooks) | 80% | Jest, Vitest, Pytest, Go test |
-| Integration tests (API, DB) | 80% | Supertest, Pytest, Go test |
-| E2E tests (critical flows) | All critical paths | Playwright, Cypress |
-| Visual regression (FE) | Hero, forms, modals | Playwright screenshots |
-
-## Test Structure (AAA Pattern)
-
-```typescript
-test('describes behavior under test', () => {
-  // Arrange — set up test data
-  const input = { email: 'test@example.com' };
-
-  // Act — execute the code being tested
-  const result = validateEmail(input.email);
-
-  // Assert — verify expected outcome
-  expect(result).toBe(true);
-});
-```
-
-## Test Naming Convention
-
-```
-test('<action> <condition> → <expected outcome>')
-
-Examples:
-  test('returns 404 when user not found')
-  test('throws ValidationError when email is empty')
-  test('falls back to cache when database is unavailable')
-  test('emits change event when checkbox is clicked')
-```
-
-## Per-Stack TDD Setup
-
-### TypeScript/React (Vitest + Testing Library)
-```bash
-npm install -D vitest @testing-library/react @testing-library/jest-dom
-# test file: src/components/__tests__/Button.test.tsx
-```
-
-### Python/FastAPI (Pytest)
-```bash
-pip install pytest pytest-cov httpx
-# test file: tests/test_users_api.py
-```
-
-### Go
-```bash
-# test file: internal/handler/users_test.go (same package, _test suffix)
-```
-
-### Rust
-```bash
-cargo add --dev tokio-test
-# test file: tests/integration_test.rs
-```
+Coverage thresholds, AAA structure, test naming, and per-stack setup live in ECC testing rules (`common/testing.md` + stack-specific). This guide defines Harness sequencing only: failing test/manual check first, implementation second, verification last.
 
 ## Agent Dispatch — TDD Gate
 
@@ -137,17 +80,4 @@ ensures tests exist before any implementation begins.
 
 ## Verification
 
-After TDD cycle, run the full verification path:
-
-```bash
-# Unit + Integration
-npm test -- --coverage          # TypeScript
-pytest --cov                    # Python
-go test -cover ./...            # Go
-
-# E2E (if applicable)
-npx playwright test             # Playwright
-
-# Harness validator
-node Harness/scripts/validate-harness.mjs --strict
-```
+Run the verification commands declared in the task PLAN or dispatch packet. Do not claim TDD completion until RED, GREEN, and full-check evidence are recorded.

@@ -18,49 +18,29 @@ Use when work needs parallel reading, independent review, cross-layer analysis, 
 - Only summaries enter main context. Load named files directly when details are needed.
 - Subagents read task files, return findings and PLAN patch suggestions. Only the main agent commits changes to PROGRESS.md and PLAN.md.
 
-## Dispatch Loop
+## Scope
 
-```text
-Goal
--> Fill task PROGRESS.md and PLAN.md
--> Apply subagents.md efficiency ladder
--> Run parallel read-only agents
--> Main agent integrates findings
--> Test Writer defines failing test or manual check
--> Implementer makes bounded change
--> Reviewer checks diff
--> Verifier records evidence
--> Main agent updates task files and closes or iterates
-```
+`agent-workflow.md` owns the build/review loop. `subagents.md` owns orchestration strategy and agent roster. This file owns the dispatch input and subagent handoff formats.
 
-## Modes
-
-| Mode | Use When | Constraint |
-| --- | --- | --- |
-| Parallel Read | research, exploration, architecture review, docs/API check | no writes |
-| Serial Write | tests, implementation, docs sync | one writer at a time |
-| Isolated Worktree | overlapping write sets or competing approaches | merge only after review |
-
-## Common Agents
+## Agent Roster
 
 | Agent | Mode | Purpose |
 | --- | --- | --- |
-| `planner` | Parallel Read | split goal into tasks, dependencies, write sets |
-| Explorer Pass | Parallel Read | bounded read-only exploration when no dedicated agent is needed |
-| `researcher` | Parallel Read | product, market, ecosystem, dependency research |
-| `docs-researcher` | Parallel Read | official docs, API, SDK, version, limits |
-| `architect` | Parallel Read | layer boundaries, ports, data flow, state impact |
-| `test-writer` | Serial Write | failing test or manual verification plan |
-| `implementer` | Serial Write | minimal change inside declared write set |
-| `debugger` | Serial Write | smallest fix for a reproduced failure |
-| `reviewer` | Parallel Read | diff review, risks, missing tests |
-| `verifier` | Parallel Read | run checks and record evidence |
-| `memory-master` | Serial Write | write/consolidate memory entries, dedup, cross-project extraction |
-| `context-master` | Parallel Read | analyze context usage, recommend compression, extract session knowledge |
-| `explore-manager` | Parallel Read | WF-MAX W0: spawn 5-10 researchers, synthesize, report to CEO |
-| `architect-manager` | Parallel Read | WF-MAX W1: spawn 3 architects, synthesize interface contracts |
-| `implement-manager` | Serial Write | WF-MAX W2: spawn implementers (one file_claim each), merge results |
-| `review-manager` | Parallel Read | WF-MAX W2R: spawn 3-4 reviewers, deduplicate, classify severity |
+| `planner` | Read | split goal into tasks, dependencies, write sets |
+| `researcher` | Read | product, market, ecosystem, dependency research |
+| `docs-researcher` | Read | official docs, API, SDK, version, limits |
+| `architect` | Read | layer boundaries, ports, data flow, state impact |
+| `test-writer` | Write | failing test or manual verification plan |
+| `implementer` | Write | minimal change inside declared write set |
+| `debugger` | Write | smallest fix for a reproduced failure |
+| `reviewer` | Read | diff review, risks, missing tests |
+| `verifier` | Read | run checks and record evidence |
+| `memory-master` | Write | write/consolidate memory entries |
+| `context-master` | Read | analyze context, recommend compression |
+| `explore-manager` | Read | WF-MAX W0: spawn researchers, synthesize |
+| `architect-manager` | Read | WF-MAX W1: spawn architects, synthesize |
+| `implement-manager` | Write | WF-MAX W2: spawn implementers |
+| `review-manager` | Read | WF-MAX W2R: spawn reviewers, deduplicate |
 
 ## Dispatch Rules
 

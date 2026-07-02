@@ -102,63 +102,18 @@ Routing priority: if a request explicitly says `/wf <task>`, `$wf`, `wf mode`, `
 
 ## Doc Map
 
-```text
-Harness/README.md                  router only
-Harness/MEMORY.md                  resource index
-Harness/PROGRESS.md                global task index and cross-task decisions
-Harness/tasks/<id>/PROGRESS.md     per-task progress, phase, heartbeat
-Harness/tasks/<id>/PLAN.md         per-task implementation plan and evidence
-Harness/tasks/_template/           task capsule template (copy to create new task)
-Harness/WF.md                      long-task workflow and recovery loop
-Harness/WF-MAX.md                  max-parallelism workflow with wave dispatch
-Harness/WF-AUTO.md                 perpetual auto-optimization workflow with 8-angle exhaustion gate
-.claude/skills/wf/SKILL.md         Claude Code WF skill command
-.claude/skills/wf-max/SKILL.md     Claude Code max-parallelism skill command
-.claude/skills/wf-auto/SKILL.md    Claude Code auto-optimization skill command
-.claude/skills/wf-review/SKILL.md  Claude Code cross-model peer review skill
-.agents/skills/wf/SKILL.md         Codex WF repo skill
-.agents/skills/wf-max/SKILL.md     Codex max-parallelism repo skill
-.agents/skills/wf-auto/SKILL.md    Codex auto-optimization repo skill
-.agents/skills/wf-review/SKILL.md  Codex cross-model peer review repo skill
-.claude/agents/explore-manager.md  WF-MAX W0 exploration Manager
-.claude/agents/architect-manager.md WF-MAX W1 architecture Manager
-.claude/agents/implement-manager.md WF-MAX W2 implementation Manager
-.claude/agents/review-manager.md   WF-MAX W2R review Manager
-Harness/.runtime/current-mode.json persistent mode state (gitignored, managed by hooks)
-Harness/scripts/wf-mode-hook.mjs   3-layer hook: SessionStart/UserPromptSubmit/PreToolUse
-Harness/scripts/wf-statusline.sh   terminal badge [WF-MAX] / [WF-REVIEW] (Unix)
-Harness/scripts/wf-statusline.ps1  terminal badge [WF-MAX] / [WF-REVIEW] (Windows)
-Harness/scripts/validate-harness.mjs scaffold validator
-Harness/scripts/wf-update-check.mjs checksum-based update checker
-Harness/scripts/wf-remove.mjs      safe harness removal
-Harness/scripts/scan-clean.mjs     template scan utility
-Harness/ECC-GUIDE.md                stack-to-ECC-rules mapping and bootstrap detection
-Harness/TDD-GUIDE.md                TDD workflow: red-green-refactor, coverage gate, per-stack setup
-Harness/lifecycle.md               0-1 product flow
-Harness/subagents.md               controller-led subagent orchestration
-Harness/context-loading.md         dynamic loading and subagent packs
-Harness/dispatch.md                lightweight parallel dispatch protocol
-Harness/extension.md               stack-specific asset contract
-Harness/agent-workflow.md          build/review/test loop
-Harness/architecture.md            layer boundaries
-Harness/research/README.md         research protocol
-Harness/research/PRD.md            product scope
-Harness/research/research-results.md research results
-Harness/workflows/*.md             optional workflow evidence rules (if installed)
-Harness/memory/tool-usage-reflections.md repeated tool failures and better command patterns
-Harness/memory/user-corrections-preferences.md durable user corrections and preferences
-Harness/memory/agent-lessons-patterns.md reusable review/debug lessons
-Harness/scripts/validate-harness.mjs lightweight harness gate
-.claude/agents/*                   built-in common agents
-.claude/skills/*                   Claude Code skill commands
-.agents/skills/*                   Codex repo skills mirrored from .claude/skills
-.claude/skills/wf-readme/SKILL.md README preservation and optional structure pass
-.claude/skills/wf-update/SKILL.md   GitHub-based harness update (script-driven)
-.agents/skills/wf-update/SKILL.md   Codex harness update skill
-.claude/skills/wf-remove/SKILL.md   safe harness removal (script-driven)
-.agents/skills/wf-remove/SKILL.md   Codex harness removal skill
-Harness/.harness-version             scaffold version and file checksums
-```
+| Category | Files |
+|----------|-------|
+| **Router + Index** | `README.md`, `MEMORY.md`, `PROGRESS.md` |
+| **Task Capsule** | `tasks/<id>/PROGRESS.md`, `tasks/<id>/PLAN.md`, `tasks/_template/` |
+| **Workflows** | `WF.md`, `WF-MAX.md`, `WF-AUTO.md`, `WF-AUTO-SPARK.md` |
+| **Guides** | `ECC-GUIDE.md`, `TDD-GUIDE.md`, `lifecycle.md`, `architecture.md` |
+| **Orchestration** | `subagents.md`, `context-loading.md`, `dispatch.md`, `agent-workflow.md`, `extension.md` |
+| **Research** | `research/README.md`, `research/PRD.md`, `research/research-results.md` |
+| **Memory** | `memory/tool-usage-reflections.md`, `memory/user-corrections-preferences.md`, `memory/agent-lessons-patterns.md` |
+| **Scripts** | `scripts/wf-mode-hook.mjs`, `scripts/validate-harness.mjs`, `scripts/wf-update-check.mjs`, `scripts/wf-remove.mjs` |
+| **Runtime** | `.runtime/current-mode.json` (gitignored, hook-managed), `.harness-version` |
+| **Agents + Skills** | `.claude/agents/*`, `.claude/skills/*`, `.agents/skills/*` |
 
 ## Skill Commands
 
