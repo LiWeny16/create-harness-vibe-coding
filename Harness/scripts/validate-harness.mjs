@@ -42,6 +42,7 @@ const commonSkills = [
   'subagent-orchestrator',
   'wf-readme',
   'wf-remove',
+  'wf-auto',
   'wf-auto-spark',
 ];
 
