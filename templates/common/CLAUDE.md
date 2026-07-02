@@ -10,7 +10,7 @@ This repository dogfoods the generated Harness scaffold. Scaffold source files l
 
 ### 1a. WF-MAX Role Contract (ACTIVE ONLY when /wf-max invoked)
 
-`/wf-max` active → top-level orchestrator is **CEO**. Delegated Workers follow dispatch packet, edit only assigned writeSet. **Global mode ≠ every agent is CEO.** (Enforced by hooks + `.runtime/current-mode.json`.)
+`/wf-max` active -> top-level orchestrator is **CEO**. Delegated Workers follow dispatch packet, edit only assigned writeSet. **Global mode != every agent is CEO.** There is no runtime hook enforcement; role/writeSet compliance is enforced by dispatch packets, review, validation, and durable task evidence.
 
 | ALLOWED (W0 CEO) | FORBIDDEN (always on source) |
 |---|---|
@@ -84,6 +84,5 @@ This repository dogfoods the generated Harness scaffold. Scaffold source files l
 
 - Never call `EnterPlanMode` — delegate planning to `planner` subagents (see `Harness/WF.md`).
 - Never write code directly in `/wf` or `/wf-max` CEO mode — delegate all implementation to Workers via dispatch packets with explicit writeSet.
-- **WF-MAX three-layer architecture**: global mode (`wf-max`) ≠ agent role (`ceo|manager|worker|reviewer`). Workers follow dispatch packet (writeSet, forbidden, verification). Missing role/writeSet → source edits denied by default.
-- **Enforcement**: `.claude/settings.json` denies `EnterPlanMode` via the `deny` list. Role contract is in [Section 1a](#1a-wf-max-role-contract-read-before-any-tool-use) — read it first.
-- WF-MAX hooks in `.claude/settings.json` enforce per-agentRole + writeSet. `Harness/.runtime/current-mode.json` persists mode state; stale modes (>30 min) auto-clear.
+- **WF-MAX three-layer architecture**: global mode (`wf-max`) != agent role (`ceo|manager|worker|reviewer`). Workers follow dispatch packet (writeSet, forbidden, verification). Missing role/writeSet means the controller must not proceed with source edits.
+- **Enforcement**: `.claude/settings.json` denies `EnterPlanMode` via the `deny` list. WF-MAX role/writeSet compliance is not hook-enforced; it is maintained through dispatch packets, independent review, validation evidence, and the task capsule. Role contract is in [Section 1a](#1a-wf-max-role-contract-active-only-when-wf-max-invoked) - read it first.

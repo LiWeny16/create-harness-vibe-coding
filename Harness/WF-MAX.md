@@ -24,6 +24,14 @@ Managers: scope, coordinate. No source edits. Reviewers: read only.
 If tempted to Read/Edit/Bash a source file → STOP. Spawn a Worker.
 ```
 
+WF-MAX is the maximum-parallelism version of the same acceptance-driven flow used
+by `/wf`: Mini PRD -> Acceptance Criteria -> UI/API Contracts -> Test Plan ->
+Implementation Dispatch -> Independent Validation -> Review -> Debug -> Memory.
+The hierarchy changes; the source of truth does not. PRD-derived AC IDs govern
+every worker dispatch, test, review, validation result, debug handoff, and memory
+entry. See [ACCEPTANCE_PROTOCOL.md](ACCEPTANCE_PROTOCOL.md),
+[AGENT_ISOLATION.md](AGENT_ISOLATION.md), and [HARNESS_BRIDGE.md](HARNESS_BRIDGE.md).
+
 ## Trigger
 
 - Explicit: `/wf-max [task]`
@@ -62,6 +70,24 @@ The Decomposition Gate is a hard stop. No code changes, no Worker spawns until t
 
 ### Gate Artifact: Dispatch Table
 
+WF-MAX gate order:
+
+```text
+PRD-GATE
+-> AC-GATE
+-> CONTRACT-GATE
+-> TEST-GATE
+-> D-GATE
+-> IMPLEMENT-GATE
+-> VALIDATION-GATE
+-> REVIEW-GATE
+```
+
+D-GATE answers "who may change which file." The earlier gates answer "what must
+be accepted, how it will be tested, and which truth files are forbidden to
+implementers." The Dispatch Table must map each write Worker to the AC IDs it
+implements.
+
 CEO MUST write this table in the task PLAN.md after W1 architecture defines the write-set and before W2 implementation dispatch:
 
 ```
@@ -72,7 +98,16 @@ CEO MUST write this table in the task PLAN.md after W1 architecture defines the 
 | docs/arch.md | Research existing patterns | researcher | res-arch | Yes |
 ```
 
+For acceptance-driven work, add an `AC IDs` column to this table and list every
+criterion the Worker is allowed to satisfy.
+
 ### Gate Rules (any violation = gate fail, retry)
+
+Acceptance-specific gate rules:
+
+1. PRD, AC, UI/API contracts, and test plan must exist before implementation dispatch.
+2. Every write Worker row must cite AC IDs.
+3. Implementer forbidden set must include PRD, AC, UI/API contracts, test plan, and validation report unless an approved Change Request is recorded.
 
 1. **Every file in the write-set MUST have exactly one write Worker.** Unassigned files = fail. This is the anti-bundling rule — one Worker touching >1 write file = fail. (Read Workers may span multiple files.)
 2. **Manager count MUST ≥ span_min = ceil(sqrt(write_files) / 3).** This is the anti-under-decomposition rule at the domain level. Fewer than the minimum number of Managers means domains are too coarse. "One Manager can handle everything" is NOT valid in WF-MAX — if the task were that simple, degrade to /wf.
@@ -97,6 +132,10 @@ If the CEO finds itself reaching for Edit/Write/Bash on source files, it is viol
 ### Self-Audit Checklist
 
 After producing the Dispatch Table, CEO MUST answer all before proceeding:
+
+- [ ] Do PRD, AC, contracts, and test plan exist before implementation dispatch?
+- [ ] Does every implementation Worker row cite AC IDs?
+- [ ] Are truth files excluded from implementer write sets unless Change Request is approved?
 
 - [ ] Did I assign myself any source file? (must be **No** — PLAN.md/PROGRESS.md writes are the exception)
 - [ ] Is every file with planned changes assigned to exactly one write Worker? (must be **Yes**)
@@ -196,6 +235,22 @@ total(depth, span) = Σ span^L for L=0..depth
 
 ## Wave Orchestration
 
+WF-MAX expands `/wf` by turning each acceptance phase into a manager/worker
+wave when useful:
+
+```text
+Product Manager Group -> PRD-GATE
+Acceptance Manager -> AC-GATE
+Contract Manager -> CONTRACT-GATE
+Test Manager -> TEST-GATE
+Architecture Manager -> boundary/interface contract
+Implementation Manager -> AC-mapped D-GATE and write-set coloring
+Validation Manager -> E2E/screenshot/trace/contract validation matrix
+Review Manager -> spec/code/test/UX/security review
+Debug Manager -> AC failure root-cause loop
+Memory Master -> durable lessons
+```
+
 ```
 W0:    Explore-Mgr    → N parallel researchers → synthesize → CEO
 E-GATE:               → Exploration Gate: CEO verifies all exploration questions answered, findings synthesized (lightweight; see WF.md Decomposition Gate)
@@ -212,6 +267,7 @@ CLOSEOUT:   CEO → context-master + memory-master (direct, no Manager)
 - **D-GATE** (Write Decomposition Gate): applies AFTER architecture defines the write-set, BEFORE any implementation Worker spawns. Dispatch Table covers the actual write-set. Gate is non-negotiable.
 - W2 dispatch: ALL Workers for a wave MUST be spawned in a single message — not one per turn. Batching is what makes parallelism real.
 
+- Acceptance gates apply before D-GATE. D-GATE decomposes the write set; it does not define the acceptance truth.
 - Wave scheduling: Managers serial across domains, Workers parallel within domain.
 - CEO validates wave output before starting next wave. No pipelining.
 
@@ -234,6 +290,9 @@ These conditions govern **auto-trigger degradation only** (wf-max → /wf). They
 - communication overhead > 30% → degrade
 
 ## /wf vs /wf-max
+
+Both modes use the same acceptance-driven mother flow. `/wf-max` changes the
+organization and amount of parallelism, not the PRD-derived source of truth.
 
 | Dimension        | /wf              | /wf-max                          |
 |------------------|------------------|----------------------------------|

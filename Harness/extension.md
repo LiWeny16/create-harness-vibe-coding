@@ -1,6 +1,6 @@
 # Extension Contract
 
-Purpose: keep stack-specific agents, skills, rules, and hooks compatible with this harness.
+Purpose: keep stack-specific agents, skills, and rules compatible with this harness.
 
 Use during setup whenever adding assets from ECC, SuperClaude, toolboxes, or local project conventions.
 
@@ -8,9 +8,9 @@ Use during setup whenever adding assets from ECC, SuperClaude, toolboxes, or loc
 
 Extensions must preserve project and harness ownership boundaries.
 
-- Preserve existing `.claude/`, `CLAUDE.md`, `AGENTS.md`, `.gitignore`, `Harness/README.md`, `Harness/workflows/*.md`, settings, hooks, and local rules unless the user explicitly requests an overwrite.
+- Preserve existing `.claude/`, `CLAUDE.md`, `AGENTS.md`, `.gitignore`, `Harness/README.md`, `Harness/workflows/*.md`, settings, and local rules unless the user explicitly requests an overwrite.
 - Treat existing project config as project fact. Read it before adding assets, then adapt new assets to the project instead of replacing the project.
-- Register added agents, skills, workflows, rules, and hooks in `Harness/MEMORY.md` and this docs router where applicable.
+- Register added agents, skills, workflows, and rules in `Harness/MEMORY.md` and this docs router where applicable.
 - Added assets may extend `.claude/skills/`, `.claude/agents/`, `.claude/rules/`, or `Harness/workflows/`, but they must not replace core harness docs.
 - Core harness docs are `Harness/README.md`, `Harness/PROGRESS.md`, `Harness/subagents.md`, `Harness/context-loading.md`, `Harness/dispatch.md`, `Harness/agent-workflow.md`, and this file.
 - If an optional workflow needs a new command or tool, document the command and fallback in `Harness/workflows/<name>.md` instead of changing core harness behavior.

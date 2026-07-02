@@ -28,14 +28,15 @@ Load other docs only by trigger.
 
 | Trigger | Load |
 | --- | --- |
-| idea, scope, MVP | `Harness/lifecycle.md`, `Harness/research/PRD.md` |
+| idea, scope, MVP | `Harness/lifecycle.md`, `Harness/research/PRD.md`, `Harness/ACCEPTANCE_PROTOCOL.md` |
+| acceptance, AC, criteria, contract, validation matrix | `Harness/ACCEPTANCE_PROTOCOL.md`, `Harness/AGENT_ISOLATION.md`, `Harness/HARNESS_BRIDGE.md` as needed |
 | research, competitors, stack choice | `Harness/research/README.md`, `Harness/research/research-results.md` |
 | task split, owner, write set | `Harness/tasks/<task-id>/PROGRESS.md`, `Harness/tasks/<task-id>/PLAN.md`, `Harness/agent-workflow.md` |
 | parallel agents, dispatch, worktree decision | `Harness/subagents.md`, `Harness/dispatch.md`, `Harness/tasks/<task-id>/PLAN.md` |
 | `/wf` mode, long task, multi-file, multi-agent | `Harness/WF.md`, `Harness/subagents.md`, `Harness/dispatch.md`, `Harness/tasks/<task-id>/PLAN.md` |
 | `/wf max`, 5+ disjoint files, maximum parallelism | `Harness/WF-MAX.md`, `Harness/subagents.md`, `Harness/dispatch.md`, `Harness/tasks/<task-id>/PLAN.md` |
-| memory, repeated tool failure, repeated user correction, reusable lesson | `Harness/MEMORY.md`, the relevant `Harness/memory/*.md` file |
-| subagent spawn | `Harness/subagents.md`, this file plus the role pack below |
+| memory, scenario memory, repeated tool failure, repeated user correction, reusable lesson | `Harness/MEMORY.md`, `Harness/MEMORY_PROTOCOL.md`, the relevant `Harness/memory/*.md` file |
+| subagent spawn | `Harness/subagents.md`, `Harness/AGENT_ISOLATION.md`, this file plus the role pack below |
 
 ## ECC Rules Per Role
 
@@ -51,7 +52,7 @@ Each subagent role loads a specific ECC rule subset. The dispatcher MUST include
 | **Implementer (BE)** | N/A | `common/patterns.md`, `python/fastapi.md` or `golang/patterns.md` | Backend subset |
 | **Test Writer** | `web/testing.md`, `typescript/testing.md` | Stack testing rules | Both |
 | **Reviewer** | `web/design-quality.md`, `web/security.md`, `web/performance.md` | Stack security + testing rules | All |
-| **Debugger** | Stack-specific hooks + coding-style | Stack-specific hooks + coding-style | Context-dependent |
+| **Debugger** | Stack-specific coding-style + patterns | Stack-specific coding-style + patterns | Context-dependent |
 | **Verifier** | `web/testing.md` | Stack testing rules | Both |
 
 ## Subagent Packs
@@ -66,7 +67,7 @@ Explorer Pass:
 
 Planner:
 - ecc: `common/patterns.md` + `common/development-workflow.md`
-- inject: user goal, lifecycle phase, PRD or PLAN section, dispatch constraints
+- inject: user goal, lifecycle phase, PRD or PLAN section, acceptance gate status, dispatch constraints
 - forbid: production code
 - return: tasks, dependencies, read/write sets, dispatch table, gates, open questions
 
@@ -90,9 +91,9 @@ Architect:
 
 Test Writer:
 - ecc: `common/testing.md` + stack-specific testing rules
-- inject: acceptance criteria, feature doc, test write set
+- inject: acceptance criteria, UI/API contracts, feature doc, test write set
 - forbid: production code
-- return: failing tests and test intent
+- return: failing tests, AC ID mapping, and test intent
 
 Implementer (Frontend):
 - ecc: `web/design-quality.md`, `web/patterns.md`, `web/performance.md`, `typescript/patterns.md`
@@ -108,21 +109,21 @@ Implementer (Backend):
 
 Reviewer:
 - ecc: `web/design-quality.md` (FE), `web/security.md` (FE), `common/security.md`, stack security
-- inject: diff, acceptance criteria, architecture docs
+- inject: PRD, acceptance criteria, UI/API contracts, diff, test/validation evidence, architecture docs
 - forbid: writes
-- return: findings by severity, missing tests, boundary issues
+- return: findings by severity, AC traceability, missing tests, boundary issues
 
 Debugger:
-- ecc: stack-specific coding-style + hooks rules
-- inject: failing command, error output, related files
+- ecc: stack-specific coding-style + patterns
+- inject: failed AC ID, failing command, error output, trace/screenshot/network evidence, related files
 - forbid: broad rewrites
-- return: root cause, fix, proof
+- return: failure layer, root cause, fix, proof
 
 Verifier:
 - ecc: stack-specific testing rules
-- inject: verification commands and acceptance criteria
+- inject: verification commands, acceptance criteria, UI/API contracts, running app/API endpoint
 - forbid: code changes
-- return: commands run, results, residual risk
+- return: commands run, AC-by-AC validation matrix, evidence paths, residual risk
 
 Memory Master:
 - inject: trigger reason, current failure/user-correction/closeout context, task PROGRESS.md section

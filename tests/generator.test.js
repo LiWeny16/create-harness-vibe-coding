@@ -229,7 +229,6 @@ test('generated scaffold stores harness-owned payload under root Harness directo
     'Harness/memory/user-corrections-preferences.md',
     'Harness/memory/agent-lessons-patterns.md',
     '.codex/config.toml',
-    '.codex/hooks.json',
     '.claude/skills/wf/SKILL.md',
     '.agents/skills/wf/SKILL.md',
     '.claude/skills/wf-max/SKILL.md',
@@ -277,8 +276,14 @@ test('generated scaffold stores harness-owned payload under root Harness directo
   assert.match(rootReadme, /wf-readme/);
   assert.match(rootReadme, /Codex/);
   assert.match(rootReadme, /\.agents\/skills/);
-  assert.match(rootReadme, /\.codex\/hooks\.json/);
+  assert.match(rootReadme, /\.codex/);
   assert.doesNotMatch(rootReadme, /commands\/wf\.toml/);
+
+  const wfHelp = readRel(targetDir, '.claude/commands/wf-help.md');
+  assert.match(wfHelp, /# \/wf-help/);
+  assert.match(wfHelp, /Do not invoke a skill/);
+  assert.match(wfHelp, /\| `\/wf-auto` \|/);
+  assert.match(wfHelp, /\| `\/wf-readme <task>` \|/);
 
   const wf = readRel(targetDir, 'Harness/WF.md');
   assert.match(wf, /Ralph-style/i);
@@ -657,7 +662,7 @@ test('core docs declare project files as the durable communication channel', () 
   }
 });
 
-test('generated web workflows require stable accessible selectors and test hooks', () => {
+test('generated web workflows require stable accessible selectors and test selectors', () => {
   const root = tmpdir();
   const targetDir = path.join(root, 'web-contracts');
 

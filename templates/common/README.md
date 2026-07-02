@@ -45,4 +45,4 @@ The agentic engineering harness lives in `Harness/`.
 Tool discovery files stay at the repository root:
 
 - Claude Code: `.claude/settings.json`, `.claude/agents/`, and `.claude/skills/`.
-- Codex: `.agents/skills/` for repo skills and `.codex/hooks.json` for hook/config integration.
+- Codex: `.agents/skills/` for repo skills and `.codex/` for config placeholders. Runtime hooks are absent by default; only `/wf-auto` may opt into a bounded tick hook.

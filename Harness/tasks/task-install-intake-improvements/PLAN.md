@@ -72,7 +72,7 @@ Findings accepted:
 - External popular skill ecosystems should be selectable as recommendations, not silently installed, because the scaffold does not vendor Superpowers, Caveman, agent-research, or codegraph assets.
 
 Findings rejected:
-- Replacing `.claude/` with `Harness/.claude/` is rejected because Claude Code discovers agents, skills, commands, settings, and hooks from root `.claude/`.
+- Replacing `.claude/` with `Harness/.claude/` is rejected because Claude Code discovers agents, skills, commands, and settings from root `.claude/`.
 - Automatically installing unknown third-party skills during scaffold generation is rejected because it would add network/tool side effects and unclear trust boundaries.
 
 Conflicts:
@@ -103,7 +103,7 @@ Residual risk:
 | `node scripts/build-version.mjs --check` | Passed | `.harness-version` up to date: 59 checksums, 73 sources |
 | `node templates/common/scripts/validate-harness.mjs --strict` | Passed | Harness validation passed strict |
 | `node tests/e2e-wf-scripts.test.mjs` | Passed | 71/71 |
-| `node tests/e2e-wf-hooks.test.mjs` | Passed | 60/60 |
+| legacy WF runtime-interceptor e2e test | Passed | Historical evidence only; runtime-interceptor e2e test was removed by `task-remove-hook-docs`. |
 | `rg` for template docs paths | Passed | No `templates/common/docs`, optional `docs/workflows`, or `docs/*` generator mappings remain outside historical task notes |
 | `node templates/common/scripts/validate-harness.mjs --strict` after memory write | Passed | Harness validation still passed after recording the `docs/` preference |
 | `npm test` after 0.8.1 refinement | Passed | 65 passed, 1 skipped |

@@ -17,6 +17,12 @@ This fills the gap between:
 
 ## Organization Model
 
+WF-AUTO uses the same acceptance-driven mother flow per cycle. Each selected
+optimization becomes a Mini PRD with AC IDs, a test/validation plan, bounded
+implementation, independent validation, review, debug if needed, and memory.
+Autonomy changes who chooses the next improvement; it does not make
+implementation or tests the source of truth.
+
 ```
 CEO(1) ──┬── Angle-Agent₁ (correctness)
          ├── Angle-Agent₂ (performance)
@@ -237,6 +243,14 @@ CEO picks the SINGLE highest-scoring finding. One change per cycle keeps each it
 
 If multiple findings tie, prefer: correctness > security > robustness > performance > architecture > maintainability > test-coverage > ux-dx.
 
+Before W2, CEO writes a cycle Mini PRD:
+
+- Goal
+- Scope and non-scope
+- AC IDs
+- UI/API/state contracts, if touched
+- Verification commands and evidence expected
+
 ### W2: IMPLEMENT
 
 Modeled on WF's build loop but scoped to ONE change:
@@ -246,6 +260,12 @@ Modeled on WF's build loop but scoped to ONE change:
 3. Implementer changes ONLY the declared write set
 
 CEO NEVER writes production code — this rule is inherited from WF-MAX (AP1: CEO-as-Worker).
+
+Acceptance-specific implementation rules:
+
+- Dispatch `test-writer` when AC IDs need new or updated tests.
+- Dispatch `implementer` with forbidden truth files: PRD, AC, UI/API contracts, test plan, and validation report.
+- Implementer may not rewrite ACs/contracts to make the implementation pass.
 
 ### W3: REVIEW
 
@@ -270,6 +290,9 @@ If review or verification fails:
 - For browser-visible changes: real browser check
 - For API changes: real request/response check
 - Record evidence in `Harness/tasks/auto/PROGRESS.md`
+
+Validation must include AC-by-AC evidence in `Harness/tasks/auto/PROGRESS.md`,
+not only a generic pass/fail command result.
 
 ### RECORD
 
@@ -296,6 +319,41 @@ Every cycle writes one entry to `Harness/tasks/auto/PROGRESS.md`:
 ### LOOP → W0
 
 IMMEDIATELY return to W0. No pause between cycles — the only breaks are the adaptive Intent Checkpoint and the A-GATE.
+
+### WF-AUTO Hook Exception
+
+Runtime hooks are disabled by default across the Harness scaffold. The only
+allowed exception is an explicitly enabled `/wf-auto` tick hook for long-running
+auto-optimization.
+
+The hook is not a role-enforcement mechanism, not a memory injection mechanism,
+and not WF-MAX state. It is only a bounded tick trigger:
+
+```text
+wf-auto hook event
+-> confirm /wf-auto is active in Harness/tasks/auto/
+-> check STOP/paused/user-interrupt state
+-> request exactly one W0-W5 tick or one Intent Checkpoint
+-> append heartbeat/evidence to Harness/tasks/auto/PROGRESS.md
+-> exit
+```
+
+Hard boundaries:
+
+- no hook is installed or registered by default
+- only `/wf-auto` may use a runtime hook
+- the hook must run one bounded tick, not an unbounded process
+- the hook must respect `Harness/tasks/auto/STOP`, `state=paused`, user stop,
+  and the 8-Angle Exhaustion Gate
+- the hook must not enforce WF-MAX roles, writeSet, or agent identity
+- the hook must not inject memory directly; use `MEMORY_PROTOCOL.md` scenario
+  hints through controller/context-master
+- the hook must not write production files outside the normal W0-W5 gated flow
+- repeated hook failures must pause auto mode and record evidence, not keep
+  retrying silently
+
+Perpetual behavior comes from repeated bounded ticks with durable evidence, not
+from a single runaway hook process.
 
 ### Intent Checkpoint (adaptive re-anchoring)
 
@@ -472,6 +530,9 @@ Before W2, CEO checks: does this change delete functionality, change public API,
 - Production hotfix needed urgently → direct fix, not optimization loop
 
 ## /wf vs /wf-max vs /wf-auto
+
+Acceptance source is PRD-derived AC IDs in `/wf` and `/wf-max`, and cycle
+Mini PRD-derived AC IDs in `/wf-auto`.
 
 | Dimension | /wf | /wf-max | /wf-auto |
 |-----------|-----|---------|----------|

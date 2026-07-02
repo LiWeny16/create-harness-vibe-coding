@@ -43,11 +43,12 @@
 
 ## 5. Acceptance Criteria
 
-- [x] `npm test` covers root `Harness/` mapping, conflict behavior, optional workflows, validator registration, memory triggers, and README language split.
-- [x] Generated projects include `Harness/MEMORY.md`, `Harness/README.md`, `Harness/WF.md`, `Harness/subagents.md`, and registered `.claude/skills/*`.
-- [x] Existing `CLAUDE.md` and `AGENTS.md` conflicts require user confirmation before merge or replacement.
-- [x] README documents both npx install and Agent-link install.
-- [x] This repository dogfoods root `Harness/` routing for future agent work.
+- [x] AC-001: `npm test` covers root `Harness/` mapping, conflict behavior, optional workflows, validator registration, memory triggers, and README language split.
+- [x] AC-002: Generated projects include `Harness/MEMORY.md`, `Harness/README.md`, `Harness/WF.md`, `Harness/subagents.md`, and registered `.claude/skills/*`.
+- [x] AC-003: Existing `CLAUDE.md` and `AGENTS.md` conflicts require user confirmation before merge or replacement.
+- [x] AC-004: README documents both npx install and Agent-link install.
+- [x] AC-005: This repository dogfoods root `Harness/` routing for future agent work.
+- [x] AC-006: Harness workflow docs make PRD-derived Acceptance Criteria the source of truth for implementation, tests, review, validation, debug, and memory.
 
 ## 6. Non-Functional Requirements
 
@@ -64,5 +65,5 @@
 
 - [x] MVP and Non-goals are project facts; no template placeholders remain.
 - [x] Decision priorities guide tradeoffs.
-- [x] Every acceptance criterion is verifiable by test, command, or manual step.
+- [x] Every acceptance criterion has an AC ID and is verifiable by test, command, or manual step.
 - [x] If implementation diverges from the PRD, update this file before changing code.

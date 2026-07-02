@@ -11,6 +11,7 @@ Use when work needs parallel reading, independent review, cross-layer analysis, 
 - Main agent owns the final decision, integration, and verification.
 - project files are the only durable communication channel; chat/subagent transcript state is non-authoritative.
 - Important assumptions, decisions, blockers, evidence, and handoffs must be written to `Harness/tasks/<task-id>/PROGRESS.md` and `Harness/tasks/<task-id>/PLAN.md`, the current feature doc, `Harness/MEMORY.md`, or `Harness/memory/*` as appropriate.
+- PRD-derived Acceptance Criteria are the source of truth. Dispatch packets must carry the relevant AC IDs and contracts.
 - Agent count: default (non-WF) ≤3 active agents; `/wf` requires ≥3 distinct subagents from `.claude/agents/` before second plan; `/wf max` removes the cap entirely (governed by span formula in WF-MAX.md). See [WF.md](WF.md) and [WF-MAX.md](WF-MAX.md) for the authoritative rules.
 - Read-only agents may run in parallel.
 - Writing agents run serially unless write sets are disjoint.
@@ -61,6 +62,9 @@ Role:               <installed agent name or bounded role, e.g. planner, impleme
 Task:               <one-sentence goal>
 ECC:                <which ECC rules to load, e.g. web/design-quality.md, python/fastapi.md. See context-loading.md#ecc-rules-per-role>
 Skills:             <which skills to activate, e.g. react-review, tdd-guide>
+PRD:                <path or task PLAN section containing Mini PRD>
+Acceptance IDs:     <AC-001, AC-002, or "none" for non-behavioral work>
+UI contract:        <path to UI_CONTRACT.md or task PLAN section, if UI task>
 API contract:       <path to api/openapi.yaml, if frontend↔backend task. Omit if N/A>
 Read set:           <files and directories the subagent may read>
 Write set:          <files the subagent may modify. "none" = read-only>
@@ -79,6 +83,7 @@ Mode:
 ECC loaded:         <which ECC rule files were actually loaded. Should match dispatch ECC field.>
 Skills active:      <which skills were active. Should match dispatch Skills field.>
 API contract:       <path to contract file used, if applicable>
+Acceptance IDs:     <AC IDs handled or validated>
 Files read:
 Files changed:
 Findings:
@@ -86,6 +91,7 @@ Evidence:
 Risks:
 Next:
 PLAN patch:
+Validation matrix:  <AC-by-AC pass/fail/block evidence, for validators>
 Concurrency group:  <wave number — 0=exploration, 1,2,3,...=implementation waves. Optional; only used in /wf max.>
 File claim:         <list of exact file paths this agent exclusively owns. Optional; only used in /wf max.>
 Granularity floor:  <50 avgLines → do NOT spawn. Apply leaf condition from WF-MAX.md.>

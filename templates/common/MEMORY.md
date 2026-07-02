@@ -10,6 +10,7 @@
 - [planner](../.claude/agents/planner.md) — task split, dependencies, write sets, and dispatch table.
 - [architect](../.claude/agents/architect.md) — boundaries, ports, data-flow, and state impact.
 - [test-writer](../.claude/agents/test-writer.md) — failing tests or manual verification before implementation.
+- [tdd-guide](../.claude/agents/tdd-guide.md) - AC-linked RED tests, browser UI acceptance, and Playwright/CDP evidence before implementation.
 - [implementer](../.claude/agents/implementer.md) — bounded implementation inside declared write set.
 - [debugger](../.claude/agents/debugger.md) — smallest fix for a reproduced failure.
 - [reviewer](../.claude/agents/reviewer.md) — read-only diff review and closeout risk.
@@ -33,12 +34,16 @@ Stack-specific agents can be added after the product shape is known.
 - [wf-update](../.claude/skills/wf-update/SKILL.md) — GitHub-based incremental harness update, checksum comparison, and safe in-place updates.
 - [wf-learn](../.claude/skills/wf-learn/SKILL.md) — force memory learning cycle: context-master -> memory-master -> project + global memory.
 - [wf-max](../.claude/skills/wf-max/SKILL.md) — maximum-parallelism workflow: write-set coloring, wave dispatch, parallel review per dimension.
-- [wf-auto](../.claude/skills/wf-auto/SKILL.md) — perpetual auto-optimization: 8-angle internal scan, intent checkpoints, evidence ledger.
+- [wf-auto](../.claude/skills/wf-auto/SKILL.md) - perpetual auto-optimization: bounded ticks, 8-angle internal scan, intent checkpoints, evidence ledger.
 - [wf-auto-spark](../.claude/skills/wf-auto-spark/SKILL.md) — perpetual inspiration mode: external spark search, long-term roadmap with staged milestones, ≤50% deviation guard.
-- [tdd](../.claude/skills/tdd/SKILL.md) — test-driven development: red-green-refactor, ≥80% coverage gate, enforces tests-first methodology.
-	- [wf-remove](../.claude/skills/wf-remove/SKILL.md) — Safely remove Harness framework files (SAFE/MODIFIED/USER classes), auto-prune empty directories, backup option.
+- [tdd](../.claude/skills/tdd/SKILL.md) - acceptance-driven TDD: AC-linked RED tests, real UI clicks for browser-visible behavior, Playwright/CDP evidence, and configured coverage gate.
+- [wf-remove](../.claude/skills/wf-remove/SKILL.md) - safely remove Harness framework files (SAFE/MODIFIED/USER classes), auto-prune empty directories, backup option.
 
 Codex repo-skill mirrors live under `../.agents/skills/` with the same skill names.
+
+## Direct Commands
+
+- [wf-help](../.claude/commands/wf-help.md) - direct `/wf-help` command that returns a WF command table without invoking a skill.
 
 Stack-specific skills can be added after the product shape is known.
 
@@ -56,6 +61,11 @@ Located under `.claude/rules/ecc/`, auto-loaded by the CC engine:
 ## Harness (Runtime)
 
 - [Docs router](README.md)
+- [Acceptance protocol](ACCEPTANCE_PROTOCOL.md)
+- [Agent isolation protocol](AGENT_ISOLATION.md)
+- [Harness Bridge](HARNESS_BRIDGE.md)
+- [Debug protocol](DEBUG_PROTOCOL.md)
+- [Memory protocol](MEMORY_PROTOCOL.md)
 - [WF mode](WF.md)
 - [WF Max mode](WF-MAX.md)
 - [0-1 lifecycle](lifecycle.md)
@@ -66,6 +76,7 @@ Located under `.claude/rules/ecc/`, auto-loaded by the CC engine:
 - [Extension contract](extension.md)
 - [Architecture docs](architecture.md)
 - [Agent workflow](agent-workflow.md)
+- [Acceptance templates](templates/)
 - [Harness validator](scripts/validate-harness.mjs)
 - [Version file](.harness-version)
 

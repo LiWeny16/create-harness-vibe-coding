@@ -2,6 +2,13 @@
 
 Use when implementing, reviewing, debugging, or coordinating subagents.
 
+This workflow is acceptance-driven. PRD-derived Acceptance Criteria are the
+source of truth; implementation, tests, review, validation, debug, and memory
+must trace to AC IDs. Load [ACCEPTANCE_PROTOCOL.md](ACCEPTANCE_PROTOCOL.md) for
+gate rules, [TDD-GUIDE.md](TDD-GUIDE.md) for AC-linked RED tests,
+[HARNESS_BRIDGE.md](HARNESS_BRIDGE.md) for UI/API/browser evidence, and
+[AGENT_ISOLATION.md](AGENT_ISOLATION.md) before role splits.
+
 ## ReAct Loop
 
 ```text
@@ -12,7 +19,7 @@ If context grows, load [context-loading.md](context-loading.md) and split the wo
 
 ## Feature Packet
 
-Every PRD scope item must be covered by a task plan at `Harness/tasks/<task-id>/PLAN.md`
+Every PRD scope item must be covered by AC IDs and a task plan at `Harness/tasks/<task-id>/PLAN.md`
 created from `Harness/tasks/_template/PLAN.md` (the primary work tracking system).
 **Cohesion rule**: if multiple PRD scope items share the same write set, the same
 test/verification path, and the same review boundary, group them into a single
@@ -28,17 +35,32 @@ For single-file fixes with no behavior change, a brief note in `PROGRESS.md` is 
 task capsule and append to its `PROGRESS.md`. Only create a new task capsule when the
 scope is substantially different. When unsure, ask.
 
-## Standard Build Loop
+## Acceptance-Driven Build Loop
 
 ```text
-PRD/task plan
+Mini PRD
+-> Acceptance Criteria
+-> UI/API contracts
+-> test plan
 -> failing test or manual check
 -> minimal implementation
--> verification
+-> independent validation
 -> review
+-> debug if needed
 -> docs sync
+-> memory
 -> close or iterate
 ```
+
+Rules:
+
+- No PRD, no implementation.
+- No acceptance criteria, no tests.
+- No acceptance criteria, no code.
+- Browser-visible behavior must have a real user-path test or documented browser validation; syntax-only checks are not acceptance.
+- Frontend-backend behavior must include network/API assertions against the contract.
+- Implementer cannot modify PRD, acceptance criteria, UI/API contracts, test plan, or validation report unless a Change Request is recorded.
+- Validator must be independent from implementer and must produce an AC-by-AC result matrix.
 
 ## Subagent Use
 
@@ -62,8 +84,10 @@ Rules:
 - Planner and Architect are read-only unless explicitly asked to return a docs patch.
 - Test Writer writes tests before Implementer writes production code.
 - Implementer only writes inside its declared write set.
+- Implementer forbidden set includes PRD, acceptance criteria, UI/API contracts, test plan, and validation report by default.
 - Writing agents run serially unless write sets are disjoint.
 - Debugger fixes the smallest failing path, not adjacent design.
+- Debugger receives failed AC IDs, evidence, and failing layer hypothesis before editing.
 - Main agent integrates summaries, resolves conflicts, and runs final verification.
 
 ## Parallel Dispatch
@@ -83,7 +107,7 @@ Every dispatched agent returns the handoff format defined in [dispatch.md](dispa
 
 ## Conflict Rule
 
-If PRD, task PLAN.md, architecture, ports, tests, or code disagree:
+If PRD, acceptance criteria, UI/API contracts, task PLAN.md, architecture, ports, tests, or code disagree:
 
 1. stop implementation
 2. record the conflict in `Harness/tasks/<task-id>/PROGRESS.md` or the feature doc
@@ -94,7 +118,8 @@ If PRD, task PLAN.md, architecture, ports, tests, or code disagree:
 
 Close only when:
 
-- acceptance criteria are satisfied
+- acceptance criteria are satisfied by AC ID
+- validation result matrix exists for user-visible behavior
 - verification evidence is recorded
 - architecture docs are synced if affected
 - no unresolved critical/high review findings remain

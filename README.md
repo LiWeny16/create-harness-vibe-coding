@@ -234,12 +234,11 @@ my-project/
 │   └── rules/                ← Universal coding rules
 ├── .agents/
 │   └── skills/               ← Codex repo skills
-├── .codex/
-│   └── hooks.json             ← Codex hook bridge
+├── .codex/                    ← Codex config
 └── tests/
 ```
 
-`Harness/` holds all harness docs. Tool-discovery folders stay at root: `.claude/` for Claude Code, `.agents/skills/` for Codex repo skills, and `.codex/` for Codex config/hooks.
+`Harness/` holds all harness docs. Tool-discovery folders stay at root: `.claude/` for Claude Code, `.agents/skills/` for Codex repo skills, and `.codex/` for Codex config. Runtime hooks are absent by default; only `/wf-auto` may opt into a bounded tick hook.
 
 ---
 

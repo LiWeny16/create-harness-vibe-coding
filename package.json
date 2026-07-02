@@ -1,6 +1,6 @@
 {
   "name": "create-harness-vibe-coding",
-  "version": "0.8.3",
+  "version": "0.8.4",
   "description": "Scaffold a 0-1 product harness for AI-assisted research, PRD, planning, architecture, build, test, and feedback loops",
   "type": "module",
   "bin": {
@@ -16,7 +16,6 @@
     "start": "node src/index.js",
     "build:version": "node scripts/build-version.mjs",
     "prepush": "node scripts/pre-push-check.mjs",
-    "prepush:install": "node scripts/pre-push-check.mjs --install",
     "test": "node --test tests/*.test.js",
     "test:smoke": "node --test tests/cli-smoke.test.js",
     "pack:smoke": "node --test tests/pack-smoke.test.js"

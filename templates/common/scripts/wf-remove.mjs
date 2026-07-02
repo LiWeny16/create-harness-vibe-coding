@@ -108,6 +108,7 @@ const CLEANUP_DIRS = [
   '.claude/agents',
   '.claude/skills/wf-auto',
   '.claude/skills/wf-browser',
+  '.claude/skills/tdd',
   '.claude/skills/wf',
   '.claude/skills/wf-learn',
   '.claude/skills/wf-max',
@@ -118,6 +119,7 @@ const CLEANUP_DIRS = [
   '.claude/skills/subagent-orchestrator',
   '.agents/skills/wf-auto',
   '.agents/skills/wf-browser',
+  '.agents/skills/tdd',
   '.agents/skills/wf',
   '.agents/skills/wf-learn',
   '.agents/skills/wf-max',
@@ -302,6 +304,8 @@ async function main() {
   const extraPatterns = [
     '.claude/skills/wf/SKILL.md',
     '.agents/skills/wf/SKILL.md',
+    '.claude/skills/tdd/SKILL.md',
+    '.agents/skills/tdd/SKILL.md',
     '.claude/skills/wf-auto/SKILL.md',
     '.agents/skills/wf-auto/SKILL.md',
     'Harness/WF-AUTO.md',
@@ -375,7 +379,7 @@ async function main() {
     }
   }
 
-  // Also check for .claude/settings.json (might have user hooks)
+    // Also check for .claude/settings.json (might have user permissions)
   const settingsFile = resolve(ROOT, '.claude', 'settings.json');
   if (existsSync(settingsFile)) {
     const settingsHash = sha256File(settingsFile);
@@ -386,7 +390,7 @@ async function main() {
       const idx = safe.findIndex(s => s.file === '.claude/settings.json');
       if (idx >= 0) {
         safe.splice(idx, 1);
-        modified.push({ file: '.claude/settings.json', currentHash: settingsHash, storedHash: storedSettingsHash, reason: 'user modified settings (may contain hooks/permissions)' });
+        modified.push({ file: '.claude/settings.json', currentHash: settingsHash, storedHash: storedSettingsHash, reason: 'user modified settings (may contain permissions)' });
       }
     }
   }

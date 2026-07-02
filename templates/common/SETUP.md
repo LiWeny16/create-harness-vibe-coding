@@ -8,14 +8,14 @@ This scaffold is a 0-1 product harness:
 
 - short agent entry files
 - dynamic docs router
-- PRD, research protocol, architecture, ports, data-flow, state templates
+- Mini PRD, acceptance protocol, UI/API contracts, research protocol, architecture, ports, data-flow, state templates
 - active `Harness/PROGRESS.md`
 - `Harness/MEMORY.md` plus a `Harness/memory/` folder for durable self-learning, user corrections, and tool reflections
 - built-in common agents
 - subagent orchestration and context-loading protocol
 - skill-style dynamic loaders in `.claude/skills/` for Claude Code and `.agents/skills/` for Codex
 - lightweight harness validator
-- test/review/feedback loop
+- acceptance/test/review/debug/memory loop
 
 It does not guess your stack or business domain. The agent MUST detect or ask, then install the right ECC rules for the project.
 
@@ -26,7 +26,7 @@ Start Claude Code or Codex, then say:
 ```text
 Read Harness/SETUP.md. Bootstrap this project as a 0-1 product harness.
 Use Harness/README.md as the router. Keep context small.
-First clarify the idea, then create PRD, research, architecture, Harness/PROGRESS.md and the first per-task plan, and the first vertical-slice task.
+First clarify the idea, then create Mini PRD, acceptance criteria, UI/API contracts, test plan, research, architecture, Harness/PROGRESS.md, the first per-task plan, and the first vertical-slice task.
 ```
 
 ## Required Bootstrap Sequence
@@ -34,16 +34,19 @@ First clarify the idea, then create PRD, research, architecture, Harness/PROGRES
 Claude must follow this order:
 
 0. **ECC Stack Configuration** — Detect the project's tech stack. If the repo is empty or has no stack markers (`package.json`, `go.mod`, `pyproject.toml`, `Cargo.toml`, `Gemfile`, `composer.json`, `build.gradle`, etc.), ask the user: "What's your tech stack? (language/framework)" Then install the matching ECC rule sets from `~/.claude/rules/ecc/`. See `Harness/ECC-GUIDE.md` for the stack→rules mapping. Minimum: always install `common/`. Verify with `ls .claude/rules/ecc/`.
-1. Read `CLAUDE.md`, `Harness/MEMORY.md`, `Harness/README.md`, and `Harness/lifecycle.md`. Load `Harness/memory/*` only when the router or memory trigger applies.
+1. Read `CLAUDE.md`, `Harness/MEMORY.md`, `Harness/README.md`, `Harness/lifecycle.md`, and `Harness/ACCEPTANCE_PROTOCOL.md`. Load `Harness/memory/*` only when the router or memory trigger applies.
 2. Ask up to 3 blocking product questions. If not blocked, record assumptions in `Harness/tasks/<task-id>/PLAN.md`.
-3. Fill `Harness/research/PRD.md` with MVP, non-goals, and acceptance criteria.
+3. Fill `Harness/research/PRD.md` or the first task PLAN with Mini PRD fields: goal, scope, non-scope, user flow, UI elements, API behavior, acceptance criteria, and verification commands.
 4. Read `Harness/research/README.md`, then fill `Harness/research/research-results.md` with adopted/rejected research choices.
-5. Fill `Harness/architecture.md`.
-6. Create a task capsule from `Harness/tasks/_template/` and fill the first vertical-slice plan in `Harness/tasks/<task-id>/PLAN.md`.
-7. Use `Harness/subagents.md`, `Harness/context-loading.md`, and `Harness/dispatch.md` when explicit WF/WK mode or any spawned subagents are involved.
-9. Implement only after a failing test or manual verification step is defined.
-10. Run `node Harness/scripts/validate-harness.mjs --strict`.
-11. Record final verification and next feedback step in `Harness/tasks/<task-id>/PROGRESS.md`. If repeated tool failures, repeated user corrections, or reusable review/debug lessons appeared, record the concise reflection in the relevant `Harness/memory/` file.
+5. Create AC IDs, UI/API contract tables, and a test plan before implementation. Use `Harness/templates/*` when helpful.
+6. Fill `Harness/architecture.md`.
+7. Create a task capsule from `Harness/tasks/_template/` and fill the first vertical-slice plan in `Harness/tasks/<task-id>/PLAN.md`.
+8. Use `Harness/AGENT_ISOLATION.md`, `Harness/subagents.md`, `Harness/context-loading.md`, and `Harness/dispatch.md` when explicit WF/WK mode or any spawned subagents are involved.
+9. Implement only after PRD-GATE, AC-GATE, CONTRACT-GATE, and TEST-GATE pass.
+10. Independently validate with an AC-by-AC result matrix; use `Harness/HARNESS_BRIDGE.md` for browser/API/CDP flows.
+11. For `/wf-auto` or memory scenario hints, read `Harness/WF-AUTO.md` and `Harness/MEMORY_PROTOCOL.md`; do not enable a background runner by default. The only allowed runtime hook is the optional `/wf-auto` bounded tick hook.
+11. Run `node Harness/scripts/validate-harness.mjs --strict`.
+12. Record final verification and next feedback step in `Harness/tasks/<task-id>/PROGRESS.md`. If repeated tool failures, repeated user corrections, or reusable review/debug lessons appeared, record the concise reflection in the relevant `Harness/memory/` file.
 
 ## Install or Upgrade Path
 
@@ -61,7 +64,7 @@ When adding this harness to a project that already has source code, docs, CI, or
 1. Get the machine-readable install report first with `npx create-harness-vibe-coding@latest <project-name> <target-dir> -y --dry-run --on-conflict skip --json`. Use `scan.markers` and `agent.aiMergeRequired` instead of hand-written root probes for install decisions. Do manual project-fact reading only after the script has created missing Harness files.
 2. Record discovered facts and open questions in `Harness/tasks/<task-id>/PROGRESS.md` before changing harness docs.
 3. Fill `Harness/research/PRD.md`, `Harness/research/research-results.md`, `Harness/architecture.md` from observed project facts plus explicit user input.
-4. Existing configuration is project fact. Do not overwrite `CLAUDE.md`, `AGENTS.md`, `.claude/`, `.agents/`, `.codex/`, `.gitignore`, settings, hooks, package files, CI, docs routers, workflow docs, or installed skills/plugins/rules unless the user explicitly approves that exact overwrite.
+4. Existing configuration is project fact. Do not overwrite `CLAUDE.md`, `AGENTS.md`, `.claude/`, `.agents/`, `.codex/`, `.gitignore`, settings, package files, CI, docs routers, workflow docs, or installed skills/plugins/rules unless the user explicitly approves that exact overwrite.
 5. When a harness file conflicts with an existing file, preserve the existing file and register any missing harness guidance manually using `Harness/extension.md`.
 6. Run `node Harness/scripts/validate-harness.mjs --strict` after project-fact placeholders have been resolved or intentionally recorded as open. Use the non-strict validator only for early structural checks.
 
@@ -174,7 +177,8 @@ Each template doc contains `{{PLACEHOLDER}}` markers. Below is what every placeh
 - `{{MUST_1..3}}`: concrete, testable MVP items (checkbox form)
 - `{{NON_GOAL_1..3}}`: explicitly out-of-scope items
 - `{{USER_ROLE}}`, `{{SCENARIO}}`, `{{FREQUENCY}}`, `{{PAIN}}`: one row per user type
-- `{{ACCEPTANCE_1..3}}`: verifiable project-level acceptance criteria
+- `AC-001..003`: verifiable project-level acceptance criteria written as Given/When/Then summaries
+- UI/API contract requirements: stable selectors, endpoint contracts, state changes, and evidence methods for relevant AC IDs
 - `{{DIMENSION}}`, `{{TARGET}}`, `{{MEASUREMENT}}`: non-functional requirements (perf, security, etc.)
 
 **`Harness/research/research-results.md`** — Tech decisions. Research before filling:
@@ -210,7 +214,7 @@ False confidence is worse than a question. If you catch yourself thinking "this 
 
 ## How to Find Proper Skills
 
-After the architecture stage reveals your stack, inspect existing `.claude/skills/`, `.agents/skills/`, plugins, hooks, and custom rules before recommending anything. Skills teach Claude Code and Codex domain-specific patterns, testing conventions, and design rules, but duplicate skills create routing noise.
+After the architecture stage reveals your stack, inspect existing `.claude/skills/`, `.agents/skills/`, plugins, and custom rules before recommending anything. Skills teach Claude Code and Codex domain-specific patterns, testing conventions, and design rules, but duplicate skills create routing noise.
 
 **Built-in route**: invoke the `/find-skills` skill (or say "help me find skills for X"). Examples:
 
@@ -239,13 +243,13 @@ ECC and Superpowers overlap ~80% in topic coverage but serve different purposes:
 | | ECC Rules | Superpowers Skills |
 |---|------|------|
 | **Role** | Coding STANDARD (what to enforce) | Coding GUIDE (how to execute) |
-| **Enforcement** | Hooks (PreToolUse/PostToolUse), validator | Agent self-discipline |
+| **Enforcement** | Validator plus documented command evidence | Agent self-discipline |
 | **Scope** | Universal + per-language (TS/Python/Go/...) | Universal (no language specifics) |
 | **TDD** | `testing.md`: coverage ≥80%, AAA pattern | `test-driven-development`: red-green-refactor workflow |
 | **Code Review** | `code-review.md`: severity levels, checklist | `requesting-code-review`: dispatch reviewer subagent |
 | **Subagents** | `subagents.md` + `dispatch.md`: role packs, write sets | `subagent-driven-development`: two-stage review after each task |
 | **Verification** | `testing.md` + `agent-workflow.md`: evidence before claims | `verification-before-completion`: verification before claiming done |
-| **Unique** | Design quality, performance budgets, security CSP, per-language idioms, hooks | Brainstorming, git worktrees |
+| **Unique** | Design quality, performance budgets, security CSP, per-language idioms | Brainstorming, git worktrees |
 
 **Installation rule:**
 1. **ECC is mandatory.** Install `common/` + stack-specific rules during bootstrap step 0. See `Harness/ECC-GUIDE.md`.
@@ -267,7 +271,7 @@ This scaffold includes built-in harness skills in `.claude/skills/*` and mirrore
 
 ## Optional Agent Assets
 
-After the product shape is known, Claude Code may also install or copy stack-specific agents, rules, and hooks into `.claude/`. Codex-discoverable workflow skills belong in `.agents/skills/`. Follow `Harness/extension.md` for every added asset.
+After the product shape is known, Claude Code may also install or copy stack-specific agents and rules into `.claude/`. Codex-discoverable workflow skills belong in `.agents/skills/`. Follow `Harness/extension.md` for every added asset.
 
 Examples:
 

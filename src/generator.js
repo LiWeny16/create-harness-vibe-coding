@@ -69,7 +69,6 @@ const OPTIONAL_DIR = path.resolve(__dirname, '..', 'templates', 'optional');
 const OPTIONAL_CATALOG = path.join(OPTIONAL_DIR, 'catalog.json');
 const VALID_CONFLICT_POLICIES = new Set(['fail', 'skip', 'backup', 'overwrite']);
 const EMPTY_DIRS = [
-  '.claude/hooks',
   'tests',
 ];
 

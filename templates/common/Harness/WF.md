@@ -7,6 +7,13 @@ This is a Ralph-style harness loop: keep moving through evidence, bounded
 exploration, second planning, implementation, review, verification, and recovery
 instead of stalling on the first obstacle.
 
+WF is acceptance-driven. The source of truth is not the implementation, not the
+tests, and not the agent's summary. The source of truth is the PRD-derived
+Acceptance Criteria. Code, tests, review, validation, debug, and memory must
+trace to AC IDs. Load [ACCEPTANCE_PROTOCOL.md](ACCEPTANCE_PROTOCOL.md) for the
+gate contract, [AGENT_ISOLATION.md](AGENT_ISOLATION.md) for role separation, and
+[HARNESS_BRIDGE.md](HARNESS_BRIDGE.md) for UI/API/browser evidence.
+
 ## Trigger
 
 Enter WF mode when any of these are true:
@@ -78,22 +85,25 @@ see [WF-MAX.md](WF-MAX.md).
 Intake
 -> confidence gate
 -> parallel planner / researcher / docs-researcher / architect roles
--> synthesis
+-> Mini PRD
+-> Acceptance Criteria
+-> UI/API contracts
+-> test plan
 -> second plan
 -> test-writer
 -> implementer
+-> independent validator
 -> reviewers
--> verifier
--> if failed: debugger -> review -> e2e/API verification -> loop
--> close with evidence
+-> if failed: debugger -> review -> e2e/API validation -> loop
+-> memory closeout with evidence
 ```
 
 ## Intake
 
 1. Read `CLAUDE.md`, `Harness/MEMORY.md`, `Harness/README.md`,
    `Harness/PROGRESS.md`, and the active task capsule if present.
-2. State the goal, non-goals, confidence level, known risks, and write
-   boundaries.
+2. State the goal, non-goals, confidence level, known risks, acceptance truth
+   files, and write boundaries.
 3. Ask up to three blocking questions only when the next action cannot reach
    95% confidence.
 4. Update `Harness/tasks/<task-id>/PROGRESS.md#Heartbeat` before dispatching
@@ -138,20 +148,27 @@ Use `Harness/subagents.md` as the orchestration methodology and
 ## Second Plan
 
 After exploration, synthesize facts found, assumptions, risks,
-accepted/rejected options, tasks, read/write sets, verification path, and
-rollback or recovery plan.
+accepted/rejected options, Mini PRD, AC IDs, UI/API contracts, tasks,
+read/write sets, verification path, and rollback or recovery plan.
 
 Write the result to `Harness/tasks/<task-id>/PLAN.md` before implementation.
 Update `Harness/tasks/<task-id>/PROGRESS.md#Heartbeat`.
 
+The second plan must pass:
+
+- PRD-GATE: goal, scope, non-scope, user flow, and verification commands exist.
+- AC-GATE: each behavior has an AC ID and Given/When/Then.
+- CONTRACT-GATE: UI/API/state contracts exist when the feature touches UI/API/state.
+- TEST-GATE: verification commands and test levels map to AC IDs.
+- IMPLEMENT-GATE: implementer forbidden set includes PRD, AC, UI/API contracts, test plan, and validation report unless a Change Request is approved.
+
 ## Build And Review
 
-1. `test-writer` defines a failing test or written manual check first.
-2. `implementer` changes only the declared write set.
-3. At least one `reviewer` checks diff, architecture, risks, and missing tests.
-4. For cross-layer or risky work, run separate reviewers for architecture and
-   test adequacy.
-5. `verifier` runs the declared checks and records exact evidence.
+1. `test-writer` defines failing tests or written manual checks from AC IDs and contracts first.
+2. `implementer` changes only the declared write set and may not edit truth files without Change Request.
+3. `verifier` or independent validator runs AC-mapped checks against running behavior and records an acceptance result matrix.
+4. At least one `reviewer` checks diff, architecture, risks, missing tests, and AC traceability.
+5. For cross-layer or risky work, run separate reviewers for spec/AC compliance, architecture, and test adequacy.
 
 ## Browser And API Evidence
 
@@ -164,6 +181,8 @@ Chrome DevTools, CDP, Playwright, or a documented real-browser run:
 - capture failed network requests
 - collect backend logs when the flow crosses an API
 - record screenshot, trace, video, or manual evidence path
+- produce an AC-by-AC acceptance result matrix
+- for frontend-backend paths, check UI selectors and API behavior against `HARNESS_BRIDGE.md`
 
 For API changes, run the project API/integration test path or a documented real
 request against a local service and record request, response, logs, and failure
@@ -175,9 +194,9 @@ If verification fails:
 
 1. Update `Harness/tasks/<task-id>/PROGRESS.md#Heartbeat` with failure count
    and blocker.
-2. Dispatch `debugger` with the failing command, error output, and smallest
-   relevant files.
-3. Fix the smallest reproduced failure.
+2. Dispatch `debugger` with the failed AC ID, failing command, error output,
+   trace/screenshot/network evidence, and smallest relevant files.
+3. Classify the failure layer using [DEBUG_PROTOCOL.md](DEBUG_PROTOCOL.md), then fix the smallest reproduced failure.
 4. Run reviewer again.
 5. Run verifier again.
 6. Repeat until verified or blocked by missing user input/external state.
@@ -205,7 +224,8 @@ equivalent bounded pass to append a compression suggestion to the task heartbeat
 
 Close only when:
 
-- acceptance criteria are satisfied
+- PRD-GATE, AC-GATE, CONTRACT-GATE, TEST-GATE, VALIDATION-GATE, and REVIEW-GATE are satisfied
+- acceptance criteria are satisfied and reported by AC ID
 - reviewer has no unresolved critical/high findings
 - test/API/browser evidence is recorded
 - affected Harness docs are synced

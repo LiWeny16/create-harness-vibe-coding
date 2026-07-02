@@ -32,7 +32,7 @@ temp/
 # Batch test temp projects
 tests/batch/.tmp/
 
-# Runtime mode state (managed by wf-mode-hook.mjs)
+# Runtime mode state
 Harness/.runtime/
 
 # Local agent/editor state

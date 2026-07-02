@@ -35,6 +35,7 @@ const commonAgents = [
 
 const commonSkills = [
   'wf',
+  'tdd',
   'wf-update',
   'wf-max',
   'wf-review',
@@ -59,10 +60,22 @@ const required = [
   'Harness/MEMORY.md',
   'Harness/WF.md',
   'Harness/WF-MAX.md',
+  'Harness/ACCEPTANCE_PROTOCOL.md',
+  'Harness/AGENT_ISOLATION.md',
+  'Harness/HARNESS_BRIDGE.md',
+  'Harness/DEBUG_PROTOCOL.md',
+  'Harness/MEMORY_PROTOCOL.md',
+  'Harness/templates/PRD.template.md',
+  'Harness/templates/ACCEPTANCE.template.md',
+  'Harness/templates/UI_CONTRACT.template.md',
+  'Harness/templates/API_CONTRACT.template.md',
+  'Harness/templates/TEST_PLAN.template.md',
+  'Harness/templates/PLAYWRIGHT_SPEC.template.ts',
+  'Harness/templates/VALIDATION_REPORT.template.md',
   ...memoryFiles,
   '.codex/config.toml',
-  '.codex/hooks.json',
   '.claude/settings.json',
+  '.claude/commands/wf-help.md',
   '.claude/rules/ecc/common.md',
   ...commonAgents.map(agent => `.claude/agents/${agent}.md`),
   ...commonSkills.map(skill => `.claude/skills/${skill}/SKILL.md`),
@@ -124,6 +137,11 @@ function read(rel) {
 function requireText(rel, text, label = text) {
   const body = read(rel);
   if (body && !body.includes(text)) errors.push(`${rel} missing ${label}`);
+}
+
+function forbidText(rel, text, label = text) {
+  const body = read(rel);
+  if (body && body.includes(text)) errors.push(`${rel} contains forbidden ${label}`);
 }
 
 function frontmatterField(text, field) {
@@ -215,6 +233,20 @@ for (const rel of required) {
   }
 }
 
+const removedHookArtifacts = [
+  'Harness/HOOK_PROTOCOL.md',
+  'Harness/scripts/wf-mode-hook.mjs',
+  'Harness/scripts/wf-statusline.sh',
+  'Harness/scripts/wf-statusline.ps1',
+  'tests/e2e-wf-hooks.test.mjs',
+];
+
+for (const rel of removedHookArtifacts) {
+  if (fs.existsSync(path.join(root, rel))) {
+    errors.push(`removed hook artifact should not exist: ${rel}`);
+  }
+}
+
 // Task capsule template files
 const taskTemplateDir = path.join(root, 'Harness', 'tasks', '_template');
 if (!fs.existsSync(taskTemplateDir)) {
@@ -286,6 +318,7 @@ requireText('CLAUDE.md', 'If `Harness/` exists, this repository is governed by t
 requireText('CLAUDE.md', 'Harness/MEMORY.md` is the memory/resource router', 'memory/resource router');
 requireText('CLAUDE.md', 'Harness/README.md#Load By Task', 'Harness task router');
 requireText('CLAUDE.md', 'Harness/SETUP.md` exists, follow it before normal project work', 'setup bootstrap contract');
+requireText('Harness/SETUP.md', 'Harness/MEMORY_PROTOCOL.md', 'setup memory protocol reference');
 requireText('CLAUDE.md', 'subagent-orchestrator` and `Harness/subagents.md', 'subagent orchestrator entry trigger');
 requireText('CLAUDE.md', 'Harness/PROGRESS.md` is the global task index', 'PROGRESS global task index');
 requireText('CLAUDE.md', 'Harness/tasks/', 'task capsule directory reference');
@@ -445,6 +478,8 @@ for (const agent of commonAgents) {
 
 requireText('Harness/extension.md', 'Skills should extend the harness');
 requireText('Harness/agent-workflow.md', 'Harness/tasks/<task-id>/PROGRESS.md');
+requireText('Harness/agent-workflow.md', 'TDD-GUIDE.md', 'agent workflow loads TDD guide');
+requireText('Harness/agent-workflow.md', 'real user-path test', 'agent workflow real user path requirement');
 requireText('Harness/research/README.md', 'research-results.md');
 requireText('Harness/WF.md', 'Ralph-style harness loop', 'WF loop description');
 requireText('Harness/WF.md', 'Heartbeat Protocol', 'heartbeat protocol');
@@ -453,6 +488,7 @@ requireText('Harness/WF.md', 'Explicit `/wf`, `$wf`, `wf mode`, `workflow mode`,
 requireText('Harness/WF.md', '.claude/agents/', 'WF built-in agent roster path');
 requireText('Harness/WF.md', 'Collaboration decision tree', 'WF decision tree');
 requireText('Harness/WF.md', 'Harness/tasks/', 'WF task directory reference');
+requireText('Harness/WF.md', 'IMPLEMENT-GATE', 'WF implement gate naming');
 requireText('Harness/README.md', '`wf mode`, `workflow mode`, or `wk mode`', 'WF/WK router aliases');
 requireText('Harness/README.md', 'explicit WF/WK loads subagent docs immediately', 'explicit WF/WK router output');
 requireText('.claude/skills/wf/SKILL.md', 'Harness/WF.md', 'wf skill loads core WF doc');
@@ -484,14 +520,71 @@ requireText('Harness/WF-MAX.md', 'write-set coloring', 'WF-MAX coloring algorith
 requireText('Harness/WF-MAX.md', 'wave dispatch', 'WF-MAX wave dispatch');
 requireText('Harness/README.md', '/wf-max', 'wf max router alias');
 requireText('Harness/README.md', 'WF-MAX.md', 'WF-MAX router reference');
+requireText('Harness/README.md', 'ACCEPTANCE_PROTOCOL.md', 'acceptance protocol router reference');
+requireText('Harness/README.md', 'TDD-GUIDE.md', 'TDD guide router reference');
+requireText('Harness/ACCEPTANCE_PROTOCOL.md', 'PRD-GATE', 'acceptance PRD gate');
+requireText('Harness/ACCEPTANCE_PROTOCOL.md', 'AC-GATE', 'acceptance AC gate');
+requireText('Harness/ACCEPTANCE_PROTOCOL.md', 'Acceptance Result', 'acceptance result matrix');
+requireText('Harness/ACCEPTANCE_PROTOCOL.md', 'Syntax-only checks', 'syntax-only checks are not browser acceptance evidence');
+requireText('Harness/AGENT_ISOLATION.md', 'implementer', 'agent isolation implementer rule');
+requireText('Harness/HARNESS_BRIDGE.md', 'Network Trace Collector', 'harness bridge network trace collector');
+requireText('Harness/WF-AUTO.md', 'Intent Checkpoint', 'wf-auto intent checkpoint');
+requireText('Harness/MEMORY_PROTOCOL.md', 'Scenario Memory Hints', 'memory protocol scenario hints');
+requireText('Harness/MEMORY_PROTOCOL.md', 'WF closeout', 'memory protocol WF closeout injection row');
+requireText('Harness/MEMORY_PROTOCOL.md', 'memory-master owns writes', 'memory protocol memory write ownership');
+requireText('Harness/TDD-GUIDE.md', 'Browser/UI Acceptance TDD Gate', 'browser UI acceptance TDD gate');
+requireText('Harness/TDD-GUIDE.md', 'syntax-only', 'syntax-only acceptance prohibition');
+requireText('Harness/TDD-GUIDE.md', 'Playwright/CDP', 'Playwright/CDP acceptance requirement');
+requireText('Harness/TDD-GUIDE.md', 'AC-by-AC result matrix', 'AC-by-AC TDD evidence matrix');
+requireText('Harness/tasks/_template/PLAN.md', 'User Action / API Request', 'task template user action/API test-plan column');
+requireText('Harness/templates/TEST_PLAN.template.md', 'syntax-only checks', 'test plan template syntax-only prohibition');
+requireText('.claude/skills/tdd/SKILL.md', 'Harness/ACCEPTANCE_PROTOCOL.md', 'tdd skill loads acceptance protocol');
+requireText('.claude/skills/tdd/SKILL.md', 'Harness/HARNESS_BRIDGE.md', 'tdd skill loads harness bridge');
+requireText('.claude/skills/tdd/SKILL.md', 'No syntax-only acceptance', 'tdd skill forbids syntax-only acceptance');
+requireText('.claude/agents/tdd-guide.md', 'Browser Acceptance Rules', 'tdd-guide browser acceptance rules');
+requireText('.claude/agents/tdd-guide.md', 'real user actions', 'tdd-guide real user action requirement');
+requireText('.claude/agents/test-writer.md', 'Harness/ACCEPTANCE_PROTOCOL.md', 'test-writer loads acceptance protocol');
+requireText('.claude/agents/test-writer.md', 'real user-path test', 'test-writer real user path requirement');
+requireText('.claude/agents/test-writer.md', 'network URL, method, payload', 'test-writer network assertion requirement');
+requireText('Harness/DEBUG_PROTOCOL.md', 'Layer Classification', 'debug layer classification');
+requireText('Harness/MEMORY_PROTOCOL.md', 'AC ID', 'memory AC traceability');
 requireText('Harness/subagents.md', 'Max parallelism', 'subagents max parallelism row');
 requireText('Harness/dispatch.md', 'Concurrency group', 'dispatch concurrency group field');
 requireText('Harness/dispatch.md', 'File claim', 'dispatch file claim field');
 requireText('CLAUDE.md', '/wf-max', 'wf max startup instruction');
+requireText('.claude/commands/wf-help.md', 'Do not invoke a skill', 'wf-help direct command boundary');
+requireText('.claude/commands/wf-help.md', '| `/wf-help` |', 'wf-help command row');
+requireText('.claude/commands/wf-help.md', '| `/wf-max <task>` |', 'wf-help wf-max row');
+requireText('.claude/commands/wf-help.md', '| `/wf-auto` |', 'wf-help wf-auto row');
+requireText('.claude/commands/wf-help.md', '| `/wf-readme <task>` |', 'wf-help wf-readme row');
+requireText('Harness/README.md', '## Direct Commands', 'direct commands section');
+requireText('Harness/README.md', '.claude/commands/wf-help.md', 'wf-help router reference');
 requireText('CLAUDE.md', 'three-layer architecture', 'CLAUDE.md three-layer role architecture');
-requireText('Harness/scripts/wf-mode-hook.mjs', 'agentRole', 'hook agentRole validation');
-requireText('Harness/scripts/wf-mode-hook.mjs', 'writeSet', 'hook writeSet enforcement');
-
+requireText('CLAUDE.md', 'not hook-enforced', 'CLAUDE no-hook role enforcement statement');
+requireText('Harness/README.md', 'no runtime hook state', 'README no-hook runtime statement');
+requireText('Harness/WF-AUTO.md', 'WF-AUTO Hook Exception', 'wf-auto-only hook exception');
+requireText('Harness/WF-AUTO.md', 'only `/wf-auto` may use a runtime hook', 'wf-auto-only hook boundary');
+forbidText('CLAUDE.md', 'Enforced by hooks', 'WF-MAX hook enforcement claim');
+forbidText('CLAUDE.md', 'WF-MAX hooks', 'WF-MAX hook enforcement claim');
+forbidText('Harness/README.md', 'PreToolUse hook', 'WF-MAX PreToolUse hook claim');
+forbidText('Harness/README.md', 'SessionStart hook', 'WF-MAX SessionStart hook claim');
+forbidText('Harness/README.md', 'hook-managed', 'hook-managed runtime claim');
+forbidText('Harness/README.md', 'HOOK_PROTOCOL.md', 'removed hook protocol reference');
+forbidText('Harness/WF-AUTO.md', 'Hook-Assisted Long Loop', 'wf-auto hook loop section');
+forbidText('Harness/MEMORY_PROTOCOL.md', 'Hooks may', 'hook-triggered memory claim');
+forbidText('.claude/settings.json', 'wf-mode-hook.mjs', 'Claude WF hook command registration');
+forbidText('.codex/hooks.json', 'wf-mode-hook.mjs', 'Codex WF hook command registration');
+const codexHookConfig = read('.codex/hooks.json');
+const claudeSettings = read('.claude/settings.json');
+if (codexHookConfig && !codexHookConfig.includes('wf-auto')) {
+  errors.push('.codex/hooks.json may only exist for a wf-auto hook configuration');
+}
+if (claudeSettings.includes('"hooks"') && !claudeSettings.includes('wf-auto')) {
+  errors.push('.claude/settings.json hooks may only be used for wf-auto');
+}
+if (read('.codex/config.toml').includes('hooks = true') && !codexHookConfig.includes('wf-auto')) {
+  errors.push('.codex/config.toml may enable hooks only with a wf-auto hook configuration');
+}
 if (errors.length) {
   console.error(`Harness validation failed${strict ? ' (strict)' : ''}:`);
   for (const error of errors) console.error(`- ${error}`);

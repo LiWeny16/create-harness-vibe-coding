@@ -14,17 +14,24 @@ Thin tool adapter. Authoritative guide: `Harness/TDD-GUIDE.md`.
 
 ## Load
 
-1. `Harness/TDD-GUIDE.md`
-2. ECC stack-specific testing rules (e.g., `typescript/testing.md`, `python/testing.md`)
-3. Current task `PLAN.md`
+1. `Harness/ACCEPTANCE_PROTOCOL.md`
+2. `Harness/HARNESS_BRIDGE.md`
+3. `Harness/AGENT_ISOLATION.md`
+4. `Harness/TDD-GUIDE.md`
+5. ECC stack-specific testing rules (for example `typescript/testing.md`, `python/testing.md`)
+6. Current task `PLAN.md`
 
 ## Rules
 
-1. **RED first**: Write failing test before ANY implementation code.
-2. **GREEN minimal**: Write only enough code to pass the test.
-3. **REFACTOR safe**: Improve code while keeping all tests green.
-4. **Coverage gate**: ≥80% before marking task complete.
-5. **Test names**: Describe behavior — `test('returns X when Y')`.
-6. **AAA structure**: Arrange → Act → Assert.
-7. **Error paths**: Test failure cases, not just happy path.
-8. **WF-MAX**: Test Writer agent dispatched BEFORE Implementer in every wave.
+1. **AC first**: Tests are derived from PRD acceptance criteria and must reference AC IDs.
+2. **RED first**: Write failing tests before ANY implementation code.
+3. **UI means real user path**: Browser-visible behavior requires Playwright/CDP or documented real-browser clicks, typing, navigation, and visible assertions.
+4. **No syntax-only acceptance**: Typecheck, lint, build, import tests, shallow renders, and snapshots cannot satisfy browser-visible ACs by themselves.
+5. **Network-aware**: Frontend-backend ACs require URL, method, payload, response, and duplicate-request assertions when applicable.
+6. **GREEN minimal**: Write only enough implementation to pass the AC-linked tests.
+7. **REFACTOR safe**: Improve code while keeping all tests green.
+8. **Coverage gate**: Meet the configured project coverage threshold before marking task complete.
+9. **AAA structure**: Arrange -> Act -> Assert.
+10. **Role isolation**: Test Writer must not reverse-engineer tests from implementation code. Implementer must not modify PRD, AC, UI contract, or API contract except through Change Request.
+11. **Evidence required**: Record RED, GREEN, full-check output, and for UI flows screenshot/trace/video/log evidence plus an AC-by-AC result matrix.
+12. **WF-MAX**: Acceptance/Test Writer wave completes before any Implementer wave starts.

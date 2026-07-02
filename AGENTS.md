@@ -24,6 +24,7 @@ Do not bulk-read `Harness/`. Let `Harness/README.md#Load By Task` route you.
 
 | Command | Purpose |
 |---------|---------|
+| `/wf-help` | Direct help table for all Harness WF commands |
 | `/wf-max [task]` | Maximum parallelism: CEO→Manager→Worker hierarchy (three-layer architecture: mode / agent role / dispatch permission) |
 | `/wf-review [focus]` | Cross-model peer review (use OTHER CLI) |
 | `/wf <task>` | Standard workflow mode |

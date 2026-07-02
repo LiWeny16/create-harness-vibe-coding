@@ -43,9 +43,9 @@ Based on answer, install matching rules.
 
 | Rule Set | What It Covers | Files |
 |----------|---------------|-------|
-| `common/` | **Required for all projects.** Immutability, error handling, file organization, git workflow, testing, security, agents, hooks, patterns. | `coding-style.md`, `git-workflow.md`, `testing.md`, `security.md`, `patterns.md`, `agents.md`, `hooks.md`, `performance.md`, `development-workflow.md` |
-| `typescript/` | TS/JS types, interfaces, immutability patterns, error handling with try-catch, Zod validation, React props, custom hooks, repository pattern. | `coding-style.md`, `testing.md`, `security.md`, `patterns.md`, `hooks.md` |
-| `web/` | Frontend: CSS custom properties, animation-only properties, semantic HTML, component composition, state management, image optimization, CSP, XSS, Core Web Vitals, bundle budgets. | `coding-style.md`, `design-quality.md`, `testing.md`, `security.md`, `patterns.md`, `performance.md`, `hooks.md` |
+| `common/` | **Required for all projects.** Immutability, error handling, file organization, git workflow, testing, security, agents, patterns, performance, development workflow. | `coding-style.md`, `git-workflow.md`, `testing.md`, `security.md`, `patterns.md`, `agents.md`, `performance.md`, `development-workflow.md` |
+| `typescript/` | TS/JS types, interfaces, immutability patterns, error handling with try-catch, Zod validation, React props, reusable React hooks, repository pattern. | `coding-style.md`, `testing.md`, `security.md`, `patterns.md` |
+| `web/` | Frontend: CSS custom properties, animation-only properties, semantic HTML, component composition, state management, image optimization, CSP, XSS, Core Web Vitals, bundle budgets. | `coding-style.md`, `design-quality.md`, `testing.md`, `security.md`, `patterns.md`, `performance.md` |
 | `python/` | PEP 8, type hints, immutability, async patterns, pytest, input validation. | `coding-style.md`, `testing.md`, `security.md`, `patterns.md` |
 | `golang/` | Idiomatic Go, error handling, concurrency patterns, table-driven tests, security. | `coding-style.md`, `testing.md`, `security.md`, `patterns.md` |
 | `rust/` | Ownership, lifetimes, error handling, unsafe usage, cargo-llvm-cov. | `coding-style.md`, `testing.md`, `security.md`, `patterns.md` |
@@ -96,7 +96,7 @@ These are NOT in Harness by default — the agent should consult them when filli
 | `web/performance.md` | Core Web Vitals targets, bundle budgets, loading strategy, image optimization, font loading, animation performance | Before production build |
 | `web/security.md` | CSP (nonce-based), XSS prevention, third-party script SRI, HTTPS headers, CSRF protection | Before any user-facing deploy |
 | `web/testing.md` | Visual regression (320/768/1024/1440), a11y, Lighthouse, cross-browser, responsive | Before launch |
-| `web/hooks.md` | PostToolUse format/lint/type-check, PreToolUse file size guard, Stop build verification | CI setup |
+| `web/testing.md` | format/lint/type-check, file size guard, build verification | CI setup |
 | `typescript/patterns.md` | API response envelope, custom hooks, Repository pattern | Backend-frontend contract |
 
 ### Backend Design (python/ + golang/ + rust/)

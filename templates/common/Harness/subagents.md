@@ -6,6 +6,11 @@ Use this file when work needs multiple roles, parallel reading, independent revi
 
 project files are the only durable communication channel; chat/subagent transcript state is non-authoritative. Important assumptions, decisions, blockers, evidence, and handoffs must be written to `Harness/tasks/<task-id>/PROGRESS.md` and `Harness/tasks/<task-id>/PLAN.md`, the current feature doc, `Harness/MEMORY.md`, or `Harness/memory/*` as appropriate.
 
+Subagent work is acceptance-driven. Use [AGENT_ISOLATION.md](AGENT_ISOLATION.md)
+for role/context isolation and [ACCEPTANCE_PROTOCOL.md](ACCEPTANCE_PROTOCOL.md)
+for PRD-GATE, AC-GATE, CONTRACT-GATE, TEST-GATE, VALIDATION-GATE, and
+REVIEW-GATE.
+
 ## Source Attribution
 
 This harness distills ideas from these sources. Keep the protocol local and conservative; do not import external runtimes by default.
@@ -52,6 +57,24 @@ Use the installed roster under `.claude/agents/` before inventing ad hoc roles.
 | `memory-master` | write/consolidate memory entries, dedup, cross-project extraction; dispatched on repeated failures, user corrections, and WF closeout |
 | `context-master` | analyze context usage, recommend compression at ~85% window, extract durable session knowledge during closeout |
 
+## Acceptance Role Passes
+
+These are role passes that may be handled by the built-in roster above or by
+project-specific agents. They define context boundaries even when no dedicated
+agent file exists.
+
+| Role Pass | Default Agent | Reads | Writes |
+| --- | --- | --- | --- |
+| PRD Planner | `planner` | user request, memory, research | Mini PRD/task PLAN only |
+| Acceptance Agent | `planner` or `test-writer` | PRD, user scenarios, UI requirements | AC section only |
+| Contract Agent | `architect` or `test-writer` | PRD, AC, API/schema/UI requirements | UI/API/state contract section only |
+| Test Architect | `test-writer` | AC, contracts, test utilities | tests or test plan only |
+| Implementer | `implementer` | PRD, AC, contracts, tests, relevant code | assigned implementation write set only |
+| Independent Validator | `verifier` | PRD, AC, contracts, running app/API, commands | validation report/evidence only |
+| Debugger | `debugger` | failed AC, logs, trace, screenshot, diff | smallest assigned fix set |
+
+Hard rule: implementer may not be the independent validator for the same AC ID.
+
 ## WF Default Fan-Out
 
 Explicit `/wf`, `wf mode`, `workflow mode`, or `wk mode` requires at least 3 distinct agents from `.claude/agents/` before second planning.
@@ -83,7 +106,7 @@ Choose the cheapest coordination level that is safe.
 | Solo pass | one file, low risk, clear intent | no subagent |
 | Single reviewer | small change with meaningful risk | implement, then reviewer |
 | Parallel read-only | broad reading, research, architecture, multiple independent failures | 2-3 read-only agents |
-| Serial build lane | normal feature or fix | test-writer -> implementer -> reviewers -> verifier |
+| Serial build lane | normal feature or fix | acceptance/contract -> test-writer -> implementer -> independent validator -> reviewers |
 | Isolated lanes | disjoint write sets or competing approaches | separate worktrees, then review and merge |
 | Max parallelism | 5+ disjoint files, fan-out benefit > coordination cost | /wf max: write-set coloring -> wave dispatch -> parallel review |
 
@@ -96,11 +119,11 @@ controller intake
 -> parallel planner/researcher/docs-researcher/architect subagents
 -> controller synthesis
 -> second plan with dependencies and write sets
--> test-writer
+-> acceptance/contract/test-writer
 -> implementer
+-> independent validator
 -> spec reviewer
 -> code/architecture reviewer
--> verifier
 -> if failed: debugger/fixer -> review -> verify -> loop
 -> close with evidence
 ```
@@ -138,8 +161,11 @@ Use the canonical dispatch input and handoff format in `Harness/dispatch.md`. Ev
 
 Implementation is not complete until both gates pass:
 
-1. **Spec review**: confirms the result matches the user request, PRD, feature doc, acceptance criteria, and non-goals. Extra features are failures.
+1. **Spec review**: confirms the result matches the user request, PRD, feature doc, acceptance criteria, contracts, and non-goals. Extra features are failures.
 2. **Code-quality review**: checks correctness, maintainability, architecture, tests, security, and integration risk.
+
+Validation is separate from review. Validator must produce an AC-by-AC result
+matrix from running behavior and evidence, not from the implementer's summary.
 
 If either reviewer finds issues, the implementer or debugger fixes them and the same gate runs again. Do not move to verifier with open critical/high findings.
 
@@ -174,6 +200,7 @@ Conflicts:
 Decisions:
 Next write set:
 Verification path:
+Acceptance/contract traceability:
 Residual risk:
 ```
 

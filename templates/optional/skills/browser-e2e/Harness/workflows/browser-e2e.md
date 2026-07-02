@@ -17,7 +17,7 @@ Browser evidence in this project follows the contract:
 2. **CLI mode is preferred for deterministic steps** — use `browser-use open/state/click/screenshot` for predictable flows
 3. **Agent mode is for dynamic exploration** — use Browser Use Agent API when the page structure is unknown or changing
 4. **Evidence goes to the task directory** — `Harness/tasks/<task-id>/evidence/*.png`
-5. **Stable UI selector contract** — Stable accessible labels/roles and stable test hooks such as `data-testid` are required for critical UI controls and states: inputs, buttons, filters, rows, empty/error/loading states.
+5. **Stable UI selector contract** — Stable accessible labels/roles and stable test selectors such as `data-testid` are required for critical UI controls and states: inputs, buttons, filters, rows, empty/error/loading states.
 
 ## Chrome DevTools / CDP / MCP Checklist
 
@@ -29,6 +29,13 @@ Browser evidence in this project follows the contract:
 - [ ] Test critical flow end-to-end
 - [ ] Capture screenshot, trace, video, or result artifact paths
 - [ ] Clean up any dev server or browser processes
+
+### Harness Bridge
+
+For frontend-backend flows, use `Harness/HARNESS_BRIDGE.md` to validate UI
+selectors, API payloads, seeded data, runtime state probes, and CDP/network
+traces. Browser validation must produce an AC-by-AC result matrix when the task
+has acceptance criteria.
 
 ## Quick Install
 
@@ -59,6 +66,7 @@ If `browser-use` is not installed, fall back to:
 ## Integration Points
 
 - **WF mode**: when browser-visible changes are made, follow the evidence contract in `Harness/WF.md#Browser And API Evidence`
+- **Harness Bridge**: use `Harness/HARNESS_BRIDGE.md` for UI contract, API contract, seeded test data, runtime state probes, and network trace collection.
 - **wf-browser**: Claude Code uses `.claude/skills/wf-browser/SKILL.md`; Codex uses `.agents/skills/wf-browser/SKILL.md`. Both load this workflow.
 - **MEMORY.md**: registered as optional workflow skill
 - **README.md**: routing table row "Browser E2E testing or automation" → browser-e2e

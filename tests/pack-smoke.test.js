@@ -19,8 +19,9 @@ test('npm pack includes core and optional templates', () => {
   assert.match(output, /templates\/optional\/skills\/[^/\\]+\/Harness\/workflows\/[^/\\]+\.md|templates\\optional\\skills\\[^/\\]+\\Harness\\workflows\\[^/\\]+\.md/);
   assert.match(output, /templates\/common\/Harness\/README\.md|templates\\common\\Harness\\README\.md/);
   assert.doesNotMatch(output, /templates\/common\/docs\/README\.md|templates\\common\\docs\\README\.md/);
+  assert.match(output, /templates\/common\/\.claude\/commands\/wf-help\.md|templates\\common\\.claude\\commands\\wf-help\.md/);
   assert.doesNotMatch(output, /templates\/common\/commands\/wf|templates\\common\\commands\\wf/);
-  assert.doesNotMatch(output, /templates\/common\/\.claude\/commands\/wf|templates\\common\\.claude\\commands\\wf/);
+  assert.doesNotMatch(output, /templates\/common\/\.claude\/commands\/wf(?:\.md|-max|-auto|-review|-learn|-browser|-readme|-update|-remove)|templates\\common\\.claude\\commands\\wf(?:\.md|-max|-auto|-review|-learn|-browser|-readme|-update|-remove)/);
   assert.doesNotMatch(output, /templates\/optional\/skills\/[^/\\]+\/\.claude\/commands|templates\\optional\\skills\\[^/\\]+\\.claude\\commands/);
   assert.doesNotMatch(output, /commands\/wf\.toml|commands\\wf\.toml/);
   assert.match(output, /src\/generator\.js|src\\generator\.js/);

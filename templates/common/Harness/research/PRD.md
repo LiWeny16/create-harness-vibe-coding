@@ -44,9 +44,17 @@
 
 ## 5. Acceptance Criteria
 
-- [ ] {{ACCEPTANCE_1}}
-- [ ] {{ACCEPTANCE_2}}
-- [ ] {{ACCEPTANCE_3}}
+- [ ] AC-001: {{GIVEN_WHEN_THEN_SUMMARY_1}}
+- [ ] AC-002: {{GIVEN_WHEN_THEN_SUMMARY_2}}
+- [ ] AC-003: {{GIVEN_WHEN_THEN_SUMMARY_3}}
+
+## 5a. UI/API Contract Requirements
+
+| Surface | Requirement | AC IDs |
+| --- | --- | --- |
+| UI | Critical controls have `data-testid` or stable accessible roles. | AC-001 |
+| API | Endpoint method, URL, payload, success, and failure behavior are explicit. | AC-002 |
+| State | URL, DOM, store, localStorage, database, or side effects are observable. | AC-003 |
 
 ## 6. Non-Functional Requirements
 
@@ -61,5 +69,6 @@
 
 - [ ] MVP and Non-goals are project facts; no `{{...}}` placeholders remain.
 - [ ] Decision priorities guide tradeoffs, not generic platitudes.
-- [ ] Every acceptance criterion is verifiable by test, command, or manual step.
+- [ ] Every acceptance criterion has an AC ID and is verifiable by test, command, or manual step.
+- [ ] UI/API contracts exist for any UI/API acceptance criterion.
 - [ ] If implementation diverges from the PRD, update this file before changing code.

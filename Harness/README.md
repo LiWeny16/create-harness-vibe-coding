@@ -7,7 +7,7 @@ Default load: `CLAUDE.md`, `Harness/MEMORY.md`, this file, and `Harness/PROGRESS
 ## 0-1 Flow
 
 ```text
-Idea -> Research -> PRD -> Architecture -> Plan -> Build -> Verify -> Feedback
+Idea -> Research -> Mini PRD -> Acceptance Criteria -> Contracts -> Tests -> Build -> Independent Validation -> Debug -> Memory
 ```
 
 For the full phase contract, load [lifecycle.md](lifecycle.md).
@@ -24,7 +24,10 @@ For the full phase contract, load [lifecycle.md](lifecycle.md).
 - Core rules live in `CLAUDE.md` and `.claude/rules/ecc/common.md`.
 - WF mode rules live in [WF.md](WF.md).
 - Phase rules live in [lifecycle.md](lifecycle.md).
-- Build, review, test, and subagent rules live in [agent-workflow.md](agent-workflow.md).
+- Build, review, test, and subagent rules live in [agent-workflow.md](agent-workflow.md); AC-linked TDD rules live in [TDD-GUIDE.md](TDD-GUIDE.md).
+- Acceptance-driven gates live in [ACCEPTANCE_PROTOCOL.md](ACCEPTANCE_PROTOCOL.md). PRD-derived Acceptance Criteria are the source of truth for implementation, tests, review, validation, debug, and memory.
+- Role/context isolation rules live in [AGENT_ISOLATION.md](AGENT_ISOLATION.md).
+- Frontend-backend test harness and CDP/network evidence rules live in [HARNESS_BRIDGE.md](HARNESS_BRIDGE.md).
 - Parallel dispatch rules live in [dispatch.md](dispatch.md).
 - Subagent orchestration methodology lives in [subagents.md](subagents.md).
 - Extension rules live in [extension.md](extension.md).
@@ -57,21 +60,22 @@ Routing priority: if a request explicitly says `/wf <task>`, `$wf`, `wf mode`, `
 | --- | --- | --- | --- |
 | Raw idea or vague product request | idea, vague, clarify, goal, non-goal, lifecycle | [lifecycle.md](lifecycle.md), [research/PRD.md](research/PRD.md) | clarified goal, non-goals, first questions |
 | Need market/tech direction | research, market, competitor, stack, library, pricing, policy | [research/README.md](research/README.md), [research/research-results.md](research/research-results.md) | research protocol, adopted/rejected choices |
-| Need MVP/spec | PRD, MVP, scope, requirement, acceptance, non-goal | [research/PRD.md](research/PRD.md) | one-page PRD with verifiable acceptance criteria |
+| Need MVP/spec | PRD, MVP, scope, requirement, acceptance, non-goal | [research/PRD.md](research/PRD.md), [ACCEPTANCE_PROTOCOL.md](ACCEPTANCE_PROTOCOL.md) | Mini PRD with AC IDs and verifiable acceptance criteria |
 | Need architecture or boundaries | architecture, boundary, layer, port, adapter, dependency | [architecture.md](architecture.md) | layer map, ports, constraints |
+| Need WF command help | /wf-help, wf help, command list, list wf commands | `.claude/commands/wf-help.md` | direct command table; no skill invocation |
 | Need WF mode | wf, /wf, $wf, wf mode, workflow mode, wk mode, long task, difficult, stuck, repeated failure | [WF.md](WF.md), [PROGRESS.md](PROGRESS.md), the current task `tasks/<id>/PROGRESS.md` and `tasks/<id>/PLAN.md` | exploration plan, second plan, heartbeat, recovery loop; explicit WF/WK loads subagent docs immediately |
-| Need perpetual auto-optimization | /wf-auto, $wf-auto, wf auto, auto mode, never stop, self-improve, continuous optimize | [WF-AUTO.md](WF-AUTO.md), [subagents.md](subagents.md), [dispatch.md](dispatch.md) | perpetual loop, 8-angle scan, spark search, intent checkpoint, evidence ledger; CEO never writes code |
+| Need perpetual auto-optimization | /wf-auto, $wf-auto, wf auto, auto mode, never stop, self-improve, continuous optimize | [WF-AUTO.md](WF-AUTO.md), [subagents.md](subagents.md), [dispatch.md](dispatch.md) | perpetual loop, bounded ticks, optional wf-auto-only hook exception, 8-angle scan, spark search, intent checkpoint, evidence ledger; CEO never writes code |
 | Need perpetual inspiration mode | /wf-auto-spark, $wf-auto-spark, wf auto spark, spark mode, external inspiration, discover mode, never stop | [WF-AUTO-SPARK.md](WF-AUTO-SPARK.md), [WF-AUTO.md](WF-AUTO.md), [subagents.md](subagents.md), [dispatch.md](dispatch.md) | roadmap-anchored: North Star + milestones; external spark search; ≤50% deviation guard; never auto-stops |
 | Need WF-MAX mode | /wf-max, $wf-max, wf max, maximum parallelism, CEO, Manager, Worker, fan-out | [WF-MAX.md](WF-MAX.md), [subagents.md](subagents.md), [dispatch.md](dispatch.md) | CEO-only dispatch, W0 fan-out, D-GATE, wave evidence |
 | Need peer review | /wf-review, $wf-review, peer review, second opinion, cross-check, stuck | `.claude/skills/wf-review/SKILL.md`, `.agents/skills/wf-review/SKILL.md`, `Harness/README.md` | cross-model multi-dimension review with severity classification |
 | Adding harness to existing project | existing project, onboarding, migrate, bootstrap, preserve, conflict | [extension.md](extension.md), [PROGRESS.md](PROGRESS.md), root `README.md` and package/CI files | discovered project facts, preserved config, manual registration plan |
 | README optimization | README, docs, quickstart, install docs, architecture diagram, command table, documentation polish | root `README.md`, `.claude/skills/wf-readme/SKILL.md`, [PROGRESS.md](PROGRESS.md), [architecture.md](architecture.md) as needed | approved README mode, preserved sections, proposed diff plan |
-| Need implementation plan | plan, task, write set, verify, milestone, progress | [PROGRESS.md](PROGRESS.md), the current task `tasks/<id>/PROGRESS.md` and `tasks/<id>/PLAN.md`, [agent-workflow.md](agent-workflow.md) | tasks, write set, verification commands |
-| Browser E2E testing or automation | /wf-browser, browser, e2e, web automation, form fill, screenshot verify, page test, browser test, Playwright AI, Browser Use | browser-e2e workflow, wf-browser skill, Browser Use skill | CLI commands, screenshots, agent history, verification pass/fail evidence |
+| Need implementation plan | plan, task, write set, verify, milestone, progress | [PROGRESS.md](PROGRESS.md), the current task `tasks/<id>/PROGRESS.md` and `tasks/<id>/PLAN.md`, [agent-workflow.md](agent-workflow.md), [ACCEPTANCE_PROTOCOL.md](ACCEPTANCE_PROTOCOL.md) | tasks, AC IDs, write set, verification commands |
+| Browser E2E testing or automation | /wf-browser, browser, e2e, web automation, form fill, screenshot verify, page test, browser test, Playwright AI, Browser Use, CDP | browser-e2e workflow, [HARNESS_BRIDGE.md](HARNESS_BRIDGE.md), wf-browser skill, Browser Use skill | UI/API contract, CLI commands, screenshots, traces, validation matrix |
 | Optional workflow installed | workflow, optional, ui-ux-review, github-pr-review, python-backend, ts-react-frontend | matching `workflows/*.md` (if installed), [extension.md](extension.md) | workflow-specific evidence, commands, fallback path |
-| Need durable memory or reflection | memory, remember, preference, correction, tool failure, lesson, reflection | [MEMORY.md](MEMORY.md), `Harness/memory/tool-usage-reflections.md`, `Harness/memory/user-corrections-preferences.md`, `Harness/memory/agent-lessons-patterns.md` | concise newest-first memory entry or no-op rationale |
-| Need subagents | subagent, role pack, context, inject, return format, orchestrator | [subagents.md](subagents.md), [context-loading.md](context-loading.md), [dispatch.md](dispatch.md) | controller plan, role-specific context pack, dispatch pack |
-| Need feature work | feature, implementation, TDD, test, review, closeout | [tasks/_template/PLAN.md](tasks/_template/PLAN.md), [agent-workflow.md](agent-workflow.md) | task plan, tests, implementation loop |
+| Need durable memory or reflection | memory, remember, preference, correction, tool failure, lesson, reflection, scenario memory | [MEMORY.md](MEMORY.md), [MEMORY_PROTOCOL.md](MEMORY_PROTOCOL.md), `Harness/memory/tool-usage-reflections.md`, `Harness/memory/user-corrections-preferences.md`, `Harness/memory/agent-lessons-patterns.md` | concise newest-first memory entry, scenario memory hint, or no-op rationale |
+| Need subagents | subagent, role pack, context, inject, return format, orchestrator, isolation | [subagents.md](subagents.md), [context-loading.md](context-loading.md), [dispatch.md](dispatch.md), [AGENT_ISOLATION.md](AGENT_ISOLATION.md) | controller plan, role-specific context pack, isolation-aware dispatch pack |
+| Need feature work | feature, implementation, TDD, test, review, closeout | [tasks/_template/PLAN.md](tasks/_template/PLAN.md), [agent-workflow.md](agent-workflow.md), [TDD-GUIDE.md](TDD-GUIDE.md), [ACCEPTANCE_PROTOCOL.md](ACCEPTANCE_PROTOCOL.md) | task plan, AC-linked RED tests, implementation loop |
 | Review or release check | review, release, finding, risk, evidence, verification | [agent-workflow.md](agent-workflow.md), current feature doc | findings, verification evidence |
 | Harness readiness check | validate, readiness, placeholder, missing file, release gate | `Harness/scripts/validate-harness.mjs`, `Harness/scripts/validate-harness.mjs --strict` | missing files and unresolved project placeholders |
 | Need harness update | /wf-update, $wf-update, update, check for updates, harness version | `.claude/skills/wf-update/SKILL.md`, `.agents/skills/wf-update/SKILL.md`, `Harness/.harness-version`, `Harness/scripts/wf-update-check.mjs` | script-driven comparison, SAFE/CONFLICT/PRESERVE classification, user decides conflicts |
@@ -82,10 +86,13 @@ Routing priority: if a request explicitly says `/wf <task>`, `$wf`, `wf mode`, `
 - Move phases in order unless the user asks for a fast lane.
 - Use `/wf <task>` in Claude Code, `$wf` in Codex, `/wf-max [task]` or `$wf-max`, `wf mode`, `workflow mode`, or `wk mode` when a task is long, difficult, uncertain, multi-file, or repeatedly failing.
 - Use `/wf-auto` for perpetual self-directed optimization that never stops until 8-angle exhaustion.
-- **WF-MAX Role Contract**: Three-layer architecture — global mode (`wf-max`), agent role (`ceo|manager|worker|reviewer`), dispatch permission (`writeSet`, `forbidden`, `verification`). CEO never writes source code. Workers edit only dispatch.writeSet. Edit/Write/MultiEdit enforced by PreToolUse hook per agentRole. See `CLAUDE.md` §1a.
+- **WF-MAX Role Contract**: Three-layer architecture — global mode (`wf-max`), agent role (`ceo|manager|worker|reviewer`), dispatch permission (`writeSet`, `forbidden`, `verification`). CEO never writes source code. Workers edit only dispatch.writeSet. Compliance is checked through dispatch packets, independent review, validation evidence, and task capsules. See `CLAUDE.md` §1a.
 - **WF-REVIEW Anti-Self-Review**: Must invoke the OTHER CLI (Codex↔Claude). Same-model simulation is forbidden.
-- Mode state persists in `Harness/.runtime/current-mode.json` (gitignored). SessionStart hook injects role-aware context (CEO/Worker/Manager/Reviewer). Stale modes (>30 min) auto-clear. Per-turn reinforcement prevents drift after compression.
-- Do not code before the PRD has MVP, non-goals, and acceptance criteria.
+- WF-MAX has no runtime hook state. The durable state is the task capsule, dispatch table, review findings, and validation evidence. The only runtime hook exception in Harness is the optional `/wf-auto` bounded tick hook described in `WF-AUTO.md`.
+- Do not code before PRD-GATE, AC-GATE, CONTRACT-GATE, and TEST-GATE are satisfied or explicitly compressed into a documented fast lane.
+- PRD-derived Acceptance Criteria are the source of truth. Code, tests, reviews, validation, debug, and memory must trace to AC IDs.
+- No acceptance criteria, no tests. No acceptance criteria, no code.
+- No `data-testid` or stable accessible selector, no UI acceptance. No API contract, no backend integration acceptance.
 - Unsure whether to open a task? Read [agent-workflow.md](agent-workflow.md) Section 1.
 - Do not spawn a subagent without a role, read boundary, write boundary, and return contract.
 - Do not run writing agents in parallel unless write sets are disjoint.
@@ -97,7 +104,6 @@ Routing priority: if a request explicitly says `/wf <task>`, `$wf`, `wf mode`, `
 - Do not close work without tests or recorded manual verification.
 - Do not mark work `Verified` until evidence is recorded in the current task's `tasks/<id>/PROGRESS.md` and `tasks/<id>/PLAN.md` or the feature doc.
 - Run `node Harness/scripts/validate-harness.mjs` for scaffold structure; run `node Harness/scripts/validate-harness.mjs --strict` after bootstrap and before release.
-- Run `node tests/e2e-wf-hooks.test.mjs` to verify hook enforcement works before deploying WF-MAX.
 - If a doc still has `{{...}}`, treat that section as a template, not project fact.
 
 ## Doc Map
@@ -107,13 +113,22 @@ Routing priority: if a request explicitly says `/wf <task>`, `$wf`, `wf mode`, `
 | **Router + Index** | `README.md`, `MEMORY.md`, `PROGRESS.md` |
 | **Task Capsule** | `tasks/<id>/PROGRESS.md`, `tasks/<id>/PLAN.md`, `tasks/_template/` |
 | **Workflows** | `WF.md`, `WF-MAX.md`, `WF-AUTO.md`, `WF-AUTO-SPARK.md` |
+| **Protocols** | `ACCEPTANCE_PROTOCOL.md`, `AGENT_ISOLATION.md`, `HARNESS_BRIDGE.md`, `DEBUG_PROTOCOL.md`, `MEMORY_PROTOCOL.md` |
 | **Guides** | `ECC-GUIDE.md`, `TDD-GUIDE.md`, `lifecycle.md`, `architecture.md` |
 | **Orchestration** | `subagents.md`, `context-loading.md`, `dispatch.md`, `agent-workflow.md`, `extension.md` |
 | **Research** | `research/README.md`, `research/PRD.md`, `research/research-results.md` |
+| **Acceptance Templates** | `templates/PRD.template.md`, `templates/ACCEPTANCE.template.md`, `templates/UI_CONTRACT.template.md`, `templates/API_CONTRACT.template.md`, `templates/TEST_PLAN.template.md`, `templates/PLAYWRIGHT_SPEC.template.ts`, `templates/VALIDATION_REPORT.template.md` |
 | **Memory** | `memory/tool-usage-reflections.md`, `memory/user-corrections-preferences.md`, `memory/agent-lessons-patterns.md` |
-| **Scripts** | `scripts/wf-mode-hook.mjs`, `scripts/validate-harness.mjs`, `scripts/wf-update-check.mjs`, `scripts/wf-remove.mjs` |
-| **Runtime** | `.runtime/current-mode.json` (gitignored, hook-managed), `.harness-version` |
+| **Scripts** | `scripts/validate-harness.mjs`, `scripts/wf-update-check.mjs`, `scripts/wf-remove.mjs` |
+| **Runtime** | `.harness-version` |
 | **Agents + Skills** | `.claude/agents/*`, `.claude/skills/*`, `.agents/skills/*` |
+| **Direct Commands** | `.claude/commands/wf-help.md` |
+
+## Direct Commands
+
+| Command | Purpose |
+|---|---|
+| `/wf-help` | Directly returns a table of all Harness WF commands, usage, and purpose. It does not invoke a skill or start a workflow. |
 
 ## Skill Commands
 
@@ -126,6 +141,6 @@ Routing priority: if a request explicitly says `/wf <task>`, `$wf`, `wf mode`, `
 | `/wf-review [focus]` | `$wf-review [focus]` | Cross-model peer review via Codex <-> Claude |
 | `/wf-learn` | `$wf-learn` | Force learning cycle: context-master -> memory-master |
 | `/wf-browser [task]` | `$wf-browser [task]` | AI-driven browser automation for E2E testing |
+| `/wf-readme [task]` | `$wf-readme [task]` | README preservation, merge, and documentation improvement workflow |
 | `/wf-update` | `$wf-update` | Script-driven harness update: fetch + compare + apply |
 | `/wf-remove` | `$wf-remove` | Safe harness removal: auto-delete SAFE, confirm MODIFIED, preserve USER DATA |
-```

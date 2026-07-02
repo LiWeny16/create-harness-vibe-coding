@@ -683,8 +683,8 @@ Implementation write candidates:
 - `templates/common/Harness/dispatch.md`
 - `Harness/subagents.md`
 - `templates/common/Harness/subagents.md`
-- `.claude/settings.json` hook docs/config if role-aware enforcement is encoded there
-- validators/tests that assert WF-MAX wording or hook behavior
+- `.claude/settings.json` runtime-interceptor docs/config if role-aware enforcement is encoded there
+- validators/tests that assert WF-MAX wording or runtime-interceptor behavior
 
 Acceptance:
 
@@ -699,14 +699,13 @@ Reviewer implementation map:
 | Area | Current Problem | Required Change |
 |---|---|---|
 | `AGENTS.md`, `CLAUDE.md` | Say `/wf-max active -> you are CEO` globally | Say WF-MAX sets global mode; only controller is CEO; spawned agents get explicit role/writeSet |
-| `Harness/README.md` | Command table and CEO note imply hook-injected global CEO | Scope CEO restrictions to `agentRole=ceo`; Worker writes are dispatch-scoped |
+| `Harness/README.md` | Command table and CEO note imply injected global CEO | Scope CEO restrictions to `agentRole=ceo`; Worker writes are dispatch-scoped |
 | `Harness/WF-MAX.md` | Sticky contract says current agent is CEO | Split into mode contract, CEO role contract, Manager role, Worker role |
 | WF-MAX D-GATE/tool boundary docs | CEO-specific boundaries written as global identity | Keep CEO boundaries, add Worker writeSet allow/deny rules |
 | `wf-max` skill docs | Adapter says "treat yourself as CEO" | "Top-level agent is CEO unless dispatch assigns another role" |
-| `Harness/scripts/wf-mode-hook.mjs` | `VALID_ROLES = ['ceo', null]`; hook writes/enforces CEO globally | Validate `agentRole`; enforce role + writeSet; mode detection writes mode only |
-| statusline scripts | Display only when role is CEO | Display mode for all agents and current `agentRole` when available |
-| `tests/e2e-wf-hooks.test.mjs` | Tests bake `role: 'ceo'` into global mode | Add mode-only tests, CEO deny tests, Worker writeSet allow/deny tests |
-| templates | Mirror old global CEO wording and hook behavior | Apply the same changes in `templates/common/*` |
+| statusline scripts | Display only when role is CEO | Superseded: no runtime-interceptor/statusline layer after `task-remove-hook-docs` |
+| WF runtime-interceptor e2e tests | Tests bake `role: 'ceo'` into global mode | Superseded: runtime-interceptor tests removed after broad-deletion decision |
+| templates | Mirror old global CEO wording and runtime-interceptor behavior | Superseded: templates now document dispatch/review/validation, not runtime interceptors |
 | validators | Do not yet require mode/role/writeSet separation | Require terms and docs proving global mode, `agentRole`, dispatch writeSet separation |
 
 Important runtime blocker:
@@ -892,10 +891,10 @@ Dispatch table:
 | `templates/common/Harness/dispatch.md` | Template parity for dispatch protocol | implementer | impl-role-architecture | No |
 | `Harness/subagents.md` | Subagent role and write permission language | implementer | impl-role-architecture | No |
 | `templates/common/Harness/subagents.md` | Template parity for subagent role language | implementer | impl-role-architecture | No |
-| `.claude/settings.json` | Hook docs/config only if needed; preserve valid JSON | implementer | impl-role-architecture | No |
+| `.claude/settings.json` | Runtime-interceptor docs/config only if needed; preserve valid JSON | implementer | impl-role-architecture | No |
 | `Harness/scripts/validate-harness.mjs` | Validator role-architecture assertions | implementer | impl-role-architecture | No |
 | `templates/common/scripts/validate-harness.mjs` | Template validator role-architecture assertions | implementer | impl-role-architecture | No |
-| `tests/*` | Focused hook/validator/WF-MAX regression coverage | implementer | impl-role-architecture | No |
+| `tests/*` | Focused validator/WF-MAX regression coverage | implementer | impl-role-architecture | No |
 | `Harness/tasks/framework-metrics-and-entry-contract/PLAN.md` | Dispatch/evidence notes | implementer | impl-role-architecture | No |
 | `Harness/tasks/framework-metrics-and-entry-contract/PROGRESS.md` | Progress/evidence notes | implementer | impl-role-architecture | No |
 

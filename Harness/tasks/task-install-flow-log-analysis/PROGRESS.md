@@ -23,7 +23,7 @@ Recovery action: none
 |---|------|-------|--------|--------|
 | 1 | Read required Harness startup context | main agent | startup files loaded | Done |
 | 2 | Slice install log into repeated reads, scriptable steps, and conflict points | main agent | command summary | Done |
-| 3 | Inspect installer code/docs for automation hooks | main agent | scoped source reads | Done |
+| 3 | Inspect installer code/docs for automation entry points | main agent | scoped source reads | Done |
 | 4 | Add JSON scan and AI merge guidance to CLI/docs/tests | main agent | npm test | Done |
 | 5 | Produce optimization recommendations | main agent | final answer | Done |
 
