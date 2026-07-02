@@ -483,6 +483,23 @@ function handleUserPromptSubmit(event) {
     } catch {}
   }
 
+  // ── CEO dispatch: set writeSet for Workers ──
+  const dispatchMatch = prompt.match(/(?:^|\n)\s*ceo\s+dispatch\s+(\S+(?:\s*,\s*\S+)*)/i);
+
+  if (dispatchMatch) {
+    try {
+      const mode = safeReadJSON(MODE_FILE);
+      if (mode && mode.agentRole === 'ceo') {
+        const files = dispatchMatch[1].split(',').map(f => f.trim()).filter(Boolean);
+        safeWriteJSON(MODE_FILE, {
+          ...mode,
+          agentRole: 'ceo',
+          writeSet: files,
+        });
+      }
+    } catch {}
+  }
+
   // ── Mode activation detection ──
   try {
     const modeConfigs = [
@@ -534,7 +551,7 @@ function handleUserPromptSubmit(event) {
 
     if (mode.mode === 'wf-max') {
       const roleText = agentRole === 'ceo'
-        ? `═══ WF-MAX CEO (${mode.phase || 'W0_EXPLORE'}) ═══ YOU ARE CEO, NOT IMPLEMENTER. Do NOT write code. Do NOT edit files. Spawn Workers via Agent tool for ALL source changes. Only write: PLAN.md, PROGRESS.md. Bash: ls/dir/tree/git only. You WILL be blocked if you attempt Edit/Write/MultiEdit.`
+        ? `═══ WF-MAX CEO (${mode.phase || 'W0_EXPLORE'}) ═══ YOU ARE CEO, NOT IMPLEMENTER. Do NOT edit source files directly. 1) `ceo dispatch file1,file2` to set Worker writeSet. 2) Spawn Workers via Agent tool. 3) After done: `ceo deescalate`. Workers with writeSet can edit. PLAN.md/PROGRESS.md always allowed.`
         : agentRole === 'worker'
         ? `WF-MAX WORKER — Edit only files in dispatch writeSet${mode.writeSet ? ': ' + mode.writeSet.join(', ') : ' (none)'}.`
         : agentRole === 'manager'
@@ -615,14 +632,18 @@ function handlePreToolUse(event) {
     process.exit(2);
   }
 
-  // ── CEO: block all source edits ──
+  // ── CEO: block source edits UNLESS writeSet dispatched (Workers active) ──
   if (agentRole === 'ceo') {
+    const dispatchSet = mode.writeSet && mode.writeSet.length > 0 ? mode.writeSet : [];
+
     if (toolName === 'Bash') {
       const trimmed = command.trim();
       if (/[\r\n\0]/.test(trimmed)) {
         process.stderr.write('[CEO BLOCK] Bash command contains newlines or control characters.\n');
         process.exit(2);
       }
+      // With active dispatch, allow npm/node/git (Workers need these)
+      if (dispatchSet.length > 0 && /^(npm|npx|node|git|pnpm|yarn)(\s+.*)?$/.test(trimmed)) return;
       if (/[;&|>`$]/.test(trimmed)) {
         process.stderr.write('[CEO BLOCK] Bash command contains shell metacharacters. Use a Worker.\n');
         process.exit(2);
@@ -633,6 +654,8 @@ function handlePreToolUse(event) {
 
     if (filePath) {
       if (isTaskFile(filePath) || isHarnessMeta(filePath, agentRole)) return;
+      // Active dispatch: allow edits within dispatched writeSet (Workers at work)
+      if (dispatchSet.length > 0 && isInWriteSet(filePath, dispatchSet)) return;
     }
 
     process.stderr.write(`[WF-MAX CEO BLOCK] ${toolName} on source files is forbidden for CEO. Delegate to a Worker via Agent tool. File: ${filePath || command}\n`);
