@@ -32,6 +32,28 @@
           }
         ]
       }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node Harness/scripts/wf-mode-hook.mjs"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node Harness/scripts/wf-mode-hook.mjs"
+          }
+        ]
+      }
     ]
   }
 }

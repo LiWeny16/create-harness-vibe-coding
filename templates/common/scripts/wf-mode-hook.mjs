@@ -602,10 +602,137 @@ function handlePreToolUse(event) {
   }
 }
 
+// ── Memory auto-capture (PostToolUse) ──────────────────────────────────────
+
+const MEMORY_DIR = join(__dirname, '..', 'memory');
+const MEMORY_FILES = {
+  toolReflections: join(MEMORY_DIR, 'tool-usage-reflections.md'),
+  userCorrections: join(MEMORY_DIR, 'user-corrections-preferences.md'),
+  agentLessons:    join(MEMORY_DIR, 'agent-lessons-patterns.md'),
+};
+const EPISODE_BUFFER = []; // Batched significant events
+const EPISODE_FLUSH_SIZE = 5;
+const SESSION_EVENTS = []; // Tracked for Stop hook summary
+
+// Captured in UserPromptSubmit: last user prompt text
+let _lastPrompt = '';
+
+function isSignificantError(stderr, stdout) {
+  const combined = (stderr + stdout).toLowerCase();
+  const patterns = [
+    /\berror\b/, /\bfail(?:ed|ure)?\b/, /\bexception\b/, /\btraceback\b/,
+    /\bpanic\b/, /\bfatal\b/, /\btimeout\b/, /\bdenied\b/, /\bblock(?:ed)?\b/,
+    /\bpermission denied\b/, /\bnot found\b/i, /\bout of memory\b/i,
+  ];
+  return patterns.some(p => p.test(combined));
+}
+
+function isTestResult(stdout) {
+  return /\b(tests?|pass(?:ed)?|fail(?:ed)?)\s+\d+/i.test(stdout) ||
+         /(\d+)\s+(passed|failed)/i.test(stdout);
+}
+
+function isUserCorrectionIntent(prompt) {
+  const patterns = [
+    /记住|记下来|别忘了|don'?t\s+forget|remember\s+this/i,
+    /我(说了|告诉过).*记住/i, /correction/i,
+    /不要.*再|别再|以后.*不要|下次.*不要/i,
+  ];
+  return patterns.some(p => p.test(prompt));
+}
+
+function appendMemory(filePath, entry) {
+  try {
+    mkdirSync(dirname(filePath), { recursive: true });
+    const ts = new Date().toISOString().replace('T', ' ').slice(0, 19);
+    const header = `\n### ${ts} — auto-captured by wf-mode-hook\n\n${entry}\n`;
+    const fd = openSync(filePath, constants.O_WRONLY | constants.O_CREAT | constants.O_APPEND, 0o644);
+    writeSync(fd, header);
+    closeSync(fd);
+  } catch {}
+}
+
+function flushEpisodeBuffer() {
+  if (EPISODE_BUFFER.length === 0) return;
+  const batch = EPISODE_BUFFER.splice(0);
+  const entry = batch.map(e => `- [${e.type}] ${e.tool}: ${e.summary.slice(0, 200)}`).join('\n');
+  appendMemory(MEMORY_FILES.toolReflections, `**Batch (${batch.length} events)**\n${entry}`);
+  SESSION_EVENTS.push({ type: 'batch', count: batch.length, summary: batch[0]?.summary });
+}
+
+function handlePostToolUse(event) {
+  try {
+    const toolName = event.tool_name || event.tool || '';
+    const stderr = (event.stderr || event.tool_stderr || '').toString();
+    const stdout = (event.stdout || event.tool_stdout || '').toString();
+
+    // ── Error auto-capture ──
+    if (isSignificantError(stderr, stdout)) {
+      const summary = stderr.slice(0, 300).replace(/\n/g, ' ').trim() ||
+                      stdout.slice(0, 300).replace(/\n/g, ' ').trim();
+      EPISODE_BUFFER.push({ type: 'error', tool: toolName, summary, ts: Date.now() });
+
+      // Immediate write for critical errors (exit code 2 = blocked by hook)
+      if (stderr.includes('BLOCK') || stderr.includes('exit 2') || event.exit_code === 2) {
+        appendMemory(MEMORY_FILES.toolReflections,
+          `**Hook blocked**: \`${toolName}\` — ${summary}\n` +
+          `> Reason: ${stderr.slice(0, 200)}\n`);
+      }
+    }
+
+    // ── Test result capture ──
+    if (isTestResult(stdout)) {
+      const lines = stdout.split('\n').filter(l => /\b(pass|fail|test)/i.test(l));
+      if (lines.length > 0) {
+        appendMemory(MEMORY_FILES.agentLessons,
+          `**Test run** (\`${toolName}\`):\n${lines.slice(0, 5).map(l => `> ${l.trim()}`).join('\n')}\n`);
+      }
+    }
+
+    // ── Flush buffer when full ──
+    if (EPISODE_BUFFER.length >= EPISODE_FLUSH_SIZE) {
+      flushEpisodeBuffer();
+    }
+
+    // ── User correction capture (checked against last prompt) ──
+    if (_lastPrompt && isUserCorrectionIntent(_lastPrompt)) {
+      appendMemory(MEMORY_FILES.userCorrections,
+        `**User directive**: ${_lastPrompt.slice(0, 300)}\n` +
+        `> Context: after \`${toolName}\` tool call\n`);
+      _lastPrompt = ''; // Reset — one correction per trigger
+    }
+  } catch {}
+}
+
+function handleStop() {
+  try {
+    // Flush remaining buffer
+    flushEpisodeBuffer();
+
+    // Write session summary if significant events occurred
+    if (SESSION_EVENTS.length > 0) {
+      const ts = new Date().toISOString().replace('T', ' ').slice(0, 19);
+      const summary = [
+        `## Session Summary — ${ts}`,
+        `- Events captured: ${SESSION_EVENTS.length}`,
+        ...SESSION_EVENTS.slice(0, 10).map(e =>
+          `  - ${e.type}: ${(e.summary || '').slice(0, 100)}`),
+        '',
+      ].join('\n');
+      appendMemory(MEMORY_FILES.toolReflections, summary);
+    }
+  } catch {}
+}
+
 // ── main ───────────────────────────────────────────────────────────────────
 
 const event = await readStdin();
 const eventType = event.hook_event_name || event.event || event.type || '';
+
+// Capture user prompt for PostToolUse correlation
+if (eventType === 'UserPromptSubmit') {
+  _lastPrompt = (event.prompt || event.input || '').toString();
+}
 
 switch (eventType) {
   case 'SessionStart':
@@ -616,6 +743,12 @@ switch (eventType) {
     break;
   case 'PreToolUse':
     handlePreToolUse(event);
+    break;
+  case 'PostToolUse':
+    handlePostToolUse(event);
+    break;
+  case 'Stop':
+    handleStop(event);
     break;
   default:
     break;
