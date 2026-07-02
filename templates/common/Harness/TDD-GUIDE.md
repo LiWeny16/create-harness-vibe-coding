@@ -112,18 +112,28 @@ If any check fails → dispatch Test Writer first, then Implementer.
 
 ## TDD in WF-MAX Mode
 
-In `/wf-max`, the CEO must include a Test Writer agent in the dispatch BEFORE any Implementer:
+In `/wf-max`, tests and implementation are dispatched in SEPARATE waves.
+Test Writers MUST complete before Implementers start. No parallel overlap.
 
 ```
-W2 Dispatch:
+W2a — TEST WAVE (Test Writers, parallel):
   1. Test Writer (FE) → write failing tests for UserProfile
   2. Test Writer (BE) → write failing API tests for GET /users
+  ↓ BARRIER: all tests written and confirmed RED ↓
+
+W2b — IMPLEMENTATION WAVE (Implementers, parallel):
   3. Implementer (FE) → make FE tests pass
   4. Implementer (BE) → make BE tests pass
+  ↓ BARRIER: all tests GREEN ↓
+
+W2R — REVIEW WAVE:
   5. Reviewer → verify test coverage + implementation correctness
 ```
 
-Tests and implementation are dispatched in the same wave but tests MUST be written first (earlier in dispatch order).
+**Why separate waves:** Workers in the same WF-MAX wave run in parallel.
+If Test Writers and Implementers share a wave, Implementers start before RED
+tests exist — violating the TDD gate. Two waves with an explicit barrier
+ensures tests exist before any implementation begins.
 
 ## Verification
 

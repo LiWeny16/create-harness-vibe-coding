@@ -71,7 +71,24 @@ Goal
 - If docs, tests, and code disagree, stop implementation and record the conflict in `Harness/tasks/<task-id>/PROGRESS.md`.
 - In /wf max, file claims must respect WF-MAX.md leaf condition: no split below 50 avgLines, no split when files ≤ span×2.
 
-## Handoff Format
+## Dispatch Input (Controller → Subagent)
+
+The controller MUST include these fields in the subagent's dispatch packet.
+Without them, the subagent has no way to know which rules or contracts to load.
+
+```text
+Role:               <explorer | planner | researcher | architect | test-writer | implementer-fe | implementer-be | reviewer | debugger | verifier>
+Task:               <one-sentence goal>
+ECC:                <which ECC rules to load, e.g. web/design-quality.md, python/fastapi.md. See context-loading.md#ecc-rules-per-role>
+Skills:             <which skills to activate, e.g. react-review, tdd-guide>
+API contract:       <path to api/openapi.yaml, if frontend↔backend task. Omit if N/A>
+Read set:           <files and directories the subagent may read>
+Write set:          <files the subagent may modify. "none" = read-only>
+Forbidden:          <commands, paths, or patterns the subagent must not touch>
+Verification:       <commands to run after implementation, e.g. npm test>
+```
+
+## Handoff Format (Subagent → Controller)
 
 Subagents return summaries in this shape:
 
@@ -79,9 +96,9 @@ Subagents return summaries in this shape:
 Agent:
 Task:
 Mode:
-ECC loaded:         <which ECC rule files were loaded, e.g. web/design-quality.md>
-Skills active:      <which skills were active, e.g. react-review>
-API contract:       <path to contract file, if frontend↔backend task>
+ECC loaded:         <which ECC rule files were actually loaded. Should match dispatch ECC field.>
+Skills active:      <which skills were active. Should match dispatch Skills field.>
+API contract:       <path to contract file used, if applicable>
 Files read:
 Files changed:
 Findings:

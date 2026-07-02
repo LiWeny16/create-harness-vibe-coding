@@ -236,43 +236,110 @@ The single most important integration pattern. Without this, frontend and backen
 3. **Validate at both boundaries.** Backend validates input (Pydantic/Zod), frontend validates API responses.
 4. **Error envelope is universal.** Use `common/patterns.md` format everywhere.
 
-### Contract Template
+### Contract Template (Conceptual — for human agreement)
 
 ```yaml
-# api/contract.yaml — Single source of truth for frontend-backend types
+# api/contract.yaml — Conceptual contract. Not generator-readable.
+# Human-readable agreement before generating OpenAPI/GraphQL schema.
+#
+# After agreement: generate real schema from this.
+#   OpenAPI:  fastapi.openapi() → openapi.json → openapi-typescript → types.ts
+#   GraphQL:  write schema.graphql → graphql-codegen → types.ts
+#   tRPC:     router definition IS the contract (auto-inferred types)
 
 endpoints:
   GET /api/users:
     request: {}
-    response:
-      success: true
-      data:
-        users: User[]
-      meta:
-        total: number
-        page: number
-
+    response: { success: true, data: { users: User[] }, meta: { total: number, page: number } }
   POST /api/users:
-    request:
-      body: CreateUserInput
-    response:
-      success: true
-      data:
-        user: User
+    request: { body: CreateUserInput }
+    response: { success: true, data: { user: User } }
 
 types:
-  User:
-    id: string (uuid)
-    email: string (email)
-    name: string
-    role: "admin" | "member"
-    createdAt: string (ISO 8601)
-
-  CreateUserInput:
-    email: string (email)
-    name: string (1-100 chars)
-    role: "admin" | "member" = "member"
+  User:       { id: uuid, email: email, name: string, role: admin|member, createdAt: ISO8601 }
+  CreateUserInput: { email: email, name: 1-100chars, role: admin|member = member }
 ```
+
+### Real Generator-Readable Example (OpenAPI 3.0)
+
+```yaml
+# api/openapi.yaml — Feed this to openapi-typescript or openapi-generator
+openapi: "3.0.3"
+info:
+  title: User API
+  version: "1.0.0"
+paths:
+  /api/users:
+    get:
+      operationId: listUsers
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20 }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      users: { type: array, items: { $ref: "#/components/schemas/User" } }
+                  meta:
+                    type: object
+                    properties:
+                      total: { type: integer }
+                      page: { type: integer }
+    post:
+      operationId: createUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CreateUserInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      user: { $ref: "#/components/schemas/User" }
+components:
+  schemas:
+    User:
+      type: object
+      required: [id, email, name, role, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        name: { type: string }
+        role: { type: string, enum: [admin, member] }
+        createdAt: { type: string, format: date-time }
+    CreateUserInput:
+      type: object
+      required: [email, name]
+      properties:
+        email: { type: string, format: email }
+        name: { type: string, minLength: 1, maxLength: 100 }
+        role: { type: string, enum: [admin, member], default: member }
+```
+
+```bash
+# Generate TypeScript types from OpenAPI:
+npx openapi-typescript api/openapi.yaml -o src/shared/api-types.ts
 
 ### Implementation Per Stack
 
