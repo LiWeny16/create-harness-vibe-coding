@@ -80,3 +80,227 @@ ls .claude/rules/ecc/<language>/      # MUST exist for detected/declared stack
 ```
 
 If rules are missing, the agent MUST install them before proceeding to step 1.
+
+## ECC Design Rules — Frontend + Backend Architecture
+
+Beyond coding style, ECC provides design-level guidance for both frontend and backend.
+These are NOT in Harness by default — the agent should consult them when filling
+`Harness/architecture.md` and `Harness/research/research-results.md`.
+
+### Frontend Design (web/ + typescript/)
+
+| Rule File | Design Guidance | When to Apply |
+|-----------|----------------|---------------|
+| `web/design-quality.md` | Anti-template policy, required qualities (hierarchy, depth, typography, motion, color semantics), banned patterns (stock hero, default card grids, safe gray-on-white) | Before writing any frontend code |
+| `web/patterns.md` | Compound components, render props, container/presentational split, state management (server/client/URL/form), URL as state, stale-while-revalidate, optimistic updates | When architecting frontend data flow |
+| `web/performance.md` | Core Web Vitals targets, bundle budgets, loading strategy, image optimization, font loading, animation performance | Before production build |
+| `web/security.md` | CSP (nonce-based), XSS prevention, third-party script SRI, HTTPS headers, CSRF protection | Before any user-facing deploy |
+| `web/testing.md` | Visual regression (320/768/1024/1440), a11y, Lighthouse, cross-browser, responsive | Before launch |
+| `web/hooks.md` | PostToolUse format/lint/type-check, PreToolUse file size guard, Stop build verification | CI setup |
+| `typescript/patterns.md` | API response envelope, custom hooks, Repository pattern | Backend-frontend contract |
+
+### Backend Design (python/ + golang/ + rust/)
+
+| Rule File | Design Guidance | When to Apply |
+|-----------|----------------|---------------|
+| `python/fastapi.md` | FastAPI patterns: async correctness, dependency injection, Pydantic schemas, OpenAPI quality | Python API projects |
+| `python/patterns.md` | Repository pattern, service layer, API response format | Any Python backend |
+| `golang/patterns.md` | Idiomatic Go patterns, concurrency, error handling | Go microservices |
+| `rust/patterns.md` | Ownership patterns, error handling, unsafe usage | Rust services |
+| `common/patterns.md` | Skeleton projects, Repository pattern, API response format, design pattern guidance | All projects |
+
+### Full-Stack Architecture Templates
+
+When filling `Harness/architecture.md`, use these templates based on project type:
+
+#### React + FastAPI (TypeScript frontend, Python backend)
+```
+src/
+├── frontend/          # React + TypeScript (ECC: typescript/ + web/)
+│   ├── components/    # Compound components (web/patterns.md)
+│   ├── hooks/         # Custom hooks (typescript/patterns.md)
+│   ├── lib/           # API client, utilities
+│   └── styles/        # CSS custom properties (web/coding-style.md)
+├── backend/           # FastAPI (ECC: python/ + python/fastapi.md)
+│   ├── api/           # Route handlers
+│   ├── models/        # Pydantic schemas
+│   ├── services/      # Business logic
+│   └── db/            # Repository pattern (common/patterns.md)
+└── shared/            # Shared types (optional: tRPC-style type sharing)
+```
+
+#### Next.js Full-Stack (TypeScript)
+```
+src/
+├── app/               # App Router (server components)
+├── components/        # Client components
+├── lib/               # Server actions, API helpers
+├── hooks/             # Client hooks
+└── styles/            # CSS modules or Tailwind
+```
+
+#### Go Backend + React Frontend (separate repos)
+```
+backend/               # Go (ECC: golang/)
+├── cmd/               # Entry points
+├── internal/          # Business logic
+│   ├── handler/       # HTTP handlers
+│   ├── service/       # Business logic
+│   └── repository/    # Data access (common/patterns.md)
+└── api/               # OpenAPI spec
+
+frontend/              # React + TypeScript (ECC: typescript/ + web/)
+├── src/
+│   ├── components/
+│   ├── hooks/
+│   └── lib/           # API client generated from OpenAPI
+```
+
+### API Contract Design
+
+The most important frontend-backend integration pattern:
+
+1. **Backend defines the contract**: OpenAPI (FastAPI), GraphQL schema, or gRPC proto
+2. **Frontend generates the client**: `openapi-generator`, `graphql-codegen`, or manual type definitions
+3. **Shared validation**: Both sides validate with the same schema (Zod on frontend, Pydantic on backend)
+4. **Error envelope**: Use `common/patterns.md` API response format: `{ success, data?, error?, meta? }`
+
+### When to Use What
+
+| Project Size | Architecture | ECC Rules |
+|-------------|-------------|-----------|
+| Single dev, MVP | Monolith (Next.js or FastAPI + React) | `common/` + stack rules |
+| 2-5 devs | Layered monolith (controller → service → repository) | Above + `web/` full |
+| 5+ devs, microservices | Separate frontend/backend repos, API contract generated | All applicable |
+| Real-time heavy | WebSocket + event-driven backend | Above + performance rules |
+
+## Agent Skills ↔ ECC Rules Mapping
+
+Harness dispatches different subagents for different tasks. Each subagent loads specific ECC rules
+PLUS optional stack-specific skills. The dispatch packet (see `Harness/dispatch.md`) should include
+both `ecc` and `skills` fields.
+
+### Frontend Agent Skills
+
+| Skill | When to Install | ECC Rules to Load |
+|-------|----------------|-------------------|
+| `react-review` | React/Next.js projects | `typescript/patterns.md`, `web/patterns.md`, `web/design-quality.md` |
+| `vue-review` | Vue 3 projects | `vue/` rules, `web/design-quality.md` |
+| `react-build` | Build errors in React | `typescript/hooks.md` |
+| `react-test` | TDD for React | `typescript/testing.md`, `web/testing.md` |
+| `flutter-review` | Flutter/Dart projects | `dart/` rules |
+| `e2e-runner` | Browser automation / Playwright | `web/testing.md` |
+| `a11y-architect` | Accessibility audit | `web/testing.md` (a11y section) |
+| `seo-specialist` | SEO optimization | `web/performance.md` |
+| `performance-optimizer` | Bundle size, Core Web Vitals | `web/performance.md` |
+| `ui-ux-review` (optional) | Design quality review | `web/design-quality.md` |
+| `gsap` / `animation` (external) | Complex animations | `web/performance.md` (animation section) |
+
+### Backend Agent Skills
+
+| Skill | When to Install | ECC Rules to Load |
+|-------|----------------|-------------------|
+| `fastapi-review` | Python FastAPI projects | `python/fastapi.md`, `python/patterns.md` |
+| `python-review` | Any Python project | `python/patterns.md`, `python/testing.md` |
+| `go-review` | Go microservices | `golang/patterns.md`, `golang/testing.md` |
+| `rust-review` | Rust services | `rust/patterns.md` |
+| `database-reviewer` | PostgreSQL/SQL work | `common/patterns.md` (Repository section) |
+| `java-review` | Java/Spring Boot | `java/` rules |
+| `kotlin-review` | Kotlin projects | `kotlin/` rules |
+| `csharp-review` | C#/.NET projects | `csharp/` rules |
+| `php-review` | PHP projects | `php/` rules |
+| `django-reviewer` | Django projects | `python/patterns.md` |
+| `cpp-review` | C++ projects | `cpp/` rules |
+
+### Cross-Cutting Skills
+
+| Skill | When to Install | ECC Rules to Load |
+|-------|----------------|-------------------|
+| `security-reviewer` | Any project (before commit) | `common/security.md`, stack security |
+| `code-reviewer` | After writing code | `common/code-review.md`, stack patterns |
+| `tdd-guide` | New features, bug fixes | `common/testing.md`, stack testing |
+| `refactor-cleaner` | Dead code cleanup | `common/patterns.md` |
+| `build-error-resolver` | Build failures | Stack-specific hooks |
+| `silent-failure-hunter` | Error handling audit | `common/patterns.md` |
+| `type-design-analyzer` | Type system design | `typescript/patterns.md` |
+| `mle-reviewer` | ML pipelines | `python/patterns.md` |
+
+## API Contract Specification (Frontend ↔ Backend)
+
+The single most important integration pattern. Without this, frontend and backend drift apart silently.
+
+### Contract Rules
+
+1. **Backend owns the schema.** Define types in the backend language, generate frontend types.
+2. **Never duplicate types manually.** One source of truth, code-generated copies.
+3. **Validate at both boundaries.** Backend validates input (Pydantic/Zod), frontend validates API responses.
+4. **Error envelope is universal.** Use `common/patterns.md` format everywhere.
+
+### Contract Template
+
+```yaml
+# api/contract.yaml — Single source of truth for frontend-backend types
+
+endpoints:
+  GET /api/users:
+    request: {}
+    response:
+      success: true
+      data:
+        users: User[]
+      meta:
+        total: number
+        page: number
+
+  POST /api/users:
+    request:
+      body: CreateUserInput
+    response:
+      success: true
+      data:
+        user: User
+
+types:
+  User:
+    id: string (uuid)
+    email: string (email)
+    name: string
+    role: "admin" | "member"
+    createdAt: string (ISO 8601)
+
+  CreateUserInput:
+    email: string (email)
+    name: string (1-100 chars)
+    role: "admin" | "member" = "member"
+```
+
+### Implementation Per Stack
+
+| Stack | Backend Schema | Frontend Types | Validation |
+|-------|---------------|----------------|------------|
+| Python BE + TS FE | Pydantic models | `openapi-typescript` from OpenAPI | Pydantic (BE) + Zod (FE) |
+| Go BE + TS FE | Go structs + OpenAPI | `openapi-generator` | Go validator (BE) + Zod (FE) |
+| Next.js fullstack | Zod schemas in `shared/` | Same Zod schemas | Zod (both sides) |
+| tRPC | tRPC router definitions | Auto-inferred from router | tRPC built-in |
+| GraphQL | GraphQL schema | `graphql-codegen` | GraphQL middleware + Zod (FE) |
+
+### Agent Dispatch with ECC + Skills
+
+When dispatching a subagent, the dispatch packet MUST include:
+
+```json
+{
+  "agentRole": "worker",
+  "task": "Implement user profile page",
+  "writeSet": ["src/components/UserProfile.tsx", "src/hooks/useUser.ts"],
+  "forbidden": ["src/backend/", "database/"],
+  "verification": ["npm test", "npm run lint"],
+  "ecc": ["web/design-quality.md", "web/patterns.md", "typescript/patterns.md"],
+  "skills": ["react-review"],
+  "apiContract": "api/contract.yaml"
+}
+```
+
+Different subagents get different `ecc` and `skills` arrays.
+A frontend implementer loads `web/` rules. A backend implementer loads `python/` or `golang/` rules.
+A reviewer loads `security/` + `testing/` rules. See `Harness/context-loading.md` for the full per-role mapping.

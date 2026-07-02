@@ -79,6 +79,9 @@ Subagents return summaries in this shape:
 Agent:
 Task:
 Mode:
+ECC loaded:         <which ECC rule files were loaded, e.g. web/design-quality.md>
+Skills active:      <which skills were active, e.g. react-review>
+API contract:       <path to contract file, if frontend↔backend task>
 Files read:
 Files changed:
 Findings:
