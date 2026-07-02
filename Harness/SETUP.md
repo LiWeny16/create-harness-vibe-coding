@@ -17,7 +17,7 @@ This scaffold is a 0-1 product harness:
 - lightweight harness validator
 - test/review/feedback loop
 
-It does not guess your stack or business domain. Claude Code or Codex should fill those through the lifecycle.
+It does not guess your stack or business domain. The agent MUST detect or ask, then install the right ECC rules for the project.
 
 ## Bootstrap Prompt
 
@@ -33,6 +33,7 @@ First clarify the idea, then create PRD, research, architecture, Harness/PROGRES
 
 Claude must follow this order:
 
+0. **ECC Stack Configuration** — Detect the project's tech stack. If the repo is empty or has no stack markers (`package.json`, `go.mod`, `pyproject.toml`, `Cargo.toml`, `Gemfile`, `composer.json`, `build.gradle`, etc.), ask the user: "What's your tech stack? (language/framework)" Then install the matching ECC rule sets from `~/.claude/rules/ecc/`. See `Harness/ECC-GUIDE.md` for the stack→rules mapping. Minimum: always install `common/`. Verify with `ls .claude/rules/ecc/`.
 1. Read `CLAUDE.md`, `Harness/MEMORY.md`, `Harness/README.md`, and `Harness/lifecycle.md`. Load `Harness/memory/*` only when the router or memory trigger applies.
 2. Ask up to 3 blocking product questions. If not blocked, record assumptions in `Harness/tasks/<task-id>/PLAN.md`.
 3. Fill `Harness/research/PRD.md` with MVP, non-goals, and acceptance criteria.
