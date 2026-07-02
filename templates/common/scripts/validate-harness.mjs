@@ -541,6 +541,9 @@ requireText('Harness/templates/TEST_PLAN.template.md', 'syntax-only checks', 'te
 requireText('.claude/skills/tdd/SKILL.md', 'Harness/ACCEPTANCE_PROTOCOL.md', 'tdd skill loads acceptance protocol');
 requireText('.claude/skills/tdd/SKILL.md', 'Harness/HARNESS_BRIDGE.md', 'tdd skill loads harness bridge');
 requireText('.claude/skills/tdd/SKILL.md', 'No syntax-only acceptance', 'tdd skill forbids syntax-only acceptance');
+requireText('.claude/skills/wf-remove/SKILL.md', 'User-facing removal is the slash/skill command', 'wf-remove slash command is user-facing');
+requireText('.claude/skills/wf-remove/SKILL.md', 'agent-internal execution steps', 'wf-remove script commands are agent-internal');
+requireText('.claude/skills/wf-remove/SKILL.md', 'verify residual discovery folders', 'wf-remove residual discovery verification');
 requireText('.claude/agents/tdd-guide.md', 'Browser Acceptance Rules', 'tdd-guide browser acceptance rules');
 requireText('.claude/agents/tdd-guide.md', 'real user actions', 'tdd-guide real user action requirement');
 requireText('.claude/agents/test-writer.md', 'Harness/ACCEPTANCE_PROTOCOL.md', 'test-writer loads acceptance protocol');

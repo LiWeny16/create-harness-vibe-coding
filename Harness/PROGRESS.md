@@ -21,6 +21,7 @@ Global task index. Load at session start to see what is active and what was done
 | task-acceptance-driven-workflow | Upgrade Harness to acceptance-driven agent workflow | Verified | 2026-07-02 |
 | task-remove-hook-docs | Remove WF hook enforcement artifacts and stale hook docs | Verified | 2026-07-02 |
 | task-add-wf-help | Add direct /wf-help command listing WF commands | Verified | 2026-07-02 |
+| task-wf-remove-residual-cleanup | Remove legacy Harness discovery leftovers during wf-remove | Verified | 2026-07-02 |
 
 ## Cross-Task Decisions
 

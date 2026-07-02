@@ -20,6 +20,7 @@ const ROOT = resolve(__dirname, '..');
 const SCRIPTS = resolve(ROOT, 'Harness', 'scripts');
 const TMP = resolve(ROOT, 'tests', '.tmp-e2e');
 const TMP_GUARD = resolve(ROOT, 'tests', '.tmp-e2e-guard');
+const TMP_EXTERNAL = resolve(ROOT, 'tests', '.tmp-e2e-external');
 const REMOVE = join(SCRIPTS, 'wf-remove.mjs');
 const UPDATE = join(SCRIPTS, 'wf-update-check.mjs');
 
@@ -58,11 +59,29 @@ function runNode(script, args = '', root = TMP, extraEnv = {}) {
   }
 }
 
+function runNodeWithoutWfRoot(script, args = '', cwd = ROOT, extraEnv = {}) {
+  try {
+    const env = { ...process.env, ...extraEnv };
+    delete env.WF_ROOT;
+    const result = execSync(`node "${script}" ${args}`, {
+      cwd,
+      encoding: 'utf-8',
+      stdio: ['pipe', 'pipe', 'pipe'],
+      timeout: 15000,
+      env,
+    });
+    return { ok: true, stdout: result, stderr: '' };
+  } catch (e) {
+    return { ok: false, stdout: e.stdout || '', stderr: e.stderr || e.message };
+  }
+}
+
 // ── Setup mock project ────────────────────────────────────────────
 
 console.log('\n🏗 Setting up mock project...');
 rmSync(TMP, { recursive: true, force: true });
 rmSync(TMP_GUARD, { recursive: true, force: true });
+rmSync(TMP_EXTERNAL, { recursive: true, force: true });
 mkdirSync(TMP, { recursive: true });
 
 // Create mock .harness-version with known checksums
@@ -115,6 +134,13 @@ const untrackedResidualFiles = {
   'Harness/research/research-results.md': 'my research results',
   'Harness/tasks/_template/PLAN.md': 'framework task template',
   'Harness/tasks/auto/PLAN.md': 'auto task framework plan',
+  '.claude/agents/reviewer.md': 'legacy reviewer agent',
+  '.claude/commands/wf-help.md': 'legacy wf-help command',
+  '.claude/skills/wf-max/SKILL.md': 'legacy wf-max skill',
+  '.agents/skills/wf-max/SKILL.md': 'legacy wf-max skill',
+  '.agents/skills/wf-review/SKILL.md': 'legacy wf-review skill',
+  '.claude/skills/custom-user-skill/SKILL.md': 'user custom skill',
+  '.agents/skills/custom-user-skill/SKILL.md': 'user custom skill',
 };
 for (const [file, content] of Object.entries(untrackedResidualFiles)) {
   const fullPath = join(TMP, ...file.split('/'));
@@ -204,10 +230,17 @@ const expectedSafe = [
   '.claude/rules/ecc/common.md',
   '.claude/skills/wf/SKILL.md',
   '.agents/skills/wf/SKILL.md',
+  '.claude/agents/reviewer.md',
+  '.claude/commands/wf-help.md',
+  '.claude/skills/wf-max/SKILL.md',
+  '.agents/skills/wf-max/SKILL.md',
+  '.agents/skills/wf-review/SKILL.md',
 ];
 for (const es of expectedSafe) {
   assert(safeFiles.includes(es), `Expected SAFE: ${es}`);
 }
+assert(!safeFiles.includes('.claude/skills/custom-user-skill/SKILL.md'), 'custom Claude skill is not SAFE');
+assert(!safeFiles.includes('.agents/skills/custom-user-skill/SKILL.md'), 'custom Codex skill is not SAFE');
 
 // Test 6.5: thorough purge plan removes Harness project facts but keeps real task records
 const purgePlanResult = runNode(REMOVE, '--json --purge-user-data --keep-tasks', TMP);
@@ -250,6 +283,29 @@ assert(existsSync(join(TMP_GUARD, 'Harness', '.harness-version')), 'purge keeps 
 assert(existsSync(join(TMP_GUARD, 'Harness', 'README.md')), 'purge guard keeps modified scaffold file');
 assert(!existsSync(join(TMP_GUARD, 'Harness', 'PROGRESS.md')), 'purge guard removes purgeable project fact');
 
+// Test 6.7: script-root targeting wins over cwd targeting.
+// This prevents accidental removal from the caller's current project when an
+// agent invokes a Harness script by absolute path from another Harness repo.
+mkdirSync(join(TMP_EXTERNAL, 'Harness', 'scripts'), { recursive: true });
+writeFileSync(join(TMP_EXTERNAL, 'Harness', 'scripts', 'wf-remove.mjs'), readFileSync(REMOVE, 'utf-8'), 'utf-8');
+writeFileSync(join(TMP_EXTERNAL, 'AGENTS.md'), 'external target agents\n', 'utf-8');
+writeFileSync(join(TMP_EXTERNAL, 'Harness', '.harness-version'), JSON.stringify({
+  generator: '0.6.1',
+  generated: '2026-06-25T00:00:00.000Z',
+  checksums: {
+    'AGENTS.md': sha256('external target agents\n'),
+  },
+}, null, 2) + '\n', 'utf-8');
+const externalRootResult = runNodeWithoutWfRoot(
+  join(TMP_EXTERNAL, 'Harness', 'scripts', 'wf-remove.mjs'),
+  '--json',
+  ROOT
+);
+const externalRootPlan = JSON.parse(externalRootResult.stdout.trim());
+assert(externalRootResult.ok, 'external script-root remove JSON runs without WF_ROOT');
+assert(externalRootPlan.totalSafe === 1, 'external script-root targeting ignores caller cwd Harness');
+assert(externalRootPlan.safe.includes('AGENTS.md'), 'external script-root plan sees target AGENTS.md');
+
 // Test 7: CLI DRY-RUN output
 const dryResult = runNode(REMOVE, '', TMP);
 assert(dryResult.ok, 'DRY-RUN runs without error');
@@ -260,6 +316,13 @@ assert(dryResult.stdout.includes('USER DATA'), 'DRY-RUN shows USER DATA section'
 // Test 8: --yes flag works (non-interactive)
 const yesResult = runNode(REMOVE, '--apply --yes', TMP);
 assert(yesResult.ok, '--apply --yes runs without error');
+assert(!existsSync(join(TMP, '.claude', 'agents', 'reviewer.md')), '--apply --yes removes legacy unchecksummed Claude agent');
+assert(!existsSync(join(TMP, '.claude', 'commands', 'wf-help.md')), '--apply --yes removes legacy unchecksummed direct command');
+assert(!existsSync(join(TMP, '.claude', 'skills', 'wf-max', 'SKILL.md')), '--apply --yes removes legacy unchecksummed Claude skill');
+assert(!existsSync(join(TMP, '.agents', 'skills', 'wf-max', 'SKILL.md')), '--apply --yes removes legacy unchecksummed Codex skill');
+assert(!existsSync(join(TMP, '.agents', 'skills', 'wf-review', 'SKILL.md')), '--apply --yes removes legacy unchecksummed Codex review skill');
+assert(existsSync(join(TMP, '.claude', 'skills', 'custom-user-skill', 'SKILL.md')), '--apply --yes preserves custom Claude skill');
+assert(existsSync(join(TMP, '.agents', 'skills', 'custom-user-skill', 'SKILL.md')), '--apply --yes preserves custom Codex skill');
 
 // ── TEST: wf-update-check.mjs ─────────────────────────────────────
 
@@ -482,6 +545,7 @@ assert(crlfHash === lfHash, 'CRLF normalizes to LF for checksums');
 
 rmSync(TMP, { recursive: true, force: true });
 rmSync(TMP_GUARD, { recursive: true, force: true });
+rmSync(TMP_EXTERNAL, { recursive: true, force: true });
 console.log('\n🧹 Cleaned up temp files.');
 
 // ── Summary ────────────────────────────────────────────────────────
