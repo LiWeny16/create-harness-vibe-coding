@@ -99,7 +99,7 @@ const contextPacks = [
   'Docs Researcher:',
   'Architect:',
   'Test Writer:',
-  'Implementer:',
+  'Implementer', // matches "Implementer:", "Implementer (Frontend):", "Implementer (Backend):"
   'Reviewer:',
   'Debugger:',
   'Verifier:',
