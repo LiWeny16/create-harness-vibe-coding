@@ -35,6 +35,9 @@ const RUNTIME_DIR = join(__dirname, '..', '.runtime');
 const MODE_FILE = join(RUNTIME_DIR, 'current-mode.json');
 const MAX_MODE_BYTES = 16384; // Expanded for writeSet/forbidden/verification fields
 const STALE_MODE_MS = 30 * 60 * 1000; // 30 min — clear modes from prior sessions
+const GOALS_FILE = join(RUNTIME_DIR, 'goals.json');
+const MAX_GOAL_BYTES = 65536;
+const MAX_GOAL_DESC = 500;
 
 const VALID_MODES = ['wf-max', 'wf-review', null];
 const VALID_ROLES = ['ceo', 'manager', 'worker', 'reviewer', null];
@@ -153,6 +156,48 @@ function safeWriteJSON(filePath, obj) {
   }
 }
 
+// ── Goal persistence (survives Claude Code goal auto-clear) ───────────────
+
+function readGoals() {
+  try {
+    if (!existsSync(GOALS_FILE)) return { goals: [] };
+    const st = lstatSync(GOALS_FILE);
+    if (!st.isFile() || st.size > MAX_GOAL_BYTES) return { goals: [] };
+    const raw = readFileSync(GOALS_FILE, 'utf8').trim();
+    if (!raw) return { goals: [] };
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed.goals)) return { goals: [] };
+    parsed.goals = parsed.goals.filter(g =>
+      typeof g.id === 'string' && g.id.length > 0 && g.id.length < 128 &&
+      typeof g.description === 'string' && g.description.length > 0 &&
+      ['active', 'completed', 'abandoned'].includes(g.status)
+    );
+    return parsed;
+  } catch { return { goals: [] }; }
+}
+
+function writeGoals(goalsObj) {
+  try {
+    mkdirSync(dirname(GOALS_FILE), { recursive: true });
+    const tmp = join(dirname(GOALS_FILE),
+      `.${basename(GOALS_FILE)}.${process.pid}.${randomBytes(4).toString('hex')}.tmp`);
+    const O_NOFOLLOW = typeof constants.O_NOFOLLOW === 'number' ? constants.O_NOFOLLOW : 0;
+    let fd;
+    try {
+      fd = openSync(tmp, constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | O_NOFOLLOW, 0o600);
+      writeSync(fd, JSON.stringify(goalsObj, null, 2) + '\n');
+    } finally {
+      if (fd !== undefined) closeSync(fd);
+    }
+    renameSync(tmp, GOALS_FILE);
+  } catch {}
+}
+
+function getActiveGoals() {
+  const data = readGoals();
+  return data.goals.filter(g => g.status === 'active');
+}
+
 // ── Path normalization (fixed for Windows absolute paths) ──────────────────
 
 function getProjectRoot() {
@@ -233,6 +278,19 @@ async function readStdin() {
 // ── Event handlers ─────────────────────────────────────────────────────────
 
 function handleSessionStart() {
+  // ── Goal persistence: re-inject active goals even if Claude Code cleared them ──
+  const activeGoals = getActiveGoals();
+  if (activeGoals.length > 0) {
+    const goalLines = activeGoals.map((g, i) => `${i + 1}. [${g.id}] ${g.description}`);
+    process.stdout.write([
+      `ACTIVE GOALS (${activeGoals.length}) — Harness-persisted, will NOT auto-clear:`,
+      ...goalLines,
+      'To complete a goal: "goal complete <id>" or "goal done <id>".',
+      'To abandon: "goal abandon <id>".',
+      '',
+    ].join('\n'));
+  }
+
   let mode;
   try { mode = safeReadJSON(MODE_FILE); } catch {}
 
@@ -314,11 +372,38 @@ function handleSessionStart() {
 }
 
 function handleUserPromptSubmit(event) {
+  const prompt = (event.prompt || event.input || '').toString();
+  const lower = prompt.toLowerCase();
+
+  // ── Goal command detection (Harness-persisted, NOT pattern-match auto-clear) ──
+  const goalSetMatch = prompt.match(/(?:^|\n)\s*(?:goal\s+set|goal\s+add|\/goal)\s+(.+?)(?:\n|$)/i);
+  const goalCompleteMatch = prompt.match(/(?:^|\n)\s*goal\s+(?:complete|done)\s+(\S+)/i);
+  const goalAbandonMatch = prompt.match(/(?:^|\n)\s*goal\s+abandon\s+(\S+)/i);
+
+  if (goalSetMatch) {
+    const desc = goalSetMatch[1].trim().slice(0, MAX_GOAL_DESC);
+    const data = readGoals();
+    const id = 'g' + Date.now().toString(36);
+    data.goals.push({ id, description: desc, status: 'active', createdAt: new Date().toISOString(), completedAt: null });
+    writeGoals(data);
+  }
+
+  if (goalCompleteMatch) {
+    const id = goalCompleteMatch[1];
+    const data = readGoals();
+    const g = data.goals.find(g => g.id === id && g.status === 'active');
+    if (g) { g.status = 'completed'; g.completedAt = new Date().toISOString(); writeGoals(data); }
+  }
+
+  if (goalAbandonMatch) {
+    const id = goalAbandonMatch[1];
+    const data = readGoals();
+    const g = data.goals.find(g => g.id === id && g.status === 'active');
+    if (g) { g.status = 'abandoned'; g.completedAt = new Date().toISOString(); writeGoals(data); }
+  }
+
   // ── Mode activation detection ──
   try {
-    const prompt = (event.prompt || event.input || '').toString();
-    const lower = prompt.toLowerCase();
-
     if (lower.includes('/wf-max') || lower.match(/\bwf\s+max\b/)) {
       safeWriteJSON(MODE_FILE, {
         active: true,
@@ -346,6 +431,20 @@ function handleUserPromptSubmit(event) {
 
   // ── Per-turn reinforcement ──
   try {
+    // Active goal reminder (always shown, independent of mode)
+    const activeGoals = getActiveGoals();
+    if (activeGoals.length > 0) {
+      const goalReminder = activeGoals.length === 1
+        ? `Active goal: [${activeGoals[0].id}] ${activeGoals[0].description}`
+        : `Active goals (${activeGoals.length}): ` + activeGoals.map(g => `[${g.id}] ${g.description}`).join(' | ');
+      process.stdout.write(JSON.stringify({
+        hookSpecificOutput: {
+          hookEventName: 'UserPromptSubmit',
+          additionalContext: `GOAL TRACKING: ${goalReminder}. Say "goal complete <id>" when done, "goal abandon <id>" to drop.`,
+        },
+      }));
+    }
+
     const mode = safeReadJSON(MODE_FILE);
     if (!mode?.active) return;
 
