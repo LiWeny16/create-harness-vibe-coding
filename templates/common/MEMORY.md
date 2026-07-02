@@ -39,9 +39,9 @@ Stack-specific agents can be added after the product shape is known.
 
 Codex repo-skill mirrors live under `../.agents/skills/` with the same skill names.
 
-- [browser-e2e](workflows/browser-e2e.md)
-
 Stack-specific skills can be added after the product shape is known.
+
+Optional workflows (when installed): browser-e2e.
 
 ## Rules (Harness Constraints)
 
