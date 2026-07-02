@@ -340,6 +340,7 @@ components:
 ```bash
 # Generate TypeScript types from OpenAPI:
 npx openapi-typescript api/openapi.yaml -o src/shared/api-types.ts
+```
 
 ### Implementation Per Stack
 
