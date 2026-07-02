@@ -57,7 +57,7 @@ The controller MUST include these fields in the subagent's dispatch packet.
 Without them, the subagent has no way to know which rules or contracts to load.
 
 ```text
-Role:               <explorer | planner | researcher | architect | test-writer | implementer-fe | implementer-be | reviewer | debugger | verifier>
+Role:               <installed agent name or bounded role, e.g. planner, implementer-fe, reviewer, memory-master>
 Task:               <one-sentence goal>
 ECC:                <which ECC rules to load, e.g. web/design-quality.md, python/fastapi.md. See context-loading.md#ecc-rules-per-role>
 Skills:             <which skills to activate, e.g. react-review, tdd-guide>

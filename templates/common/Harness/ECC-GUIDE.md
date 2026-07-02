@@ -115,11 +115,11 @@ Write the project-specific structure in `Harness/architecture.md`. Use the ECC r
 
 ### API Contract
 
-See [API Contract Rules](#api-contract-rules) below for the full spec.
+See [Contract Rules](#contract-rules) below for the full spec.
 
 ## Agent Skills + ECC Rules
 
-Dispatch packets may include both `ecc` and `skills` fields. `Harness/context-loading.md#ECC Rules Per Role` owns the role-to-ECC mapping. This guide owns stack detection and the catalog of available ECC rule sets.
+Dispatch packets MUST include `ecc` and SHOULD include `skills` fields (use `skills: none` when no skill applies). `Harness/context-loading.md#ecc-rules-per-role` owns the role-to-ECC mapping. This guide owns stack detection and the catalog of available ECC rule sets.
 
 ## API Contract Specification (Frontend ↔ Backend)
 
