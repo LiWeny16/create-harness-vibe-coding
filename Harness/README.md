@@ -133,6 +133,7 @@ Harness/scripts/wf-update-check.mjs checksum-based update checker
 Harness/scripts/wf-remove.mjs      safe harness removal
 Harness/scripts/scan-clean.mjs     template scan utility
 Harness/ECC-GUIDE.md                stack-to-ECC-rules mapping and bootstrap detection
+Harness/TDD-GUIDE.md                TDD workflow: red-green-refactor, coverage gate, per-stack setup
 Harness/lifecycle.md               0-1 product flow
 Harness/subagents.md               controller-led subagent orchestration
 Harness/context-loading.md         dynamic loading and subagent packs

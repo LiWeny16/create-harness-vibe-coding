@@ -35,13 +35,16 @@ Stack-specific agents can be added after the product shape is known.
 - [wf-max](../.claude/skills/wf-max/SKILL.md) — maximum-parallelism workflow: write-set coloring, wave dispatch, parallel review per dimension.
 - [wf-auto](../.claude/skills/wf-auto/SKILL.md) — perpetual auto-optimization: 8-angle internal scan, intent checkpoints, evidence ledger.
 - [wf-auto-spark](../.claude/skills/wf-auto-spark/SKILL.md) — perpetual inspiration mode: external spark search, long-term roadmap with staged milestones, ≤50% deviation guard.
+- [tdd](../.claude/skills/tdd/SKILL.md) — test-driven development: red-green-refactor, ≥80% coverage gate, enforces tests-first methodology.
 	- [wf-remove](../.claude/skills/wf-remove/SKILL.md) — Safely remove Harness framework files (SAFE/MODIFIED/USER classes), auto-prune empty directories, backup option.
 
 Codex repo-skill mirrors live under `../.agents/skills/` with the same skill names.
 
 Stack-specific skills can be added after the product shape is known.
 
-Optional workflows (when installed): browser-e2e.
+- [browser-e2e](workflows/browser-e2e.md)
+
+Stack-specific skills can be added after the product shape is known.
 
 ## Rules (Harness Constraints)
 
