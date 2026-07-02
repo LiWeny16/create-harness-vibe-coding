@@ -2,6 +2,8 @@
 
 Task-level implementation plan and evidence. Main agent writes after second planning; implementer reads before coding.
 
+> **Task naming**: See `NAMING.md`. Format: `<verb>-<noun>[-detail]`, kebab-case, ≤40 chars. Directory name = task ID.
+
 ## Goal
 
 ## Acceptance Criteria

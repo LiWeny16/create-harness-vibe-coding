@@ -147,6 +147,20 @@ function listMarkdownFiles(rel) {
     .map(entry => `${normalizedRel}/${entry.name}`);
 }
 
+// Task naming convention: <verb>-<noun>[-detail], kebab-case, ≤40 chars
+// Reserved: _template (system), auto (auto-mode capsule)
+const TASK_NAME_RE = /^[a-z]+(-[a-z0-9]+){1,4}$/;
+const TASK_NAME_MAX = 40;
+const TASK_RESERVED = new Set(['_template', 'auto']);
+
+function validateTaskName(name) {
+  if (TASK_RESERVED.has(name)) return null; // reserved, skip
+  if (name.startsWith('_')) return `Task name "${name}" — leading underscore reserved for system dirs`;
+  if (name.length > TASK_NAME_MAX) return `Task name "${name}" — ${name.length} chars, max ${TASK_NAME_MAX}`;
+  if (!TASK_NAME_RE.test(name)) return `Task name "${name}" — must be <verb>-<noun>[-detail], kebab-case, 2-5 words`;
+  return null;
+}
+
 function unresolvedTemplatePlaceholders(text) {
   const placeholders = [];
   const pattern = /\{\{([^{}\r\n]+)\}\}/g;
@@ -211,6 +225,10 @@ const taskDirs = fs.existsSync(path.join(root, 'Harness', 'tasks'))
       .map(e => e.name)
   : [];
 for (const taskDir of taskDirs) {
+  // Validate task naming convention
+  const nameErr = validateTaskName(taskDir);
+  if (nameErr) errors.push(nameErr);
+
   const planPath = `Harness/tasks/${taskDir}/PLAN.md`;
   const planText = read(planPath);
   if (!planText) continue;
