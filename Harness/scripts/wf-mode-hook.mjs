@@ -39,9 +39,9 @@ const GOALS_FILE = join(RUNTIME_DIR, 'goals.json');
 const MAX_GOAL_BYTES = 65536;
 const MAX_GOAL_DESC = 500;
 
-const VALID_MODES = ['wf-max', 'wf-review', null];
+const VALID_MODES = ['wf', 'wf-max', 'wf-auto', 'wf-auto-spark', 'wf-review', 'wf-learn', null];
 const VALID_ROLES = ['ceo', 'manager', 'worker', 'reviewer', null];
-const VALID_PHASES = ['W0_EXPLORE', 'W1_ARCHITECTURE', 'W2_IMPLEMENT', 'W2R_REVIEW', 'W3_DEPENDENT', 'INTEGRATION', 'CLOSEOUT', 'REVIEW', null];
+const VALID_PHASES = ['W0_EXPLORE', 'W1_ARCHITECTURE', 'W2_IMPLEMENT', 'W2R_REVIEW', 'W3_DEPENDENT', 'INTEGRATION', 'CLOSEOUT', 'REVIEW', 'SPARK', 'AUTO', 'LEARN', null];
 const BLOCKED_TOOLS = ['Edit', 'Write', 'MultiEdit', 'Bash'];
 const MAX_TASKID_BYTES = 128;
 
@@ -368,6 +368,22 @@ function handleSessionStart() {
       'Use Bash to invoke the OTHER CLI (codex/claude). NEVER self-review.',
       'Your role: prepare context, invoke peer, synthesize findings.',
     ].join('\n'));
+  } else if (mode.mode === 'wf') {
+    process.stdout.write([
+      'WF MODE ACTIVE — Task-bounded workflow with heartbeat and recovery loop.',
+    ].join('\n'));
+  } else if (mode.mode === 'wf-auto') {
+    process.stdout.write([
+      'WF-AUTO MODE ACTIVE — Perpetual auto-optimization. Never stops until 8-angle exhaustion.',
+    ].join('\n'));
+  } else if (mode.mode === 'wf-auto-spark') {
+    process.stdout.write([
+      'WF-AUTO-SPARK MODE ACTIVE — Perpetual inspiration. External spark search. Roadmap-anchored.',
+    ].join('\n'));
+  } else if (mode.mode === 'wf-learn') {
+    process.stdout.write([
+      'WF-LEARN MODE ACTIVE — Force learning cycle: context-master -> memory-master.',
+    ].join('\n'));
   }
 }
 
@@ -404,28 +420,28 @@ function handleUserPromptSubmit(event) {
 
   // ── Mode activation detection ──
   try {
-    if (lower.includes('/wf-max') || lower.match(/\bwf\s+max\b/)) {
-      safeWriteJSON(MODE_FILE, {
-        active: true,
-        mode: 'wf-max',
-        agentRole: 'ceo',
-        role: 'ceo', // legacy compat
-        taskId: 'wf-max-current-task',
-        phase: 'W0_EXPLORE',
-        explicitInvocation: true,
-        startedAt: new Date().toISOString(),
-      });
-    } else if (lower.includes('/wf-review') || lower.match(/\bwf\s+review\b/)) {
-      safeWriteJSON(MODE_FILE, {
-        active: true,
-        mode: 'wf-review',
-        agentRole: 'ceo',
-        role: 'ceo', // legacy compat
-        taskId: 'wf-review-current',
-        phase: 'REVIEW',
-        explicitInvocation: true,
-        startedAt: new Date().toISOString(),
-      });
+    const modeConfigs = [
+      { trigger: ['/wf-auto-spark', 'wf auto spark', 'spark mode'], mode: 'wf-auto-spark', taskId: 'wf-auto-spark-current', phase: 'SPARK' },
+      { trigger: ['/wf-max', 'wf max'], mode: 'wf-max', taskId: 'wf-max-current-task', phase: 'W0_EXPLORE' },
+      { trigger: ['/wf-auto', 'wf auto', 'auto mode'], mode: 'wf-auto', taskId: 'wf-auto-current', phase: 'AUTO' },
+      { trigger: ['/wf-review', 'wf review'], mode: 'wf-review', taskId: 'wf-review-current', phase: 'REVIEW' },
+      { trigger: ['/wf-learn', 'wf learn'], mode: 'wf-learn', taskId: 'wf-learn-current', phase: 'LEARN' },
+      { trigger: ['/wf', 'wf mode', 'workflow mode', 'wk mode'], mode: 'wf', taskId: 'wf-current-task', phase: 'W0_EXPLORE' },
+    ];
+    for (const cfg of modeConfigs) {
+      if (cfg.trigger.some(t => lower.includes(t))) {
+        safeWriteJSON(MODE_FILE, {
+          active: true,
+          mode: cfg.mode,
+          agentRole: 'ceo',
+          role: 'ceo',
+          taskId: cfg.taskId,
+          phase: cfg.phase,
+          explicitInvocation: true,
+          startedAt: new Date().toISOString(),
+        });
+        break;
+      }
     }
   } catch {}
 
@@ -473,6 +489,34 @@ function handleUserPromptSubmit(event) {
         hookSpecificOutput: {
           hookEventName: 'UserPromptSubmit',
           additionalContext: 'WF-REVIEW ACTIVE. Use Bash to invoke the OTHER CLI. NEVER self-review.',
+        },
+      }));
+    } else if (mode.mode === 'wf') {
+      process.stdout.write(JSON.stringify({
+        hookSpecificOutput: {
+          hookEventName: 'UserPromptSubmit',
+          additionalContext: 'WF MODE ACTIVE — Task-bounded workflow with heartbeat and recovery loop.',
+        },
+      }));
+    } else if (mode.mode === 'wf-auto') {
+      process.stdout.write(JSON.stringify({
+        hookSpecificOutput: {
+          hookEventName: 'UserPromptSubmit',
+          additionalContext: 'WF-AUTO MODE ACTIVE — Perpetual auto-optimization. Never stops until 8-angle exhaustion.',
+        },
+      }));
+    } else if (mode.mode === 'wf-auto-spark') {
+      process.stdout.write(JSON.stringify({
+        hookSpecificOutput: {
+          hookEventName: 'UserPromptSubmit',
+          additionalContext: 'WF-AUTO-SPARK MODE ACTIVE — Perpetual inspiration. External spark search. Roadmap-anchored.',
+        },
+      }));
+    } else if (mode.mode === 'wf-learn') {
+      process.stdout.write(JSON.stringify({
+        hookSpecificOutput: {
+          hookEventName: 'UserPromptSubmit',
+          additionalContext: 'WF-LEARN MODE ACTIVE — Force learning cycle: context-master -> memory-master.',
         },
       }));
     }
