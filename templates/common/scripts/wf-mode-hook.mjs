@@ -1,24 +1,27 @@
 #!/usr/bin/env node
 /**
- * wf-mode-hook.mjs — Claude Code hook for WF / WF-MAX enforcement
+ * wf-mode-hook.mjs - Harness workflow hook for Claude Code/Codex.
  *
- * Modes: wf, wf-max, wf-auto, wf-auto-spark, wf-review, wf-learn
- * Roles (wf-max): ceo, ceo-escalated, worker, manager, reviewer
- *
- * NO-DEADLOCK GUARANTEES:
- *   - Stale mode (>30 min) auto-cleared on SessionStart
- *   - Corrupted/missing mode file → no blocking (fail-open)
- *   - Any state → "ceo done" clears everything
- *   - isTaskFile / isHarnessMeta always allowed
- *
- * Hook events:
- *   SessionStart    → auto-clear stale; inject context for fresh mode
- *   UserPromptSubmit→ detect mode activation; goals; escalation commands
- *   PreToolUse      → enforce agentRole + writeSet
+ * Authority model:
+ * - Harness/.runtime/current-mode.json is observable workflow state only.
+ * - Per-agent dispatch context is the authority for source-write permissions.
+ * - Dispatch context may arrive on the hook event or via HARNESS_* env vars.
  */
 
-import { constants, openSync, readSync, writeSync, closeSync, existsSync, mkdirSync, lstatSync, renameSync } from 'node:fs';
-import { join, dirname, basename } from 'node:path';
+import {
+  closeSync,
+  constants,
+  existsSync,
+  lstatSync,
+  mkdirSync,
+  openSync,
+  readFileSync,
+  readSync,
+  renameSync,
+  writeFileSync,
+  writeSync,
+} from 'node:fs';
+import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomBytes } from 'node:crypto';
 
@@ -27,479 +30,612 @@ const RUNTIME_DIR = join(__dirname, '..', '.runtime');
 const MODE_FILE = join(RUNTIME_DIR, 'current-mode.json');
 const GOALS_FILE = join(RUNTIME_DIR, 'goals.json');
 
-const MAX_MODE_BYTES = 16384;
-const MAX_GOAL_BYTES = 65536;
+const MAX_MODE_BYTES = 16 * 1024;
+const MAX_GOAL_BYTES = 64 * 1024;
 const MAX_GOAL_DESC = 500;
-const MAX_ESCALATION_FILES = 1;
 const MAX_TASKID_BYTES = 128;
+const MAX_ESCALATION_FILES = 1;
 const STALE_MODE_MS = 30 * 60 * 1000;
 
-const VALID_MODES = ['wf', 'wf-max', 'wf-auto', 'wf-auto-spark', 'wf-review', 'wf-learn', null];
-const VALID_ROLES = ['ceo', 'ceo-escalated', 'worker', 'manager', 'reviewer', null];
-const VALID_PHASES = ['W0_EXPLORE', 'W1_ARCHITECTURE', 'W2_IMPLEMENT', 'W2R_REVIEW', 'W3_DEPENDENT', 'INTEGRATION', 'CLOSEOUT', 'REVIEW', 'SPARK', 'AUTO', 'LEARN', null];
-const BLOCKED_TOOLS = ['Edit', 'Write', 'MultiEdit', 'Bash'];
+const VALID_MODES = new Set(['wf', 'wf-max', 'wf-auto', 'wf-auto-spark', 'wf-review', 'wf-learn', null]);
+const VALID_ROLES = new Set(['ceo', 'ceo-escalated', 'manager', 'worker', 'reviewer', null]);
+const VALID_PHASES = new Set([
+  'W0_EXPLORE',
+  'W1_ARCHITECTURE',
+  'W2_IMPLEMENT',
+  'W2R_REVIEW',
+  'W3_DEPENDENT',
+  'INTEGRATION',
+  'CLOSEOUT',
+  'REVIEW',
+  'SPARK',
+  'AUTO',
+  'LEARN',
+  null,
+]);
+const GUARDED_TOOLS = new Set(['Edit', 'Write', 'MultiEdit', 'Bash']);
+const SAFE_BASH = /^(ls|dir|tree|git\s+status|git\s+diff|git\s+log|git\s+branch|node\s+Harness\/scripts\/[a-z0-9_.-]+\.mjs|which|echo|type|codex|claude|npm\s+test|npm\s+run|npx\s+playwright\s+test)(\s+[^;&|>`$]*)?$/i;
 
-// ── Safe I/O ─────────────────────────────────────────────────────────────
+const PROJECT_ROOT = findProjectRoot();
 
-function safeResolveHarnessPath(filePath) {
-  try {
-    const parts = filePath.replace(/\\/g, '/').split('/').filter(Boolean);
-    let resolved = '';
-    for (const part of parts) {
-      if (part === '..') return null;
-      resolved = resolved ? join(resolved, part) : (resolved || part);
-      try {
-        const st = lstatSync(resolved);
-        if (st.isSymbolicLink()) return null;
-      } catch (e) {
-        if (e.code === 'ENOENT' && part !== parts[parts.length - 1]) return null;
-      }
+function findProjectRoot() {
+  let current = resolve(__dirname);
+  for (let i = 0; i < 12; i++) {
+    if (existsSync(join(current, 'CLAUDE.md')) || existsSync(join(current, 'package.json'))) {
+      return current;
     }
-    const normalized = resolved.replace(/\\/g, '/');
-    if (!normalized.includes('Harness/')) return null;
-    return resolved;
-  } catch { return null; }
-}
-
-function safeReadJSON(filePath, maxBytes = MAX_MODE_BYTES) {
-  try {
-    const safe = safeResolveHarnessPath(filePath);
-    if (!safe) return null;
-    const st = lstatSync(safe);
-    if (!st.isFile() || st.size > maxBytes) return null;
-    const O_NOFOLLOW = typeof constants.O_NOFOLLOW === 'number' ? constants.O_NOFOLLOW : 0;
-    let fd;
-    try {
-      fd = openSync(safe, constants.O_RDONLY | O_NOFOLLOW);
-      const buf = Buffer.alloc(maxBytes);
-      const n = readSync(fd, buf, 0, maxBytes, 0);
-      const raw = buf.slice(0, n).toString('utf8').trim();
-      if (!raw) return null;
-      const parsed = JSON.parse(raw);
-      if (!VALID_MODES.includes(parsed.mode)) return null;
-      if (parsed.agentRole !== undefined && parsed.agentRole !== '' && !VALID_ROLES.includes(parsed.agentRole)) return null;
-      if (parsed.role !== undefined && parsed.role !== '' && !VALID_ROLES.includes(parsed.role)) return null;
-      if (parsed.agentRole === '') parsed.agentRole = undefined;
-      if (parsed.role === '') parsed.role = undefined;
-      if (!parsed.agentRole && parsed.role) parsed.agentRole = parsed.role;
-      if (parsed.agentRole === undefined && parsed.role === undefined) parsed.agentRole = null;
-      if (parsed.active !== undefined && typeof parsed.active !== 'boolean') return null;
-      if (parsed.phase !== undefined && !VALID_PHASES.includes(parsed.phase)) return null;
-      if (parsed.explicitInvocation !== undefined && typeof parsed.explicitInvocation !== 'boolean') return null;
-      if (parsed.taskId && typeof parsed.taskId === 'string') {
-        parsed.taskId = parsed.taskId.replace(/[^\w-]/g, '').slice(0, MAX_TASKID_BYTES);
-        if (!parsed.taskId) parsed.taskId = 'current';
-      }
-      if (parsed.writeSet !== undefined) {
-        if (!Array.isArray(parsed.writeSet)) return null;
-        if (!parsed.writeSet.every(e => typeof e === 'string' && e.length > 0 && e.length < 1024)) return null;
-      }
-      if (parsed.forbidden !== undefined) {
-        if (!Array.isArray(parsed.forbidden)) return null;
-        if (!parsed.forbidden.every(e => typeof e === 'string' && e.length < 1024)) return null;
-      }
-      return parsed;
-    } finally { if (fd !== undefined) closeSync(fd); }
-  } catch { return null; }
-}
-
-function safeWriteJSON(filePath, obj) {
-  try {
-    mkdirSync(dirname(filePath), { recursive: true });
-    try { if (lstatSync(filePath).isSymbolicLink()) return; } catch (e) { if (e.code !== 'ENOENT') return; }
-    const tmp = join(dirname(filePath), `.${basename(filePath)}.${process.pid}.${randomBytes(4).toString('hex')}.tmp`);
-    const O_NOFOLLOW = typeof constants.O_NOFOLLOW === 'number' ? constants.O_NOFOLLOW : 0;
-    let fd;
-    try {
-      fd = openSync(tmp, constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | O_NOFOLLOW, 0o600);
-      writeSync(fd, JSON.stringify(obj, null, 2) + '\n');
-    } finally { if (fd !== undefined) closeSync(fd); }
-    renameSync(tmp, filePath);
-  } catch { /* silent-fail */ }
-}
-
-// ── Project root detection ────────────────────────────────────────────────
-
-function getProjectRoot() {
-  let dir = __dirname;
-  for (let i = 0; i < 10; i++) {
-    if (existsSync(join(dir, 'CLAUDE.md'))) return dir;
-    const parent = dirname(dir);
-    if (parent === dir) break;
-    dir = parent;
+    const parent = dirname(current);
+    if (parent === current) break;
+    current = parent;
   }
-  return join(__dirname, '..', '..');
+  return resolve(__dirname, '..', '..');
 }
 
-const ROOT = getProjectRoot();
-
-function normalizePath(p) {
-  return relative(ROOT, resolve(ROOT, p)).replace(/\\/g, '/');
+function hasTraversal(rawPath) {
+  return String(rawPath || '')
+    .replace(/\\/g, '/')
+    .split('/')
+    .some((part) => part === '..');
 }
 
-// ── File classification ───────────────────────────────────────────────────
+function normalizeProjectPath(filePath) {
+  if (!filePath || typeof filePath !== 'string') return null;
+  if (hasTraversal(filePath)) return null;
 
-function isTaskFile(fp) {
-  const n = normalizePath(fp);
-  return /^Harness\/tasks\/[^/]+\/(PROGRESS|PLAN)\.md$/.test(n);
+  const absolutePath = isAbsolute(filePath) ? resolve(filePath) : resolve(PROJECT_ROOT, filePath);
+  const relativePath = relative(PROJECT_ROOT, absolutePath).replace(/\\/g, '/');
+  if (!relativePath || relativePath === '.') return '';
+  if (relativePath === '..' || relativePath.startsWith('../') || isAbsolute(relativePath)) return null;
+  return relativePath;
 }
 
-function isHarnessMeta(fp, agentRole) {
-  const n = normalizePath(fp);
-  if (/^\.claude\/(settings\.json|rules\/ecc\/.+\.md)$/.test(n)) return true;
-  if (/^Harness\/\.runtime\//.test(n)) return true;
-  if (/^\.codex\//.test(n)) return true;
-  return false;
+function isSafeRuntimeTarget(filePath) {
+  const normalized = normalizeProjectPath(filePath);
+  return normalized === 'Harness/.runtime/current-mode.json' || normalized === 'Harness/.runtime/goals.json';
 }
 
-function isInWriteSet(fp, writeSet) {
-  const n = normalizePath(fp);
-  return writeSet.some(w => {
-    const wn = w.replace(/\\/g, '/');
-    return n === wn || n.endsWith('/' + wn) || wn.endsWith('/' + basename(n));
+function readJSONFile(filePath, maxBytes = MAX_MODE_BYTES) {
+  try {
+    const normalized = normalizeProjectPath(filePath);
+    if (!normalized) return null;
+    const absolutePath = resolve(PROJECT_ROOT, normalized);
+    const stat = lstatSync(absolutePath);
+    if (!stat.isFile() || stat.size > maxBytes) return null;
+
+    const noFollow = typeof constants.O_NOFOLLOW === 'number' ? constants.O_NOFOLLOW : 0;
+    let fd;
+    try {
+      fd = openSync(absolutePath, constants.O_RDONLY | noFollow);
+      const buffer = Buffer.alloc(maxBytes);
+      const bytes = readSync(fd, buffer, 0, maxBytes, 0);
+      const raw = buffer.subarray(0, bytes).toString('utf8').trim();
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } finally {
+      if (fd !== undefined) closeSync(fd);
+    }
+  } catch {
+    return null;
+  }
+}
+
+function writeJSONFile(filePath, value) {
+  try {
+    if (!isSafeRuntimeTarget(filePath)) return false;
+    const normalized = normalizeProjectPath(filePath);
+    const absolutePath = resolve(PROJECT_ROOT, normalized);
+    mkdirSync(dirname(absolutePath), { recursive: true });
+    try {
+      if (lstatSync(absolutePath).isSymbolicLink()) return false;
+    } catch (error) {
+      if (error.code !== 'ENOENT') return false;
+    }
+
+    const tmpPath = join(dirname(absolutePath), `.${basename(absolutePath)}.${process.pid}.${randomBytes(4).toString('hex')}.tmp`);
+    const noFollow = typeof constants.O_NOFOLLOW === 'number' ? constants.O_NOFOLLOW : 0;
+    let fd;
+    try {
+      fd = openSync(tmpPath, constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | noFollow, 0o600);
+      writeSync(fd, JSON.stringify(value, null, 2) + '\n');
+    } finally {
+      if (fd !== undefined) closeSync(fd);
+    }
+    renameSync(tmpPath, absolutePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function validateMode(rawMode) {
+  if (!rawMode || typeof rawMode !== 'object') return null;
+  const mode = { ...rawMode };
+  if (!VALID_MODES.has(mode.mode ?? null)) return null;
+  if (mode.active !== undefined && typeof mode.active !== 'boolean') return null;
+  if (!VALID_PHASES.has(mode.phase ?? null)) return null;
+  if (mode.agentRole !== undefined && mode.agentRole !== '' && !VALID_ROLES.has(mode.agentRole)) return null;
+  if (mode.role !== undefined && mode.role !== '' && !VALID_ROLES.has(mode.role)) return null;
+  if (mode.explicitInvocation !== undefined && typeof mode.explicitInvocation !== 'boolean') return null;
+
+  if (mode.agentRole === '') delete mode.agentRole;
+  if (mode.role === '') delete mode.role;
+  if (!mode.agentRole && mode.role) mode.agentRole = mode.role;
+
+  if (typeof mode.taskId === 'string') {
+    mode.taskId = sanitizeTaskId(mode.taskId);
+  }
+  if (mode.writeSet !== undefined) {
+    const writeSet = parseList(mode.writeSet);
+    if (!writeSet) return null;
+    mode.writeSet = writeSet;
+  }
+  if (mode.forbidden !== undefined) {
+    const forbidden = parseList(mode.forbidden);
+    if (!forbidden) return null;
+    mode.forbidden = forbidden;
+  }
+  return mode;
+}
+
+function readMode() {
+  return validateMode(readJSONFile(MODE_FILE, MAX_MODE_BYTES));
+}
+
+function clearMode() {
+  writeJSONFile(MODE_FILE, {
+    active: false,
+    mode: null,
+    agentRole: null,
+    phase: null,
+    clearedAt: new Date().toISOString(),
   });
 }
 
-// ── Goal persistence ──────────────────────────────────────────────────────
+function sanitizeTaskId(value) {
+  const sanitized = String(value).replace(/[^\w-]/g, '').slice(0, MAX_TASKID_BYTES);
+  return sanitized || 'current';
+}
 
-function readGoals() {
+function parseList(value) {
+  if (value === undefined || value === null || value === '') return [];
+  if (Array.isArray(value)) {
+    if (!value.every((item) => typeof item === 'string' && item.length > 0 && item.length < 1024)) return null;
+    return value.map((item) => item.trim()).filter(Boolean);
+  }
+  if (typeof value !== 'string' || value.length >= 8192) return null;
+  const trimmed = value.trim();
+  if (!trimmed) return [];
+  if (trimmed.startsWith('[')) {
+    try {
+      return parseList(JSON.parse(trimmed));
+    } catch {
+      return null;
+    }
+  }
+  return trimmed.split(/[\n,]/).map((item) => item.trim()).filter(Boolean);
+}
+
+function normalizeRole(role) {
+  if (role === undefined || role === null || role === '') return null;
+  const normalized = String(role).trim().toLowerCase();
+  return VALID_ROLES.has(normalized) ? normalized : null;
+}
+
+function pickObject(value) {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+}
+
+function readDispatchContext(event) {
+  const toolInput = pickObject(event.tool_input || event.input);
+  const candidates = [
+    pickObject(event.dispatch),
+    pickObject(event.harness),
+    pickObject(event.permission),
+    pickObject(event.context),
+    pickObject(toolInput.dispatch),
+    pickObject(toolInput.harness),
+    pickObject(toolInput.permission),
+    event,
+  ];
+
+  const merged = {};
+  for (const candidate of candidates) {
+    for (const key of ['agentRole', 'role', 'writeSet', 'forbidden', 'verification', 'taskId', 'phase']) {
+      if (candidate[key] !== undefined && merged[key] === undefined) {
+        merged[key] = candidate[key];
+      }
+    }
+  }
+
+  if (process.env.HARNESS_AGENT_ROLE || process.env.HARNESS_ROLE) {
+    merged.agentRole = process.env.HARNESS_AGENT_ROLE || process.env.HARNESS_ROLE;
+  }
+  if (process.env.HARNESS_WRITE_SET !== undefined) merged.writeSet = process.env.HARNESS_WRITE_SET;
+  if (process.env.HARNESS_FORBIDDEN !== undefined) merged.forbidden = process.env.HARNESS_FORBIDDEN;
+  if (process.env.HARNESS_VERIFICATION !== undefined) merged.verification = process.env.HARNESS_VERIFICATION;
+  if (process.env.HARNESS_TASK_ID !== undefined) merged.taskId = process.env.HARNESS_TASK_ID;
+  if (process.env.HARNESS_PHASE !== undefined) merged.phase = process.env.HARNESS_PHASE;
+
+  const agentRole = normalizeRole(merged.agentRole ?? merged.role);
+  if (!agentRole) return null;
+
+  const writeSet = parseList(merged.writeSet);
+  const forbidden = parseList(merged.forbidden);
+  const verification = parseList(merged.verification);
+  if (!writeSet || !forbidden || !verification) return null;
+
+  return {
+    agentRole,
+    writeSet,
+    forbidden,
+    verification,
+    taskId: typeof merged.taskId === 'string' ? sanitizeTaskId(merged.taskId) : undefined,
+    phase: VALID_PHASES.has(merged.phase ?? null) ? merged.phase : undefined,
+    source: 'dispatch',
+  };
+}
+
+function readEmergencyEscalation(mode) {
+  if (mode?.active && mode.agentRole === 'ceo-escalated') {
+    return {
+      agentRole: 'ceo-escalated',
+      writeSet: mode.writeSet || [],
+      forbidden: mode.forbidden || [],
+      verification: [],
+      taskId: mode.taskId,
+      phase: mode.phase,
+      source: 'escalation',
+    };
+  }
+  return null;
+}
+
+function isModeActive(mode) {
+  return Boolean(mode?.active && mode.mode);
+}
+
+function isTaskArtifact(relativePath) {
+  return /^Harness\/tasks\/[^/]+\/(PLAN|PROGRESS|ARTIFACTS|NOTES)\.md$/.test(relativePath)
+    || relativePath === 'Harness/PROGRESS.md'
+    || relativePath === 'Harness/MEMORY.md'
+    || /^Harness\/memory\/[^/]+\.md$/.test(relativePath);
+}
+
+function isForbiddenPath(relativePath, forbidden) {
+  return forbidden.some((entry) => pathMatches(relativePath, entry));
+}
+
+function isInWriteSet(relativePath, writeSet) {
+  return writeSet.some((entry) => pathMatches(relativePath, entry));
+}
+
+function pathMatches(relativePath, pattern) {
+  const normalizedPattern = normalizeProjectPath(pattern);
+  if (!normalizedPattern) return false;
+  return relativePath === normalizedPattern || relativePath.startsWith(normalizedPattern + '/');
+}
+
+function isGuardedSourcePath(relativePath) {
+  if (!relativePath) return false;
+  if (relativePath.startsWith('Harness/.runtime/')) return true;
+  if (isTaskArtifact(relativePath)) return false;
+  return true;
+}
+
+function isSafeBash(command) {
+  const trimmed = String(command || '').trim();
+  if (!trimmed) return true;
+  if (/[\r\n\0]/.test(trimmed)) return false;
+  if (/[;&|>`$]/.test(trimmed)) return false;
+  return SAFE_BASH.test(trimmed);
+}
+
+function outputContext(hookEventName, additionalContext) {
+  process.stdout.write(JSON.stringify({
+    hookSpecificOutput: {
+      hookEventName,
+      additionalContext,
+    },
+  }));
+}
+
+function readEvent() {
+  if (process.argv[3]) {
+    try {
+      return JSON.parse(process.argv[3]);
+    } catch {
+      return {};
+    }
+  }
+  if (process.argv[2] && process.argv[2].trim().startsWith('{')) {
+    try {
+      return JSON.parse(process.argv[2]);
+    } catch {
+      return {};
+    }
+  }
   try {
-    if (!existsSync(GOALS_FILE)) return { goals: [] };
-    const raw = readFileSync(GOALS_FILE, 'utf8');
-    if (raw.length > MAX_GOAL_BYTES) return { goals: [] };
-    return JSON.parse(raw);
-  } catch { return { goals: [] }; }
+    const raw = readFileSync(0, 'utf8').trim();
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function eventName(event) {
+  return event.hook_event_name || event.event || event.type || process.argv[2] || '';
+}
+
+function goalData() {
+  const parsed = readJSONFile(GOALS_FILE, MAX_GOAL_BYTES);
+  if (!parsed || !Array.isArray(parsed.goals)) return { goals: [] };
+  parsed.goals = parsed.goals.filter((goal) =>
+    goal
+    && typeof goal.id === 'string'
+    && typeof goal.description === 'string'
+    && ['active', 'completed', 'abandoned'].includes(goal.status)
+  );
+  return parsed;
 }
 
 function writeGoals(data) {
-  safeWriteJSON(GOALS_FILE, data);
+  writeJSONFile(GOALS_FILE, data);
 }
 
-function getActiveGoals() {
-  return readGoals().goals.filter(g => g.status === 'active');
+function activeGoalText() {
+  const goals = goalData().goals.filter((goal) => goal.status === 'active');
+  if (goals.length === 0) return '';
+  if (goals.length === 1) return `GOAL TRACKING: Active goal [${goals[0].id}] ${goals[0].description}.`;
+  return `GOAL TRACKING: Active goals ${goals.map((goal) => `[${goal.id}] ${goal.description}`).join(' | ')}.`;
 }
-
-// For goals we need readFileSync/writeFileSync (different file, not Harness/)
-import { readFileSync, writeFileSync } from 'node:fs';
-
-// ── SessionStart ──────────────────────────────────────────────────────────
 
 function handleSessionStart(event) {
-  let mode;
-  try { mode = safeReadJSON(MODE_FILE); } catch { mode = null; }
-
-  if (mode?.active && mode.startedAt) {
-    const age = Date.now() - new Date(mode.startedAt).getTime();
-    if (age > STALE_MODE_MS) {
-      // Stale mode from previous session — clear
-      try { writeFileSync(MODE_FILE, JSON.stringify({ mode: null, agentRole: null, active: false })); } catch {}
+  let mode = readMode();
+  if (mode?.active) {
+    const startedAt = Date.parse(mode.startedAt || '');
+    if (!startedAt || Date.now() - startedAt > STALE_MODE_MS) {
+      clearMode();
       mode = null;
     }
-  } else if (mode?.active && !mode.startedAt) {
-    // Missing startedAt = stale
-    try { writeFileSync(MODE_FILE, JSON.stringify({ mode: null, agentRole: null, active: false })); } catch {}
-    mode = null;
+  }
+  if (!isModeActive(mode)) return;
+
+  const dispatch = readDispatchContext(event);
+  const role = dispatch?.agentRole || mode.agentRole || mode.role || 'observer';
+  const phase = dispatch?.phase || mode.phase || 'W0_EXPLORE';
+  const taskId = dispatch?.taskId || mode.taskId || 'current';
+
+  if (mode.mode === 'wf-review') {
+    outputContext('SessionStart', `WF-REVIEW MODE ACTIVE\nTask: ${taskId} | Phase: ${phase}\nUse the OTHER CLI. Never self-review.`);
+    return;
   }
 
-  if (!mode?.active) return;
-
-  const agentRole = mode.agentRole || mode.role || null;
-  const phase = mode.phase || 'W0_EXPLORE';
-
-  // Inject mode context
-  const lines = [];
   if (mode.mode === 'wf-max') {
-    if (agentRole === 'ceo') {
-      lines.push(
-        'WF-MAX CEO MODE — ORCHESTRATOR, NOT IMPLEMENTER',
-        `Task: ${mode.taskId || 'current'} | Phase: ${phase}`,
-        '',
-        'CEO does NOT write source code. Plan, dispatch Workers, synthesize.',
-        'Workers stuck 3x? "ceo escalate <file>" for 1-file exemption.',
-        'Exit: "ceo done" clears all enforcement.',
-      );
-    } else if (agentRole === 'ceo-escalated') {
-      lines.push(
-        'WF-MAX CEO (ESCALATED) — limited 1-file edit permission',
-        `Write set: ${(mode.writeSet || []).join(', ') || 'none'}`,
-        'After edit: "ceo deescalate" to return to CEO.',
-      );
-    }
-  } else if (mode.mode === 'wf') {
-    lines.push(`WF MODE ACTIVE — ${phase}`, 'Multi-subagent orchestration required.');
-  } else if (mode.mode === 'wf-review') {
-    lines.push('WF-REVIEW MODE ACTIVE', 'Cross-model peer review. Read and report.');
-  } else if (mode.mode === 'wf-auto' || mode.mode === 'wf-auto-spark') {
-    lines.push(`${mode.mode.toUpperCase()} — CEO orchestrator`, 'Never writes source code.');
+    const writeSet = dispatch?.writeSet?.length ? `\nwriteSet: ${dispatch.writeSet.join(', ')}` : '';
+    outputContext('SessionStart', `WF-MAX ACTIVE\nTask: ${taskId} | Phase: ${phase}\nRole: ${role}${writeSet}\nMode file is status only; dispatch context grants source-write authority.`);
+    return;
   }
 
-  if (lines.length) {
-    process.stdout.write(JSON.stringify({
-      hookSpecificOutput: {
-        hookEventName: 'SessionStart',
-        additionalContext: lines.join('\n'),
-      },
-    }));
-  }
+  outputContext('SessionStart', `${String(mode.mode).toUpperCase()} ACTIVE\nTask: ${taskId} | Phase: ${phase}`);
 }
 
-// ── UserPromptSubmit ──────────────────────────────────────────────────────
+function handleGoalCommands(prompt) {
+  const setMatch = prompt.match(/(?:^|\n)\s*goal\s+set\s+(.+)/i);
+  const completeMatch = prompt.match(/(?:^|\n)\s*goal\s+complete\s+(\S+)/i);
+  const abandonMatch = prompt.match(/(?:^|\n)\s*goal\s+abandon\s+(\S+)/i);
 
-function handleUserPromptSubmit(event) {
-  const prompt = (event.prompt || event.text || '').trim();
-  if (!prompt) return;
-  const lower = prompt.toLowerCase();
-
-  // ── Goals ──
-  const goalSetMatch = prompt.match(/(?:^|\n)\s*goal\s+set\s+(.+)/i);
-  const goalCompleteMatch = prompt.match(/(?:^|\n)\s*goal\s+complete\s+(\S+)/i);
-  const goalAbandonMatch = prompt.match(/(?:^|\n)\s*goal\s+abandon\s+(\S+)/i);
-
-  if (goalSetMatch) {
-    const desc = goalSetMatch[1].trim().slice(0, MAX_GOAL_DESC);
-    const data = readGoals();
-    const id = 'g' + Date.now().toString(36);
-    data.goals.push({ id, description: desc, status: 'active', createdAt: new Date().toISOString(), completedAt: null });
+  if (setMatch) {
+    const data = goalData();
+    data.goals.push({
+      id: 'g' + Date.now().toString(36),
+      description: setMatch[1].trim().slice(0, MAX_GOAL_DESC),
+      status: 'active',
+      createdAt: new Date().toISOString(),
+      completedAt: null,
+    });
     writeGoals(data);
   }
-  if (goalCompleteMatch) {
-    const id = goalCompleteMatch[1];
-    const data = readGoals();
-    const g = data.goals.find(g => g.id === id && g.status === 'active');
-    if (g) { g.status = 'completed'; g.completedAt = new Date().toISOString(); writeGoals(data); }
-  }
-  if (goalAbandonMatch) {
-    const id = goalAbandonMatch[1];
-    const data = readGoals();
-    const g = data.goals.find(g => g.id === id && g.status === 'active');
-    if (g) { g.status = 'abandoned'; g.completedAt = new Date().toISOString(); writeGoals(data); }
-  }
 
-  // ── Emergency escape: "ceo done" clears everything ──
-  const doneMatch = prompt.match(/(?:^|\n)\s*ceo\s+done/i);
-  if (doneMatch) {
-    try { writeFileSync(MODE_FILE, JSON.stringify({ mode: null, agentRole: null, active: false })); } catch {}
-    return;
-  }
-
-  // ── Escalate / Deescalate ──
-  const escalateMatch = prompt.match(/(?:^|\n)\s*ceo\s+escalate\s+(\S+(?:\s*,\s*\S+)*)(?:\s+"(.+?)")?/i);
-  const deescalateMatch = prompt.match(/(?:^|\n)\s*ceo\s+deescalate/i);
-
-  if (escalateMatch) {
-    try {
-      const mode = safeReadJSON(MODE_FILE);
-      if (mode && mode.agentRole === 'ceo') {
-        const files = escalateMatch[1].split(',').map(f => f.trim()).filter(Boolean);
-        const reason = (escalateMatch[2] || 'Worker retry limit exceeded').slice(0, 200);
-        if (files.length <= MAX_ESCALATION_FILES) {
-          safeWriteJSON(MODE_FILE, {
-            ...mode,
-            agentRole: 'ceo-escalated',
-            writeSet: files,
-            escalationReason: reason,
-            escalatedAt: new Date().toISOString(),
-          });
-        }
-      }
-    } catch {}
-  }
-
-  if (deescalateMatch) {
-    try {
-      const mode = safeReadJSON(MODE_FILE);
-      if (mode) {
-        const { escalationReason, escalatedAt, writeSet, forbidden, ...rest } = mode;
-        safeWriteJSON(MODE_FILE, {
-          ...rest,
-          agentRole: 'ceo',
-          writeSet: undefined,
-          forbidden: undefined,
-        });
-      }
-    } catch {}
-  }
-
-  // ── Mode activation ──
-  try {
-    const modeConfigs = [
-      { triggers: ['/wf-auto-spark', 'wf auto spark', 'spark mode'], mode: 'wf-auto-spark', phase: 'SPARK' },
-      { triggers: ['/wf-max', 'wf max'], mode: 'wf-max', phase: 'W0_EXPLORE' },
-      { triggers: ['/wf-auto', 'wf auto', 'auto mode'], mode: 'wf-auto', phase: 'AUTO' },
-      { triggers: ['/wf-review', 'wf review'], mode: 'wf-review', phase: 'REVIEW' },
-      { triggers: ['/wf-learn', 'wf learn'], mode: 'wf-learn', phase: 'LEARN' },
-      { triggers: ['/wf', 'wf mode', 'workflow mode', 'wk mode'], mode: 'wf', phase: 'W0_EXPLORE' },
-    ];
-    for (const cfg of modeConfigs) {
-      if (cfg.triggers.some(t => lower.includes(t))) {
-        safeWriteJSON(MODE_FILE, {
-          active: true,
-          mode: cfg.mode,
-          agentRole: 'ceo',
-          taskId: `wf-${cfg.mode}-current`,
-          phase: cfg.phase,
-          explicitInvocation: true,
-          startedAt: new Date().toISOString(),
-        });
-        break;
-      }
+  for (const [match, status] of [[completeMatch, 'completed'], [abandonMatch, 'abandoned']]) {
+    if (!match) continue;
+    const data = goalData();
+    const goal = data.goals.find((item) => item.id === match[1] && item.status === 'active');
+    if (goal) {
+      goal.status = status;
+      goal.completedAt = new Date().toISOString();
+      writeGoals(data);
     }
-  } catch {}
-
-  // ── Per-turn reinforcement ──
-  try {
-    const activeGoals = getActiveGoals();
-    if (activeGoals.length > 0) {
-      const goalReminder = activeGoals.length === 1
-        ? `Active goal: [${activeGoals[0].id}] ${activeGoals[0].description}`
-        : `Active goals (${activeGoals.length}): ` + activeGoals.map(g => `[${g.id}] ${g.description}`).join(' | ');
-      process.stdout.write(JSON.stringify({
-        hookSpecificOutput: {
-          hookEventName: 'UserPromptSubmit',
-          additionalContext: `GOAL TRACKING: ${goalReminder}. "goal complete <id>" to finish, "goal abandon <id>" to drop.`,
-        },
-      }));
-    }
-
-    const mode = safeReadJSON(MODE_FILE);
-    if (!mode?.active) return;
-
-    const agentRole = mode.agentRole || mode.role;
-    if (!agentRole) return;
-
-    const writeSetInfo = mode.writeSet?.length ? ` [writeSet: ${mode.writeSet.join(', ')}]` : '';
-    let roleText = '';
-
-    if (mode.mode === 'wf-max') {
-      if (agentRole === 'ceo') {
-        roleText = `WF-MAX CEO (${mode.phase || 'W0_EXPLORE'})${writeSetInfo} — Plan and delegate. NOT implementer. "ceo escalate <file>" for 1-file exemption. "ceo done" to exit.`;
-      } else if (agentRole === 'ceo-escalated') {
-        roleText = `WF-MAX CEO (ESCALATED)${writeSetInfo} — 1-file exemption active. Edit ONLY escalated file. "ceo deescalate" when done.`;
-      }
-    } else if (agentRole === 'ceo') {
-      roleText = `${mode.mode.toUpperCase()} CEO — Orchestrate. Do not write source code.`;
-    }
-
-    if (roleText) {
-      process.stdout.write(JSON.stringify({
-        hookSpecificOutput: {
-          hookEventName: 'UserPromptSubmit',
-          additionalContext: roleText,
-        },
-      }));
-    }
-  } catch {}
+  }
 }
 
-// ── PreToolUse ────────────────────────────────────────────────────────────
+function handleEscalationCommands(prompt) {
+  if (/(?:^|\n)\s*ceo\s+done\b/i.test(prompt)) {
+    clearMode();
+    return true;
+  }
+
+  const escalateMatch = prompt.match(/(?:^|\n)\s*ceo\s+escalate\s+(\S+(?:\s*,\s*\S+)*)(?:\s+"(.+?)")?/i);
+  if (escalateMatch) {
+    const mode = readMode();
+    const files = parseList(escalateMatch[1]);
+    if (!mode?.active || !files || files.length !== MAX_ESCALATION_FILES || files.some((file) => !normalizeProjectPath(file))) {
+      outputContext('UserPromptSubmit', 'CEO escalation denied. Provide exactly one project-relative file path.');
+      return true;
+    }
+    writeJSONFile(MODE_FILE, {
+      ...mode,
+      agentRole: 'ceo-escalated',
+      writeSet: files,
+      escalationReason: (escalateMatch[2] || 'Worker retry limit exceeded').slice(0, 200),
+      escalatedAt: new Date().toISOString(),
+    });
+    outputContext('UserPromptSubmit', `CEO escalation active for ${files[0]}. Say "ceo deescalate" when finished.`);
+    return true;
+  }
+
+  if (/(?:^|\n)\s*ceo\s+deescalate\b/i.test(prompt)) {
+    const mode = readMode();
+    if (mode?.active) {
+      const { writeSet, forbidden, escalationReason, escalatedAt, ...rest } = mode;
+      writeJSONFile(MODE_FILE, {
+        ...rest,
+        agentRole: 'ceo',
+        deescalatedAt: new Date().toISOString(),
+      });
+    }
+    outputContext('UserPromptSubmit', 'CEO escalation cleared. Source writes are blocked again.');
+    return true;
+  }
+
+  return false;
+}
+
+function detectMode(prompt) {
+  const lower = prompt.toLowerCase();
+  const configs = [
+    { triggers: ['/wf-auto-spark', 'wf auto spark', 'spark mode'], mode: 'wf-auto-spark', taskId: 'wf-auto-spark-current', phase: 'SPARK' },
+    { triggers: ['/wf-max', 'wf max'], mode: 'wf-max', taskId: 'wf-max-current-task', phase: 'W0_EXPLORE' },
+    { triggers: ['/wf-auto', 'wf auto', 'auto mode'], mode: 'wf-auto', taskId: 'wf-auto-current', phase: 'AUTO' },
+    { triggers: ['/wf-review', 'wf review'], mode: 'wf-review', taskId: 'wf-review-current', phase: 'REVIEW' },
+    { triggers: ['/wf-learn', 'wf learn'], mode: 'wf-learn', taskId: 'wf-learn-current', phase: 'LEARN' },
+    { triggers: ['/wf', 'wf mode', 'workflow mode', 'wk mode'], mode: 'wf', taskId: 'wf-current-task', phase: 'W0_EXPLORE' },
+  ];
+
+  for (const config of configs) {
+    if (config.triggers.some((trigger) => lower.includes(trigger))) {
+      writeJSONFile(MODE_FILE, {
+        active: true,
+        mode: config.mode,
+        agentRole: 'ceo',
+        taskId: config.taskId,
+        phase: config.phase,
+        explicitInvocation: true,
+        startedAt: new Date().toISOString(),
+      });
+      return config;
+    }
+  }
+  return null;
+}
+
+function handleUserPromptSubmit(event) {
+  const prompt = String(event.prompt || event.text || '').trim();
+  if (!prompt) return;
+
+  handleGoalCommands(prompt);
+  if (handleEscalationCommands(prompt)) return;
+  detectMode(prompt);
+
+  const goalText = activeGoalText();
+  const mode = readMode();
+  if (!goalText && !isModeActive(mode)) return;
+
+  const dispatch = readDispatchContext(event);
+  const contextLines = [];
+  if (goalText) contextLines.push(goalText);
+  if (isModeActive(mode)) {
+    if (mode.mode === 'wf-review') {
+      contextLines.push('WF-REVIEW ACTIVE. Use the OTHER CLI. Never self-review.');
+    } else if (mode.mode === 'wf-max') {
+      const role = dispatch?.agentRole || mode.agentRole || 'observer';
+      contextLines.push(`WF-MAX ACTIVE. Role: ${role}. Source-write authority comes from dispatch context, not the mode file.`);
+    } else {
+      contextLines.push(`${String(mode.mode).toUpperCase()} ACTIVE.`);
+    }
+  }
+  if (contextLines.length) outputContext('UserPromptSubmit', contextLines.join('\n'));
+}
+
+function allowTaskArtifact(agentRole, relativePath) {
+  if (!isTaskArtifact(relativePath)) return false;
+  return agentRole === 'ceo' || agentRole === 'manager' || agentRole === 'ceo-escalated';
+}
+
+function block(message) {
+  process.stderr.write(message + '\n');
+  process.exit(2);
+}
+
+function enforceFileTool(agentRole, relativePath, context) {
+  if (!relativePath) block('[BLOCK] Invalid or unsafe file path.');
+  if (isForbiddenPath(relativePath, context.forbidden || [])) {
+    block(`[FORBIDDEN BLOCK] ${relativePath} matches forbidden scope.`);
+  }
+  if (!isGuardedSourcePath(relativePath) && allowTaskArtifact(agentRole, relativePath)) return;
+
+  if (agentRole === 'reviewer') {
+    block(`[REVIEWER BLOCK] ${relativePath} cannot be edited by reviewer.`);
+  }
+  if (agentRole === 'ceo') {
+    block(`[CEO BLOCK] ${relativePath} is a source write. Delegate to a Worker or use ceo escalate <file>.`);
+  }
+  if (agentRole === 'worker' || agentRole === 'manager' || agentRole === 'ceo-escalated') {
+    if (isInWriteSet(relativePath, context.writeSet || [])) return;
+    const label = agentRole === 'ceo-escalated' ? 'ESCALATED BLOCK' : `${agentRole.toUpperCase()} BLOCK`;
+    block(`[${label}] ${relativePath} is outside writeSet [${(context.writeSet || []).join(', ')}].`);
+  }
+  block(`[ROLE BLOCK] ${relativePath} blocked for role ${agentRole}.`);
+}
+
+function enforceBash(agentRole, command) {
+  if (isSafeBash(command)) return;
+  block(`[${agentRole.toUpperCase()} BLOCK] Bash command is outside the safe command policy.`);
+}
 
 function handlePreToolUse(event) {
-  let mode;
-  try { mode = safeReadJSON(MODE_FILE); } catch { return; /* fail-open */ }
-  if (!mode?.active) return;
+  const mode = readMode();
+  const dispatch = readDispatchContext(event);
+  const emergencyEscalation = dispatch ? null : readEmergencyEscalation(mode);
+  const context = dispatch || emergencyEscalation;
+
+  if (!context && !isModeActive(mode)) return;
 
   const toolName = event.tool_name || event.tool || '';
-  if (!BLOCKED_TOOLS.includes(toolName)) return;
+  if (!GUARDED_TOOLS.has(toolName)) return;
 
-  const input = event.tool_input || event.input || {};
-  const filePath = input.file_path || '';
-  const command = input.command || '';
-  const agentRole = mode.agentRole || mode.role || null;
+  const toolInput = pickObject(event.tool_input || event.input);
+  const command = toolInput.command || '';
+  const relativePath = normalizeProjectPath(toolInput.file_path || '');
 
-  // ── No role → allow (default mode, not enforcing) ──
-  if (!agentRole) return;
+  if (!context) {
+    if (toolName === 'Bash' && isSafeBash(command)) return;
+    if (relativePath && isTaskArtifact(relativePath)) return;
+    block(`[WF-MAX BLOCK] ${toolName} blocked: no dispatch role/writeSet authority is present.`);
+  }
 
-  // ── Bash safety filter (applies to all roles) ──
   if (toolName === 'Bash') {
-    const trimmed = command.trim();
-    if (/[\r\n\0]/.test(trimmed)) {
-      process.stderr.write(`[BLOCK] Bash command contains control characters.\n`);
-      process.exit(2);
-    }
-    // Allowed safe commands (all roles)
-    const safeBash = /^(ls|dir|tree|git\s+status|git\s+diff|git\s+log|git\s+branch|git\s+push|git\s+commit|which|echo|type|node|npm|npx|pnpm|yarn)(\s+.*)?$/;
-    if (safeBash.test(trimmed)) return;
-  }
-
-  if (filePath) {
-    // Task files and harness meta always allowed
-    if (isTaskFile(filePath) || isHarnessMeta(filePath, agentRole)) return;
-  }
-
-  // ── CEO: no source edits (escalate for exemption) ──
-  if (agentRole === 'ceo') {
-    process.stderr.write(`[CEO BLOCK] Source edits forbidden. "ceo escalate <file>" for 1-file exemption after Workers stuck 3x.\n`);
-    process.exit(2);
-  }
-
-  // ── CEO-Escalated: edit only escalated file ──
-  if (agentRole === 'ceo-escalated') {
-    const writeSet = mode.writeSet || [];
-    if (filePath && isInWriteSet(filePath, writeSet)) return;
-    process.stderr.write(`[ESCALATED BLOCK] File "${filePath}" not in escalation set [${writeSet.join(', ')}]. "ceo deescalate" to return.\n`);
-    process.exit(2);
-  }
-
-  // ── Manager: no source edits ──
-  if (agentRole === 'manager') {
-    if (filePath) {
-      process.stderr.write(`[MANAGER BLOCK] Source edits forbidden. Delegate to Workers.\n`);
-      process.exit(2);
-    }
+    enforceBash(context.agentRole, command);
     return;
   }
 
-  // ── Reviewer: no edits at all ──
-  if (agentRole === 'reviewer') {
-    if (filePath) {
-      process.stderr.write(`[REVIEWER BLOCK] Edits forbidden. Read and report only.\n`);
-      process.exit(2);
-    }
-    return;
-  }
-
-  // ── Worker: edit only within writeSet ──
-  if (agentRole === 'worker') {
-    const writeSet = mode.writeSet || [];
-    if (filePath && isInWriteSet(filePath, writeSet)) return;
-    process.stderr.write(`[WORKER BLOCK] "${filePath}" outside writeSet [${writeSet.join(', ')}].\n`);
-    process.exit(2);
-  }
+  enforceFileTool(context.agentRole, relativePath, context);
 }
 
-// ── PostToolUse: memory auto-capture ──────────────────────────────────────
-
-function handlePostToolUse(event) {
-  // Stub: auto-capture significant errors and user corrections
-  // See original implementation for full logic
+function handlePostToolUse() {
+  return;
 }
 
-// ── Stop ──────────────────────────────────────────────────────────────────
-
-function handleStop(event) {
-  // Stub: auto-capture on session stop
+function handleStop() {
+  return;
 }
 
-// ── Dispatch ──────────────────────────────────────────────────────────────
+const event = readEvent();
 
-const eventName = process.argv[2];
-const raw = process.argv[3] || '{}';
-
-switch (eventName) {
+switch (eventName(event)) {
   case 'SessionStart':
-    handleSessionStart(JSON.parse(raw));
+    handleSessionStart(event);
     break;
   case 'UserPromptSubmit':
-    handleUserPromptSubmit(JSON.parse(raw));
+    handleUserPromptSubmit(event);
     break;
   case 'PreToolUse':
-    handlePreToolUse(JSON.parse(raw));
+    handlePreToolUse(event);
     break;
   case 'PostToolUse':
-    handlePostToolUse(JSON.parse(raw));
+    handlePostToolUse(event);
     break;
   case 'Stop':
-    handleStop(JSON.parse(raw));
+    handleStop(event);
     break;
   default:
     break;
