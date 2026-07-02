@@ -61,7 +61,7 @@ Routing priority: if a request explicitly says `/wf <task>`, `$wf`, `wf mode`, `
 | Need architecture or boundaries | architecture, boundary, layer, port, adapter, dependency | [architecture.md](architecture.md) | layer map, ports, constraints |
 | Need WF mode | wf, /wf, $wf, wf mode, workflow mode, wk mode, long task, difficult, stuck, repeated failure | [WF.md](WF.md), [PROGRESS.md](PROGRESS.md), the current task `tasks/<id>/PROGRESS.md` and `tasks/<id>/PLAN.md` | exploration plan, second plan, heartbeat, recovery loop; explicit WF/WK loads subagent docs immediately |
 | Need perpetual auto-optimization | /wf-auto, $wf-auto, wf auto, auto mode, never stop, self-improve, continuous optimize | [WF-AUTO.md](WF-AUTO.md), [subagents.md](subagents.md), [dispatch.md](dispatch.md) | perpetual loop, 8-angle scan, spark search, intent checkpoint, evidence ledger; CEO never writes code |
-| Need spark-augmented auto mode | /wf-auto-spark, $wf-auto-spark, wf auto spark, spark mode, external inspiration, discover mode | [WF-AUTO.md](WF-AUTO.md), [subagents.md](subagents.md) | spark-augmented W0: external sources active from cycle 1, Value Gate scored ≥18/25 |
+| Need perpetual inspiration mode | /wf-auto-spark, $wf-auto-spark, wf auto spark, spark mode, external inspiration, discover mode, never stop | [WF-AUTO-SPARK.md](WF-AUTO-SPARK.md), [WF-AUTO.md](WF-AUTO.md), [subagents.md](subagents.md), [dispatch.md](dispatch.md) | roadmap-anchored: North Star + milestones; external spark search; ≤50% deviation guard; never auto-stops |
 | Need WF-MAX mode | /wf-max, $wf-max, wf max, maximum parallelism, CEO, Manager, Worker, fan-out | [WF-MAX.md](WF-MAX.md), [subagents.md](subagents.md), [dispatch.md](dispatch.md) | CEO-only dispatch, W0 fan-out, D-GATE, wave evidence |
 | Need peer review | /wf-review, $wf-review, peer review, second opinion, cross-check, stuck | `.claude/skills/wf-review/SKILL.md`, `.agents/skills/wf-review/SKILL.md`, `Harness/README.md` | cross-model multi-dimension review with severity classification |
 | Adding harness to existing project | existing project, onboarding, migrate, bootstrap, preserve, conflict | [extension.md](extension.md), [PROGRESS.md](PROGRESS.md), root `README.md` and package/CI files | discovered project facts, preserved config, manual registration plan |
@@ -165,7 +165,7 @@ Harness/.harness-version             scaffold version and file checksums
 | `/wf <task>` | `$wf <task>` | Long-task workflow: explore -> plan -> implement -> review -> verify |
 | `/wf-max [task]` | `$wf-max [task]` | Maximum parallelism: CEO -> Manager -> Worker hierarchy |
 | `/wf-auto` | `$wf-auto` | Perpetual auto-optimization: never stops until 8-angle exhaustion |
-| `/wf-auto-spark` | `$wf-auto-spark` | Spark-augmented auto: external inspiration active from cycle 1 |
+| `/wf-auto-spark` | `$wf-auto-spark` | Perpetual inspiration: spark search, roadmap-anchored, ≤50% deviation guard, never auto-stops |
 | `/wf-review [focus]` | `$wf-review [focus]` | Cross-model peer review via Codex <-> Claude |
 | `/wf-learn` | `$wf-learn` | Force learning cycle: context-master -> memory-master |
 | `/wf-browser [task]` | `$wf-browser [task]` | AI-driven browser automation for E2E testing |

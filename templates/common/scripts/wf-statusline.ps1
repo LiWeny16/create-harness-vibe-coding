@@ -47,4 +47,16 @@ switch ($json.mode) {
   'wf-review' {
     Write-Host -NoNewline "`e[38;5;178m[WF-REVIEW]`e[0m"
   }
+  'wf-auto-spark' {
+    Write-Host -NoNewline "`e[38;5;213m[SPARK]`e[0m"
+  }
+  'wf-auto' {
+    Write-Host -NoNewline "`e[38;5;111m[WF-AUTO]`e[0m"
+  }
+  'wf' {
+    Write-Host -NoNewline "`e[38;5;108m[WF]`e[0m"
+  }
+  'wf-learn' {
+    Write-Host -NoNewline "`e[38;5;222m[WF-LEARN]`e[0m"
+  }
 }

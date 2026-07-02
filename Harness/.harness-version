@@ -1,6 +1,6 @@
 {
   "generator": "0.8.1",
-  "generated": "2026-07-02T02:09:16.640Z",
+  "generated": "2026-07-02T02:11:29.110Z",
   "options": [],
   "autoCheck": true,
   "source": "https://raw.githubusercontent.com/zingspark/create-harness-vibe-coding/main/templates/common/",
@@ -47,7 +47,7 @@
     "AGENTS.md": "sha256-c6e6f08195c41b49b682291c7b83f55acd9750767a7eef3811bf5bbdaa66f76a",
     "CLAUDE.md": "sha256-67678707e97f27a51ffffc3a87e1f01a00bc81231db1fe11cd61c85b483a7c0c",
     "Harness/MEMORY.md": "sha256-dbfa2b9c0bbe5576df4c7e87c5dd6597375470c523d1a52e4f00f9128e86c76d",
-    "Harness/README.md": "sha256-d06dc38af52f61a9a69ea086ac85336be714fa14848af0fbf331ea136dc9e323",
+    "Harness/README.md": "sha256-4338bf6a3e2aa2086876e52e7d9f021eec53f6235d9b52168a7f4fb944807d91",
     "Harness/SETUP.md": "sha256-c7c237f63661e8c8698223a5b53d48c7f18797502cdbcff225851e78a6af077f",
     "Harness/WF-AUTO-SPARK.md": "sha256-48cc08e1a78cd4abb2ae9c2807ef1ac9a09544eb954220b9087b2032fabbd690",
     "Harness/WF-AUTO.md": "sha256-ac0ab13e11ca658cd2c5b6ce73f3d267bea6391a04e850c9f9a24d642f1ad350",
@@ -63,8 +63,8 @@
     "Harness/scripts/validate-harness.mjs": "sha256-393e72e09d0d7ed40e40638b6b45fb70a3b40f002a342097ebe30bb8e08279c5",
     "Harness/scripts/wf-mode-hook.mjs": "sha256-fbf2c398bfe21374fc5d0230133dfa16feff6afe79598bd185aae49643075545",
     "Harness/scripts/wf-remove.mjs": "sha256-ae941d34d7d263f2b65751d177673a3c4fb11c326885ca413245e3f93e99a006",
-    "Harness/scripts/wf-statusline.ps1": "sha256-99e956c59d5aec78e1422fa93d47a4551450ad0935ab87a714068e2d90586aaf",
-    "Harness/scripts/wf-statusline.sh": "sha256-01ba4b33f513473e2a923e0ad7e5bcc7cf4c921e18c25f2e64aa118f1f7eba24",
+    "Harness/scripts/wf-statusline.ps1": "sha256-49effdea8b0980e762a9440f4be9011543ede3533f6df1b2008368d78c427fcc",
+    "Harness/scripts/wf-statusline.sh": "sha256-6fa034fab9abe9361daae14cdb802f69825ce20d4bf6a9c18f58c04e971693ac",
     "Harness/scripts/wf-update-check.mjs": "sha256-d14ce08f4c05ba118362a56a4b7d5965b114bc2b15a023c08e21d57f32b2cf93",
     "Harness/subagents.md": "sha256-e66f4bef8ce6c118cf0ec8c511f727a8c2c40bce25dcf5b754489d89915a47ba"
   },

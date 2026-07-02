@@ -52,4 +52,16 @@ case "$MODE_NAME" in
   wf-review)
     printf '\033[38;5;178m[WF-REVIEW]\033[0m'
     ;;
+  wf-auto-spark)
+    printf '\033[38;5;213m[SPARK]\033[0m'
+    ;;
+  wf-auto)
+    printf '\033[38;5;111m[WF-AUTO]\033[0m'
+    ;;
+  wf)
+    printf '\033[38;5;108m[WF]\033[0m'
+    ;;
+  wf-learn)
+    printf '\033[38;5;222m[WF-LEARN]\033[0m'
+    ;;
 esac
