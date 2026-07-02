@@ -3,43 +3,45 @@
 ## Format
 
 ```
-<verb>-<noun>[-detail]
+task-<verb>-<noun>[-detail]
 ```
+
+All task directories MUST have the `task-` prefix. This distinguishes tasks from system directories at a glance.
 
 ## Rules
 
 | Rule | Example ✓ | Example ✗ |
 |------|-----------|-----------|
-| kebab-case (lowercase, hyphens) | `fix-ceo-inheritance` | `fix_ceo_inheritance`, `FixCeoInheritance` |
-| Verb-first (describes action) | `add-goal-persistence` | `goal-persistence-add` |
-| 3-5 words, ≤40 characters | `refactor-hook-role-model` | `refactor-the-entire-hook-role-model-architecture` |
-| No abbreviations unless domain-standard | `fix-auth-middleware` | `fx-ath-mdw` |
-| Be specific about scope | `update-claude-md-entry-contract` | `update-docs` |
+| `task-` prefix required | `task-fix-ceo-inheritance` | `fix-ceo-inheritance` |
+| kebab-case (lowercase, hyphens) | `task-fix-ceo-inheritance` | `task-fix_ceo_inheritance` |
+| Verb-first after prefix | `task-add-goal-persistence` | `task-goal-persistence-add` |
+| 2-5 words after prefix, ≤46 total chars | `task-refactor-hook-role` | `task-refactor-the-entire-hook-role-model` |
+| No abbreviations unless domain-standard | `task-fix-auth-middleware` | `task-fx-ath-mdw` |
 
-## Reserved Prefixes
+## Reserved Names
 
-| Prefix | Purpose | Example |
-|--------|---------|---------|
-| `wf-` | Workflow system tasks | `wf-conflict-fix` |
-| `auto` | Reserved for auto-mode capsule (single directory, no hyphen) | `auto` |
-| `_` | Reserved for template/system directories | `_template` |
+| Name | Purpose |
+|------|---------|
+| `_template` | Task capsule template (never a real task) |
+| `auto` | Auto-mode capsule (shared by `/wf-auto` and `/wf-auto-spark`) |
 
 ## Task ID Lifecycle
 
-1. Created from `_template/` by copying
-2. Directory name IS the task ID — used in `Harness/PROGRESS.md`, hooks, and dispatch packets
+1. Created by copying `_template/` → `task-<verb>-<noun>/`
+2. Directory name IS the task ID — used in `Harness/PROGRESS.md`, hooks, dispatch packets
 3. Directory archived (not renamed) when task completes
 4. Task ID is immutable after creation (changing it breaks cross-references)
+5. Existing tasks without `task-` prefix are grandfathered — rename is optional but recommended
 
 ## Examples
 
 ```
-add-dark-mode-support
-fix-auth-token-expiry
-update-harness-lifecycle-docs
-remove-legacy-config-files
-refactor-agent-dispatch-model
-migrate-to-esm-imports
-audit-security-headers
-benchmark-wf-max-throughput
+task-add-dark-mode-support
+task-fix-auth-token-expiry
+task-update-harness-lifecycle-docs
+task-remove-legacy-config-files
+task-refactor-agent-dispatch-model
+task-migrate-to-esm-imports
+task-audit-security-headers
+task-benchmark-wf-max-throughput
 ```

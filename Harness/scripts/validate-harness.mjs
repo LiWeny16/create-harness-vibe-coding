@@ -147,17 +147,25 @@ function listMarkdownFiles(rel) {
     .map(entry => `${normalizedRel}/${entry.name}`);
 }
 
-// Task naming convention: <verb>-<noun>[-detail], kebab-case, ≤40 chars
+// Task naming convention: task-<verb>-<noun>[-detail], kebab-case, ≤46 chars
+// Prefix "task-" required for new tasks. Existing tasks without prefix grandfathered (warning only).
 // Reserved: _template (system), auto (auto-mode capsule)
-const TASK_NAME_RE = /^[a-z]+(-[a-z0-9]+){1,4}$/;
-const TASK_NAME_MAX = 40;
+const TASK_NAME_RE = /^task-[a-z]+(-[a-z0-9]+){1,4}$/;
+const TASK_NAME_MAX = 46; // "task-" (5) + ≤40 chars body + 1 safety = 46
 const TASK_RESERVED = new Set(['_template', 'auto']);
 
-function validateTaskName(name) {
-  if (TASK_RESERVED.has(name)) return null; // reserved, skip
+function validateTaskName(name, strict) {
+  if (TASK_RESERVED.has(name)) return null;
   if (name.startsWith('_')) return `Task name "${name}" — leading underscore reserved for system dirs`;
   if (name.length > TASK_NAME_MAX) return `Task name "${name}" — ${name.length} chars, max ${TASK_NAME_MAX}`;
-  if (!TASK_NAME_RE.test(name)) return `Task name "${name}" — must be <verb>-<noun>[-detail], kebab-case, 2-5 words`;
+  if (!TASK_NAME_RE.test(name)) {
+    // Grandfather: existing tasks without "task-" prefix get a warning, not an error
+    if (/^[a-z]+(-[a-z0-9]+){1,4}$/.test(name)) {
+      if (strict) return `Task name "${name}" — missing "task-" prefix (required for new tasks). Rename to "task-${name}".`;
+      return null; // non-strict: allow grandfathered names
+    }
+    return `Task name "${name}" — must be task-<verb>-<noun>[-detail], kebab-case, 2-5 words after prefix`;
+  }
   return null;
 }
 
@@ -226,7 +234,7 @@ const taskDirs = fs.existsSync(path.join(root, 'Harness', 'tasks'))
   : [];
 for (const taskDir of taskDirs) {
   // Validate task naming convention
-  const nameErr = validateTaskName(taskDir);
+  const nameErr = validateTaskName(taskDir, strict);
   if (nameErr) errors.push(nameErr);
 
   const planPath = `Harness/tasks/${taskDir}/PLAN.md`;
