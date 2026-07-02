@@ -18,15 +18,17 @@ function mockProject(name) {
 }
 
 // ── 01: wf-max CEO enforcement ──
-S('01-wf-max-ceo.mjs', `import { simulateHook, readModeFile } from '../harness/setup.mjs';
+S('01-wf-max-ceo.mjs', `import { simulateHook, readModeFile, createHarnessProject } from '../harness/setup.mjs';
 import { scenario, assert, assertMode, assertHookBlocked, assertHookAllowed, assertSessionStartContains, summary } from '../harness/verify.mjs';
 import { join } from 'path';
 import { writeFileSync, mkdirSync } from 'fs';
 
 scenario('01-wf-max-ceo');
-const P = process.env.BATCH_TMP + '/01-wf-max-ceo';
-mkdirSync(join(P, 'Harness', '.runtime'), { recursive: true });
-writeFileSync(join(P, 'CLAUDE.md'), '# test');
+const P = createHarnessProject('01-wf-max-ceo');
+process.env.BATCH_PROJECT = P;
+mkdirSync(join(P, 'src'), { recursive: true });
+writeFileSync(join(P, 'src', 'index.js'), '// test');
+let r;
 mkdirSync(join(P, 'Harness', 'tasks', 'test'), { recursive: true });
 mkdirSync(join(P, 'src'), { recursive: true });
 writeFileSync(join(P, 'src', 'index.js'), '// test');

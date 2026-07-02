@@ -29,6 +29,9 @@ temp/
 *.key
 *.pem
 
+# Batch test temp projects
+tests/batch/.tmp/
+
 # Runtime mode state (managed by wf-mode-hook.mjs)
 Harness/.runtime/
 

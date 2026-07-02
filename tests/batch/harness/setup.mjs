@@ -19,16 +19,31 @@ export function createProject(name, fixture = 'empty') {
 }
 
 export function installHarness(targetDir) {
-  return execFileSync(process.execPath, [BIN, targetDir, '-y', '--on-conflict', 'skip'], {
+  // CLI needs relative path from ROOT
+  const rel = targetDir.replace(ROOT, '').replace(/^[\\/]+/, '');
+  return execFileSync(process.execPath, [BIN, rel, '-y', '--on-conflict', 'skip'], {
     encoding: 'utf8',
     timeout: 30000,
     cwd: ROOT,
   });
 }
 
+export function createHarnessProject(name) {
+  const dir = join(ROOT, 'tests', 'batch', '.tmp', name);
+  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+  // Install harness so hook's __dirname resolves to test project
+  if (!existsSync(join(dir, 'Harness', 'scripts', 'wf-mode-hook.mjs'))) {
+    installHarness(dir);
+  }
+  return dir;
+}
+
 export function simulateHook(eventJSON) {
-  const hookScript = join(ROOT, 'Harness', 'scripts', 'wf-mode-hook.mjs');
-  const workDir = process.env.BATCH_TMP || ROOT;
+  // Use test project's installed hook so __dirname -> test project's Harness/.runtime
+  const projectDir = process.env.BATCH_PROJECT || process.env.BATCH_TMP || ROOT;
+  const testHook = join(projectDir, 'Harness', 'scripts', 'wf-mode-hook.mjs');
+  const hookScript = existsSync(testHook) ? testHook : join(ROOT, 'Harness', 'scripts', 'wf-mode-hook.mjs');
+  const workDir = projectDir;
   // Ensure CLAUDE.md exists so hook's getProjectRoot() resolves correctly
   const claudeMd = join(workDir, 'CLAUDE.md');
   if (!existsSync(claudeMd)) writeFileSync(claudeMd, '# test project\\n');
