@@ -31,7 +31,7 @@ First clarify the idea, then create Mini PRD, acceptance criteria, UI/API contra
 
 ## Required Bootstrap Sequence
 
-Claude must follow this order:
+Claude or Codex must follow this order during bootstrap. This sequence is broader than installation; if the user only asked to install/configure the harness in an existing project, follow the "Existing Project Fast Path" below and stop after the non-strict validator passes.
 
 0. **ECC Stack Configuration** — Detect the project's tech stack. If the repo is empty or has no stack markers (`package.json`, `go.mod`, `pyproject.toml`, `Cargo.toml`, `Gemfile`, `composer.json`, `build.gradle`, etc.), ask the user: "What's your tech stack? (language/framework)" Then install the matching ECC rule sets from `~/.claude/rules/ecc/`. See `Harness/ECC-GUIDE.md` for the stack→rules mapping. Minimum: always install `common/`. Verify with `ls .claude/rules/ecc/`.
 1. Read `CLAUDE.md`, `Harness/MEMORY.md`, `Harness/README.md`, `Harness/lifecycle.md`, and `Harness/ACCEPTANCE_PROTOCOL.md`. Load `Harness/memory/*` only when the router or memory trigger applies.
@@ -45,8 +45,8 @@ Claude must follow this order:
 9. Implement only after PRD-GATE, AC-GATE, CONTRACT-GATE, and TEST-GATE pass.
 10. Independently validate with an AC-by-AC result matrix; use `Harness/HARNESS_BRIDGE.md` for browser/API/CDP flows.
 11. For `/wf-auto` or memory scenario hints, read `Harness/WF-AUTO.md` and `Harness/MEMORY_PROTOCOL.md`; do not enable a background runner by default. The only allowed runtime hook is the optional `/wf-auto` bounded tick hook.
-11. Run `node Harness/scripts/validate-harness.mjs --strict`.
-12. Record final verification and next feedback step in `Harness/tasks/<task-id>/PROGRESS.md`. If repeated tool failures, repeated user corrections, or reusable review/debug lessons appeared, record the concise reflection in the relevant `Harness/memory/` file.
+12. Run `node Harness/scripts/validate-harness.mjs --strict` after project-fact placeholders are resolved.
+13. Record final verification and next feedback step in `Harness/tasks/<task-id>/PROGRESS.md`. If repeated tool failures, repeated user corrections, or reusable review/debug lessons appeared, record the concise reflection in the relevant `Harness/memory/` file.
 
 ## Install or Upgrade Path
 
@@ -61,18 +61,23 @@ Before writing, identify the project state:
 
 When adding this harness to a project that already has source code, docs, CI, or tool configuration, treat the existing project as the source of truth before filling harness docs.
 
+### Existing Project Fast Path
+
+Use this path when the user asks only to install or configure the harness in an existing project. Do not bootstrap PRD, research, architecture, or task capsules unless the user explicitly asks for bootstrap.
+
 1. Get the machine-readable install report first with `npx create-harness-vibe-coding@latest <project-name> <target-dir> -y --dry-run --on-conflict skip --json`. Use `scan.markers` and `agent.aiMergeRequired` instead of hand-written root probes for install decisions. Do manual project-fact reading only after the script has created missing Harness files.
-2. Record discovered facts and open questions in `Harness/tasks/<task-id>/PROGRESS.md` before changing harness docs.
-3. Fill `Harness/research/PRD.md`, `Harness/research/research-results.md`, `Harness/architecture.md` from observed project facts plus explicit user input.
+2. Run the JSON `agent.safeMergeCommand` to create only missing files.
+3. Record discovered facts in the final install summary. Create or update task capsules only when bootstrap or multi-step implementation work begins.
 4. Existing configuration is project fact. Do not overwrite `CLAUDE.md`, `AGENTS.md`, `.claude/`, `.agents/`, `.codex/`, `.gitignore`, settings, package files, CI, docs routers, workflow docs, or installed skills/plugins/rules unless the user explicitly approves that exact overwrite.
 5. When a harness file conflicts with an existing file, preserve the existing file and register any missing harness guidance manually using `Harness/extension.md`.
-6. Run `node Harness/scripts/validate-harness.mjs --strict` after project-fact placeholders have been resolved or intentionally recorded as open. Use the non-strict validator only for early structural checks.
+6. Run `node Harness/scripts/validate-harness.mjs` as the install-complete gate.
+7. Defer `node Harness/scripts/validate-harness.mjs --strict` until bootstrap removes project-fact placeholders. If placeholders intentionally remain, report strict validation as deferred rather than treating install as failed.
 
 `npx create-harness-vibe-coding` is an install/safe-merge entry, not an update engine for a project that already has an installed Harness. If `Harness/` already exists, use `/wf-update`, `$wf-update`, or `node Harness/scripts/wf-update-check.mjs`; root entry files and user-modified Harness docs require agent-mediated merge decisions.
 
 ### Agent-Link Install Intake
 
-When the user installs by pasting the GitHub link into an agent, get the JSON install report before editing or asking generic questions. Summarize `scan.markers`, then ask only questions that affect writes, architecture, security, or workflow. Ask at most three blocking questions up front, record safe defaults for the rest, and ask follow-ups only when that choice becomes active.
+When the user installs by pasting the GitHub link into an agent, get the JSON install report before editing or asking generic questions. Do not fetch full template files or read package source until `agent.aiMergeRequired` names a file that needs semantic comparison. Summarize `scan.markers`, then ask only questions that affect writes, architecture, security, or workflow. Ask at most three blocking questions up front, record safe defaults for the rest, and ask follow-ups only when that choice becomes active.
 
 | Topic | Ask When | Default If Unanswered |
 | --- | --- | --- |
@@ -117,9 +122,9 @@ When `--on-conflict skip` leaves existing files untouched, the script still owns
      - **[Overwrite]** — Replace with the template version. Optionally backup the original first (`--on-conflict backup`).
      - **[Keep]** — Leave the existing file as-is. Skip this file.
 
-4. For Merge: use Edit (not Write) to add missing content. Only insert sections, headings, and text that are structurally required. Do not reorder or modify existing content. Do not remove custom project-specific registrations.
+4. For Merge: use targeted edits, not a full-file rewrite. In Codex, use `apply_patch` or an equivalent patch operation. Only insert sections, headings, and text that are structurally required. Do not reorder or modify existing content. Do not remove custom project-specific registrations. After merging `CLAUDE.md` or `AGENTS.md`, inspect the heading outline and remove duplicate headings or repeated bullets introduced by the merge.
 
-5. After all merges, run `node Harness/scripts/validate-harness.mjs --strict` once after project-fact placeholders are resolved. Run the non-strict validator earlier only when you need a quick structural check before bootstrap is complete.
+5. After all install merges, run `node Harness/scripts/validate-harness.mjs`. Run `node Harness/scripts/validate-harness.mjs --strict` only after project-fact placeholders are resolved during bootstrap or release preparation.
 
 **File-specific gap checklists:**
 
@@ -131,12 +136,12 @@ The harness validator checks for specific structural invariants. When comparing 
 | `AGENTS.md` | Root agent entry points to `CLAUDE.md` and `Harness/README.md`; for existing projects, merge only after explicit user consent |
 | `README.md` | Existing README is project-owned. Preserve by default; ask whether to append only Development notes or run `wf-readme` for a structure pass with tables/diagrams before broad edits |
 | `Harness/MEMORY.md` | All common agents registered under `## Agents`; all common harness skills registered under `## Skills`; all 3 `Harness/memory/` files registered under `## Memory Folder`; `Harness/memory/` folder usage guidance; `Project Resource Index` in title |
-| `.claude/rules/ecc/common.md` | `## Context` section with the durable communication invariant (`project files are the only durable communication channel`); `## Memory` section with three reflection file entries; `## Security` section |
+| `.claude/rules/ecc/common.md` | Required project-local universal rules. Keep it even when global `~/.claude/rules/ecc/common/` exists; that directory and this file have different scopes. Required sections: `## Context` with the durable communication invariant (`project files are the only durable communication channel`); `## Memory` with three reflection file entries; `## Security` |
 | `Harness/README.md` | `## Keyword Routing` heading; `## Load By Task` table with at minimum the rows: "Need WF mode", "Adding harness to existing project", "Need implementation plan", "Need parallel agents", "Need subagents", "Need durable memory or reflection"; WF routing keywords include `/wf`, `wf mode`, `workflow mode`, and `wk mode`; explicit WF/WK output says subagent docs load immediately; `## Doc Map` with `memory/` and `subagents.md` entries; the durable communication invariant text; `Harness/README.md is the primary router` |
 | `Harness/WF.md` | `WF mode requires multi-subagent orchestration by default`; explicit `/wf`, `$wf`, `wf mode`, `workflow mode`, or `wk mode` requires at least 3 distinct role passes before second planning; `collaboration decision tree`; `Heartbeat Protocol` |
 | `Harness/extension.md` | `## Non-Invasive Extension Rules` section with the "Preserve existing" rule; `## Agent Contract` section; `## Registration` section |
-| `Harness/dispatch.md` | The durable communication invariant; common agent entries for all 9 agents; `## Handoff Format` heading |
-| `Harness/context-loading.md` | The durable communication invariant; `Harness/README.md is the primary router`; all 10 subagent context packs (Explorer Pass, Planner, Researcher, Docs Researcher, Architect, Test Writer, Implementer, Reviewer, Debugger, Verifier) |
+| `Harness/dispatch.md` | The durable communication invariant; registered common agent entries; `## Handoff Format` heading |
+| `Harness/context-loading.md` | The durable communication invariant; `Harness/README.md is the primary router`; all 12 subagent context packs (Explorer Pass, Planner, Researcher, Docs Researcher, Architect, Test Writer, Implementer, Reviewer, Debugger, Verifier, Memory Master, Context Master) |
 | `Harness/subagents.md` | `## Source Attribution`; `## Built-in Agent Roster`; `## WF Default Fan-Out`; `Controller Role`; `Efficiency Ladder`; `Review Gates`; `collaboration decision tree`; source markers for `npx skills find`, `dispatching-parallel-agents`, and `subagent-driven-development` |
 | `Harness/architecture.md` | `## 2. Interface Decoupling`; `## 3. State Design`; `Avoid speculative abstraction`; layer constraints derived from actual project facts |
 | `Harness/PROGRESS.md` | global task index with Active Task and task history; cross-task decisions |
@@ -148,10 +153,12 @@ The harness validator checks for specific structural invariants. When comparing 
 
 **Files that do NOT need manual merge when the path does not already exist (auto-created by harness):**
 
+The generated file list is authoritative by path, not by stale count labels. Current common scaffolds include WF-MAX manager agents and `tdd-guide`; keep every file created by the scaffold unless a removal workflow explicitly classifies it as safe to remove.
+
 - `Harness/memory/tool-usage-reflections.md`, `Harness/memory/user-corrections-preferences.md`, `Harness/memory/agent-lessons-patterns.md` — these are new empty files
-- `.claude/agents/*.md` — all 9 common agents
+- `.claude/agents/*.md` - all built-in common agent files, including WF-MAX managers and `tdd-guide`
 - `.claude/skills/*.md` and mirrored `.agents/skills/*.md` — Claude Code and Codex skill adapters over the same Harness docs
-- `.claude/rules/ecc/common.md` — universal rules (unless the project has custom rules in this file)
+- `.claude/rules/ecc/common.md` - required project-local universal rules. Do not delete this file as a duplicate of a global `~/.claude/rules/ecc/common/` directory; they are different scopes.
 - `.claude/settings.json` — harness settings
 - `Harness/WF.md`, `Harness/lifecycle.md`, `Harness/subagents.md`, `Harness/agent-workflow.md`, `Harness/architecture.md` — harness runtime docs
 - `Harness/research/*.md` — research protocol and templates
@@ -314,5 +321,5 @@ After scaffolding, use the JSON output first. Files in `plan.create[]` were hand
 
 1. Read `CLAUDE.md`, `Harness/MEMORY.md`, and `Harness/README.md`.
 2. Follow the Required Bootstrap Sequence above.
-3. Run `node Harness/scripts/validate-harness.mjs --strict` when done.
+3. Run `node Harness/scripts/validate-harness.mjs` after install. Run `node Harness/scripts/validate-harness.mjs --strict` after bootstrap resolves project-fact placeholders.
 4. Delete `Harness/SETUP.md`.

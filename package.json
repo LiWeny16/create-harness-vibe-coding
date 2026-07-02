@@ -1,6 +1,6 @@
 {
   "name": "create-harness-vibe-coding",
-  "version": "0.8.5",
+  "version": "0.8.6",
   "description": "Scaffold a 0-1 product harness for AI-assisted research, PRD, planning, architecture, build, test, and feedback loops",
   "type": "module",
   "bin": {

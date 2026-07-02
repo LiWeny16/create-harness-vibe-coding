@@ -77,7 +77,7 @@ Routing priority: if a request explicitly says `/wf <task>`, `$wf`, `wf mode`, `
 | Need subagents | subagent, role pack, context, inject, return format, orchestrator, isolation | [subagents.md](subagents.md), [context-loading.md](context-loading.md), [dispatch.md](dispatch.md), [AGENT_ISOLATION.md](AGENT_ISOLATION.md) | controller plan, role-specific context pack, isolation-aware dispatch pack |
 | Need feature work | feature, implementation, TDD, test, review, closeout | [tasks/_template/PLAN.md](tasks/_template/PLAN.md), [agent-workflow.md](agent-workflow.md), [TDD-GUIDE.md](TDD-GUIDE.md), [ACCEPTANCE_PROTOCOL.md](ACCEPTANCE_PROTOCOL.md) | task plan, AC-linked RED tests, implementation loop |
 | Review or release check | review, release, finding, risk, evidence, verification | [agent-workflow.md](agent-workflow.md), current feature doc | findings, verification evidence |
-| Harness readiness check | validate, readiness, placeholder, missing file, release gate | `Harness/scripts/validate-harness.mjs`, `Harness/scripts/validate-harness.mjs --strict` | missing files and unresolved project placeholders |
+| Harness readiness check | validate, readiness, placeholder, missing file, release gate | `Harness/scripts/validate-harness.mjs`, `Harness/scripts/validate-harness.mjs --strict` | structural install check; strict bootstrap/release placeholder check |
 | Need harness update | /wf-update, $wf-update, update, check for updates, harness version | `.claude/skills/wf-update/SKILL.md`, `.agents/skills/wf-update/SKILL.md`, `Harness/.harness-version`, `Harness/scripts/wf-update-check.mjs` | script-driven comparison, SAFE/CONFLICT/PRESERVE classification, user decides conflicts |
 | Need harness removal | /wf-remove, $wf-remove, wf remove, remove harness, uninstall harness | `.claude/skills/wf-remove/SKILL.md`, `.agents/skills/wf-remove/SKILL.md`, `Harness/scripts/wf-remove.mjs` | safe removal plan: auto-remove SAFE, confirm MODIFIED, never touch USER DATA |
 
@@ -103,7 +103,7 @@ Routing priority: if a request explicitly says `/wf <task>`, `$wf`, `wf mode`, `
 - Do not add stack-specific agents or skills without following `extension.md`.
 - Do not close work without tests or recorded manual verification.
 - Do not mark work `Verified` until evidence is recorded in the current task's `tasks/<id>/PROGRESS.md` and `tasks/<id>/PLAN.md` or the feature doc.
-- Run `node Harness/scripts/validate-harness.mjs` for scaffold structure; run `node Harness/scripts/validate-harness.mjs --strict` after bootstrap and before release.
+- Run `node Harness/scripts/validate-harness.mjs` for install-complete scaffold structure; run `node Harness/scripts/validate-harness.mjs --strict` only after bootstrap resolves project-fact placeholders and before release.
 - If a doc still has `{{...}}`, treat that section as a template, not project fact.
 
 ## Doc Map

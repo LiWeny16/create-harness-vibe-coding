@@ -18,7 +18,7 @@ npx create-harness-vibe-coding@latest my-project
 
 ## Your Agent Knows What to Do
 
-Already have a project? **Don't read the docs**. Paste this sentence. Your agent handles the rest.
+Already have a project? Paste this sentence. Your agent should use the script-first fast path: dry-run JSON first, read only files named in `agent.aiMergeRequired`, then run the structural validator.
 
 ```text
 Read and follow https://github.com/zingspark/create-harness-vibe-coding exactly to configure this project with create-harness-vibe-coding.
@@ -41,7 +41,7 @@ Chinese README: [README-CN.md](README-CN.md)
 | `subagent-orchestrator` | Runs parallel agents without collision |
 | `memory-master` + `context-master` | Learns from failures, compresses when full |
 | PRD + Research templates | Asks "what" and "why" before coding |
-| 11 built-in agents | Research, plan, architect, test, build, review, debug, verify |
+| 16 built-in agents | Research, plan, architecture, TDD, build, review, debug, verify, memory/context, WF-MAX managers |
 | Architecture docs | Knows where boundaries live |
 | Context-loading protocol | Loads only the docs each agent needs |
 | `.claude/` + `.agents/skills/` | Claude Code and Codex skill adapters over the same Harness docs |
@@ -125,9 +125,14 @@ npx create-harness-vibe-coding@latest my-app . -y --dry-run --json
 
 # Add only what's missing. Never overwrite.
 npx create-harness-vibe-coding@latest my-app . -y --on-conflict skip --json
+
+# Install-complete structural gate.
+node Harness/scripts/validate-harness.mjs
 ```
 
 The JSON output is the agent's install report: `scan` replaces hand-written root probes, `plan.create` is script-owned, and `agent.aiMergeRequired` is the only list that needs semantic AI review. Do not read package source or templates unless `agent.aiMergeRequired` names a conflicting file.
+
+For existing projects, a passing non-strict validator is the install-complete gate. `--strict` is the bootstrap/release gate and may fail until PRD, research, and architecture placeholders have been resolved from real project facts.
 
 `npx` is an install and safe-merge entry, not an update engine for an already installed Harness. Once `Harness/` exists, use `/wf-update` in Claude Code, `$wf-update` in Codex, or `node Harness/scripts/wf-update-check.mjs`; root entry conflicts such as `CLAUDE.md`, `AGENTS.md`, `.claude/`, `.agents/`, `.codex/`, and local Harness docs need agent-mediated merge decisions.
 
@@ -182,6 +187,14 @@ npx create-harness-vibe-coding@latest my-app . -y --dry-run --json
 
 Use `scan.markers` instead of manual top-level probes. Ask **at most 3 blocking questions** before touching files. Files in `plan.create` are handled by the script; only files in `agent.aiMergeRequired` need AI comparison and user-supervised merge decisions.
 
+Fast path for an existing project with no installed `Harness/`:
+
+1. Run the dry-run JSON command.
+2. Run the JSON `agent.safeMergeCommand` to create only missing files.
+3. Patch only files listed in `agent.aiMergeRequired`; preserve project-owned content.
+4. Run `node Harness/scripts/validate-harness.mjs`.
+5. Stop and report install status. Defer `--strict` until bootstrap fills project-fact placeholders.
+
 Ask these only when they affect writes:
 
 - If `CLAUDE.md` or `AGENTS.md` already exists, should missing Harness guidance be merged, kept separate, or skipped?
@@ -205,7 +218,10 @@ Harness docs always live in root `Harness/`; do not route Harness files through 
 # In this package repo
 npm test
 
-# In a generated project after bootstrap
+# In an existing project immediately after safe-merge install
+node Harness/scripts/validate-harness.mjs
+
+# In a generated project after bootstrap, or before release
 node Harness/scripts/validate-harness.mjs --strict
 ```
 
@@ -229,7 +245,7 @@ my-project/
 │   ├── memory/                ← Durable self-learning
 │   └── scripts/               ← Validator
 ├── .claude/
-│   ├── agents/               ← 11 common agents
+│   ├── agents/               ← 16 built-in agents
 │   ├── skills/               ← Claude Code skill commands
 │   └── rules/                ← Universal coding rules
 ├── .agents/
