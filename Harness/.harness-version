@@ -1,6 +1,6 @@
 {
   "generator": "0.8.1",
-  "generated": "2026-07-02T02:06:43.486Z",
+  "generated": "2026-07-02T02:09:16.640Z",
   "options": [],
   "autoCheck": true,
   "source": "https://raw.githubusercontent.com/zingspark/create-harness-vibe-coding/main/templates/common/",
@@ -61,7 +61,7 @@
     "Harness/research/README.md": "sha256-956c154df01cb9376972eb8b88bb3be0fe4e2dda802a72457c0126e3476fa755",
     "Harness/scripts/scan-clean.mjs": "sha256-7f693faf762c9c8e7657143d651f7c8369ed4823f18babe21daec58a55025593",
     "Harness/scripts/validate-harness.mjs": "sha256-393e72e09d0d7ed40e40638b6b45fb70a3b40f002a342097ebe30bb8e08279c5",
-    "Harness/scripts/wf-mode-hook.mjs": "sha256-4c195048d765a822974fe1aa84353286afcf6a1093db9e62bf46695ae0adfc41",
+    "Harness/scripts/wf-mode-hook.mjs": "sha256-fbf2c398bfe21374fc5d0230133dfa16feff6afe79598bd185aae49643075545",
     "Harness/scripts/wf-remove.mjs": "sha256-ae941d34d7d263f2b65751d177673a3c4fb11c326885ca413245e3f93e99a006",
     "Harness/scripts/wf-statusline.ps1": "sha256-99e956c59d5aec78e1422fa93d47a4551450ad0935ab87a714068e2d90586aaf",
     "Harness/scripts/wf-statusline.sh": "sha256-01ba4b33f513473e2a923e0ad7e5bcc7cf4c921e18c25f2e64aa118f1f7eba24",

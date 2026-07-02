@@ -40,7 +40,9 @@ const MAX_GOAL_BYTES = 65536;
 const MAX_GOAL_DESC = 500;
 
 const VALID_MODES = ['wf', 'wf-max', 'wf-auto', 'wf-auto-spark', 'wf-review', 'wf-learn', null];
-const VALID_ROLES = ['ceo', 'manager', 'worker', 'reviewer', null];
+const VALID_ROLES = ['ceo', 'ceo-escalated', 'manager', 'worker', 'reviewer', null];
+const MAX_ESCALATION_COUNT = 3; // Worker failures before CEO can escalate
+const MAX_ESCALATION_FILES = 3; // Max files CEO can touch while escalated
 const VALID_PHASES = ['W0_EXPLORE', 'W1_ARCHITECTURE', 'W2_IMPLEMENT', 'W2R_REVIEW', 'W3_DEPENDENT', 'INTEGRATION', 'CLOSEOUT', 'REVIEW', 'SPARK', 'AUTO', 'LEARN', null];
 const BLOCKED_TOOLS = ['Edit', 'Write', 'MultiEdit', 'Bash'];
 const MAX_TASKID_BYTES = 128;
@@ -376,6 +378,17 @@ function handleSessionStart() {
         '1. Read files, analyze, report findings.',
         '2. Do NOT edit any files.',
       ].join('\n'));
+    } else if (agentRole === 'ceo-escalated') {
+      const ws = mode.writeSet ? ` [writeSet: ${mode.writeSet.join(', ')}]` : '';
+      process.stdout.write([
+        '═══ CEO ESCALATED — Workers failed, CEO stepping in ═══',
+        `Task: ${mode.taskId || 'current'} | Phase: ${phase}`,
+        `Reason: ${mode.escalationReason || 'Worker retry limit exceeded'}`,
+        '',
+        `WRITE ONLY: ${mode.writeSet ? mode.writeSet.join(', ') : 'NONE SPECIFIED'}`,
+        'Fix the specific issue, then IMMEDIATELY say "ceo deescalate".',
+        'De-escalation returns you to normal CEO (no source writes).',
+      ].join('\n'));
     }
   } else if (mode.mode === 'wf-review') {
     process.stdout.write([
@@ -431,6 +444,43 @@ function handleUserPromptSubmit(event) {
     const data = readGoals();
     const g = data.goals.find(g => g.id === id && g.status === 'active');
     if (g) { g.status = 'abandoned'; g.completedAt = new Date().toISOString(); writeGoals(data); }
+  }
+
+  // ── CEO escalation / de-escalation ──
+  const escalateMatch = prompt.match(/(?:^|\n)\s*ceo\s+escalate\s+(\S+(?:\s*,\s*\S+)*)(?:\s+"(.+?)")?/i);
+  const deescalateMatch = prompt.match(/(?:^|\n)\s*ceo\s+deescalate/i);
+
+  if (escalateMatch) {
+    try {
+      const mode = safeReadJSON(MODE_FILE);
+      if (mode && mode.agentRole === 'ceo') {
+        const files = escalateMatch[1].split(',').map(f => f.trim()).filter(Boolean);
+        const reason = (escalateMatch[2] || 'Worker retry limit exceeded').slice(0, 200);
+        if (files.length <= MAX_ESCALATION_FILES) {
+          safeWriteJSON(MODE_FILE, {
+            ...mode,
+            agentRole: 'ceo-escalated',
+            writeSet: files,
+            escalationReason: reason,
+            escalatedAt: new Date().toISOString(),
+          });
+        }
+      }
+    } catch {}
+  }
+
+  if (deescalateMatch) {
+    try {
+      const mode = safeReadJSON(MODE_FILE);
+      if (mode && mode.agentRole === 'ceo-escalated') {
+        const { escalationReason, escalatedAt, ...rest } = mode;
+        safeWriteJSON(MODE_FILE, {
+          ...rest,
+          agentRole: 'ceo',
+          writeSet: undefined,
+        });
+      }
+    } catch {}
   }
 
   // ── Mode activation detection ──
@@ -491,6 +541,8 @@ function handleUserPromptSubmit(event) {
         ? `WF-MAX MANAGER — Coordinate and synthesize. No source edits.`
         : agentRole === 'reviewer'
         ? `WF-MAX REVIEWER — Read and report only. No edits.`
+        : agentRole === 'ceo-escalated'
+        ? `═══ CEO ESCALATED — Fix the issue in ${mode.writeSet ? mode.writeSet.join(',') : 'escalated files'}, then deescalate. ═══`
         : `WF-MAX ACTIVE — Role: ${agentRole}.`;
 
       process.stdout.write(JSON.stringify({
@@ -658,6 +710,33 @@ function handlePreToolUse(event) {
 
     process.stderr.write(`[WF-MAX REVIEWER BLOCK] ${toolName} is forbidden for Reviewer. Read and report only.\n`);
     process.exit(2);
+  }
+
+  // ── CEO-Escalated: can write escalated files only ──
+  if (agentRole === 'ceo-escalated') {
+    const writeSet = mode.writeSet || [];
+
+    if (toolName === 'Bash') {
+      const trimmed = command.trim();
+      if (/[\r\n\0]/.test(trimmed)) {
+        process.stderr.write('[ESCALATED BLOCK] Bash command contains control characters.\n');
+        process.exit(2);
+      }
+      if (/[;&|>`$]/.test(trimmed)) {
+        process.stderr.write('[ESCALATED BLOCK] Bash command contains shell metacharacters.\n');
+        process.exit(2);
+      }
+      const allowed = /^(ls|dir|tree|git\s+status|git\s+diff|git\s+log|git\s+branch|node\s+Harness\/scripts\/[a-z0-9_.-]+\.mjs|which|echo|type|codex|claude|npm\s+test|npm\s+run)(\s+[^;&|>`$]*)?$/;
+      if (allowed.test(trimmed)) return;
+    }
+
+    if (filePath) {
+      if (isTaskFile(filePath) || isHarnessMeta(filePath, 'ceo')) return;
+      if (isInWriteSet(filePath, writeSet)) return;
+      process.stderr.write(`[ESCALATED BLOCK] ${toolName} on "${filePath}" is outside escalation writeSet [${writeSet.join(', ')}]. Say "ceo deescalate" to return to normal CEO.\n`);
+      process.exit(2);
+    }
+    return;
   }
 }
 
