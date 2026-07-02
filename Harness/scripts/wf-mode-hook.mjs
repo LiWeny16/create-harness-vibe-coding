@@ -321,15 +321,30 @@ function handleSessionStart() {
   if (mode.mode === 'wf-max') {
     if (agentRole === 'ceo') {
       process.stdout.write([
-        'WF-MAX MODE ACTIVE — Top-level orchestrator is CEO.',
+        '═══ WF-MAX CEO MODE — YOU ARE THE ORCHESTRATOR, NOT AN IMPLEMENTER ═══',
         `Task: ${mode.taskId || 'current'} | Phase: ${phase}`,
         '',
-        'CEO RULES (delegated Workers follow their dispatch packet):',
-        '1. Spawn read-only subagents in ONE message for exploration',
-        '2. NEVER Edit/Write/MultiEdit source files — delegate to Workers via Agent tool',
-        '3. Bash: only ls/dir/tree/git status/git diff, and harness scripts',
-        '4. PLAN.md and PROGRESS.md writes are your ONLY write exceptions',
-        '5. Any temptation to Read/Edit a source file → STOP. Spawn a Worker.',
+        'YOUR IDENTITY: You are CEO. You do NOT write code. You THINK, PLAN, and DELEGATE.',
+        'Every line of source code must be written by a Worker subagent — never by you.',
+        '',
+        'WHAT YOU DO:',
+        '  • Read docs and plan architecture',
+        '  • Grep/Glob to scope the problem',
+        '  • Spawn Workers via Agent tool to implement changes',
+        '  • Write PLAN.md and PROGRESS.md (your ONLY file writes)',
+        '  • Run verification commands via Bash',
+        '',
+        'WHAT YOU NEVER DO:',
+        '  ✗ Edit / Write / MultiEdit any source file',
+        '  ✗ Write code directly — even "just one line"',
+        '  ✗ Bash commands with side effects (npm install, git commit, etc.)',
+        '  ✗ Read source files deeply (delegate to Worker)',
+        '',
+        'IF YOU CATCH YOURSELF about to edit a source file → STOP IMMEDIATELY.',
+        'Say "Delegating to Worker" and spawn an Agent with explicit writeSet.',
+        '',
+        'PreToolUse hook ENFORCES this. You WILL be blocked if you try to write code.',
+        'Save tokens. Save time. Delegate from the start.',
       ].join('\n'));
     } else if (agentRole === 'worker') {
       const ws = mode.writeSet ? ` [writeSet: ${mode.writeSet.join(', ')}]` : ' [no writeSet]';
@@ -469,7 +484,7 @@ function handleUserPromptSubmit(event) {
 
     if (mode.mode === 'wf-max') {
       const roleText = agentRole === 'ceo'
-        ? `WF-MAX ACTIVE — Top-level orchestrator is CEO (${mode.phase || 'W0_EXPLORE'}). Spawn Workers. NEVER Edit/Write/MultiEdit source files. Bash only: ls/dir/tree/git. PLAN.md/PROGRESS.md writes allowed.`
+        ? `═══ WF-MAX CEO (${mode.phase || 'W0_EXPLORE'}) ═══ YOU ARE CEO, NOT IMPLEMENTER. Do NOT write code. Do NOT edit files. Spawn Workers via Agent tool for ALL source changes. Only write: PLAN.md, PROGRESS.md. Bash: ls/dir/tree/git only. You WILL be blocked if you attempt Edit/Write/MultiEdit.`
         : agentRole === 'worker'
         ? `WF-MAX WORKER — Edit only files in dispatch writeSet${mode.writeSet ? ': ' + mode.writeSet.join(', ') : ' (none)'}.`
         : agentRole === 'manager'

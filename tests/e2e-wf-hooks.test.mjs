@@ -71,7 +71,7 @@ console.log('\n── SessionStart ──');
 setupModeFile('wf-max', true);
 const ss = runHook({ hook_event_name: 'SessionStart' });
 assert(ss.exit === 0, 'SessionStart exits 0');
-assert(ss.stdout.includes('WF-MAX MODE ACTIVE'), 'SessionStart injects CEO role');
+assert(ss.stdout.includes('WF-MAX CEO MODE'), 'SessionStart injects CEO role');
 assert(ss.stdout.includes('W0_EXPLORE'), 'SessionStart includes phase');
 cleanupModeFile();
 
@@ -136,7 +136,7 @@ console.log('\n── UserPromptSubmit — Per-turn Reinforcement ──');
 setupModeFile('wf-max', true);
 const ptMax = runHook({ hook_event_name: 'UserPromptSubmit', prompt: 'do the thing' });
 assert(ptMax.stdout.includes('hookSpecificOutput'), 'WF-MAX per-turn emits hookSpecificOutput');
-assert(ptMax.stdout.includes('WF-MAX ACTIVE'), 'Per-turn reminds CEO role');
+assert(ptMax.stdout.includes('WF-MAX CEO'), 'Per-turn reminds CEO role');
 assert(ptMax.stdout.includes('W0_EXPLORE'), 'Per-turn includes phase');
 cleanupModeFile();
 
@@ -514,7 +514,7 @@ console.log('\n── SessionStart Stale Mode Auto-Clear ──');
 
   const ss = runHook({ hook_event_name: 'SessionStart' });
   // Stale mode should NOT inject CEO context
-  assert(!ss.stdout.includes('WF-MAX MODE ACTIVE'), 'Stale mode (>30 min) does NOT inject CEO');
+  assert(!ss.stdout.includes('WF-MAX CEO MODE'), 'Stale mode (>30 min) does NOT inject CEO');
   // Mode file should be cleared
   const modeData = JSON.parse(readFileSync(modeFile, 'utf8'));
   assert(modeData.active === false, 'Stale mode file cleared (active=false)');
@@ -526,7 +526,7 @@ console.log('\n── SessionStart Stale Mode Auto-Clear ──');
 {
   setupModeFile('wf-max', true);
   const ss = runHook({ hook_event_name: 'SessionStart' });
-  assert(ss.stdout.includes('WF-MAX MODE ACTIVE'), 'Fresh mode (<30 min) still injects CEO');
+  assert(ss.stdout.includes('WF-MAX CEO MODE'), 'Fresh mode (<30 min) still injects CEO');
   cleanupModeFile();
 }
 
