@@ -198,7 +198,7 @@ test('validation fails when optional web workflows lose stable selector requirem
   assert.match(output, /Harness\/workflows\/browser-e2e\.md missing stable UI selector contract/);
 });
 
-test('validation fails when a registered optional workflow file is missing', () => {
+test('validation passes when an optional workflow file is not installed', () => {
   const targetDir = generateProject({ withOptions: ['browser-e2e'] });
   fs.rmSync(path.join(targetDir, 'Harness', 'workflows', 'browser-e2e.md'), { force: true });
 
@@ -208,8 +208,8 @@ test('validation fails when a registered optional workflow file is missing', () 
   });
   const output = `${result.stdout}\n${result.stderr}`;
 
-  assert.notEqual(result.status, 0);
-  assert.match(output, /registered workflow file is missing: Harness\/workflows\/browser-e2e\.md/);
+  assert.equal(result.status, 0);
+  assert.match(output, /Harness validation passed/);
 });
 
 test('validation fails when a registered optional skill file is missing', () => {

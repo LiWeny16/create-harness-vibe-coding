@@ -22,18 +22,12 @@ This repository dogfoods the generated Harness scaffold. Scaffold source files l
 **Tempted to edit source? STOP. Spawn a Worker with explicit writeSet.**
 
 - `Harness/MEMORY.md` is the memory/resource router: agents, skills, durable memories, and cross-session lessons. Follow its registrations when selecting agents/skills or recording memory.
-- `Harness/README.md` is the task router. For every request, check `Harness/README.md#Load By Task`; if a row matches, read and follow those docs before acting.
+- `Harness/README.md` is the task router. For every request, check `Harness/README.md#Load By Task` and `Harness/README.md#Skill Commands`; invoke via `/wf-*` skills or `$wf-*` skills.
 - `Harness/PROGRESS.md` is the global task index. Load at session start to see active task and task history.
 - If work spans more than one step, create a task capsule from `Harness/tasks/_template/` and update `Harness/tasks/<task-id>/PROGRESS.md`.
-- Use `/wf <task>`, `/wf-review [focus]`, `wf mode`, `workflow mode`, or `wk mode` for long, difficult, uncertain, multi-file, or repeated-failure work.
-- Use `/wf-max [task]` for maximum parallelism — CEO→Manager→Worker hierarchy. CEO never writes code directly.
-- Use `/wf-auto` for perpetual self-directed optimization — never stops, continuously improves until 8-angle exhaustion.
-- Use `subagent-orchestrator` and `Harness/subagents.md` when coordinating multiple subagents.
-- Use `/wf-update` to check for and apply scaffold updates from GitHub. See `.claude/skills/wf-update/SKILL.md`.
 - Subagents are readers and reporters. Only the main agent writes to `Harness/tasks/<task-id>/PROGRESS.md` and `Harness/tasks/<task-id>/PLAN.md`.
-- For memory writing and consolidation (repeated failures, user corrections, closeout), dispatch `memory-master`.
-- For context analysis and compression alerts (~85% window), dispatch `context-master`.
-- Universal rules live in `.claude/rules/ecc/common.md`.
+- Invoke multi-agent work via `subagent-orchestrator` and `Harness/subagents.md`. Update harness via `/wf-update` (see `.claude/skills/wf-update/SKILL.md`).
+- For memory writing, dispatch `memory-master`. For context analysis, dispatch `context-master`.
 - Never bulk-read `Harness/`; route through `Harness/README.md` and `Harness/MEMORY.md`.
 - Scaffold source files live under `templates/common/` and `templates/optional/`; generated dogfood runtime files live under root `Harness/` and `.claude/`.
 

@@ -1,6 +1,6 @@
 {
   "generator": "0.8.1",
-  "generated": "2026-07-02T03:50:56.689Z",
+  "generated": "2026-07-02T03:53:09.460Z",
   "options": [],
   "autoCheck": true,
   "source": "https://raw.githubusercontent.com/zingspark/create-harness-vibe-coding/main/templates/common/",
@@ -48,7 +48,7 @@
     ".codex/config.toml": "sha256-d37497c3278121598a663564ab38b53f658969717f78decb661ddd11c66551ea",
     ".codex/hooks.json": "sha256-ec2322e080b96b1c0cb86161476ff75a4ed00312b57eed979d7d4a379365d0b7",
     "AGENTS.md": "sha256-c6e6f08195c41b49b682291c7b83f55acd9750767a7eef3811bf5bbdaa66f76a",
-    "CLAUDE.md": "sha256-67678707e97f27a51ffffc3a87e1f01a00bc81231db1fe11cd61c85b483a7c0c",
+    "CLAUDE.md": "sha256-8449974dcfd605089ea6f00a6c5dc712e6da12b187825ab063254c8081a84f0b",
     "Harness/ECC-GUIDE.md": "sha256-48924c4c0e17dc47be53d616a6690415307688f971ec872d8860c5bbe64c90d7",
     "Harness/MEMORY.md": "sha256-6e01795e787eb809f856cce8d90a15a118f8fac1ebbb71dd746a868f207a9457",
     "Harness/README.md": "sha256-3f33274b01d100f20694efdf6c4633a01a79dcef9c9b8974ad5e8796ef928dc6",
