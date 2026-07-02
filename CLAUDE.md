@@ -8,7 +8,7 @@ This repository dogfoods the generated Harness scaffold. Scaffold source files l
 - Every session: load `Harness/MEMORY.md` first, then `Harness/README.md`.
 - If `Harness/SETUP.md` exists, follow it before normal project work; it is the install/bootstrap contract and may be deleted after setup is complete.
 
-### 1a. WF-MAX Role Contract (READ BEFORE ANY TOOL USE)
+### 1a. WF-MAX Role Contract (ACTIVE ONLY when /wf-max invoked)
 
 `/wf-max` active → top-level orchestrator is **CEO**. Delegated Workers follow dispatch packet, edit only assigned writeSet. **Global mode ≠ every agent is CEO.** (Enforced by hooks + `.runtime/current-mode.json`.)
 
