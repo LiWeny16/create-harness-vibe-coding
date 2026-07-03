@@ -49,7 +49,7 @@ Every added skill must state:
 - whether to update `Harness/PROGRESS.md` and task files
 - whether to use [subagents.md](subagents.md) and [dispatch.md](dispatch.md)
 
-Skills should extend the harness. They should not replace `Harness/README.md`, `PLAN.md`, `subagents.md`, `context-loading.md`, `dispatch.md`, or `agent-workflow.md`.
+Skills should extend the harness. They should not replace `Harness/README.md`, `Harness/PROGRESS.md`, `subagents.md`, `context-loading.md`, `dispatch.md`, or `agent-workflow.md`.
 
 ## Rules
 

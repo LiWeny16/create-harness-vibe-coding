@@ -23,13 +23,18 @@ description: Use for /wf-update in Claude Code, $wf-update or /skills wf-update 
    `agent` block as the action plan.
 2. Preserve all PRESERVE files. Never overwrite user task, memory, research,
    README, package, or architecture files.
-3. If `agent.safeApplyCommand` is present, run it to apply SAFE and NEW files
-   before spending AI time on conflicts. Default command:
+3. If `agent.safeApplyCommand` is present, run it to apply SAFE, NEW, and
+   adopted metadata-only files before spending AI time on conflicts. Default command:
    `node Harness/scripts/wf-update-check.mjs --apply-safe`.
 4. For every `agent.aiMergeRequired` entry, compare the local file with
    `templateHint` or `remoteUrl`, then choose merge, keep-local, or
-   overwrite-from-template. Ask the user only when the intent is ambiguous.
-5. Use strict `--apply` only when the JSON plan has zero conflicts.
+   overwrite-from-template. Record the decision through the script with
+   `--accept-local <file>`, `--accept-merged <file>`, or
+   `--accept-template <file>`; do not hand-edit `Harness/.harness-version`.
+   Ask the user only when the intent is ambiguous.
+5. Run `node Harness/scripts/wf-update-check.mjs --finalize` after all
+   conflicts have script-recorded decisions. Use strict `--apply` only when the
+   JSON plan has zero conflicts.
 6. After update, run the validator and then scan-clean.
 
 ## Return

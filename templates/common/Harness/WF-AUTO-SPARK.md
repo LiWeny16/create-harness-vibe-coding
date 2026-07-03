@@ -16,6 +16,23 @@ Spark mode replaces the 8-angle internal scan with EXTERNAL inspiration search. 
 
 But perpetual search without direction = drift. The **Roadmap** is the anchor.
 
+## Inherited Execution Chain
+
+WF-AUTO-SPARK inherits WF-AUTO and WF constraints. External spark search replaces discovery only; it does not replace acceptance, implementation, review, verification, reflection, or evidence.
+
+Every accepted spark candidate must re-enter the same per-cycle chain:
+
+```text
+spark search -> Value Gate -> deviation check -> Mini PRD -> AC IDs
+-> test/validation plan -> implementer -> verifier -> cross-review
+-> reflector PASS -> evidence ledger -> next spark cycle
+```
+
+Spark searchers are read-only. Any implementation must use the dispatch packet
+from `Harness/dispatch.md` with explicit write set, forbidden truth files, AC
+IDs, and verification commands. A candidate with no verifier evidence or no
+reflector PASS is not accepted, even if the idea is valuable.
+
 ## Startup: Roadmap Declaration
 
 Before first spark cycle, CEO MUST declare a roadmap. This is written to `Harness/tasks/auto/SPARK-ROADMAP.md`.
@@ -79,7 +96,7 @@ STARTUP: Declare roadmap (North Star + Milestones) → user confirms
 │   ↓                                                     │
 │ IMPLEMENT: Bounded cycle (≤3 files, ≤50 lines net)      │
 │   ↓                                                     │
-│ REVIEW + VERIFY: Same two-gate review as WF-AUTO        │
+│ VERIFY + CROSS-REVIEW + REFLECTOR PASS                  │
 │   ↓                                                     │
 │ VALUE REFLECTION: CEO writes in PROGRESS.md             │
 │   "Driven by [source]. Matters because [reason].        │

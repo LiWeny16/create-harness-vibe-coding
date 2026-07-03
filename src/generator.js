@@ -351,6 +351,7 @@ function nextBackupPath(destPath) {
 
 function registerOptionalContent(file, content, selectedSkills) {
   if (!selectedSkills.length) return content;
+  const hasBrowserE2e = selectedSkills.some(skill => skill.id === 'browser-e2e');
 
   if (file === 'Harness/MEMORY.md') {
     const lines = selectedSkills.map(skill => (
@@ -366,7 +367,25 @@ function registerOptionalContent(file, content, selectedSkills) {
     const lines = selectedSkills.map(skill => (
       `- [${skill.title}](workflows/${skill.id}.md) - ${skill.description}`
     ));
-    return `${content.trimEnd()}\n\n## Installed Optional Workflows\n\n${lines.join('\n')}\n`;
+    let next = content;
+    if (hasBrowserE2e) {
+      next = next.replace(
+        '| Optional workflow installed |',
+        '| Browser E2E testing or automation | /wf-browser, $wf-browser, browser, e2e, web automation, screenshot verify, page test, browser test, Playwright, CDP | [workflows/browser-e2e.md](workflows/browser-e2e.md), [HARNESS_BRIDGE.md](HARNESS_BRIDGE.md) | UI/API contract, CLI commands, screenshots, traces, validation matrix |\n| Optional workflow installed |',
+      );
+      next = next.replace(
+        '| `/wf-readme [task]` |',
+        '| `/wf-browser [task]` | `$wf-browser [task]` | Optional browser automation/E2E workflow when `browser-e2e` is installed |\n| `/wf-readme [task]` |',
+      );
+    }
+    return `${next.trimEnd()}\n\n## Installed Optional Workflows\n\n${lines.join('\n')}\n`;
+  }
+
+  if (file === '.claude/commands/wf-help.md' && hasBrowserE2e) {
+    return content.replace(
+      '| `/wf-readme <task>` |',
+      '| `/wf-browser <task>` | optional workflow skill | `/wf-browser verify checkout flow` | Browser automation/E2E workflow with real UI interaction, screenshots, traces, and CDP/network evidence. |\n| `/wf-readme <task>` |',
+    );
   }
 
   return content;

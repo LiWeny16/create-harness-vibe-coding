@@ -16,7 +16,7 @@ This repository dogfoods the generated Harness scaffold. Scaffold source files l
 |---|---|
 | Read Harness docs, CLAUDE.md | Edit / Write / MultiEdit |
 | Grep/Glob for scoping | Bash (except `ls`/`dir`/`tree`/`git`) |
-| Agent spawn (ONE message) | Deep source reads → delegate to Worker |
+| Agent spawn (ONE message) | Deep source reads -> delegate to Worker |
 | Write PLAN.md / PROGRESS.md | Sequential spawn (AP6) |
 
 **Tempted to edit source? STOP. Spawn a Worker with explicit writeSet.**
@@ -25,6 +25,7 @@ This repository dogfoods the generated Harness scaffold. Scaffold source files l
 - `Harness/README.md` is the task router. For every request, check `Harness/README.md#Load By Task` and `Harness/README.md#Skill Commands`; invoke via `/wf-*` skills or `$wf-*` skills.
 - `Harness/PROGRESS.md` is the global task index. Load at session start to see active task and task history.
 - If work spans more than one step, create a task capsule from `Harness/tasks/_template/` and update `Harness/tasks/<task-id>/PROGRESS.md`.
+- Keep task records compact: PLAN holds goal, decisions, scope, risks; PROGRESS holds status/next, changes, verification. Link logs or outputs instead of pasting them.
 - Subagents are readers and reporters. Only the main agent writes to `Harness/tasks/<task-id>/PROGRESS.md` and `Harness/tasks/<task-id>/PLAN.md`.
 - Invoke multi-agent work via `subagent-orchestrator` and `Harness/subagents.md`. Update harness via `/wf-update` (see `.claude/skills/wf-update/SKILL.md`).
 - For memory writing, dispatch `memory-master`. For context analysis, dispatch `context-master`.
@@ -36,7 +37,7 @@ This repository dogfoods the generated Harness scaffold. Scaffold source files l
 - You must have **>=95% confidence** in user intent before writing implementation code.
 - If confidence is below 95%, stop and ask up to 3 blocking questions.
 - If multiple valid approaches exist and the choice affects architecture, scope, stack, or user-facing behavior, present trade-offs instead of picking silently.
-- State assumptions before implementation and record durable assumptions, decisions, blockers, handoffs, and verification evidence in `Harness/tasks/<task-id>/PLAN.md`.
+- State assumptions before implementation and record only durable assumptions, decisions, blockers, handoffs, and verification evidence in `Harness/tasks/<task-id>/PLAN.md`.
 - If something is unclear, stop. Name what is unclear and ask instead of guessing.
 - Before asserting a fact about the codebase, read the file that proves it. If you cannot cite the file and line, do not assert.
 
@@ -75,14 +76,14 @@ This repository dogfoods the generated Harness scaffold. Scaffold source files l
 - **Tool reflection trigger**: record a lightweight reflection when the same tool/use pattern fails 3+ times, or when a better command pattern/environment fix is found. Write it newest-first in `Harness/memory/tool-usage-reflections.md`.
 - **User correction trigger**: record a lightweight preference/correction when the user asks to remember it, or when the user corrects the same assumption/pattern 2+ times. Write it newest-first in `Harness/memory/user-corrections-preferences.md`.
 - **Agent lesson trigger**: record reusable lessons from review/debug loops in `Harness/memory/agent-lessons-patterns.md` when they would prevent recurrence.
-- **WF auto-trigger**: before WF closeout, dispatch `context-master` then `memory-master` (or use `/wf-learn`). The old "3x same failure" auto-trigger is unreliable — make this a mandatory closeout gate.
+- **WF auto-trigger**: before WF closeout, dispatch `context-master` then `memory-master` (or use `/wf-learn`). The old "3x same failure" auto-trigger is unreliable - make this a mandatory closeout gate.
 - **Context threshold trigger**: when context approaches ~85% of the window, dispatch `context-master` to analyze and write a non-blocking compression suggestion to `Harness/tasks/<task-id>/PROGRESS.md#Heartbeat`.
 - **Closeout trigger**: during WF closeout, dispatch `context-master` to extract durable knowledge, then `memory-master` to consolidate into `Harness/memory/*`.
 - Never record secrets, credentials, tokens, or private data in memory.
 
 ## 7. Mode Constraints
 
-- Never call `EnterPlanMode` — delegate planning to `planner` subagents (see `Harness/WF.md`).
-- Never write code directly in `/wf` or `/wf-max` CEO mode — delegate all implementation to Workers via dispatch packets with explicit writeSet.
-- **WF-MAX three-layer architecture**: global mode (`wf-max`) != agent role (`ceo|manager|worker|reviewer`). Workers follow dispatch packet (writeSet, forbidden, verification). Missing role/writeSet means the controller must not proceed with source edits.
+- Never call `EnterPlanMode` - delegate planning to `planner` subagents (see `Harness/WF.md`).
+- Never write code directly in `/wf` or `/wf-max` CEO mode - delegate all implementation to Workers via dispatch packets with explicit writeSet.
+- **WF-MAX three-layer architecture**: global mode (`wf-max`) != agent role (`ceo|manager|worker|verifier|reviewer|reflector`). Workers follow dispatch packet (writeSet, forbidden, verification). Missing role/writeSet means the controller must not proceed with source edits.
 - **Enforcement**: `.claude/settings.json` denies `EnterPlanMode` via the `deny` list. WF-MAX role/writeSet compliance is not hook-enforced; it is maintained through dispatch packets, independent review, validation evidence, and the task capsule. Role contract is in [Section 1a](#1a-wf-max-role-contract-active-only-when-wf-max-invoked) - read it first.

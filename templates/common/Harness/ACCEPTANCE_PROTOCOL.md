@@ -16,8 +16,10 @@ Context Load
 -> Test Plan
 -> Implementation Dispatch
 -> Independent Validation
--> Review
--> Debug
+-> Cross-Review
+-> Reflector PASS
+-> Final Acceptance
+-> Debug/iterate if needed
 -> Memory
 ```
 
@@ -25,8 +27,8 @@ Mode differences are organizational only:
 
 | Mode | Organization | Same Acceptance Flow |
 | --- | --- | --- |
-| `/wf` / `$wf` | Small team, mostly serial | yes |
-| `/wf-max` / `$wf-max` | CEO -> Manager -> Worker hierarchy | yes |
+| `/wf` / `$wf` | Complete role chain | yes |
+| `/wf-max` / `$wf-max` | Complete role chain plus CEO -> Manager -> Worker fan-out | yes |
 | `/wf-auto` / `$wf-auto` | Repeating optimization loop | yes, per cycle |
 
 ## Gates
@@ -42,6 +44,7 @@ These gates apply before implementation unless the user explicitly asks for a sm
 | IMPLEMENT-GATE | Implementer may not modify acceptance truth files except through Change Request. | dispatch write set and forbidden set |
 | VALIDATION-GATE | Validator must be independent and must validate AC IDs against running behavior. | validation report with evidence matrix |
 | REVIEW-GATE | Reviewer reads PRD, AC, diff, and run evidence directly. | findings with AC IDs |
+| REFLECT-GATE | Reflector reads verifier evidence and reviewer findings before final acceptance. | PASS, RETURN_TO_DEBUG, or BLOCKED verdict |
 
 Truth files are:
 
@@ -55,6 +58,8 @@ Truth files are:
 ## Mini PRD Minimum
 
 Every task that changes behavior needs a Mini PRD. It can live in `Harness/research/PRD.md`, a feature doc, or `Harness/tasks/<task-id>/PLAN.md`.
+For routine scoped work, keep the Mini PRD compact. Do not expand into a long
+product brief unless scope, risk, or user-facing behavior requires it.
 
 Minimum fields:
 
@@ -71,6 +76,9 @@ Minimum fields:
 ## Acceptance Criteria Format
 
 Each AC must be independently testable and use a stable ID:
+Default to 1-3 concise ACs in the task PLAN. Expand to full UI/API contracts,
+test plan, and AC-by-AC validation matrix only for browser-visible,
+API/integration, security/data-loss, cross-module, or other high-risk behavior.
 
 ```markdown
 ## AC-001: Empty phone number cannot request verification code

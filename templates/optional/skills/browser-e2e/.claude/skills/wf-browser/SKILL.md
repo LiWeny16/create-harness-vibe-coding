@@ -1,6 +1,6 @@
 ---
 name: wf-browser
-description: AI-driven browser automation for E2E testing, web scraping, form filling, and UI verification. Powered by Browser Use (89.1% WebVoyager benchmark). Use for /wf-browser, browser testing, web automation, page interaction, form filling, screenshot verification, or any task requiring real browser control. Dual mode: CLI (fast iteration, no LLM needed) + Python Agent API (complex multi-step workflows with AI reasoning).
+description: AI-driven browser automation for E2E testing, web scraping, form filling, and UI verification. Powered by Browser Use (89.1% WebVoyager benchmark). Use for Claude /wf-browser, Codex $wf-browser, browser testing, web automation, page interaction, form filling, screenshot verification, or any task requiring real browser control. Dual mode: CLI (fast iteration, no LLM needed) + Python Agent API (complex multi-step workflows with AI reasoning).
 ---
 
 # WF Browser — AI Browser Automation

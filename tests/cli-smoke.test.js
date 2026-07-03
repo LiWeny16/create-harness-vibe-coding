@@ -11,6 +11,15 @@ function tmpdir() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'harness-cli-'));
 }
 
+function writeUpdateStub(target, script = "console.log(JSON.stringify({ status: 'up-to-date', cwd: process.cwd(), args: process.argv.slice(2) }));\n") {
+  fs.mkdirSync(path.join(target, 'Harness', 'scripts'), { recursive: true });
+  fs.writeFileSync(
+    path.join(target, 'Harness', 'scripts', 'wf-update-check.mjs'),
+    script,
+    'utf8',
+  );
+}
+
 test('--help documents existing-project flags and optional skills', () => {
   const output = execFileSync(process.execPath, [bin, '--help'], { encoding: 'utf8' });
   assert.match(output, /--dry-run/);
@@ -118,6 +127,81 @@ test('existing project can use equals form for conflict policy', () => {
   assert.match(output, /skipped/i);
   assert.equal(fs.readFileSync(path.join(target, 'CLAUDE.md'), 'utf8'), 'legacy\n');
 });
+
+test('AC-001 existing Harness non-JSON install switches to update checker without install writes', () => {
+  const root = tmpdir();
+  const target = path.join(root, 'installed-harness');
+  fs.mkdirSync(path.join(target, 'Harness'), { recursive: true });
+  fs.writeFileSync(path.join(target, 'Harness', 'README.md'), 'existing harness\n');
+  writeUpdateStub(target);
+
+  const result = spawnSync(
+    process.execPath,
+    [bin, 'installed-harness', target, '-y', '--on-conflict', 'skip'],
+    { encoding: 'utf8' },
+  );
+  const output = `${result.stdout}\n${result.stderr}`;
+
+  assert.equal(result.status, 0, output);
+  assert.match(output, /Existing Harness detected/i);
+  assert.match(output, /up-to-date/);
+  assert.equal(fs.existsSync(path.join(target, 'CLAUDE.md')), false);
+  assert.equal(fs.existsSync(path.join(target, 'Harness', 'SETUP.md')), false);
+  assert.equal(fs.readFileSync(path.join(target, 'Harness', 'README.md'), 'utf8'), 'existing harness\n');
+});
+
+test('AC-002 existing Harness JSON dry-run returns update mode instead of install plan', () => {
+  const root = tmpdir();
+  const target = path.join(root, 'installed-harness-json');
+  fs.mkdirSync(path.join(target, 'Harness'), { recursive: true });
+  fs.writeFileSync(path.join(target, 'Harness', 'README.md'), 'existing harness\n');
+  writeUpdateStub(target);
+
+  const output = execFileSync(
+    process.execPath,
+    [bin, 'installed-harness-json', target, '--json', '--dry-run'],
+    { encoding: 'utf8' },
+  );
+  const data = JSON.parse(output.trim());
+
+  assert.equal(data.success, true);
+  assert.equal(data.mode, 'update');
+  assert.equal(data.scan.markers.hasHarness, true);
+  assert.equal(data.update.status, 'up-to-date');
+  assert.deepEqual(data.update.args, ['--json']);
+  assert.equal(data.plan, undefined);
+  assert.ok(data.agent.next.some(item => item.action === 'update'));
+  assert.equal(fs.existsSync(path.join(target, 'CLAUDE.md')), false);
+  assert.equal(fs.existsSync(path.join(target, 'Harness', 'SETUP.md')), false);
+});
+
+for (const status of ['error', 'offline', 'template-remote', 'downgrade-refused']) {
+  test(`AC-002 existing Harness JSON update switch fails on ${status} even with zero exit`, () => {
+    const root = tmpdir();
+    const target = path.join(root, `installed-harness-json-${status}`);
+    fs.mkdirSync(path.join(target, 'Harness'), { recursive: true });
+    fs.writeFileSync(path.join(target, 'Harness', 'README.md'), 'existing harness\n');
+    writeUpdateStub(
+      target,
+      `console.log(JSON.stringify({ status: '${status}', message: 'synthetic ${status}' }));\n`,
+    );
+
+    const result = spawnSync(
+      process.execPath,
+      [bin, `installed-harness-json-${status}`, target, '--json', '--dry-run'],
+      { encoding: 'utf8' },
+    );
+    const data = JSON.parse(result.stdout.trim());
+
+    assert.notEqual(result.status, 0);
+    assert.equal(data.success, false);
+    assert.equal(data.mode, 'update');
+    assert.equal(data.update.status, status);
+    assert.match(data.errors.join('\n'), new RegExp(status));
+    assert.equal(fs.existsSync(path.join(target, 'CLAUDE.md')), false);
+    assert.equal(fs.existsSync(path.join(target, 'Harness', 'SETUP.md')), false);
+  });
+}
 
 test('--list-options prints built-in optional catalog', () => {
   const output = execFileSync(process.execPath, [bin, '--list-options'], { encoding: 'utf8' });

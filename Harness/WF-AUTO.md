@@ -12,7 +12,7 @@
 
 This fills the gap between:
 - `/wf` — task-bounded, stops on completion
-- `/wf-max` — task-bounded, stops on completion, just faster
+- `/wf-max` - task-bounded WF strict superset: complete role chain plus maximum parallelism
 - `/wf-auto` — **unbounded, self-directed, perpetual improvement**
 
 ## Organization Model
@@ -22,6 +22,26 @@ optimization becomes a Mini PRD with AC IDs, a test/validation plan, bounded
 implementation, independent validation, review, debug if needed, and memory.
 Autonomy changes who chooses the next improvement; it does not make
 implementation or tests the source of truth.
+
+## Inherited WF/WF-MAX Constraints
+
+WF-AUTO inherits WF acceptance gates and subagent orchestration for every
+accepted change. Each W2-W5 cycle must run this chain:
+
+```text
+Mini PRD -> AC IDs -> test/validation plan -> implementer -> verifier
+-> cross-review -> reflector PASS -> evidence ledger -> next W0
+```
+
+WF-AUTO also inherits the WF-MAX CEO tool and write-set boundary: the CEO may
+scope, plan, dispatch, synthesize, and write only the auto task capsule. The CEO
+does not edit production source. Implementation happens only through dispatched
+workers with explicit write sets, forbidden truth files, and verification
+commands.
+
+WF-AUTO does not inherit WF-MAX mandatory maximum fan-out unless `/wf-max` is
+explicitly invoked or the selected change exceeds the auto cycle cap and
+escalates. Auto mode stays one accepted change per cycle.
 
 ```
 CEO(1) ──┬── Angle-Agent₁ (correctness)
@@ -269,12 +289,15 @@ Acceptance-specific implementation rules:
 
 ### W3: REVIEW
 
-Two-gate review (from WF/subagents.md):
+Two-gate review (from WF/subagents.md), then reflection:
 
 1. **Spec review**: Did the change address the finding without introducing extras?
 2. **Code-quality review**: Is the change correct, maintainable, safe?
+3. **Reflector gate**: Does review evidence, verifier evidence, and residual
+   risk support acceptance?
 
 At least one `reviewer` subagent. For critical/security findings, dispatch two independent reviewers.
+Do not record the cycle as accepted until `reflector` returns PASS.
 
 ### W4: DEBUG (Recovery)
 
@@ -290,6 +313,8 @@ If review or verification fails:
 - For browser-visible changes: real browser check
 - For API changes: real request/response check
 - Record evidence in `Harness/tasks/auto/PROGRESS.md`
+- Final acceptance still requires cross-review and reflector PASS after
+  verification. A passing command alone is not acceptance.
 
 Validation must include AC-by-AC evidence in `Harness/tasks/auto/PROGRESS.md`,
 not only a generic pass/fail command result.
@@ -308,6 +333,7 @@ Every cycle writes one entry to `Harness/tasks/auto/PROGRESS.md`:
 - Value Gate scores: Impact=4, Evidence=3, Fit=5, Timing=4, Cost/Risk=4 (Total=20/25 ✓)
 - Review: PASS (spec + code-quality)
 - Verify: PASS (unit tests + manual API check)
+- Reflector: PASS
 - Evidence Ledger:
   - Evidence type: code analysis
   - Expected impact: null safety in user lookup path
@@ -442,12 +468,12 @@ Before a spark candidate enters W1, it passes through the Value Gate. Binary yes
 
 **Pass threshold:** Total ≥ 18/25 AND no dimension below 3.
 
-**Spark stop condition (empirical, not arbitrary):**
-Spark mode stops when ANY of:
+**Spark checkpoint condition (empirical, not arbitrary):**
+Spark mode does not auto-stop. When ANY of these happens, trigger Re-Anchor Gate, record evidence, and ask whether to continue, change criteria, or stop:
 - 5 consecutive candidates fail the Value Gate (nothing meaningful found)
 - 3 implemented spark cycles with weak measured impact (evidence ledger shows no real gain)
 - 2 repeated source families with zero new candidates (search exhausted)
-- User interrupts
+- User interrupts (stop immediately if the user says stop)
 
 ### Evidence Ledger
 
@@ -464,7 +490,7 @@ Measured result: <actual outcome after W5 — filled AFTER verification>
 Verdict: CONFIRMED (impact matched) | PARTIAL (some gain) | NEGLIGIBLE (no real change) | REVERTED (caused regression)
 ```
 
-If a spark cycle's measured result is NEGLIGIBLE or REVERTED, increment `weakSparkCount`. After 3 weak spark cycles, spark enters `auto.exhausted`.
+If a spark cycle's measured result is NEGLIGIBLE or REVERTED, increment `weakSparkCount`. After 3 weak spark cycles, trigger Re-Anchor Gate; do not enter `auto.exhausted` unless the user chooses to stop.
 
 ## CEO Constraints
 

@@ -12,7 +12,7 @@ Use when work needs parallel reading, independent review, cross-layer analysis, 
 - project files are the only durable communication channel; chat/subagent transcript state is non-authoritative.
 - Important assumptions, decisions, blockers, evidence, and handoffs must be written to `Harness/tasks/<task-id>/PROGRESS.md` and `Harness/tasks/<task-id>/PLAN.md`, the current feature doc, `Harness/MEMORY.md`, or `Harness/memory/*` as appropriate.
 - PRD-derived Acceptance Criteria are the source of truth. Dispatch packets must carry the relevant AC IDs and contracts.
-- Agent count: default (non-WF) ≤3 active agents; `/wf` requires ≥3 distinct subagents from `.claude/agents/` before second plan; `/wf max` removes the cap entirely (governed by span formula in WF-MAX.md). See [WF.md](WF.md) and [WF-MAX.md](WF-MAX.md) for the authoritative rules.
+- Agent count: default (non-WF) <=3 active agents; `/wf` requires the complete role chain by default; `/wf max` inherits that chain and removes the Harness default cap through the span formula. Real concurrency is still bounded by runtime thread budget, config, billing, and local resources. Use current runtime subagents first, close completed agents, then cross-CLI overflow. Generated Codex config defaults to `agents.max_threads = 12` and `agents.max_depth = 1`; ask the user before raising `agents.max_threads` above that default. See [WF.md](WF.md) and [WF-MAX.md](WF-MAX.md).
 - Read-only agents may run in parallel.
 - Writing agents run serially unless write sets are disjoint.
 - Use a worktree when two agents may touch overlapping files or long-running branches.
@@ -36,6 +36,7 @@ Use when work needs parallel reading, independent review, cross-layer analysis, 
 | `debugger` | Write | smallest fix for a reproduced failure |
 | `reviewer` | Read | diff review, risks, missing tests |
 | `verifier` | Read | run checks and record evidence |
+| `reflector` | Read | synthesize review/evidence and decide acceptance readiness |
 | `memory-master` | Write | write/consolidate memory entries |
 | `context-master` | Read | analyze context, recommend compression |
 | `explore-manager` | Read | WF-MAX W0: spawn researchers, synthesize |
@@ -50,9 +51,9 @@ Use when work needs parallel reading, independent review, cross-layer analysis, 
 - If two write sets overlap, do not run those agents in parallel.
 - If an agent returns uncertainty, mark the row `Blocked` or add a follow-up row.
 - If docs, tests, and code disagree, stop implementation and record the conflict in `Harness/tasks/<task-id>/PROGRESS.md`.
-- In /wf max, file claims must respect WF-MAX.md leaf condition: no split below 50 avgLines, no split when files ≤ span×2.
+- In /wf max, file claims must respect WF-MAX.md leaf condition: no split below 50 avgLines, no split when files <= span*2.
 
-## Dispatch Input (Controller → Subagent)
+## Dispatch Input (Controller -> Subagent)
 
 The controller MUST include these fields in the subagent's dispatch packet.
 Without them, the subagent has no way to know which rules or contracts to load.
@@ -65,14 +66,14 @@ Skills:             <which skills to activate, e.g. react-review, tdd-guide>
 PRD:                <path or task PLAN section containing Mini PRD>
 Acceptance IDs:     <AC-001, AC-002, or "none" for non-behavioral work>
 UI contract:        <path to UI_CONTRACT.md or task PLAN section, if UI task>
-API contract:       <path to api/openapi.yaml, if frontend↔backend task. Omit if N/A>
+API contract:       <path to api/openapi.yaml, if frontend<->backend task. Omit if N/A>
 Read set:           <files and directories the subagent may read>
 Write set:          <files the subagent may modify. "none" = read-only>
 Forbidden:          <commands, paths, or patterns the subagent must not touch>
 Verification:       <commands to run after implementation, e.g. npm test>
 ```
 
-## Handoff Format (Subagent → Controller)
+## Handoff Format (Subagent -> Controller)
 
 Subagents return summaries in this shape:
 
@@ -82,7 +83,7 @@ Task:
 Mode:
 ECC loaded:         <which ECC rule files were actually loaded. Should match dispatch ECC field.>
 Skills active:      <which skills were active. Should match dispatch Skills field.>
-API contract:       <path to contract file used, if applicable>
+API contract:       <path to api/openapi.yaml, if frontend<->backend task. Omit if N/A>
 Acceptance IDs:     <AC IDs handled or validated>
 Files read:
 Files changed:
@@ -92,9 +93,9 @@ Risks:
 Next:
 PLAN patch:
 Validation matrix:  <AC-by-AC pass/fail/block evidence, for validators>
-Concurrency group:  <wave number — 0=exploration, 1,2,3,...=implementation waves. Optional; only used in /wf max.>
+Concurrency group:  <wave number - 0=exploration, 1,2,3,...=implementation waves. Optional; only used in /wf max.>
 File claim:         <list of exact file paths this agent exclusively owns. Optional; only used in /wf max.>
-Granularity floor:  <50 avgLines → do NOT spawn. Apply leaf condition from WF-MAX.md.>
+Granularity floor:  <50 avgLines -> do NOT spawn. Apply leaf condition from WF-MAX.md.>
 ```
 
 Use `Files changed: none` for read-only agents. Use `PLAN patch: none` when no state update is needed.

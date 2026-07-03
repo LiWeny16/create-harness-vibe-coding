@@ -1,29 +1,26 @@
-# {{TASK_ID}} — PROGRESS
+# {{TASK_ID}} - PROGRESS
 
-Task-level progress and heartbeat. Main agent updates; subagents read only.
+Compact heartbeat. Update on phase changes, blockers, failures, and closeout.
+Do not paste logs; record the command/file that proves the state.
 
-## Current Goal
+## Status
 
-## Phase
-
-Current: Intake
-
-## Heartbeat
-
-Last beat:
-Current phase: Intake
-Current blocker: none
-Next beat trigger:
-Failure count: 0
-Recovery action: none
+- Phase: Intake
+- Next:
+- Blocker: none
 
 ## Tasks
 
-| # | Task | Owner | Verify | Status |
-|---|------|-------|--------|--------|
-| 1 | Define goal and scope | main agent | recorded above | Pending |
+- [ ] Define goal and scope
 
-## Agent Handoffs
+## Changes
 
-| Agent | Role | Context Pack | Result |
-|-------|------|-------------|--------|
+-
+
+## Verification
+
+-
+
+## Notes
+
+-

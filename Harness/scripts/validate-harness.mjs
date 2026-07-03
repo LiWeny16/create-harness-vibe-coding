@@ -25,6 +25,7 @@ const commonAgents = [
   'debugger',
   'reviewer',
   'verifier',
+  'reflector',
   'memory-master',
   'context-master',
   'explore-manager',
@@ -227,6 +228,21 @@ function registeredWorkflowFiles(...texts) {
   return [...files].sort();
 }
 
+function listedWorkflowCommands(...texts) {
+  const commands = new Set();
+  const pattern = /`\/(wf(?:-[a-z0-9]+)?)(?:\s+[^`]*)?`/g;
+
+  for (const text of texts) {
+    for (const match of text.matchAll(pattern)) {
+      const command = `/${match[1]}`;
+      if (command === '/wf-help') continue;
+      commands.add(command);
+    }
+  }
+
+  return [...commands].sort();
+}
+
 for (const rel of required) {
   if (!fs.existsSync(path.join(root, rel))) {
     errors.push(`missing required file: ${rel}`);
@@ -386,6 +402,18 @@ for (const skillFile of registeredSkillFiles(docsReadme, memory)) {
   }
 }
 
+for (const command of listedWorkflowCommands(docsReadme, read('.claude/commands/wf-help.md'))) {
+  const skill = command.slice(1);
+  const claudeSkill = `.claude/skills/${skill}/SKILL.md`;
+  const codexSkill = `.agents/skills/${skill}/SKILL.md`;
+  if (!fs.existsSync(path.join(root, claudeSkill))) {
+    errors.push(`command docs list missing Claude skill: ${command} -> ${claudeSkill}`);
+  }
+  if (!fs.existsSync(path.join(root, codexSkill))) {
+    errors.push(`command docs list missing Codex skill: ${command} -> ${codexSkill}`);
+  }
+}
+
 for (const workflowFile of registeredWorkflowFiles(docsReadme, memory)) {
   if (!fs.existsSync(path.join(root, workflowFile))) {
     // Optional workflows (browser-e2e, ts-react-frontend, etc.) may not be installed
@@ -478,13 +506,23 @@ for (const agent of commonAgents) {
 
 requireText('Harness/extension.md', 'Skills should extend the harness');
 requireText('Harness/agent-workflow.md', 'Harness/tasks/<task-id>/PROGRESS.md');
+requireText('CLAUDE.md', 'Keep task records compact', 'compact task record startup rule');
+requireText('Harness/README.md', 'Task records are compact by default', 'compact task record router rule');
+requireText('Harness/agent-workflow.md', 'AC record size', 'compact AC record size rule');
+requireText('Harness/ACCEPTANCE_PROTOCOL.md', 'Default to 1-3 concise ACs', 'compact AC default');
+requireText('Harness/WF.md', 'Do not paste command logs or subagent transcripts', 'compact heartbeat rule');
+requireText('Harness/tasks/_template/PLAN.md', 'Compact task record', 'compact task PLAN template');
+requireText('Harness/tasks/_template/PLAN.md', 'Default: keep 1-3 concise ACs', 'compact task PLAN AC guidance');
+requireText('Harness/tasks/_template/PROGRESS.md', 'Compact heartbeat', 'compact task PROGRESS template');
 requireText('Harness/agent-workflow.md', 'TDD-GUIDE.md', 'agent workflow loads TDD guide');
 requireText('Harness/agent-workflow.md', 'real user-path test', 'agent workflow real user path requirement');
 requireText('Harness/research/README.md', 'research-results.md');
 requireText('Harness/WF.md', 'Ralph-style harness loop', 'WF loop description');
 requireText('Harness/WF.md', 'Heartbeat Protocol', 'heartbeat protocol');
-requireText('Harness/WF.md', 'WF mode requires multi-subagent orchestration by default', 'WF multi-subagent default');
-requireText('Harness/WF.md', 'Explicit `/wf`, `$wf`, `wf mode`, `workflow mode`, or `wk mode` MUST use at least 3 distinct role passes', 'explicit WF/WK role-pass minimum');
+requireText('Harness/WF.md', 'WF mode requires the complete role chain by default', 'WF complete role chain default');
+requireText('Harness/WF.md', 'MUST cover every mandatory role class before closeout', 'explicit WF/WK complete role chain');
+requireText('Harness/WF.md', 'Independent Validation', 'WF independent validation role');
+requireText('Harness/WF.md', 'reflector', 'WF reflector gate');
 requireText('Harness/WF.md', '.claude/agents/', 'WF built-in agent roster path');
 requireText('Harness/WF.md', 'Collaboration decision tree', 'WF decision tree');
 requireText('Harness/WF.md', 'Harness/tasks/', 'WF task directory reference');
@@ -506,6 +544,8 @@ requireText('Harness/subagents.md', '## Built-in Agent Roster', 'built-in agent 
 requireText('Harness/subagents.md', '## WF Default Fan-Out', 'WF default fan-out');
 requireText('Harness/subagents.md', 'concrete conditions', 'subagent decision tree');
 requireText('Harness/subagents.md', 'parallel planner/researcher/docs-researcher/architect subagents', 'WF roster orchestration shape');
+requireText('Harness/subagents.md', '`reflector`', 'reflector agent roster');
+requireText('Harness/subagents.md', 'reflector PASS', 'reflector review gate');
 requireText('Harness/subagents.md', '## Efficiency Ladder', 'subagent efficiency ladder');
 requireText('Harness/subagents.md', '## Review Gates', 'subagent review gates');
 requireText('Harness/architecture.md', '## 2. Interface Decoupling', 'architecture interface decoupling');
@@ -518,6 +558,24 @@ requireText('Harness/WF-MAX.md', 'three-layer architecture', 'WF-MAX three-layer
 requireText('Harness/WF-MAX.md', 'agent role', 'WF-MAX agent role separation');
 requireText('Harness/WF-MAX.md', 'write-set coloring', 'WF-MAX coloring algorithm');
 requireText('Harness/WF-MAX.md', 'wave dispatch', 'WF-MAX wave dispatch');
+requireText('Harness/WF-MAX.md', 'strict superset', 'WF-MAX strict superset');
+requireText('Harness/WF-MAX.md', 'cross-CLI overflow', 'WF-MAX cross-CLI overflow');
+requireText('Harness/WF-MAX.md', 'claude -p', 'WF-MAX Claude CLI overflow');
+requireText('Harness/WF-MAX.md', 'codex exec', 'WF-MAX Codex CLI overflow');
+requireText('Harness/WF-MAX.md', 'agents.max_threads', 'WF-MAX Codex max_threads config');
+requireText('Harness/WF-MAX.md', 'agents.max_depth', 'WF-MAX Codex max_depth config');
+requireText('Harness/WF-MAX.md', 'max_threads = 12', 'WF-MAX Codex scaffold max_threads default');
+requireText('Harness/WF-MAX.md', 'max_depth = 1', 'WF-MAX Codex scaffold max_depth default');
+requireText('Harness/WF-MAX.md', 'ask the user before raising `agents.max_threads`', 'WF-MAX asks before raising Codex thread cap');
+requireText('Harness/WF-MAX.md', 'Close completed agents', 'WF-MAX close completed agents before overflow');
+requireText('Harness/WF-MAX.md', 'Codex++', 'WF-MAX forbids relying on Codex++ as stable capacity');
+requireText('.claude/skills/wf-max/SKILL.md', 'agents.max_threads', 'wf-max skill Codex thread config');
+requireText('.claude/skills/wf-max/SKILL.md', 'max_threads = 12', 'wf-max skill Codex scaffold max_threads default');
+requireText('.claude/skills/wf-max/SKILL.md', 'ask the user before raising', 'wf-max skill asks before raising Codex thread cap');
+requireText('.claude/skills/wf-max/SKILL.md', 'Codex++', 'wf-max skill forbids Codex++ capacity assumption');
+requireText('.codex/config.toml', '[agents]', 'Codex agents config table');
+requireText('.codex/config.toml', 'max_threads = 12', 'Codex scaffold max_threads default');
+requireText('.codex/config.toml', 'max_depth = 1', 'Codex scaffold max_depth default');
 requireText('Harness/README.md', '/wf-max', 'wf max router alias');
 requireText('Harness/README.md', 'WF-MAX.md', 'WF-MAX router reference');
 requireText('Harness/README.md', 'ACCEPTANCE_PROTOCOL.md', 'acceptance protocol router reference');
@@ -529,6 +587,12 @@ requireText('Harness/ACCEPTANCE_PROTOCOL.md', 'Syntax-only checks', 'syntax-only
 requireText('Harness/AGENT_ISOLATION.md', 'implementer', 'agent isolation implementer rule');
 requireText('Harness/HARNESS_BRIDGE.md', 'Network Trace Collector', 'harness bridge network trace collector');
 requireText('Harness/WF-AUTO.md', 'Intent Checkpoint', 'wf-auto intent checkpoint');
+requireText('Harness/WF-AUTO.md', 'Inherited WF/WF-MAX Constraints', 'wf-auto inherited WF/WF-MAX constraints');
+requireText('Harness/WF-AUTO.md', 'Mini PRD -> AC IDs -> test/validation plan -> implementer -> verifier', 'wf-auto per-cycle WF chain');
+requireText('Harness/WF-AUTO.md', 'reflector PASS', 'wf-auto reflector gate');
+requireText('Harness/WF-AUTO-SPARK.md', 'Inherited Execution Chain', 'wf-auto-spark inherited execution chain');
+requireText('Harness/WF-AUTO-SPARK.md', 'External spark search replaces discovery only', 'wf-auto-spark discovery-only inheritance');
+requireText('Harness/WF-AUTO-SPARK.md', 'reflector PASS', 'wf-auto-spark reflector gate');
 requireText('Harness/MEMORY_PROTOCOL.md', 'Scenario Memory Hints', 'memory protocol scenario hints');
 requireText('Harness/MEMORY_PROTOCOL.md', 'WF closeout', 'memory protocol WF closeout injection row');
 requireText('Harness/MEMORY_PROTOCOL.md', 'memory-master owns writes', 'memory protocol memory write ownership');
@@ -536,7 +600,7 @@ requireText('Harness/TDD-GUIDE.md', 'Browser/UI Acceptance TDD Gate', 'browser U
 requireText('Harness/TDD-GUIDE.md', 'syntax-only', 'syntax-only acceptance prohibition');
 requireText('Harness/TDD-GUIDE.md', 'Playwright/CDP', 'Playwright/CDP acceptance requirement');
 requireText('Harness/TDD-GUIDE.md', 'AC-by-AC result matrix', 'AC-by-AC TDD evidence matrix');
-requireText('Harness/tasks/_template/PLAN.md', 'User Action / API Request', 'task template user action/API test-plan column');
+requireText('Harness/tasks/_template/PLAN.md', 'Expanded evidence required when triggered', 'task template expanded evidence trigger');
 requireText('Harness/templates/TEST_PLAN.template.md', 'syntax-only checks', 'test plan template syntax-only prohibition');
 requireText('.claude/skills/tdd/SKILL.md', 'Harness/ACCEPTANCE_PROTOCOL.md', 'tdd skill loads acceptance protocol');
 requireText('.claude/skills/tdd/SKILL.md', 'Harness/HARNESS_BRIDGE.md', 'tdd skill loads harness bridge');
@@ -549,6 +613,7 @@ requireText('.claude/agents/tdd-guide.md', 'real user actions', 'tdd-guide real 
 requireText('.claude/agents/test-writer.md', 'Harness/ACCEPTANCE_PROTOCOL.md', 'test-writer loads acceptance protocol');
 requireText('.claude/agents/test-writer.md', 'real user-path test', 'test-writer real user path requirement');
 requireText('.claude/agents/test-writer.md', 'network URL, method, payload', 'test-writer network assertion requirement');
+requireText('.claude/agents/reflector.md', 'PASS, RETURN_TO_DEBUG, or BLOCKED', 'reflector verdict contract');
 requireText('Harness/DEBUG_PROTOCOL.md', 'Layer Classification', 'debug layer classification');
 requireText('Harness/MEMORY_PROTOCOL.md', 'AC ID', 'memory AC traceability');
 requireText('Harness/subagents.md', 'Max parallelism', 'subagents max parallelism row');
@@ -568,12 +633,17 @@ requireText('Harness/README.md', 'no runtime hook state', 'README no-hook runtim
 requireText('Harness/WF-AUTO.md', 'WF-AUTO Hook Exception', 'wf-auto-only hook exception');
 requireText('Harness/WF-AUTO.md', 'only `/wf-auto` may use a runtime hook', 'wf-auto-only hook boundary');
 forbidText('CLAUDE.md', 'Enforced by hooks', 'WF-MAX hook enforcement claim');
+forbidText('Harness/WF.md', 'MUST use at least 3 distinct role passes', 'old WF role-pass minimum');
+forbidText('Harness/WF.md', 'at least three distinct role passes', 'old WF role-pass wording');
+forbidText('Harness/dispatch.md', 'requires ≥3 distinct subagents', 'old dispatch WF role minimum');
 forbidText('CLAUDE.md', 'WF-MAX hooks', 'WF-MAX hook enforcement claim');
 forbidText('Harness/README.md', 'PreToolUse hook', 'WF-MAX PreToolUse hook claim');
 forbidText('Harness/README.md', 'SessionStart hook', 'WF-MAX SessionStart hook claim');
 forbidText('Harness/README.md', 'hook-managed', 'hook-managed runtime claim');
 forbidText('Harness/README.md', 'HOOK_PROTOCOL.md', 'removed hook protocol reference');
 forbidText('Harness/WF-AUTO.md', 'Hook-Assisted Long Loop', 'wf-auto hook loop section');
+forbidText('Harness/dispatch.md', 'removes the cap entirely', 'unbounded runtime-cap claim');
+forbidText('Harness/WF-MAX.md', 'no hard agent cap; recursion governed', 'unbounded agent-cap claim');
 forbidText('Harness/MEMORY_PROTOCOL.md', 'Hooks may', 'hook-triggered memory claim');
 forbidText('.claude/settings.json', 'wf-mode-hook.mjs', 'Claude WF hook command registration');
 forbidText('.codex/hooks.json', 'wf-mode-hook.mjs', 'Codex WF hook command registration');

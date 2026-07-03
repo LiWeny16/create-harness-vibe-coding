@@ -23,7 +23,7 @@ import { createInterface } from 'readline';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = process.env.WF_ROOT ? resolve(process.env.WF_ROOT) : resolve(__dirname, '..', '..');
 const VERSION_FILE = resolve(ROOT, 'Harness', '.harness-version');
-const SOURCE_BASE = 'https://raw.githubusercontent.com/zingspark/create-harness-vibe-coding/main/templates/common/';
+const DEFAULT_SOURCE_BASE = 'https://raw.githubusercontent.com/zingspark/create-harness-vibe-coding/main/templates/common/';
 
 // ── Classification constants ────────────────────────────────────────
 
@@ -35,6 +35,7 @@ const PRESERVE_PATTERNS = [
   /^Harness\/research\/PRD\.md$/,
   /^Harness\/research\/research-results\.md$/,
   /^Harness\/architecture\.md$/,
+  /^tests\/\.gitkeep$/,
   /^README\.md$/,
   /^\.gitignore$/,
   /^package\.json$/,
@@ -44,6 +45,7 @@ const PRESERVE_PATTERNS = [
 /** Directories scanned for orphan files (untracked by either checksum set). */
 const FRAMEWORK_DIRS = [
   '.claude/agents',
+  '.claude/commands',
   '.claude/skills',
   '.claude/rules',
   '.agents/skills',
@@ -71,6 +73,18 @@ function canonicalPath(file) {
   return file.replace(/\\/g, '/').replace(/\/+/g, '/');
 }
 
+function readFlagValue(args, flagName) {
+  const idx = args.indexOf(flagName);
+  if (idx === -1) return null;
+  const value = args[idx + 1];
+  if (!value || value.startsWith('--')) return null;
+  return value;
+}
+
+function normalizeSourceBase(sourceBase) {
+  return sourceBase.endsWith('/') ? sourceBase : sourceBase + '/';
+}
+
 /** Check whether a canonical path matches any PRESERVE pattern. */
 function isPreserved(canonical) {
   for (const p of PRESERVE_PATTERNS) {
@@ -79,12 +93,35 @@ function isPreserved(canonical) {
   return false;
 }
 
+function selectedOptionIds(localVersion) {
+  return new Set(
+    Array.isArray(localVersion?.options)
+      ? localVersion.options.map(String).filter(Boolean)
+      : [],
+  );
+}
+
+function optionalSkillFromSource(source) {
+  const normalized = canonicalPath(source || '');
+  const match = normalized.match(/^skills\/([^/]+)\//);
+  return match ? match[1] : null;
+}
+
+function isInstalledOptionalFile(file, localVersion) {
+  const skillId = optionalSkillFromSource(localVersion?.sources?.[file]);
+  return Boolean(skillId && selectedOptionIds(localVersion).has(skillId));
+}
+
 /** Detect template placeholders in remote content. */
 function isTemplate(raw) {
   return /\{\{[a-zA-Z]+\}\}/.test(raw);
 }
 
 async function fetchRemote(url, timeoutMs = 30000) {
+  if (url.startsWith('file://')) {
+    return readFileSync(fileURLToPath(url), 'utf-8');
+  }
+
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -220,6 +257,7 @@ async function main() {
   const clean = args.includes('--clean');
   const yes = args.includes('--yes');
   const jsonOut = args.includes('--json');
+  const sourceBase = normalizeSourceBase(readFlagValue(args, '--source-base') || process.env.WF_SOURCE_BASE || DEFAULT_SOURCE_BASE);
 
   // 1. Read local state
   if (!existsSync(VERSION_FILE)) {
@@ -248,7 +286,7 @@ async function main() {
   // 2. Fetch remote version file
   let remoteVersion;
   try {
-    const raw = await fetchRemote(SOURCE_BASE + '.harness-version');
+    const raw = await fetchRemote(sourceBase + '.harness-version');
     if (isTemplate(raw)) {
       if (jsonOut) {
         console.log(JSON.stringify({ status: 'error', message: 'Remote .harness-version is a template (contains {{placeholders}}). Cannot determine dead files.' }));
@@ -279,6 +317,7 @@ async function main() {
     const canonical = canonicalPath(file);
     if (remoteChecksums[file]) continue; // still in remote, not dead
     if (isPreserved(canonical)) continue; // user data, never dead
+    if (isInstalledOptionalFile(file, localVersion)) continue; // installed optional workflow/skill
     deadFiles.push({ file, reason: 'not in remote template' });
   }
 

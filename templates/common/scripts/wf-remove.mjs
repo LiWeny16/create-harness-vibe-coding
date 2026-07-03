@@ -114,6 +114,7 @@ const BUILT_IN_AGENT_NAMES = [
   'implementer',
   'memory-master',
   'planner',
+  'reflector',
   'researcher',
   'review-manager',
   'reviewer',

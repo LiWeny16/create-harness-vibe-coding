@@ -46,6 +46,12 @@ const MERGE_PATTERNS = [
   /^Harness\/README\.md$/,
 ];
 
+const OPTIONAL_REGISTRATION_FILES = new Set([
+  '.claude/commands/wf-help.md',
+  'Harness/MEMORY.md',
+  'Harness/README.md',
+]);
+
 // ── Helpers ────────────────────────────────────────────────────────
 
 /** Reject paths that escape ROOT (traversal, absolute, .., etc.). */
@@ -73,8 +79,45 @@ function readFlagValue(args, flagName) {
   return value;
 }
 
+function readRepeatedFlagValues(args, flagName) {
+  const values = [];
+  for (let i = 0; i < args.length; i += 1) {
+    const arg = args[i];
+    if (arg === flagName && args[i + 1] && !args[i + 1].startsWith('--')) {
+      values.push(args[i + 1]);
+      i += 1;
+    } else if (arg.startsWith(`${flagName}=`)) {
+      values.push(arg.slice(flagName.length + 1));
+    }
+  }
+  return [...new Set(values.map(canonicalPath).filter(Boolean))];
+}
+
 function normalizeSourceBase(sourceBase) {
   return sourceBase.endsWith('/') ? sourceBase : sourceBase + '/';
+}
+
+function selectedOptionIds(localVersion) {
+  return new Set(
+    Array.isArray(localVersion?.options)
+      ? localVersion.options.map(String).filter(Boolean)
+      : [],
+  );
+}
+
+function optionalSkillFromSource(source) {
+  const normalized = canonicalPath(source || '');
+  const match = normalized.match(/^skills\/([^/]+)\//);
+  return match ? match[1] : null;
+}
+
+function isInstalledOptionalFile(file, localVersion) {
+  const skillId = optionalSkillFromSource(localVersion?.sources?.[file]);
+  return Boolean(skillId && selectedOptionIds(localVersion).has(skillId));
+}
+
+function hasInstalledOptions(localVersion) {
+  return selectedOptionIds(localVersion).size > 0;
 }
 
 /** Detect template placeholders in remote content. */
@@ -134,6 +177,10 @@ async function main() {
   const apply = args.includes('--apply');
   const applySafe = args.includes('--apply-safe') || args.includes('--safe-only');
   const jsonOut = args.includes('--json');
+  const finalize = args.includes('--finalize');
+  const acceptLocal = readRepeatedFlagValues(args, '--accept-local');
+  const acceptMerged = readRepeatedFlagValues(args, '--accept-merged');
+  const acceptTemplate = readRepeatedFlagValues(args, '--accept-template');
   const ignoreVersion = args.includes('--ignore-version') || args.includes('--force-check');
   const sourceBase = normalizeSourceBase(readFlagValue(args, '--source-base') || process.env.WF_SOURCE_BASE || DEFAULT_SOURCE_BASE);
 
@@ -144,6 +191,7 @@ async function main() {
     } else {
       console.error('ERROR: Harness/.harness-version not found. Is Harness installed?');
     }
+    process.exitCode = 1;
     return;
   }
 
@@ -157,6 +205,7 @@ async function main() {
       console.error('ERROR: Failed to parse Harness/.harness-version:', e.message);
       console.error('  The file may be corrupted. If this is an old project, try reinstalling the harness.');
     }
+    process.exitCode = 1;
     return;
   }
 
@@ -166,6 +215,7 @@ async function main() {
     } else {
       console.error('ERROR: Harness/.harness-version has unexpected structure.');
     }
+    process.exitCode = 1;
     return;
   }
 
@@ -183,6 +233,7 @@ async function main() {
         console.log('  The generate step has not been run on the remote repo. No update possible.');
         console.log('  This is expected during development — the update mechanism works once the remote is live.');
       }
+      process.exitCode = 1;
       return;
     }
     remoteVersion = JSON.parse(raw);
@@ -193,6 +244,7 @@ async function main() {
       console.error('ERROR: Cannot reach GitHub or invalid JSON. Offline?');
       console.error(e.message);
     }
+    process.exitCode = 1;
     return;
   }
 
@@ -224,6 +276,7 @@ async function main() {
     } else {
       console.log(`✅ Already up to date (v${localGen})`);
     }
+    if (versionCmp < 0) process.exitCode = 1;
     return;
   }
 
@@ -233,6 +286,7 @@ async function main() {
 
   const remoteChecksums = remoteVersion.checksums || {};
   const remoteSources = remoteVersion.sources || {};
+  localVersion.acceptedConflicts = localVersion.acceptedConflicts || {};
 
   /** Resolve the remote template-relative path for a dest-keyed file. Falls back to the key itself for back-compat. */
   function remotePath(file) {
@@ -253,13 +307,23 @@ async function main() {
     return {
       ...withRemoteMeta(entry),
       choices: ['merge', 'keep-local', 'overwrite-from-template'],
+      decisionCommands: {
+        keepLocal: `node Harness/scripts/wf-update-check.mjs --accept-local ${shellArg(entry.file)} --finalize`,
+        acceptMerged: `node Harness/scripts/wf-update-check.mjs --accept-merged ${shellArg(entry.file)} --finalize`,
+        overwriteFromTemplate: `node Harness/scripts/wf-update-check.mjs --accept-template ${shellArg(entry.file)} --finalize`,
+      },
     };
+  }
+
+  function shellArg(value) {
+    return /^[A-Za-z0-9@._/\\:-]+$/.test(value) ? value : JSON.stringify(value);
   }
 
   function buildJsonPlan() {
     return {
       updated: plan.updated.map(withRemoteMeta),
       created: plan.created.map(withRemoteMeta),
+      adopted: plan.adopted.map(withRemoteMeta),
       conflict: plan.conflict.map(withConflictActions),
       skipped: plan.skipped.map(withRemoteMeta),
     };
@@ -271,20 +335,85 @@ async function main() {
       dryRunJsonCommand: 'node Harness/scripts/wf-update-check.mjs --json',
       safeApplyCommand: 'node Harness/scripts/wf-update-check.mjs --apply-safe',
       strictApplyCommand: 'node Harness/scripts/wf-update-check.mjs --apply',
+      finalizeCommand: 'node Harness/scripts/wf-update-check.mjs --finalize',
       partialUpdate: localVersion.partialUpdate || null,
+      acceptedConflicts: localVersion.acceptedConflicts || {},
       aiMergeRequired: jsonPlan.conflict,
       aiMergeRequiredCount: jsonPlan.conflict.length,
-      conflictPolicy: 'Use the script for SAFE/NEW files. For each CONFLICT file, compare local content with templateHint/remoteUrl and choose merge, keep-local, or overwrite-from-template.',
+      conflictPolicy: 'Use the script for SAFE/NEW/adopted files. For each CONFLICT file, compare local content with templateHint/remoteUrl, then record the decision with --accept-local, --accept-merged, or --accept-template. Do not hand-edit Harness/.harness-version.',
       postUpdateCommands: [
-        'node Harness/scripts/validate-harness.mjs --strict',
-        'node Harness/scripts/scan-clean.mjs',
+        'node Harness/scripts/validate-harness.mjs',
+        'node Harness/scripts/scan-clean.mjs --json',
       ],
+      bootstrapDebtCommand: 'node Harness/scripts/validate-harness.mjs --strict',
     };
+  }
+
+  async function applyTemplateFile(file) {
+    const remoteHash = remoteChecksums[file];
+    if (!remoteHash) throw new Error(`No remote checksum for ${file}`);
+    const dest = safePath(file);
+    if (!dest) throw new Error(`Traversal rejected: ${file}`);
+    if (existsSync(dest) && lstatSync(dest).isSymbolicLink()) throw new Error(`Symlink rejected: ${file}`);
+    const content = await fetchRemote(sourceBase + remotePath(file));
+    const normalized = content.replace(/\r\n/g, '\n');
+    const fetchedHash = sha256(normalized);
+    if (fetchedHash !== remoteHash) throw new Error(`Hash mismatch: ${file}`);
+    mkdirSync(dirname(dest), { recursive: true });
+    writeFileSync(dest, normalized, 'utf-8');
+    localVersion.checksums[file] = remoteHash;
+    delete localVersion.acceptedConflicts[file];
+  }
+
+  function recordLocalDecision(file, decision, appliedAt) {
+    const remoteHash = remoteChecksums[file];
+    if (!remoteHash) throw new Error(`No remote checksum for ${file}`);
+    const diskPath = safePath(file);
+    if (!diskPath) throw new Error(`Traversal rejected: ${file}`);
+    const localHash = sha256File(diskPath);
+    if (!localHash) throw new Error(`File not found for ${decision}: ${file}`);
+    localVersion.acceptedConflicts[file] = {
+      decision,
+      targetGenerator: remoteGen,
+      localHash,
+      remoteHash,
+      templateHint: remotePath(file),
+      updatedAt: appliedAt,
+    };
+  }
+
+  function acceptedDecisionMatches(file, localHash, remoteHash) {
+    const decision = localVersion.acceptedConflicts?.[file];
+    return Boolean(
+      decision
+      && decision.targetGenerator === remoteGen
+      && decision.localHash === localHash
+      && decision.remoteHash === remoteHash
+    );
+  }
+
+  let decisionMetadataDirty = false;
+  if (acceptLocal.length || acceptMerged.length || acceptTemplate.length) {
+    const appliedAt = new Date().toISOString();
+    try {
+      for (const file of acceptLocal) recordLocalDecision(file, 'accept-local', appliedAt);
+      for (const file of acceptMerged) recordLocalDecision(file, 'accept-merged', appliedAt);
+      for (const file of acceptTemplate) await applyTemplateFile(file);
+      decisionMetadataDirty = true;
+    } catch (e) {
+      if (jsonOut) {
+        console.log(JSON.stringify({ status: 'error', message: e.message }, null, 2));
+      } else {
+        console.error(`ERROR: ${e.message}`);
+      }
+      process.exitCode = 1;
+      return;
+    }
   }
 
   const allFiles = new Set([...Object.keys(localChecksums), ...Object.keys(remoteChecksums)]);
 
-  const plan = { updated: [], created: [], conflict: [], skipped: [] };
+  const plan = { updated: [], created: [], adopted: [], conflict: [], skipped: [] };
 
   for (const file of [...allFiles].sort()) {
     const canonical = canonicalPath(file);
@@ -301,6 +430,10 @@ async function main() {
     const remoteHash = remoteChecksums[file];
 
     if (!remoteHash) {
+      if (storedHash && isInstalledOptionalFile(file, localVersion)) {
+        plan.skipped.push({ file, reason: 'installed optional workflow file' });
+        continue;
+      }
       plan.skipped.push({ file, reason: 'not in remote' });
       continue;
     }
@@ -308,6 +441,14 @@ async function main() {
     if (!storedHash) {
       // New file from remote — if local file exists, it's a CONFLICT
       if (localHash) {
+        if (localHash === remoteHash) {
+          plan.adopted.push({ file, localHash, remoteHash, reason: 'new remote file already matches local file' });
+          continue;
+        }
+        if (acceptedDecisionMatches(file, localHash, remoteHash)) {
+          plan.skipped.push({ file, reason: `accepted conflict decision: ${localVersion.acceptedConflicts[file].decision}` });
+          continue;
+        }
         plan.conflict.push({ file, localHash, storedHash: 'none', remoteHash, reason: 'new remote file conflicts with existing local file' });
         continue;
       }
@@ -318,6 +459,27 @@ async function main() {
       } else {
         plan.created.push({ file, remoteHash });
       }
+      continue;
+    }
+
+    if (
+      storedHash
+      && hasInstalledOptions(localVersion)
+      && OPTIONAL_REGISTRATION_FILES.has(canonical)
+      && localHash === storedHash
+      && localHash !== remoteHash
+    ) {
+      if (acceptedDecisionMatches(file, localHash, remoteHash)) {
+        plan.skipped.push({ file, reason: `accepted conflict decision: ${localVersion.acceptedConflicts[file].decision}` });
+        continue;
+      }
+      plan.conflict.push({
+        file,
+        localHash,
+        storedHash,
+        remoteHash,
+        reason: 'installed optional registration needs merge',
+      });
       continue;
     }
 
@@ -332,6 +494,10 @@ async function main() {
         plan.updated.push({ file, remoteHash });
       }
     } else if (tier === 'CONFLICT') {
+      if (acceptedDecisionMatches(file, localHash, remoteHash)) {
+        plan.skipped.push({ file, reason: `accepted conflict decision: ${localVersion.acceptedConflicts[file].decision}` });
+        continue;
+      }
       plan.conflict.push({
         file,
         localHash,
@@ -353,8 +519,10 @@ async function main() {
       to: remoteGen,
       sourceBase,
       partialUpdate: localVersion.partialUpdate || null,
+      acceptedConflicts: localVersion.acceptedConflicts || {},
       updated: plan.updated.length,
       created: plan.created.length,
+      adopted: plan.adopted.length,
       conflict: plan.conflict.length,
       skipped: plan.skipped.length,
       plan: jsonPlan,
@@ -392,6 +560,7 @@ async function main() {
     if (apply && !applySafe && plan.conflict.length > 0) {
       console.log(`❌ Cannot apply: ${plan.conflict.length} conflicts must be resolved first.`);
       console.log('   Run --apply-safe to apply SAFE/NEW files first, or resolve conflicts manually then re-run --apply.');
+      process.exitCode = 1;
       return plan;
     }
     if (applySafe && plan.conflict.length > 0) {
@@ -458,6 +627,7 @@ async function main() {
       localVersion.checksums = localVersion.checksums || {};
       for (const u of plan.updated) localVersion.checksums[u.file] = u.remoteHash;
       for (const c of plan.created) localVersion.checksums[c.file] = c.remoteHash;
+      for (const a of plan.adopted) localVersion.checksums[a.file] = a.remoteHash;
       if (plan.conflict.length === 0) {
         localVersion.generator = remoteGen;
         localVersion.generated = appliedAt;
@@ -467,6 +637,7 @@ async function main() {
           targetGenerator: remoteGen,
           updatedAt: appliedAt,
           appliedFiles: [...plan.updated, ...plan.created].map(x => x.file),
+          adoptedFiles: plan.adopted.map(x => x.file),
           conflicts: plan.conflict.map(x => x.file),
         };
       }
@@ -478,7 +649,36 @@ async function main() {
       }
     } else {
       console.log(`❌ ${failed} failures. NO files were version-tracked. Fix and re-run.`);
+      process.exitCode = 1;
     }
+  }
+
+  if (finalize) {
+    if (plan.updated.length > 0 || plan.created.length > 0 || plan.adopted.length > 0) {
+      console.log(`Cannot finalize: ${plan.updated.length} safe updates, ${plan.created.length} new files, and ${plan.adopted.length} adopted metadata entries still need --apply-safe.`);
+      if (decisionMetadataDirty) {
+        writeFileSync(VERSION_FILE, JSON.stringify(localVersion, null, 2) + '\n', 'utf-8');
+      }
+      process.exitCode = 1;
+      return plan;
+    }
+    if (plan.conflict.length > 0) {
+      console.log(`Cannot finalize: ${plan.conflict.length} conflicts still need a script-recorded decision.`);
+      if (decisionMetadataDirty) {
+        writeFileSync(VERSION_FILE, JSON.stringify(localVersion, null, 2) + '\n', 'utf-8');
+      }
+      process.exitCode = 1;
+      return plan;
+    }
+    const finalizedAt = new Date().toISOString();
+    localVersion.generator = remoteGen;
+    localVersion.generated = finalizedAt;
+    delete localVersion.partialUpdate;
+    writeFileSync(VERSION_FILE, JSON.stringify(localVersion, null, 2) + '\n', 'utf-8');
+    console.log(`Finalized Harness update to ${remoteGen}.`);
+  } else if (decisionMetadataDirty) {
+    writeFileSync(VERSION_FILE, JSON.stringify(localVersion, null, 2) + '\n', 'utf-8');
+    console.log('Recorded conflict decision metadata.');
   }
 
   return plan;

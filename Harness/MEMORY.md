@@ -5,37 +5,38 @@
 
 ## Agents (Sub-agents)
 
-- [researcher](../.claude/agents/researcher.md) — product, market, open-source, dependency, pricing, policy, and ecosystem research.
-- [docs-researcher](../.claude/agents/docs-researcher.md) — official docs, API, SDK, config, limits, errors, and examples verification.
-- [planner](../.claude/agents/planner.md) — task split, dependencies, write sets, and dispatch table.
-- [architect](../.claude/agents/architect.md) — boundaries, ports, data-flow, and state impact.
-- [test-writer](../.claude/agents/test-writer.md) — failing tests or manual verification before implementation.
+- [researcher](../.claude/agents/researcher.md) - product, market, open-source, dependency, pricing, policy, and ecosystem research.
+- [docs-researcher](../.claude/agents/docs-researcher.md) - official docs, API, SDK, config, limits, errors, and examples verification.
+- [planner](../.claude/agents/planner.md) - task split, dependencies, write sets, and dispatch table.
+- [architect](../.claude/agents/architect.md) - boundaries, ports, data-flow, and state impact.
+- [test-writer](../.claude/agents/test-writer.md) - failing tests or manual verification before implementation.
 - [tdd-guide](../.claude/agents/tdd-guide.md) - AC-linked RED tests, browser UI acceptance, and Playwright/CDP evidence before implementation.
-- [implementer](../.claude/agents/implementer.md) — bounded implementation inside declared write set.
-- [debugger](../.claude/agents/debugger.md) — smallest fix for a reproduced failure.
-- [reviewer](../.claude/agents/reviewer.md) — read-only diff review and closeout risk.
-- [verifier](../.claude/agents/verifier.md) — verification commands and evidence.
-- [memory-master](../.claude/agents/memory-master.md) — memory writing, dedup, consolidation, and cross-project knowledge extraction.
-- [context-master](../.claude/agents/context-master.md) — context analysis, compression alerts, and session knowledge extraction for memory-master.
-- [explore-manager](../.claude/agents/explore-manager.md) — WF-MAX W0 exploration: spawn 5-10 read-only researchers, synthesize, report to CEO.
-- [architect-manager](../.claude/agents/architect-manager.md) — WF-MAX W1 architecture: spawn 3 architects, synthesize interface contracts, report to CEO.
-- [implement-manager](../.claude/agents/implement-manager.md) — WF-MAX W2 implementation: spawn 5-7 implementers (one file_claim each), merge, report to CEO.
-- [review-manager](../.claude/agents/review-manager.md) — WF-MAX W2R review: spawn 3-4 reviewers (spec/code/security/perf), deduplicate, classify severity, report to CEO.
+- [implementer](../.claude/agents/implementer.md) - bounded implementation inside declared write set.
+- [debugger](../.claude/agents/debugger.md) - smallest fix for a reproduced failure.
+- [reviewer](../.claude/agents/reviewer.md) - read-only spec/AC and code/architecture/test review.
+- [verifier](../.claude/agents/verifier.md) - verification commands and AC evidence matrix.
+- [reflector](../.claude/agents/reflector.md) - closeout synthesis, contradiction check, and final acceptance gate verdict.
+- [memory-master](../.claude/agents/memory-master.md) - memory writing, dedup, consolidation, and cross-project knowledge extraction.
+- [context-master](../.claude/agents/context-master.md) - context analysis, compression alerts, and session knowledge extraction for memory-master.
+- [explore-manager](../.claude/agents/explore-manager.md) - WF-MAX W0 exploration: spawn 5-10 read-only researchers, synthesize, report to CEO.
+- [architect-manager](../.claude/agents/architect-manager.md) - WF-MAX W1 architecture: spawn 3 architects, synthesize interface contracts, report to CEO.
+- [implement-manager](../.claude/agents/implement-manager.md) - WF-MAX W2 implementation: spawn 5-7 implementers (one file_claim each), merge, report to CEO.
+- [review-manager](../.claude/agents/review-manager.md) - WF-MAX W2R review: spawn 3-4 reviewers (spec/code/security/perf), deduplicate, classify severity, report to CEO.
 
 Stack-specific agents can be added after the product shape is known.
 
 ## Skills (Workflows)
 
-- [WF Mode](WF.md) — long-task workflow: exploration, second plan, implementation, review, verification, heartbeat, and recovery loop.
-- [wf](../.claude/skills/wf/SKILL.md) — Claude Code WF skill command; mirrored for Codex at `../.agents/skills/wf/SKILL.md`.
-- [subagent-orchestrator](../.claude/skills/subagent-orchestrator/SKILL.md) — controller-led subagent orchestration, parallel read-only passes, review gates, and recovery handoffs.
-- [wf-readme](../.claude/skills/wf-readme/SKILL.md) — README preservation, append-only development sections, structured tables, and approved architecture diagrams.
-- [wf-review](../.claude/skills/wf-review/SKILL.md) — cross-model peer review: invoke the other agent CLI (Codex/Claude) for independent review.
-- [wf-update](../.claude/skills/wf-update/SKILL.md) — GitHub-based incremental harness update, checksum comparison, and safe in-place updates.
-- [wf-learn](../.claude/skills/wf-learn/SKILL.md) — force memory learning cycle: context-master -> memory-master -> project + global memory.
-- [wf-max](../.claude/skills/wf-max/SKILL.md) — maximum-parallelism workflow: write-set coloring, wave dispatch, parallel review per dimension.
+- [WF Mode](WF.md) - complete role chain: plan, research/docs, architecture, test, implement, validation, cross-review, reflector, acceptance.
+- [wf](../.claude/skills/wf/SKILL.md) - Claude Code WF skill command; mirrored for Codex at `../.agents/skills/wf/SKILL.md`.
+- [subagent-orchestrator](../.claude/skills/subagent-orchestrator/SKILL.md) - controller-led subagent orchestration, parallel read-only passes, review gates, and recovery handoffs.
+- [wf-readme](../.claude/skills/wf-readme/SKILL.md) - README preservation, append-only development sections, structured tables, and approved architecture diagrams.
+- [wf-review](../.claude/skills/wf-review/SKILL.md) - cross-model peer review: invoke the other agent CLI (Codex/Claude) for independent review.
+- [wf-update](../.claude/skills/wf-update/SKILL.md) - GitHub-based incremental harness update, checksum comparison, and safe in-place updates.
+- [wf-learn](../.claude/skills/wf-learn/SKILL.md) - force memory learning cycle: context-master -> memory-master -> project + global memory.
+- [wf-max](../.claude/skills/wf-max/SKILL.md) - WF strict superset: complete role chain plus maximum parallelism, current runtime subagents first, cross-CLI overflow when available.
 - [wf-auto](../.claude/skills/wf-auto/SKILL.md) - perpetual auto-optimization: bounded ticks, 8-angle internal scan, intent checkpoints, evidence ledger.
-- [wf-auto-spark](../.claude/skills/wf-auto-spark/SKILL.md) — perpetual inspiration mode: external spark search, long-term roadmap with staged milestones, ≤50% deviation guard.
+- [wf-auto-spark](../.claude/skills/wf-auto-spark/SKILL.md) - perpetual inspiration mode: external spark search, long-term roadmap with staged milestones, <=50% deviation guard.
 - [tdd](../.claude/skills/tdd/SKILL.md) - acceptance-driven TDD: AC-linked RED tests, real UI clicks for browser-visible behavior, Playwright/CDP evidence, and configured coverage gate.
 - [wf-remove](../.claude/skills/wf-remove/SKILL.md) - safely remove Harness framework files (SAFE/MODIFIED/USER classes), auto-prune empty directories, backup option.
 
@@ -49,13 +50,11 @@ Stack-specific skills can be added after the product shape is known.
 
 - [browser-e2e](workflows/browser-e2e.md)
 
-Stack-specific skills can be added after the product shape is known.
-
 ## Rules (Harness Constraints)
 
 Located under `.claude/rules/ecc/`, auto-loaded by the CC engine:
 
-- [common.md](../.claude/rules/ecc/common.md) — universal harness constraints for context loading, verification, subagents, and security (alwaysApply: true)
+- [common.md](../.claude/rules/ecc/common.md) - universal harness constraints for context loading, verification, subagents, and security (alwaysApply: true)
 - Language-specific rules pending Claude Code initialization (e.g. python.md, typescript.md, etc.)
 
 ## Harness (Runtime)

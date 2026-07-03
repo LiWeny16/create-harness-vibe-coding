@@ -18,6 +18,7 @@ For the full phase contract, load [lifecycle.md](lifecycle.md).
 - If the task does not clearly match a row below, search by keywords before loading more docs.
 - project files are the only durable communication channel; chat/subagent transcript state is non-authoritative.
 - Important assumptions, decisions, blockers, evidence, and handoffs must be written to the current task's `tasks/<id>/PROGRESS.md` and `tasks/<id>/PLAN.md`, the current feature doc, `Harness/MEMORY.md`, or `Harness/memory/*` as appropriate.
+- Task records are compact by default: PLAN holds goal, decisions, scope, risks; PROGRESS holds status/next, changes, verification. Do not paste command logs, full transcripts, or broad PRDs when a link or one-line evidence entry is enough.
 - Build commands, git conventions, and release notes belong in root `README.md`, not `CLAUDE.md`.
 - README rewrites are optional project-doc work. Use `wf-readme` and preserve existing public docs unless the user approves a broader restructure.
 - Code architecture belongs in [architecture.md](architecture.md) or the current feature doc, not `CLAUDE.md`.
@@ -63,10 +64,10 @@ Routing priority: if a request explicitly says `/wf <task>`, `$wf`, `wf mode`, `
 | Need MVP/spec | PRD, MVP, scope, requirement, acceptance, non-goal | [research/PRD.md](research/PRD.md), [ACCEPTANCE_PROTOCOL.md](ACCEPTANCE_PROTOCOL.md) | Mini PRD with AC IDs and verifiable acceptance criteria |
 | Need architecture or boundaries | architecture, boundary, layer, port, adapter, dependency | [architecture.md](architecture.md) | layer map, ports, constraints |
 | Need WF command help | /wf-help, wf help, command list, list wf commands | `.claude/commands/wf-help.md` | direct command table; no skill invocation |
-| Need WF mode | wf, /wf, $wf, wf mode, workflow mode, wk mode, long task, difficult, stuck, repeated failure | [WF.md](WF.md), [PROGRESS.md](PROGRESS.md), the current task `tasks/<id>/PROGRESS.md` and `tasks/<id>/PLAN.md` | exploration plan, second plan, heartbeat, recovery loop; explicit WF/WK loads subagent docs immediately |
+| Need WF mode | wf, /wf, $wf, wf mode, workflow mode, wk mode, long task, difficult, stuck, repeated failure | [WF.md](WF.md), [PROGRESS.md](PROGRESS.md), the current task `tasks/<id>/PROGRESS.md` and `tasks/<id>/PLAN.md` | complete role chain, heartbeat, recovery loop; explicit WF/WK loads subagent docs immediately |
 | Need perpetual auto-optimization | /wf-auto, $wf-auto, wf auto, auto mode, never stop, self-improve, continuous optimize | [WF-AUTO.md](WF-AUTO.md), [subagents.md](subagents.md), [dispatch.md](dispatch.md) | perpetual loop, bounded ticks, optional wf-auto-only hook exception, 8-angle scan, spark search, intent checkpoint, evidence ledger; CEO never writes code |
-| Need perpetual inspiration mode | /wf-auto-spark, $wf-auto-spark, wf auto spark, spark mode, external inspiration, discover mode, never stop | [WF-AUTO-SPARK.md](WF-AUTO-SPARK.md), [WF-AUTO.md](WF-AUTO.md), [subagents.md](subagents.md), [dispatch.md](dispatch.md) | roadmap-anchored: North Star + milestones; external spark search; ≤50% deviation guard; never auto-stops |
-| Need WF-MAX mode | /wf-max, $wf-max, wf max, maximum parallelism, CEO, Manager, Worker, fan-out | [WF-MAX.md](WF-MAX.md), [subagents.md](subagents.md), [dispatch.md](dispatch.md) | CEO-only dispatch, W0 fan-out, D-GATE, wave evidence |
+| Need perpetual inspiration mode | /wf-auto-spark, $wf-auto-spark, wf auto spark, spark mode, external inspiration, discover mode, never stop | [WF-AUTO-SPARK.md](WF-AUTO-SPARK.md), [WF-AUTO.md](WF-AUTO.md), [subagents.md](subagents.md), [dispatch.md](dispatch.md) | roadmap-anchored: North Star + milestones; external spark search; <=50% deviation guard; never auto-stops |
+| Need WF-MAX mode | /wf-max, $wf-max, wf max, maximum parallelism, CEO, Manager, Worker, fan-out | [WF-MAX.md](WF-MAX.md), [subagents.md](subagents.md), [dispatch.md](dispatch.md) | WF strict superset: complete role chain plus maximum fan-out, current runtime subagents first, cross-CLI overflow when available |
 | Need peer review | /wf-review, $wf-review, peer review, second opinion, cross-check, stuck | `.claude/skills/wf-review/SKILL.md`, `.agents/skills/wf-review/SKILL.md`, `Harness/README.md` | cross-model multi-dimension review with severity classification |
 | Adding harness to existing project | existing project, onboarding, migrate, bootstrap, preserve, conflict | [extension.md](extension.md), [PROGRESS.md](PROGRESS.md), root `README.md` and package/CI files | discovered project facts, preserved config, manual registration plan |
 | README optimization | README, docs, quickstart, install docs, architecture diagram, command table, documentation polish | root `README.md`, `.claude/skills/wf-readme/SKILL.md`, [PROGRESS.md](PROGRESS.md), [architecture.md](architecture.md) as needed | approved README mode, preserved sections, proposed diff plan |
@@ -86,8 +87,8 @@ Routing priority: if a request explicitly says `/wf <task>`, `$wf`, `wf mode`, `
 - Move phases in order unless the user asks for a fast lane.
 - Use `/wf <task>` in Claude Code, `$wf` in Codex, `/wf-max [task]` or `$wf-max`, `wf mode`, `workflow mode`, or `wk mode` when a task is long, difficult, uncertain, multi-file, or repeatedly failing.
 - Use `/wf-auto` for perpetual self-directed optimization that never stops until 8-angle exhaustion.
-- **WF-MAX Role Contract**: Three-layer architecture — global mode (`wf-max`), agent role (`ceo|manager|worker|reviewer`), dispatch permission (`writeSet`, `forbidden`, `verification`). CEO never writes source code. Workers edit only dispatch.writeSet. Compliance is checked through dispatch packets, independent review, validation evidence, and task capsules. See `CLAUDE.md` §1a.
-- **WF-REVIEW Anti-Self-Review**: Must invoke the OTHER CLI (Codex↔Claude). Same-model simulation is forbidden.
+- **WF-MAX Role Contract**: Three-layer architecture: global mode (`wf-max`), agent role (`ceo|manager|worker|verifier|reviewer|reflector`), dispatch permission (`writeSet`, `forbidden`, `verification`). CEO never writes source code. Workers edit only dispatch.writeSet. Compliance is checked through dispatch packets, independent review, validation evidence, and task capsules. See `CLAUDE.md#1a`.
+- **WF-REVIEW Anti-Self-Review**: Must invoke the OTHER CLI (Codex -> Claude, or Claude -> Codex). Same-model simulation is forbidden.
 - WF-MAX has no runtime hook state. The durable state is the task capsule, dispatch table, review findings, and validation evidence. The only runtime hook exception in Harness is the optional `/wf-auto` bounded tick hook described in `WF-AUTO.md`.
 - Do not code before PRD-GATE, AC-GATE, CONTRACT-GATE, and TEST-GATE are satisfied or explicitly compressed into a documented fast lane.
 - PRD-derived Acceptance Criteria are the source of truth. Code, tests, reviews, validation, debug, and memory must trace to AC IDs.
@@ -102,7 +103,7 @@ Routing priority: if a request explicitly says `/wf <task>`, `$wf`, `wf mode`, `
 - In WF Max mode, D-GATE (Dispatch Table + Self-Audit Checklist) is mandatory before W2 implementation dispatch.
 - Do not add stack-specific agents or skills without following `extension.md`.
 - Do not close work without tests or recorded manual verification.
-- Do not mark work `Verified` until evidence is recorded in the current task's `tasks/<id>/PROGRESS.md` and `tasks/<id>/PLAN.md` or the feature doc.
+- Do not mark work `Verified` until evidence is recorded, cross-review has passed, and reflector verdict is PASS.
 - Run `node Harness/scripts/validate-harness.mjs` for install-complete scaffold structure; run `node Harness/scripts/validate-harness.mjs --strict` only after bootstrap resolves project-fact placeholders and before release.
 - If a doc still has `{{...}}`, treat that section as a template, not project fact.
 
@@ -134,10 +135,10 @@ Routing priority: if a request explicitly says `/wf <task>`, `$wf`, `wf mode`, `
 
 | Claude Code | Codex | Purpose |
 |---|---|---|
-| `/wf <task>` | `$wf <task>` | Long-task workflow: explore -> plan -> implement -> review -> verify |
-| `/wf-max [task]` | `$wf-max [task]` | Maximum parallelism: CEO -> Manager -> Worker hierarchy |
+| `/wf <task>` | `$wf <task>` | Complete role chain: plan, research/docs, architecture, test, implement, validation, cross-review, reflector, acceptance |
+| `/wf-max [task]` | `$wf-max [task]` | WF strict superset with maximum parallelism: CEO -> Manager -> Worker, cross-CLI overflow |
 | `/wf-auto` | `$wf-auto` | Perpetual auto-optimization: never stops until 8-angle exhaustion |
-| `/wf-auto-spark` | `$wf-auto-spark` | Perpetual inspiration: spark search, roadmap-anchored, ≤50% deviation guard, never auto-stops |
+| `/wf-auto-spark` | `$wf-auto-spark` | Perpetual inspiration: spark search, roadmap-anchored, <=50% deviation guard, never auto-stops |
 | `/wf-review [focus]` | `$wf-review [focus]` | Cross-model peer review via Codex <-> Claude |
 | `/wf-learn` | `$wf-learn` | Force learning cycle: context-master -> memory-master |
 | `/wf-browser [task]` | `$wf-browser [task]` | AI-driven browser automation for E2E testing |

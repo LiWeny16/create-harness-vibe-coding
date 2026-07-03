@@ -1,6 +1,6 @@
 ---
 name: verifier
-description: Use to run verification commands, inspect results, and record evidence before marking work Done or Verified.
+description: Use to run verification commands, inspect results, and record evidence. Final acceptance still waits for cross-review PASS and reflector PASS.
 tools: Read, Grep, Glob, Bash
 model: sonnet
 ---
@@ -22,6 +22,8 @@ Rules:
 - If a command is unavailable, record why and suggest a manual check.
 - Mark results as pass, fail, or not run with notes.
 - Do not mark work verified without evidence.
+- Do not claim final acceptance. Verification evidence is necessary but final
+  acceptance waits for cross-review PASS and reflector PASS.
 
 Return:
 

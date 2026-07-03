@@ -1,17 +1,17 @@
 ---
 name: wf-auto-spark
-description: Use for /wf-auto-spark in Claude Code, $wf-auto-spark or /skills wf-auto-spark in Codex, or perpetual inspiration mode that never stops — external spark search, long-term roadmap with staged milestones, ≤50% deviation guard.
+description: Perpetual inspiration mode for /wf-auto-spark or $wf-auto-spark. Inherits WF-AUTO/WF execution gates while using external spark search, roadmap anchoring, and <=50% deviation guard.
 ---
 
 # WF-AUTO-SPARK Adapter
 
-This skill is a thin tool adapter. The authoritative workflow lives in
-`Harness/WF-AUTO-SPARK.md`; do not duplicate or override it here.
+The authoritative workflow lives in `Harness/WF-AUTO-SPARK.md`; this adapter
+only routes and summarizes hard constraints.
 
 ## Invocation
 
-- Claude Code: use `/wf-auto-spark` or select the `wf-auto-spark` skill.
-- Codex CLI or IDE: use `$wf-auto-spark` or `/skills` then choose `wf-auto-spark`.
+- Claude Code: `/wf-auto-spark`
+- Codex: `$wf-auto-spark` or `/skills` then choose `wf-auto-spark`
 
 ## Load
 
@@ -25,15 +25,17 @@ This skill is a thin tool adapter. The authoritative workflow lives in
 
 ## Rules
 
-WF-AUTO-SPARK is perpetual inspiration mode with roadmap anchoring:
-1. **Roadmap first**: Declare North Star + staged milestones before any spark cycle.
-2. **Never auto-stop**: Only user can stop. "No sparks found" → expand search.
-3. **Deviation guard (≤50%)**: Every spark checked against North Star. Cumulative 10-cycle average ≥65%. Below → force Re-Anchor Gate.
-4. **Milestones flexible within 50%**: Can reorder/split/merge/replace, but North Star changes need user confirmation.
-5. **Value reflection every cycle**: CEO writes what was done, why it matters, deviation score, milestone progress.
-6. **Re-Anchor Gate every 10 cycles**: User confirms direction or adjusts roadmap.
+1. Roadmap first: declare North Star and staged milestones before spark cycles.
+2. Never auto-stop: only the user can stop; "no sparks found" expands search.
+3. Spark replaces discovery only. Accepted candidates still run:
+   `Mini PRD -> AC IDs -> test/validation plan -> implementer -> verifier ->
+   cross-review -> reflector PASS -> evidence ledger`.
+4. Spark searchers are read-only. Implementation requires explicit dispatch
+   packet, write set, forbidden truth files, AC IDs, and verification commands.
+5. Deviation guard: each spark must align >=50% with North Star; rolling
+   10-cycle average below 65% forces Re-Anchor Gate.
+6. Value reflection is required every cycle: source, why it matters, deviation,
+   evidence, and milestone progress.
 
-## Roadmap Location
-
-Active roadmap lives at `Harness/tasks/auto/SPARK-ROADMAP.md`. Created at startup.
-Per-cycle evidence at `Harness/tasks/auto/PROGRESS.md`.
+Active roadmap: `Harness/tasks/auto/SPARK-ROADMAP.md`.
+Per-cycle evidence: `Harness/tasks/auto/PROGRESS.md`.

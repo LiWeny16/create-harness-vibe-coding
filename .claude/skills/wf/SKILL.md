@@ -29,8 +29,12 @@ This skill is a thin tool adapter. The authoritative workflow lives in
 - Create or update a task capsule under `Harness/tasks/<task-id>/`.
 - Run the WF loop from `Harness/WF.md`: intake, bounded exploration, second
   plan, implementation, review, verification, recovery, and closeout.
-- For explicit WF invocation, use at least three distinct role passes before
-  the second plan. Use real subagents when the runtime supports them; otherwise
-  record a bounded-pass fallback in the task plan.
+- For explicit WF invocation, schedule the complete role chain at intake:
+  plan, research/docs research as needed, architecture, test, implement,
+  independent validation, cross-review, reflector, and final acceptance. Use
+  real subagents when the runtime supports them; otherwise record bounded-pass
+  fallback coverage in the task plan.
+- Do not mark accepted until cross-review passes and the reflector returns
+  PASS.
 - Keep `Harness/tasks/<task-id>/PROGRESS.md#Heartbeat` current before long
   commands, after failures, and at closeout.

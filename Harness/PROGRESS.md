@@ -4,7 +4,7 @@ Global task index. Load at session start to see what is active and what was done
 
 ## Active Task
 
-- None
+- task-wf-full-role-chain
 
 ## Task Index
 
@@ -22,6 +22,9 @@ Global task index. Load at session start to see what is active and what was done
 | task-remove-hook-docs | Remove WF hook enforcement artifacts and stale hook docs | Verified | 2026-07-02 |
 | task-add-wf-help | Add direct /wf-help command listing WF commands | Verified | 2026-07-02 |
 | task-wf-remove-residual-cleanup | Remove legacy Harness discovery leftovers during wf-remove | Verified | 2026-07-02 |
+| task-wf-update-finalize-cleanup | Make wf-update finalize safely and clean update residue like install/remove | Verified | 2026-07-03 |
+| task-install-update-switch | Auto-route existing Harness installs to update and fix optional command consistency | Build | - |
+| task-wf-full-role-chain | Make /wf use complete mandatory role chain with reflector and cross-review gate | Verified | 2026-07-03 |
 
 ## Cross-Task Decisions
 
@@ -31,3 +34,4 @@ Global task index. Load at session start to see what is active and what was done
 | 2026-06-24 | memory-master + context-master added to commonAgents | Global memory and context management |
 | 2026-07-01 | Harness template source paths live under `templates/common/Harness/` and optional `Harness/workflows/` | Do not route scaffold-owned docs through `docs/` |
 | 2026-07-01 | `npx create-harness-vibe-coding` remains install/safe-merge only, not an installed-Harness updater | Existing Harness updates need agent-mediated conflict handling for root entry and user-modified files |
+| 2026-07-03 | Existing `Harness/` detected by install CLI must auto-switch to the installed update checker instead of continuing install writes | User decision: install/update should be one safe entry, with script switching modes by target state |

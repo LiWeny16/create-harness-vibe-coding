@@ -2,9 +2,13 @@
 import * as p from '@clack/prompts';
 import fs from 'node:fs';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import pc from 'picocolors';
 import { askConflictPolicy, askOptionalSelections, askProjectName, askTargetDir } from './prompts.js';
 import { generate, getOptionalCatalog } from './generator.js';
+
+const UPDATE_SUCCESS_STATUSES = new Set(['up-to-date', 'update-available', 'partial-update']);
+const UPDATE_FAILURE_STATUSES = new Set(['error', 'offline', 'template-remote', 'downgrade-refused']);
 
 // ── CLI flags ──────────────────────────────────────────────
 const raw = process.argv.slice(2);
@@ -85,6 +89,10 @@ if (generationOptions.json) {
   const projectName = argName || DEFAULT_NAME;
   const targetDir = argDir || `./${projectName}`;
   const scan = scanTarget(targetDir);
+  if (scan.hasHarness) {
+    printJsonResult(createUpdateSwitchResult(scan, { json: true }));
+    process.exit(0);
+  }
   const result = generate({ projectName, targetDir, ...generationOptions });
   result.scan = createJsonScan(scan);
   result.agent = createAgentGuidance(result, {
@@ -111,6 +119,11 @@ let projectName, targetDir;
 if (argName || skipPrompts) {
   projectName = argName || DEFAULT_NAME;
   targetDir = argDir || `./${projectName}`;
+  const scan = scanTarget(targetDir);
+
+  if (scan.hasHarness) {
+    process.exit(runUpdateSwitch(scan, { json: false }));
+  }
 
   console.log(pc.dim('────────────────────────────────────────────'));
   console.log(`  Project     ${pc.green(projectName)}`);
@@ -158,6 +171,10 @@ if (argName || skipPrompts) {
 
   const scan = scanTarget(targetDir);
   printScan(scan);
+
+  if (scan.hasHarness) {
+    process.exit(runUpdateSwitch(scan, { json: false }));
+  }
 
   if (!generationOptions.dryRun && !conflictPolicyProvided && scan.needsConflictPolicy) {
     try {
@@ -427,6 +444,113 @@ function printJsonResult(result) {
   if (!result.success) {
     process.exit(1);
   }
+}
+
+function runUpdateSwitch(scan, { json }) {
+  const updateResult = createUpdateSwitchResult(scan, { json });
+  if (json) {
+    printJsonResult(updateResult);
+    return updateResult.success ? 0 : 1;
+  }
+
+  console.log('');
+  console.log(pc.yellow('Existing Harness detected. Switching to wf-update check.'));
+  console.log(pc.dim(`Directory   ${scan.resolvedDir}`));
+  console.log(pc.dim('Command     node Harness/scripts/wf-update-check.mjs'));
+  console.log('');
+
+  if (!updateResult.success && updateResult.error) {
+    console.error(pc.red(updateResult.error));
+    return 1;
+  }
+
+  if (updateResult.stdout) process.stdout.write(updateResult.stdout);
+  if (updateResult.stderr) process.stderr.write(updateResult.stderr);
+  return updateResult.exitCode ?? 0;
+}
+
+function getUpdateStatusError(update) {
+  if (!update || typeof update !== 'object' || typeof update.status !== 'string') {
+    return 'Update checker did not return a machine-readable status.';
+  }
+  if (UPDATE_FAILURE_STATUSES.has(update.status)) {
+    return `Update checker reported ${update.status}${update.message ? `: ${update.message}` : ''}`;
+  }
+  if (!UPDATE_SUCCESS_STATUSES.has(update.status)) {
+    return `Update checker returned unrecognized status: ${update.status}`;
+  }
+  return null;
+}
+
+function createUpdateSwitchResult(scan, { json }) {
+  const args = ['Harness/scripts/wf-update-check.mjs'];
+  if (json) args.push('--json');
+
+  const scriptPath = path.join(scan.resolvedDir, 'Harness', 'scripts', 'wf-update-check.mjs');
+  const command = `node ${args.join(' ')}`;
+  const base = {
+    success: false,
+    mode: 'update',
+    scan: createJsonScan(scan),
+    agent: {
+      sourceOfTruth: 'Existing Harness detected; install automatically switched to the target update checker. Do not continue install writes.',
+      updateCommand: json
+        ? 'node Harness/scripts/wf-update-check.mjs --json'
+        : 'node Harness/scripts/wf-update-check.mjs',
+      next: [
+        {
+          action: 'update',
+          command: json
+            ? 'node Harness/scripts/wf-update-check.mjs --json'
+            : 'node Harness/scripts/wf-update-check.mjs',
+          reason: 'Harness already exists, so updates must use the installed Harness update flow.',
+        },
+      ],
+    },
+  };
+
+  if (!fs.existsSync(scriptPath)) {
+    return {
+      ...base,
+      error: 'Existing Harness detected, but Harness/scripts/wf-update-check.mjs was not found. Install writes were skipped; inspect the existing Harness before updating manually.',
+      errors: ['Harness/scripts/wf-update-check.mjs not found'],
+    };
+  }
+
+  const result = spawnSync(process.execPath, args, {
+    cwd: scan.resolvedDir,
+    encoding: 'utf8',
+  });
+  const stdout = result.stdout || '';
+  const stderr = result.stderr || '';
+  const status = result.status ?? 1;
+
+  let update = undefined;
+  if (json && stdout.trim()) {
+    try {
+      update = JSON.parse(stdout.trim());
+    } catch {
+      update = { rawOutput: stdout };
+    }
+  }
+
+  const errors = [];
+  if (status !== 0) errors.push(`Update checker exited with status ${status}`);
+  if (json) {
+    const statusError = getUpdateStatusError(update);
+    if (statusError) errors.push(statusError);
+  }
+
+  return {
+    ...base,
+    success: errors.length === 0,
+    exitCode: status,
+    command,
+    stdout,
+    stderr,
+    ...(json ? { update } : {}),
+    ...(errors.length === 0 ? {} : { error: errors[0], errors }),
+  };
 }
 
 function scanTarget(targetDir) {

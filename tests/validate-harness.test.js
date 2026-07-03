@@ -162,12 +162,12 @@ test('validation fails when durable filesystem communication invariant is remove
   assert.match(output, /Harness\/README\.md missing durable filesystem communication invariant/);
 });
 
-test('validation fails when WF multi-agent orchestration contract is removed', () => {
+test('validation fails when WF complete role chain contract is removed', () => {
   const targetDir = generateProject();
   writeRel(
     targetDir,
     'Harness/WF.md',
-    readRel(targetDir, 'Harness/WF.md').replace('WF mode requires multi-subagent orchestration by default', 'WF mode may use one or more passes'),
+    readRel(targetDir, 'Harness/WF.md').replace('WF mode requires the complete role chain by default', 'WF mode may use one or more passes'),
   );
 
   const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
@@ -177,7 +177,25 @@ test('validation fails when WF multi-agent orchestration contract is removed', (
   const output = `${result.stdout}\n${result.stderr}`;
 
   assert.notEqual(result.status, 0);
-  assert.match(output, /Harness\/WF\.md missing WF multi-subagent default/);
+  assert.match(output, /Harness\/WF\.md missing WF complete role chain default/);
+});
+
+test('validation fails when compact task record guidance is removed', () => {
+  const targetDir = generateProject();
+  writeRel(
+    targetDir,
+    'Harness/tasks/_template/PLAN.md',
+    readRel(targetDir, 'Harness/tasks/_template/PLAN.md').replace('Compact task record', 'Verbose task record'),
+  );
+
+  const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
+    cwd: targetDir,
+    encoding: 'utf8',
+  });
+  const output = `${result.stdout}\n${result.stderr}`;
+
+  assert.notEqual(result.status, 0);
+  assert.match(output, /Harness\/tasks\/_template\/PLAN\.md missing compact task PLAN template/);
 });
 
 test('validation fails when optional web workflows lose stable selector requirements', () => {
@@ -224,4 +242,23 @@ test('validation fails when a registered optional skill file is missing', () => 
 
   assert.notEqual(result.status, 0);
   assert.match(output, /registered skill file is missing: \.claude\/skills\/browser-e2e\/SKILL\.md/);
+});
+
+test('AC-004 validation fails when command docs list a missing skill command', () => {
+  const targetDir = generateProject();
+  writeRel(
+    targetDir,
+    '.claude/commands/wf-help.md',
+    `${readRel(targetDir, '.claude/commands/wf-help.md')}\n| \`/wf-ghost <task>\` | workflow skill | \`/wf-ghost test\` | Missing command. |\n`,
+  );
+
+  const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
+    cwd: targetDir,
+    encoding: 'utf8',
+  });
+  const output = `${result.stdout}\n${result.stderr}`;
+
+  assert.notEqual(result.status, 0);
+  assert.match(output, /command docs list missing Claude skill: \/wf-ghost -> \.claude\/skills\/wf-ghost\/SKILL\.md/);
+  assert.match(output, /command docs list missing Codex skill: \/wf-ghost -> \.agents\/skills\/wf-ghost\/SKILL\.md/);
 });

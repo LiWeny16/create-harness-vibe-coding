@@ -8,12 +8,13 @@
  * Usage: node tests/e2e-wf-scripts.test.mjs
  */
 
-import { mkdirSync, writeFileSync, readFileSync, rmSync, existsSync } from 'fs';
+import { mkdirSync, writeFileSync, readFileSync, rmSync, existsSync, cpSync } from 'fs';
 import { resolve, join, sep } from 'path';
 import { createHash } from 'crypto';
 import { execSync } from 'child_process';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { dirname } from 'path';
+import { generate } from '../src/generator.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
@@ -21,8 +22,11 @@ const SCRIPTS = resolve(ROOT, 'Harness', 'scripts');
 const TMP = resolve(ROOT, 'tests', '.tmp-e2e');
 const TMP_GUARD = resolve(ROOT, 'tests', '.tmp-e2e-guard');
 const TMP_EXTERNAL = resolve(ROOT, 'tests', '.tmp-e2e-external');
+const TMP_OPTIONAL = resolve(ROOT, 'tests', '.tmp-e2e-optional');
+const TMP_OPTIONAL_REMOTE = resolve(ROOT, 'tests', '.tmp-e2e-optional-remote');
 const REMOVE = join(SCRIPTS, 'wf-remove.mjs');
 const UPDATE = join(SCRIPTS, 'wf-update-check.mjs');
+const SCAN = join(SCRIPTS, 'scan-clean.mjs');
 
 let passed = 0;
 let failed = 0;
@@ -82,6 +86,8 @@ console.log('\n🏗 Setting up mock project...');
 rmSync(TMP, { recursive: true, force: true });
 rmSync(TMP_GUARD, { recursive: true, force: true });
 rmSync(TMP_EXTERNAL, { recursive: true, force: true });
+rmSync(TMP_OPTIONAL, { recursive: true, force: true });
+rmSync(TMP_OPTIONAL_REMOTE, { recursive: true, force: true });
 mkdirSync(TMP, { recursive: true });
 
 // Create mock .harness-version with known checksums
@@ -372,6 +378,14 @@ const localMergePath = join(TMP, 'Harness', 'README.md');
 mkdirSync(dirname(localMergePath), { recursive: true });
 writeFileSync(localMergePath, 'local router conflict\n', 'utf-8');
 
+const localByteMatchNewPath = join(TMP, '.claude', 'settings.json');
+mkdirSync(dirname(localByteMatchNewPath), { recursive: true });
+writeFileSync(localByteMatchNewPath, 'settings template\n', 'utf-8');
+
+const localCommandOrphanPath = join(TMP, '.claude', 'commands', 'legacy.md');
+mkdirSync(dirname(localCommandOrphanPath), { recursive: true });
+writeFileSync(localCommandOrphanPath, 'legacy untracked command\n', 'utf-8');
+
 const localAlreadyCurrentPath = join(TMP, 'Harness', 'WF.md');
 mkdirSync(dirname(localAlreadyCurrentPath), { recursive: true });
 writeFileSync(localAlreadyCurrentPath, mockFiles['Harness/WF.md'] + '\n', 'utf-8');
@@ -390,6 +404,7 @@ writeFileSync(updateLocalVersionPath, JSON.stringify(updateLocalVersion, null, 2
 
 const remoteUpdateFiles = {
   '.claude/agents/planner.md': 'planner agent definition v2.\n',
+  '.claude/settings.json': 'settings template\n',
   'Harness/NEW.md': 'new runtime file\n',
   'Harness/README.md': 'remote router template v2\n',
   'Harness/WF.md': mockFiles['Harness/WF.md'] + '\n',
@@ -423,6 +438,8 @@ assert(localUpdatePlan.status === 'update-available', 'local-source update repor
 assert(localUpdatePlan.agent?.safeApplyCommand?.includes('--apply-safe'), 'JSON agent hints include --apply-safe command');
 assert(localUpdatePlan.agent?.aiMergeRequired?.some(c => c.file === 'Harness/README.md' && c.templateHint === 'Harness/README.md' && c.remoteUrl?.startsWith('file://')), 'JSON agent hints include remote conflict source');
 assert(localJsonPlan.updated.some(x => x.file === '.claude/agents/planner.md'), 'local-source update marks missing safe file as updated');
+assert(localJsonPlan.adopted?.some(x => x.file === '.claude/settings.json'), 'AC-001 byte-matching new remote file is adopted without AI conflict');
+assert(!localJsonPlan.conflict.some(x => x.file === '.claude/settings.json'), 'AC-001 byte-matching new remote file is not a conflict');
 assert(localJsonPlan.created.some(x => x.file === 'Harness/NEW.md'), 'local-source update marks new runtime file as created');
 assert(localJsonPlan.conflict.some(x => x.file === 'Harness/README.md'), 'local-source update marks modified merge file as conflict');
 assert(localJsonPlan.skipped.some(x => x.file === 'Harness/WF.md' && x.reason.includes('already current')), 'local-source update skips already-current files');
@@ -440,12 +457,67 @@ const versionAfterApplySafe = JSON.parse(readFileSync(join(TMP, 'Harness', '.har
 assert(versionAfterApplySafe.generator === '0.6.1', '--apply-safe does not bump generator while conflicts remain');
 assert(versionAfterApplySafe.partialUpdate?.targetGenerator === '0.7.0', '--apply-safe records partial update target');
 assert(versionAfterApplySafe.checksums['.claude/agents/planner.md'] === remoteUpdateChecksums['.claude/agents/planner.md'], '--apply-safe tracks applied file checksum');
+assert(versionAfterApplySafe.checksums['.claude/settings.json'] === remoteUpdateChecksums['.claude/settings.json'], 'AC-001 --apply-safe adopts byte-matching new file checksum');
 
 const partialJsonResult = runNode(UPDATE, '--json', TMP, { WF_SOURCE_BASE: updateRemoteBase });
 const partialJsonPlan = JSON.parse(partialJsonResult.stdout.trim());
 assert(partialJsonPlan.status === 'partial-update', 'partial update JSON reports partial-update status');
 assert(partialJsonPlan.partialUpdate?.targetGenerator === '0.7.0', 'partial update JSON includes target generator');
 assert(partialJsonPlan.agent?.partialUpdate?.targetGenerator === '0.7.0', 'partial update agent hints include partialUpdate');
+
+const finalizeLocalResult = runNode(UPDATE, '--accept-local Harness/README.md --finalize', TMP, { WF_SOURCE_BASE: updateRemoteBase });
+assert(finalizeLocalResult.ok, 'AC-002 accept-local finalize runs without error');
+const versionAfterFinalize = JSON.parse(readFileSync(join(TMP, 'Harness', '.harness-version'), 'utf-8'));
+assert(versionAfterFinalize.generator === '0.7.0', 'AC-002 finalize bumps generator after all conflicts are decided');
+assert(!versionAfterFinalize.partialUpdate, 'AC-002 finalize clears partialUpdate residue');
+assert(readFileSync(localMergePath, 'utf-8') === 'local router conflict\n', 'AC-002 accept-local preserves project-specific merge file');
+assert(versionAfterFinalize.acceptedConflicts?.['Harness/README.md']?.decision === 'accept-local', 'AC-002 finalize records local conflict decision');
+
+const scanCommandOrphanResult = runNode(SCAN, '--json', TMP, { WF_SOURCE_BASE: updateRemoteBase });
+assert(scanCommandOrphanResult.ok, 'AC-003 scan-clean JSON runs against local source');
+const scanCommandOrphanPlan = JSON.parse(scanCommandOrphanResult.stdout.trim());
+assert(scanCommandOrphanPlan.orphan?.some(x => x.file === '.claude/commands/legacy.md'), 'AC-003 scan-clean reports .claude/commands orphan files');
+
+const optionalGenerateResult = generate({
+  projectName: 'optional-scan',
+  targetDir: TMP_OPTIONAL,
+  withOptions: ['browser-e2e'],
+});
+assert(optionalGenerateResult.success, 'optional browser-e2e fixture generates');
+const commonTemplateBase = pathToFileURL(resolve(ROOT, 'templates', 'common') + sep).href;
+const optionalScanResult = runNode(SCAN, '--json', TMP_OPTIONAL, { WF_SOURCE_BASE: commonTemplateBase });
+assert(optionalScanResult.ok, 'scan-clean JSON runs against optional install');
+const optionalScanPlan = JSON.parse(optionalScanResult.stdout.trim());
+assert(
+  !optionalScanPlan.dead?.some(x => x.file.includes('browser-e2e') || x.file.includes('wf-browser')),
+  'scan-clean does not mark installed optional browser workflow files dead',
+);
+assert(
+  !optionalScanPlan.dead?.some(x => x.file === 'tests/.gitkeep'),
+  'scan-clean does not mark generated tests/.gitkeep dead',
+);
+
+cpSync(resolve(ROOT, 'templates', 'common'), TMP_OPTIONAL_REMOTE, { recursive: true });
+const optionalRemoteVersionPath = join(TMP_OPTIONAL_REMOTE, '.harness-version');
+const optionalRemoteVersion = JSON.parse(readFileSync(optionalRemoteVersionPath, 'utf-8'));
+optionalRemoteVersion.generator = '9.9.9';
+writeFileSync(optionalRemoteVersionPath, JSON.stringify(optionalRemoteVersion, null, 2) + '\n', 'utf-8');
+const optionalRemoteBase = pathToFileURL(TMP_OPTIONAL_REMOTE + sep).href;
+const optionalUpdateResult = runNode(UPDATE, '--json', TMP_OPTIONAL, { WF_SOURCE_BASE: optionalRemoteBase });
+assert(optionalUpdateResult.ok, 'wf-update-check JSON runs against optional install');
+const optionalUpdatePlan = JSON.parse(optionalUpdateResult.stdout.trim());
+assert(
+  !optionalUpdatePlan.plan?.updated?.some(x => x.file === 'Harness/README.md'),
+  'wf-update-check does not SAFE overwrite optional Harness/README.md registration',
+);
+assert(
+  optionalUpdatePlan.plan?.conflict?.some(x => x.file === 'Harness/README.md' && x.reason.includes('optional registration')),
+  'wf-update-check routes optional Harness/README.md registration through merge',
+);
+assert(
+  optionalUpdatePlan.plan?.skipped?.some(x => x.file === '.claude/skills/wf-browser/SKILL.md' && x.reason.includes('optional workflow')),
+  'wf-update-check preserves optional wf-browser skill outside common manifest',
+);
 
 // ── TEST: safePath() traversal rejection ──────────────────────────
 
@@ -546,6 +618,8 @@ assert(crlfHash === lfHash, 'CRLF normalizes to LF for checksums');
 rmSync(TMP, { recursive: true, force: true });
 rmSync(TMP_GUARD, { recursive: true, force: true });
 rmSync(TMP_EXTERNAL, { recursive: true, force: true });
+rmSync(TMP_OPTIONAL, { recursive: true, force: true });
+rmSync(TMP_OPTIONAL_REMOTE, { recursive: true, force: true });
 console.log('\n🧹 Cleaned up temp files.');
 
 // ── Summary ────────────────────────────────────────────────────────

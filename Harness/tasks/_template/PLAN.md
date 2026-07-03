@@ -1,84 +1,75 @@
-# {{TASK_ID}} — PLAN
+# {{TASK_ID}} - PLAN
 
-Task-level implementation plan and evidence. Main agent writes after second planning; implementer reads before coding.
+Compact task record. Keep only facts needed to resume, review, and verify.
+Link files or command names instead of pasting logs or subagent transcripts.
 
-> **Task naming**: See `NAMING.md`. Format: `<verb>-<noun>[-detail]`, kebab-case, ≤40 chars. Directory name = task ID.
+> Task ID: kebab-case, under 60 chars. Directory name = task ID.
 
 ## Goal
 
-## Mini PRD
+- Outcome:
+- Non-goals:
 
-Scope:
-- 
+## Decisions
 
-Non-scope:
-- 
+-
 
-User flow:
-1. 
+## Acceptance
 
-UI elements:
-- 
+Default: keep 1-3 concise ACs. Expand only for UI/API/security/data-loss,
+cross-module, or other high-risk behavior.
 
-API behavior:
-- 
+- AC-001:
 
-## Acceptance Criteria
-
-| AC ID | Given / When / Then | Verification | Evidence |
-|-------|----------------------|--------------|----------|
-| AC-001 |  |  |  |
-
-## UI Contract
-
-| Element | Selector / Role | States | AC IDs |
-|---------|-----------------|--------|--------|
-
-## API Contract
-
-| Endpoint | Method | Payload / Response | AC IDs |
-|----------|--------|--------------------|--------|
-
-## Test Plan
-
-For browser-visible ACs, include real user actions and evidence. Syntax-only checks, import tests, shallow renders, typecheck, lint, and build success are not acceptance evidence for UI behavior.
-
-| AC ID | Test Level | User Action / API Request | Command / File | Evidence | Status |
-|-------|------------|---------------------------|----------------|----------|--------|
+Expanded evidence required when triggered:
+- UI/browser-visible: add selector contract and real browser evidence.
+- API/integration: add endpoint/payload/response contract.
+- High-risk behavior: add AC-by-AC validation matrix.
 
 ## Scope
 
 Allowed write set:
-- 
+-
 
 Forbidden:
-- 
-- PRD / acceptance criteria / UI contract / API contract / test plan / validation report unless Change Request is recorded
+-
+- Truth files (PRD, ACs, UI/API contracts, test plan, validation report) unless a Change Request is recorded.
 
-## Loaded Context
+## Context
 
-- 
+- Loaded:
+- Assumptions:
 
-## Subagent Dispatch
+## Agents
 
-| Agent | Mode | Read Set | Write Set | Status |
-|-------|------|----------|-----------|--------|
+Only record agents or bounded passes that materially changed the decision.
 
-## Subagent Synthesis
-
-Agents used:
-Findings accepted:
-Findings rejected:
-Conflicts:
-Decisions:
-Residual risk:
+| Role | Read / Write Set | Result |
+|------|------------------|--------|
 
 ## Verification
 
-| Check | Result | Notes |
-|-------|--------|-------|
+- [ ]
 
-## Acceptance Result
+## Risks
+
+-
+
+## Expanded Contracts
+
+Use this section only when the Acceptance triggers above apply.
+
+### UI Contract
+
+| Element | Selector / Role | States | AC IDs |
+|---------|-----------------|--------|--------|
+
+### API Contract
+
+| Endpoint | Method | Payload / Response | AC IDs |
+|----------|--------|--------------------|--------|
+
+### Validation Matrix
 
 | AC ID | Result | Evidence | Notes |
 |-------|--------|----------|-------|

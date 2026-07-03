@@ -34,41 +34,51 @@ Two distinct trigger classes; do not conflate them:
 - Explicit invocation (`/wf`, `$wf`, `wf mode`, `workflow mode`, `wk mode`,
   `/wf-max`, `$wf-max`): role fan-out is mandatory and unconditional. File
   count, task size, and subsystem count are irrelevant. A one-file task invoked
-  with WF still uses at least three role passes before the second plan.
+  with WF still schedules the complete role chain before closeout.
 - Auto-triggering decides whether the harness enters WF mode on its own. It can
   only escalate into WF, never downgrade an explicit command out of WF.
 
-## Multi-Subagent Requirement
+## Complete Role Chain Requirement
 
-WF mode requires multi-subagent orchestration by default.
+WF mode requires the complete role chain by default.
 
-Normative rule: Explicit `/wf`, `$wf`, `wf mode`, `workflow mode`, or `wk mode` MUST use at least 3 distinct role passes before second planning.
+Normative rule: Explicit `/wf`, `$wf`, `wf mode`, `workflow mode`, or `wk mode` MUST cover every mandatory role class before closeout: Plan, Research, Architecture, Test, Implement, Independent Validation, Cross-Review, Reflect, and Final Acceptance.
 
-- Explicit `/wf`, `$wf`, `wf mode`, `workflow mode`, or `wk mode` MUST use at
-  least 3 distinct role passes before second planning. Use real subagents when
-  the runtime supports them; otherwise emulate those roles as bounded passes and
-  record the fallback.
+- Explicit `/wf`, `$wf`, `wf mode`, `workflow mode`, or `wk mode` MUST schedule
+  the complete role chain at intake. Use real subagents when the runtime
+  supports them; otherwise emulate those roles as bounded passes and record the
+  fallback.
+- Mandatory role classes:
+  - Plan: `planner`
+  - Research: `researcher` or `docs-researcher`; use both when local and external/current facts matter
+  - Architecture: `architect`
+  - Test: `test-writer`
+  - Implement: `implementer` and `debugger` when needed
+  - Independent Validation: `verifier` records AC-mapped evidence before cross-review
+  - Cross-Review: at least two independent review lenses after implementation
+  - Reflect: `reflector`
+  - Final Acceptance: controller accepts only after cross-review passes and `reflector` returns PASS
 - Runtime mapping:
   - Claude Code: prefer subagents from `.claude/agents/`.
   - Codex: prefer the available Codex subagent surface; if unavailable, use
     bounded passes with the same roles and evidence contract.
 - Collaboration decision tree (replaces the old "7:3" heuristic with concrete
   conditions):
-  - Explicit WF/WK mode -> always multi-role, no exceptions.
-  - 3+ files changed -> multi-role at minimum: planner, implementer, reviewer.
-  - Cross-layer change -> architect plus implementers plus reviewer.
-  - Uncertain scope or approach -> planner plus researcher plus architect.
+  - Explicit WF/WK mode -> complete role chain, no exceptions.
+  - 3+ files changed -> complete role chain.
+  - Cross-layer change -> complete role chain plus separate architecture review.
+  - Uncertain scope or approach -> complete role chain with both researcher and architect passes.
   - 1-2 files, well-understood, not in WF mode -> solo is acceptable.
   - Repeated failure on the same task -> stop solo and switch to multi-role.
-- Default initial fan-out: `planner`, `researcher` or `docs-researcher`, and
-  `architect`. Add `test-writer`, `reviewer`, `debugger`, or `verifier` when
-  the phase needs them.
+- Default `/wf` startup records the full chain in the task plan. Dependency-bound
+  roles run when their phase is ready; they are not optional.
 
 ## Exploration Gate
 
 - [ ] Controller has not read source files directly; only Harness docs, root
   agent entries, and subagent or bounded-pass returns.
-- [ ] At least 3 distinct role types, each with one specific question.
+- [ ] Complete role chain is scheduled in the task plan.
+- [ ] Plan, Research, and Architecture role passes each have one specific question before second planning.
 - [ ] Role passes were dispatched together when the runtime supports parallel
   dispatch.
 - [ ] Agent count is at least `max(3, ceil(estimated_dirs / 2))`; estimate from
@@ -93,8 +103,9 @@ Intake
 -> test-writer
 -> implementer
 -> independent validator
--> reviewers
--> if failed: debugger -> review -> e2e/API validation -> loop
+-> cross-review: spec/AC reviewer + code/architecture/test reviewer
+-> reflector
+-> if failed: debugger -> verifier -> cross-review -> reflector -> loop
 -> memory closeout with evidence
 ```
 
@@ -166,9 +177,12 @@ The second plan must pass:
 
 1. `test-writer` defines failing tests or written manual checks from AC IDs and contracts first.
 2. `implementer` changes only the declared write set and may not edit truth files without Change Request.
-3. `verifier` or independent validator runs AC-mapped checks against running behavior and records an acceptance result matrix.
-4. At least one `reviewer` checks diff, architecture, risks, missing tests, and AC traceability.
-5. For cross-layer or risky work, run separate reviewers for spec/AC compliance, architecture, and test adequacy.
+3. `verifier` or independent validator runs AC-mapped checks against running behavior and records an evidence matrix before cross-review.
+4. Cross-review is mandatory: at least two independent review lenses must pass before acceptance.
+   - Spec/AC review checks request, scope, contracts, and non-goals.
+   - Code/architecture/test review checks implementation risk, maintainability, security, and verification adequacy.
+5. `reflector` reads verifier evidence and reviewer findings, resolves contradictions with the controller, and returns PASS before final acceptance.
+6. For cross-layer or risky work, run separate reviewers for spec/AC compliance, architecture, security, and test adequacy.
 
 ## Browser And API Evidence
 
@@ -197,9 +211,10 @@ If verification fails:
 2. Dispatch `debugger` with the failed AC ID, failing command, error output,
    trace/screenshot/network evidence, and smallest relevant files.
 3. Classify the failure layer using [DEBUG_PROTOCOL.md](DEBUG_PROTOCOL.md), then fix the smallest reproduced failure.
-4. Run reviewer again.
-5. Run verifier again.
-6. Repeat until verified or blocked by missing user input/external state.
+4. Run verifier again and record fresh AC-mapped evidence.
+5. Run cross-review again.
+6. Run reflector again.
+7. Repeat until verified or blocked by missing user input/external state.
 
 Before asking the user after repeated failures, run the context-master then
 memory-master learning cycle or use `wf-learn`.
@@ -207,6 +222,8 @@ memory-master learning cycle or use `wf-learn`.
 ## Heartbeat Protocol
 
 Heartbeat is a lightweight recovery protocol, not a background daemon.
+Keep heartbeat entries to one or two lines: phase, blocker/failure, next action,
+and evidence pointer. Do not paste command logs or subagent transcripts.
 
 Update `Harness/tasks/<task-id>/PROGRESS.md#Heartbeat`:
 
@@ -224,9 +241,10 @@ equivalent bounded pass to append a compression suggestion to the task heartbeat
 
 Close only when:
 
-- PRD-GATE, AC-GATE, CONTRACT-GATE, TEST-GATE, VALIDATION-GATE, and REVIEW-GATE are satisfied
+- PRD-GATE, AC-GATE, CONTRACT-GATE, TEST-GATE, VALIDATION-GATE, REVIEW-GATE, and REFLECT-GATE are satisfied
 - acceptance criteria are satisfied and reported by AC ID
-- reviewer has no unresolved critical/high findings
+- cross-review has passed with no unresolved critical/high findings
+- reflector verdict is PASS
 - test/API/browser evidence is recorded
 - affected Harness docs are synced
 - context-master has analyzed the session and extracted durable knowledge
