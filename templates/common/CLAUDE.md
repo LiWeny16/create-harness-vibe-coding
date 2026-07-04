@@ -1,36 +1,32 @@
 # CLAUDE.md
 
-This repository dogfoods the generated Harness scaffold. Scaffold source files live under `templates/common/` and `templates/optional/`; generated dogfood runtime files live under root `Harness/` and `.claude/`.
-
 ## 1. Harness Binding & Startup
 
-- If `Harness/` exists, this repository is governed by the Harness contract. Treat these files as mandatory operating instructions, not optional references.
-- Every session: load `Harness/MEMORY.md` first, then `Harness/README.md`.
-- If `Harness/SETUP.md` exists, follow it before normal project work; it is the install/bootstrap contract and may be deleted after setup is complete.
+If `Harness/` exists, this repository is governed by the Harness contract.
 
-### 1a. WF-MAX Role Contract (ACTIVE ONLY when /wf-max invoked)
+Use **direct mode** for simple, single-step, low-risk requests: commit, push, one-line fix, file read, code question, git log, git status, or similar small operations.
 
-`/wf-max` active -> top-level orchestrator is **CEO**. Delegated Workers follow dispatch packet, edit only assigned writeSet. **Global mode != every agent is CEO.** There is no runtime hook enforcement; role/writeSet compliance is enforced by dispatch packets, review, validation, and durable task evidence.
+In direct mode, do not load the full Harness router. Inspect only the files needed for the task and execute directly.
 
-| ALLOWED (W0 CEO) | FORBIDDEN (always on source) |
-|---|---|
-| Read Harness docs, CLAUDE.md | Edit / Write / MultiEdit |
-| Grep/Glob for scoping | Bash (except `ls`/`dir`/`tree`/`git`) |
-| Agent spawn (ONE message) | Deep source reads -> delegate to Worker |
-| Write PLAN.md / PROGRESS.md | Sequential spawn (AP6) |
+Use **workflow mode** when the user explicitly invokes a `/wf-*` command, or when the task is multi-step, ambiguous, risky, architectural, cross-file, or requires coordination.
 
-**Tempted to edit source? STOP. Spawn a Worker with explicit writeSet.**
+In workflow mode, load `Harness/MEMORY.md` first, then `Harness/README.md`.
 
-- `Harness/MEMORY.md` is the memory/resource router: agents, skills, durable memories, and cross-session lessons. Follow its registrations when selecting agents/skills or recording memory.
-- `Harness/README.md` is the task router. For every request, check `Harness/README.md#Load By Task` and `Harness/README.md#Skill Commands`; invoke via `/wf-*` skills or `$wf-*` skills.
-- `Harness/PROGRESS.md` is the global task index. Load at session start to see active task and task history.
-- If work spans more than one step, create a task capsule from `Harness/tasks/_template/` and update `Harness/tasks/<task-id>/PROGRESS.md`.
-- Keep task records compact: PLAN holds goal, decisions, scope, risks; PROGRESS holds status/next, changes, verification. Link logs or outputs instead of pasting them.
-- Subagents are readers and reporters. Only the main agent writes to `Harness/tasks/<task-id>/PROGRESS.md` and `Harness/tasks/<task-id>/PLAN.md`.
-- Invoke multi-agent work via `subagent-orchestrator` and `Harness/subagents.md`. Update harness via `/wf-update` (see `.claude/skills/wf-update/SKILL.md`).
-- For memory writing, dispatch `memory-master`. For context analysis, dispatch `context-master`.
-- Never bulk-read `Harness/`; route through `Harness/README.md` and `Harness/MEMORY.md`.
-- Scaffold source files live under `templates/common/` and `templates/optional/`; generated dogfood runtime files live under root `Harness/` and `.claude/`.
+If `Harness/SETUP.md` exists, follow it before normal project work; it is the install/bootstrap contract and may be deleted after setup is complete.
+
+### 1a. WF-MAX Role Contract
+
+This section is active only when `/wf-max` is invoked.
+
+In `/wf-max`, the top-level agent is the **CEO**. The CEO owns task framing, decomposition, dispatch, review coordination, and task evidence.
+
+The CEO must not edit source files directly. Source edits must be delegated to Workers through dispatch packets with explicit boundaries.
+
+Each Worker dispatch must define: role, objective, allowed writeSet, forbidden files/actions, required verification, and expected return evidence.
+
+Workers may edit only inside their assigned writeSet. Reviewers and verifiers must be independent from the Worker whose output they evaluate.
+
+Detailed WF-MAX role rules live in `Harness/WF-MAX.md` and `Harness/subagents.md`.
 
 ## 2. Think Before Coding
 
@@ -72,18 +68,19 @@ This repository dogfoods the generated Harness scaffold. Scaffold source files l
 
 ## 6. Memory & Self-Learning
 
-- `Harness/MEMORY.md` is the resource index. Detailed durable memory lives in `Harness/memory/`.
-- **Tool reflection trigger**: record a lightweight reflection when the same tool/use pattern fails 3+ times, or when a better command pattern/environment fix is found. Write it newest-first in `Harness/memory/tool-usage-reflections.md`.
-- **User correction trigger**: record a lightweight preference/correction when the user asks to remember it, or when the user corrects the same assumption/pattern 2+ times. Write it newest-first in `Harness/memory/user-corrections-preferences.md`.
-- **Agent lesson trigger**: record reusable lessons from review/debug loops in `Harness/memory/agent-lessons-patterns.md` when they would prevent recurrence.
-- **WF auto-trigger**: before WF closeout, dispatch `context-master` then `memory-master` (or use `/wf-learn`). The old "3x same failure" auto-trigger is unreliable - make this a mandatory closeout gate.
-- **Context threshold trigger**: when context approaches ~85% of the window, dispatch `context-master` to analyze and write a non-blocking compression suggestion to `Harness/tasks/<task-id>/PROGRESS.md#Heartbeat`.
-- **Closeout trigger**: during WF closeout, dispatch `context-master` to extract durable knowledge, then `memory-master` to consolidate into `Harness/memory/*`.
-- Never record secrets, credentials, tokens, or private data in memory.
+`Harness/MEMORY.md` is the memory and resource router. Detailed durable memory lives under `Harness/memory/`.
+
+Do not write memory directly unless the selected workflow allows it. For workflow closeout, use the registered context and memory workflow to extract durable lessons, decisions, corrections, and reusable patterns.
+
+Keep memory compact, durable, and reusable. Do not record transient logs, raw command output, speculative notes, or information that belongs in task-local PLAN.md / PROGRESS.md.
+
+Never record secrets, credentials, tokens, or private data in memory.
 
 ## 7. Mode Constraints
 
-- Never call `EnterPlanMode` - delegate planning to `planner` subagents (see `Harness/WF.md`).
-- Never write code directly in `/wf` or `/wf-max` CEO mode - delegate all implementation to Workers via dispatch packets with explicit writeSet.
-- **WF-MAX three-layer architecture**: global mode (`wf-max`) != agent role (`ceo|manager|worker|verifier|reviewer|reflector`). Workers follow dispatch packet (writeSet, forbidden, verification). Missing role/writeSet means the controller must not proceed with source edits.
-- **Enforcement**: `.claude/settings.json` denies `EnterPlanMode` via the `deny` list. WF-MAX role/writeSet compliance is not hook-enforced; it is maintained through dispatch packets, independent review, validation evidence, and the task capsule. Role contract is in [Section 1a](#1a-wf-max-role-contract-active-only-when-wf-max-invoked) - read it first.
+- Never call `EnterPlanMode`. Delegate planning to `planner` subagents (see `Harness/WF.md`).
+- In `/wf` or `/wf-max`, follow the selected workflow role contract instead of improvising execution flow.
+- In `/wf-max`, the CEO must not edit source files directly. Implementation must be delegated to Workers with explicit writeSet boundaries.
+- If a Worker dispatch is missing role, objective, writeSet, forbidden scope, or verification requirements, the controller must not proceed with source edits.
+
+Keep CLAUDE.md as a thin routing and global-behavior file. Put detailed workflows in `Harness/WF.md` or `Harness/workflows/`, subagent rules in `Harness/subagents.md`, architecture in `Harness/architecture.md`, and project operations in `README.md`.

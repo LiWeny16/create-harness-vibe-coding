@@ -2,7 +2,17 @@
 
 Purpose: route humans and agents to the smallest useful context. `Harness/README.md` is the primary router.
 
-Default load: `CLAUDE.md`, `Harness/MEMORY.md`, this file, and `Harness/PROGRESS.md` when work is active. Do not read the whole `Harness/` tree.
+Default load: `CLAUDE.md`. When the task is complex or a `/wf-*` command is invoked, also load `Harness/MEMORY.md`, this file, and `Harness/PROGRESS.md` when work is active. Do not read the whole `Harness/` tree.
+
+## Direct Mode (Degradation Path)
+
+When the user does NOT invoke `/wf-*` and the request is simple, single-step, and low-risk — commit, push, one-line fix, read file, code question, git log, status check — operate in **direct mode**. Skip the router entirely. Execute the task. Do not load `Harness/MEMORY.md`, `Harness/README.md`, or `Harness/PROGRESS.md`.
+
+Escalate to the router (next section) only when:
+- User explicitly invokes `/wf-*`, `$wf-*`, `wf mode`, `workflow mode`, or `wk mode`
+- Task is multi-step, ambiguous, high-risk, or touches many files
+- Task involves subagent orchestration, architecture changes, or cross-cutting concerns
+- You've failed the same operation twice and need structured recovery
 
 ## 0-1 Flow
 
@@ -55,10 +65,11 @@ Keywords are retrieval hints, not project facts.
 
 Load the matching row only. Add adjacent docs only when the loaded doc directly names them.
 
-Routing priority: if a request explicitly says `/wf <task>`, `$wf`, `wf mode`, `workflow mode`, or `wk mode`, or is long, difficult, uncertain, repeated-failure, migration, architecture-heavy, browser-visible, or broad multi-agent implementation work, choose the WF row first. Load `Harness/WF.md` directly, then delegate subagent coordination to `subagent-orchestrator`. If the request says `/wf-auto`, `$wf-auto`, `wf auto`, or `auto mode`, choose the WF-AUTO row and load `Harness/WF-AUTO.md`.
+Routing priority: **direct mode is the default** when no `/wf-*` command is present and the task is simple. If a request explicitly says `/wf <task>`, `$wf`, `wf mode`, `workflow mode`, or `wk mode`, or is long, difficult, uncertain, repeated-failure, migration, architecture-heavy, browser-visible, or broad multi-agent implementation work, choose the WF row first. Load `Harness/WF.md` directly, then delegate subagent coordination to `subagent-orchestrator`. If the request says `/wf-auto`, `$wf-auto`, `wf auto`, or `auto mode`, choose the WF-AUTO row and load `Harness/WF-AUTO.md`.
 
 | When to Read | Keywords | Load | Output |
 | --- | --- | --- | --- |
+| **Direct mode (default)** | simple, single-step, low-risk, commit, push, one-line, read, question, status, no /wf-* command | Nothing beyond CLAUDE.md | Direct execution; no router load |
 | Raw idea or vague product request | idea, vague, clarify, goal, non-goal, lifecycle | [lifecycle.md](lifecycle.md), [research/PRD.md](research/PRD.md) | clarified goal, non-goals, first questions |
 | Need market/tech direction | research, market, competitor, stack, library, pricing, policy | [research/README.md](research/README.md), [research/research-results.md](research/research-results.md) | research protocol, adopted/rejected choices |
 | Need MVP/spec | PRD, MVP, scope, requirement, acceptance, non-goal | [research/PRD.md](research/PRD.md), [ACCEPTANCE_PROTOCOL.md](ACCEPTANCE_PROTOCOL.md) | Mini PRD with AC IDs and verifiable acceptance criteria |
