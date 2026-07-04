@@ -255,10 +255,10 @@ test('generated scaffold stores harness-owned payload under root Harness directo
   assert.match(claude, /Harness\/README\.md/);
   assert.match(claude, /Harness\/MEMORY\.md/);
   assert.match(claude, /If `Harness\/` exists, this repository is governed by the Harness contract/);
-  assert.match(claude, /Harness\/MEMORY\.md` is the memory\/resource router/);
-  assert.match(claude, /Harness\/README\.md#Load By Task/);
+  assert.match(claude, /memory and resource router/);
+  assert.match(claude, /Harness\/README\.md/);
   assert.match(claude, /Harness\/SETUP\.md` exists, follow it before normal project work/);
-  assert.match(claude, /subagent-orchestrator` and `Harness\/subagents\.md/);
+  assert.match(claude, /Harness\/subagents\.md/);
   assert.match(claude, /## 2\. Think Before Coding/);
   assert.match(claude, /## 3\. Simplicity First/);
   assert.match(claude, /## 4\. Surgical Changes/);
@@ -696,8 +696,9 @@ test('generated scaffold includes memory folder registrations and reflection tri
   assert.match(setup, /Package manager\/stack/);
   assert.match(setup, /Document existing commands first/);
   assert.match(setup, /add CI\/CD only after user approval/);
-  assert.match(claude, /same tool\/use pattern fails 3\+ times/);
-  assert.match(claude, /user corrects the same assumption\/pattern 2\+ times/);
+  const memoryProto = readRel(targetDir, 'Harness/MEMORY_PROTOCOL.md');
+  assert.match(memoryProto, /same tool or command pattern fails 3\+ times/);
+  assert.match(memoryProto, /user corrects the same assumption or preference 2\+ times/);
 });
 
 test('core docs declare project files as the durable communication channel', () => {

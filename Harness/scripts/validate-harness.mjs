@@ -328,17 +328,17 @@ for (const rel of durableCommunicationDocs) {
   requireText(rel, 'chat/subagent transcript state is non-authoritative', 'non-authoritative transcript invariant');
 }
 
-requireText('CLAUDE.md', 'same tool/use pattern fails 3+ times', 'tool reflection trigger');
-requireText('CLAUDE.md', 'user corrects the same assumption/pattern 2+ times', 'user correction reflection trigger');
+requireText('Harness/MEMORY_PROTOCOL.md', 'same tool or command pattern fails 3+ times', 'tool reflection trigger');
+requireText('Harness/MEMORY_PROTOCOL.md', 'user corrects the same assumption or preference 2+ times', 'user correction reflection trigger');
 requireText('CLAUDE.md', 'If `Harness/` exists, this repository is governed by the Harness contract', 'Harness binding contract');
-requireText('CLAUDE.md', 'Harness/MEMORY.md` is the memory/resource router', 'memory/resource router');
-requireText('CLAUDE.md', 'Harness/README.md#Load By Task', 'Harness task router');
+requireText('CLAUDE.md', 'memory and resource router', 'memory/resource router');
+requireText('Harness/README.md', 'Load By Task', 'Harness task router');
 requireText('CLAUDE.md', 'Harness/SETUP.md` exists, follow it before normal project work', 'setup bootstrap contract');
 requireText('Harness/SETUP.md', 'Harness/MEMORY_PROTOCOL.md', 'setup memory protocol reference');
-requireText('CLAUDE.md', 'subagent-orchestrator` and `Harness/subagents.md', 'subagent orchestrator entry trigger');
-requireText('CLAUDE.md', 'Harness/PROGRESS.md` is the global task index', 'PROGRESS global task index');
+requireText('Harness/README.md', 'subagent-orchestrator', 'subagent orchestrator entry trigger');
+requireText('Harness/README.md', 'PROGRESS.md', 'PROGRESS global task index');
 requireText('CLAUDE.md', 'Harness/tasks/', 'task capsule directory reference');
-requireText('CLAUDE.md', 'Subagents are readers and reporters', 'subagent state committer rule');
+requireText('Harness/subagents.md', 'Subagents are readers and reporters', 'subagent state committer rule');
 for (const heading of ['## 2. Think Before Coding', '## 3. Simplicity First', '## 4. Surgical Changes', '## 5. Goal-Driven Execution']) {
   requireText('CLAUDE.md', heading, `Karpathy-style rule heading: ${heading}`);
 }
@@ -506,7 +506,6 @@ for (const agent of commonAgents) {
 
 requireText('Harness/extension.md', 'Skills should extend the harness');
 requireText('Harness/agent-workflow.md', 'Harness/tasks/<task-id>/PROGRESS.md');
-requireText('CLAUDE.md', 'Keep task records compact', 'compact task record startup rule');
 requireText('Harness/README.md', 'Task records are compact by default', 'compact task record router rule');
 requireText('Harness/agent-workflow.md', 'AC record size', 'compact AC record size rule');
 requireText('Harness/ACCEPTANCE_PROTOCOL.md', 'Default to 1-3 concise ACs', 'compact AC default');
@@ -552,7 +551,7 @@ requireText('Harness/architecture.md', '## 2. Interface Decoupling', 'architectu
 requireText('Harness/architecture.md', '## 3. State Design', 'architecture state design');
 requireText('Harness/architecture.md', 'Avoid speculative abstraction', 'anti-overengineering architecture rule');
 requireText('CLAUDE.md', 'Use explicit interfaces or state models only when they protect a real boundary', 'CLAUDE interface/state simplicity rule');
-requireText('CLAUDE.md', '/wf-update', 'wf update startup instruction');
+requireText('Harness/README.md', '/wf-update', 'wf update startup instruction');
 requireText('Harness/README.md', 'Need harness update', 'update routing row');
 requireText('Harness/WF-MAX.md', 'three-layer architecture', 'WF-MAX three-layer architecture');
 requireText('Harness/WF-MAX.md', 'agent role', 'WF-MAX agent role separation');
@@ -627,8 +626,8 @@ requireText('.claude/commands/wf-help.md', '| `/wf-auto` |', 'wf-help wf-auto ro
 requireText('.claude/commands/wf-help.md', '| `/wf-readme <task>` |', 'wf-help wf-readme row');
 requireText('Harness/README.md', '## Direct Commands', 'direct commands section');
 requireText('Harness/README.md', '.claude/commands/wf-help.md', 'wf-help router reference');
-requireText('CLAUDE.md', 'three-layer architecture', 'CLAUDE.md three-layer role architecture');
-requireText('CLAUDE.md', 'not hook-enforced', 'CLAUDE no-hook role enforcement statement');
+requireText('Harness/WF-MAX.md', 'three-layer architecture', 'CLAUDE.md three-layer role architecture');
+requireText('Harness/README.md', 'no runtime hook state', 'CLAUDE no-hook role enforcement statement');
 requireText('Harness/README.md', 'no runtime hook state', 'README no-hook runtime statement');
 requireText('Harness/WF-AUTO.md', 'WF-AUTO Hook Exception', 'wf-auto-only hook exception');
 requireText('Harness/WF-AUTO.md', 'only `/wf-auto` may use a runtime hook', 'wf-auto-only hook boundary');
