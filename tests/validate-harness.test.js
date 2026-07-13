@@ -262,3 +262,117 @@ test('AC-004 validation fails when command docs list a missing skill command', (
   assert.match(output, /command docs list missing Claude skill: \/wf-ghost -> \.claude\/skills\/wf-ghost\/SKILL\.md/);
   assert.match(output, /command docs list missing Codex skill: \/wf-ghost -> \.agents\/skills\/wf-ghost\/SKILL\.md/);
 });
+
+test('validation fails when stale eight-angle exhaustion rule is present in WF-AUTO.md', () => {
+  const targetDir = generateProject();
+  writeRel(
+    targetDir,
+    'Harness/WF-AUTO.md',
+    readRel(targetDir, 'Harness/WF-AUTO.md') + '\nAll 8 exhausted.\n',
+  );
+
+  const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
+    cwd: targetDir,
+    encoding: 'utf8',
+  });
+  const output = `${result.stdout}\n${result.stderr}`;
+
+  assert.notEqual(result.status, 0);
+  assert.match(output, /stale eight-angle exhaustion rule/);
+});
+
+test('validation fails when stale three-consecutive-all-exhausted stop rule is present in WF-AUTO.md', () => {
+  const targetDir = generateProject();
+  writeRel(
+    targetDir,
+    'Harness/WF-AUTO.md',
+    readRel(targetDir, 'Harness/WF-AUTO.md') + '\n3 consecutive all-exhausted rounds.\n',
+  );
+
+  const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
+    cwd: targetDir,
+    encoding: 'utf8',
+  });
+  const output = `${result.stdout}\n${result.stderr}`;
+
+  assert.notEqual(result.status, 0);
+  assert.match(output, /stale three-consecutive-all-exhausted stop rule/);
+});
+
+test('validation fails when stale 8-Angle Exhaustion Gate name is present in WF-AUTO.md', () => {
+  const targetDir = generateProject();
+  writeRel(
+    targetDir,
+    'Harness/WF-AUTO.md',
+    readRel(targetDir, 'Harness/WF-AUTO.md').replace(
+      'Adaptive Coverage Exhaustion Gate',
+      '8-Angle Exhaustion Gate',
+    ),
+  );
+
+  const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
+    cwd: targetDir,
+    encoding: 'utf8',
+  });
+  const output = `${result.stdout}\n${result.stderr}`;
+
+  assert.notEqual(result.status, 0);
+  assert.match(output, /stale eight-angle exhaustion gate name/);
+});
+
+test('validation fails when stale eight-spark fixed-count search is present in WF-AUTO-SPARK.md', () => {
+  const targetDir = generateProject();
+  writeRel(
+    targetDir,
+    'Harness/WF-AUTO-SPARK.md',
+    readRel(targetDir, 'Harness/WF-AUTO-SPARK.md').replace(
+      'parallel external searches',
+      '8 parallel external searches',
+    ),
+  );
+
+  const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
+    cwd: targetDir,
+    encoding: 'utf8',
+  });
+  const output = `${result.stdout}\n${result.stderr}`;
+
+  assert.notEqual(result.status, 0);
+  assert.match(output, /stale eight-spark fixed-count search/);
+});
+
+test('validation passes when WF-AUTO.md uses adaptive coverage contract exclusively', () => {
+  const targetDir = generateProject();
+
+  const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
+    cwd: targetDir,
+    encoding: 'utf8',
+  });
+  const output = `${result.stdout}\n${result.stderr}`;
+
+  assert.equal(result.status, 0);
+  assert.match(output, /Harness validation passed/);
+  // Must contain the adaptive contract
+  const wfAuto = readRel(targetDir, 'Harness/WF-AUTO.md');
+  assert.match(wfAuto, /Adaptive Coverage Exhaustion Gate/);
+  assert.match(wfAuto, /dynamic high-risk obligations/);
+  assert.match(wfAuto, /two different confirmation strategies/);
+  assert.doesNotMatch(wfAuto, /All 8 exhausted/);
+  assert.doesNotMatch(wfAuto, /3 consecutive all-exhausted rounds/);
+  assert.doesNotMatch(wfAuto, /8-Angle Exhaustion Gate/);
+});
+
+test('validation passes when WF-AUTO-SPARK.md uses non-fixed-count spark search', () => {
+  const targetDir = generateProject();
+
+  const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
+    cwd: targetDir,
+    encoding: 'utf8',
+  });
+  const output = `${result.stdout}\n${result.stderr}`;
+
+  assert.equal(result.status, 0);
+  const wfAutoSpark = readRel(targetDir, 'Harness/WF-AUTO-SPARK.md');
+  assert.doesNotMatch(wfAutoSpark, /8 parallel external searches/);
+  assert.match(wfAutoSpark, /parallel external searches/);
+});

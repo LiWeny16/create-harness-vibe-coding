@@ -75,10 +75,13 @@ const required = [
   'Harness/templates/VALIDATION_REPORT.template.md',
   ...memoryFiles,
   '.codex/config.toml',
+  'opencode.json',
   '.claude/settings.json',
   '.claude/commands/wf-help.md',
+  '.opencode/commands/wf-help.md',
   '.claude/rules/ecc/common.md',
   ...commonAgents.map(agent => `.claude/agents/${agent}.md`),
+  ...commonAgents.map(agent => `.opencode/agents/${agent}.md`),
   ...commonSkills.map(skill => `.claude/skills/${skill}/SKILL.md`),
   ...commonSkills.map(skill => `.agents/skills/${skill}/SKILL.md`),
   'Harness/README.md',
@@ -504,6 +507,21 @@ for (const agent of commonAgents) {
   }
 }
 
+for (const agent of commonAgents) {
+  const rel = `.opencode/agents/${agent}.md`;
+  const text = read(rel);
+  if (!text) continue;
+
+  for (const field of ['description', 'mode']) {
+    if (!frontmatterField(text, field)) errors.push(`${rel} missing frontmatter field: ${field}:`);
+  }
+
+  const mode = frontmatterField(text, 'mode');
+  if (mode && mode !== 'subagent') {
+    errors.push(`${rel} frontmatter mode should be subagent (got: ${mode})`);
+  }
+}
+
 requireText('Harness/extension.md', 'Skills should extend the harness');
 requireText('Harness/agent-workflow.md', 'Harness/tasks/<task-id>/PROGRESS.md');
 requireText('Harness/README.md', 'Task records are compact by default', 'compact task record router rule');
@@ -575,6 +593,8 @@ requireText('.claude/skills/wf-max/SKILL.md', 'Codex++', 'wf-max skill forbids C
 requireText('.codex/config.toml', '[agents]', 'Codex agents config table');
 requireText('.codex/config.toml', 'max_threads = 12', 'Codex scaffold max_threads default');
 requireText('.codex/config.toml', 'max_depth = 1', 'Codex scaffold max_depth default');
+requireText('opencode.json', '"$schema": "https://opencode.ai/config.json"', 'OpenCode config schema');
+requireText('opencode.json', '.claude/rules/ecc/common.md', 'OpenCode instructions reference to ECC rules');
 requireText('Harness/README.md', '/wf-max', 'wf max router alias');
 requireText('Harness/README.md', 'WF-MAX.md', 'WF-MAX router reference');
 requireText('Harness/README.md', 'ACCEPTANCE_PROTOCOL.md', 'acceptance protocol router reference');
@@ -586,6 +606,16 @@ requireText('Harness/ACCEPTANCE_PROTOCOL.md', 'Syntax-only checks', 'syntax-only
 requireText('Harness/AGENT_ISOLATION.md', 'implementer', 'agent isolation implementer rule');
 requireText('Harness/HARNESS_BRIDGE.md', 'Network Trace Collector', 'harness bridge network trace collector');
 requireText('Harness/WF-AUTO.md', 'Intent Checkpoint', 'wf-auto intent checkpoint');
+requireText('Harness/WF-AUTO.md', 'Adaptive Coverage Exhaustion Gate', 'wf-auto adaptive coverage exhaustion gate');
+requireText('Harness/WF-AUTO.md', 'dynamic high-risk obligations', 'wf-auto dynamic high-risk obligations');
+requireText('Harness/WF-AUTO.md', 'two different confirmation strategies', 'wf-auto two different confirmation strategies');
+requireText('Harness/WF-AUTO-ANGLES.md', 'Selection algorithm', 'wf-auto adaptive angle selection');
+requireText('Harness/WF-AUTO-ANGLES.md', 'Dynamic obligations', 'wf-auto dynamic obligations');
+requireText('Harness/WF-AUTO-ANGLES.md', 'Common probe recipes', 'wf-auto common probe recipes');
+forbidText('Harness/WF-AUTO.md', 'All 8 exhausted', 'stale eight-angle exhaustion rule');
+forbidText('Harness/WF-AUTO.md', '3 consecutive all-exhausted rounds', 'stale three-consecutive-all-exhausted stop rule');
+forbidText('Harness/WF-AUTO.md', '8-Angle Exhaustion Gate', 'stale eight-angle exhaustion gate name');
+forbidText('Harness/WF-AUTO-SPARK.md', '8 parallel external searches', 'stale eight-spark fixed-count search');
 requireText('Harness/WF-AUTO.md', 'Inherited WF/WF-MAX Constraints', 'wf-auto inherited WF/WF-MAX constraints');
 requireText('Harness/WF-AUTO.md', 'Mini PRD -> AC IDs -> test/validation plan -> implementer -> verifier', 'wf-auto per-cycle WF chain');
 requireText('Harness/WF-AUTO.md', 'reflector PASS', 'wf-auto reflector gate');

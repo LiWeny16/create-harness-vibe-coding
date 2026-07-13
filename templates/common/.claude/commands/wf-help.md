@@ -8,7 +8,7 @@ do not dispatch agents, and do not edit files.
 | `/wf-help` | direct command | `/wf-help` | Show this command table. |
 | `/wf <task>` | workflow skill | `/wf fix failing login flow` | Standard acceptance-driven workflow for long, uncertain, multi-file, browser/API, or recovery work. |
 | `/wf-max <task>` | workflow skill | `/wf-max refactor auth module` | WF strict superset: complete role chain plus maximum fan-out, CEO -> Manager -> Worker dispatch, cross-CLI overflow when the current runtime agent pool is exhausted. |
-| `/wf-auto` | workflow skill | `/wf-auto` | Perpetual auto-optimization loop using bounded cycles, 8-angle exhaustion, evidence ledger, and optional wf-auto-only tick hook. |
+| `/wf-auto` | workflow skill | `/wf-auto` | Perpetual adaptive auto-optimization using project evidence, dynamic probes, risk obligations, evidence ledger, and confirmation-based exhaustion. |
 | `/wf-auto-spark` | workflow skill | `/wf-auto-spark` | Perpetual inspiration mode with roadmap anchoring and external spark search. |
 | `/wf-review <focus>` | workflow skill | `/wf-review security and test coverage` | Cross-model peer review through the other CLI; use for second opinions and risk checks. |
 | `/wf-learn` | workflow skill | `/wf-learn` | Force context-master -> memory-master learning cycle after repeated failures or closeout. |

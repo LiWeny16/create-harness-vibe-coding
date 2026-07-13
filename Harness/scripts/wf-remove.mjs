@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 /**
- * wf-remove.mjs â€?Safely remove Harness framework files.
+ * wf-remove.mjs ï¿½?Safely remove Harness framework files.
  *
  * Classifies all Harness-owned files into:
- *   SAFE     â€?framework files matching stored checksums â†?auto-remove
- *   MODIFIED â€?framework files edited by user â†?MUST confirm
- *   USER     â€?user data files â†?NEVER remove
+ *   SAFE     ï¿½?framework files matching stored checksums ï¿½?auto-remove
+ *   MODIFIED ï¿½?framework files edited by user ï¿½?MUST confirm
+ *   USER     ï¿½?user data files ï¿½?NEVER remove
  *
  * Usage:
  *   node Harness/scripts/wf-remove.mjs                    # dry-run: show plan
@@ -38,6 +38,8 @@ const HARNESS_PREFIXES = [
   '.claude/',
   '.agents/',
   '.codex/',
+  '.opencode/',
+  'opencode.json',
   'Harness/',
   'CLAUDE.md',
   'AGENTS.md',
@@ -45,7 +47,7 @@ const HARNESS_PREFIXES = [
   'tests/.gitkeep',
 ];
 
-/** Files the user owns â€?NEVER remove. Consistent with wf-update-check PRESERVE_PATTERNS. */
+/** Files the user owns ï¿½?NEVER remove. Consistent with wf-update-check PRESERVE_PATTERNS. */
 const USER_DATA_PATTERNS = [
   /^Harness\/PROGRESS\.md$/,
   /^Harness\/tasks\//,
@@ -144,13 +146,18 @@ const BUILT_IN_SKILL_NAMES = [
 ];
 
 const KNOWN_FRAMEWORK_FILES = new Set([
-  ...BUILT_IN_AGENT_NAMES.map(name => `.claude/agents/${name}.md`),
+  ...BUILT_IN_AGENT_NAMES.flatMap(name => [
+    `.claude/agents/${name}.md`,
+    `.opencode/agents/${name}.md`,
+  ]),
   ...BUILT_IN_SKILL_NAMES.flatMap(name => [
     `.claude/skills/${name}/SKILL.md`,
     `.agents/skills/${name}/SKILL.md`,
   ]),
   '.claude/commands/wf-help.md',
+  '.opencode/commands/wf-help.md',
   '.claude/rules/ecc/common.md',
+  'opencode.json',
 ]);
 
 function isKnownFrameworkFile(file) {
@@ -185,6 +192,10 @@ const CLEANUP_DIRS = [
   '.agents/skills',
   '.agents',
   '.codex',
+  '.opencode/commands',
+  '.opencode/agents',
+  '.opencode/skills',
+  '.opencode',
   '.claude/rules/ecc',
   '.claude/rules',
   'Harness/scripts',
@@ -305,7 +316,7 @@ function removeEmptyDirs(startDir) {
 
 async function askUser(question) {
   if (!process.stdin.isTTY) {
-    console.log('   (non-interactive â€?defaulting to KEEP)');
+    console.log('   (non-interactive ï¿½?defaulting to KEEP)');
     return 'k';
   }
   const rl = createInterface({ input: process.stdin, output: process.stdout });
@@ -378,9 +389,9 @@ async function main() {
   }
 
   // 2. Classify every file
-  const safe = [];     // SAFE â€?matches checksum, auto-remove
-  const modified = []; // MODIFIED â€?user edited, must confirm
-  const user = [];     // USER â€?never remove
+  const safe = [];     // SAFE ï¿½?matches checksum, auto-remove
+  const modified = []; // MODIFIED ï¿½?user edited, must confirm
+  const user = [];     // USER ï¿½?never remove
   const skipped = [];  // File not on disk, traversal rejected, or framework-keep
   const purge = [];    // Explicitly requested Harness user-data removal
   skipped.push(...scanIssues);
@@ -402,13 +413,13 @@ async function main() {
         });
         continue;
       }
-      user.push({ file, reason: 'user data â€?NEVER removed' });
+      user.push({ file, reason: 'user data ï¿½?NEVER removed' });
       continue;
     }
 
     // Only allow deletion of files under harness-owned prefixes
     if (!isHarnessOwned(canonical)) {
-      user.push({ file, reason: 'outside harness prefix â€?NEVER removed' });
+      user.push({ file, reason: 'outside harness prefix ï¿½?NEVER removed' });
       continue;
     }
 
@@ -427,12 +438,18 @@ async function main() {
 
     if (!storedHash) {
       if (isKnownFrameworkFile(canonical)) {
-        safe.push({
-          file,
-          currentHash,
-          storedHash: currentHash,
-          reason: 'known framework file missing from legacy checksums',
-        });
+        if (canonical === 'opencode.json') {
+          // opencode.json without provenance â€” may pre-date Harness install.
+          // Only auto-remove when checksum proves Harness created it.
+          modified.push({ file, currentHash, storedHash: 'none', reason: 'not in checksums (may be pre-existing user config)' });
+        } else {
+          safe.push({
+            file,
+            currentHash,
+            storedHash: currentHash,
+            reason: 'known framework file missing from legacy checksums',
+          });
+        }
       } else {
         modified.push({ file, currentHash, storedHash: 'none', reason: 'not in checksums' });
       }
@@ -449,7 +466,7 @@ async function main() {
     const settingsHash = sha256File(settingsFile);
     const storedSettingsHash = storedChecksums['.claude/settings.json'];
     if (storedSettingsHash && settingsHash !== storedSettingsHash) {
-      // User modified settings â€?move to modified
+      // User modified settings ï¿½?move to modified
       // Remove from safe if it was there
       const idx = safe.findIndex(s => s.file === '.claude/settings.json');
       if (idx >= 0) {
@@ -493,16 +510,16 @@ async function main() {
     return;
   }
 
-  console.log('\nðŸ§¹ WF-REMOVE â€?Harness framework removal plan\n');
+  console.log('\nðŸ§¹ WF-REMOVE ï¿½?Harness framework removal plan\n');
 
   if (safe.length > 0) {
-    console.log(`âœ?SAFE (${safe.length} files â€?auto-remove, unmodified framework):`);
-    for (const s of safe) console.log(`   âœ?${s.file}`);
+    console.log(`ï¿½?SAFE (${safe.length} files ï¿½?auto-remove, unmodified framework):`);
+    for (const s of safe) console.log(`   ï¿½?${s.file}`);
     console.log('');
   }
 
   if (modified.length > 0) {
-    console.log(`âš?MODIFIED (${modified.length} files â€?REQUIRE CONFIRMATION):`);
+    console.log(`ï¿½?MODIFIED (${modified.length} files ï¿½?REQUIRE CONFIRMATION):`);
     for (const m of modified) {
       console.log(`   ? ${m.file}  [${m.reason}]`);
     }
@@ -510,8 +527,8 @@ async function main() {
   }
 
   if (user.length > 0) {
-    console.log(`ðŸ”’ USER DATA (${user.length} files â€?NEVER removed):`);
-    for (const u of user) console.log(`   â—?${u.file}  [${u.reason}]`);
+    console.log(`ðŸ”’ USER DATA (${user.length} files ï¿½?NEVER removed):`);
+    for (const u of user) console.log(`   ï¿½?${u.file}  [${u.reason}]`);
     console.log('');
   }
 
@@ -528,17 +545,17 @@ async function main() {
     return;
   }
 
-  // 4. Apply â€?remove SAFE files automatically (rehash before unlink)
+  // 4. Apply ï¿½?remove SAFE files automatically (rehash before unlink)
   let safeRemoved = 0;
   let safeFailed = 0;
   for (const s of safe) {
     const diskPath = safePath(s.file);
-    if (!diskPath) { console.error(`   âœ?Traversal rejected: ${s.file}`); safeFailed++; continue; }
+    if (!diskPath) { console.error(`   ï¿½?Traversal rejected: ${s.file}`); safeFailed++; continue; }
     if (!existsSync(diskPath)) continue;
     // Re-verify hash hasn't changed since classification
     const currentHash = sha256File(diskPath);
     if (currentHash !== s.storedHash) {
-      console.log(`   âŠ?Skipped (modified since classification): ${s.file}`);
+      console.log(`   ï¿½?Skipped (modified since classification): ${s.file}`);
       safeFailed++;
       continue;
     }
@@ -546,13 +563,13 @@ async function main() {
       unlinkSync(diskPath);
       safeRemoved++;
     } catch (e) {
-      console.error(`   âœ?Failed to remove: ${s.file} â€?${e.message}`);
+      console.error(`   ï¿½?Failed to remove: ${s.file} ï¿½?${e.message}`);
       safeFailed++;
     }
   }
-  console.log(`âœ?Removed ${safeRemoved} safe files.`);
+  console.log(`ï¿½?Removed ${safeRemoved} safe files.`);
 
-  // 5. Handle MODIFIED files â€?prompt user
+  // 5. Handle MODIFIED files ï¿½?prompt user
   let modifiedRemoved = 0;
   let modifiedKept = 0;
   let modifiedFailed = 0;
@@ -572,7 +589,7 @@ async function main() {
     }
     if (yes) {
       // Non-interactive mode: skip all modified
-      console.log(`   âŠ?Skipped (modified): ${m.file}`);
+      console.log(`   ï¿½?Skipped (modified): ${m.file}`);
       modifiedKept++;
       continue;
     }
@@ -584,17 +601,17 @@ async function main() {
     const answer = await askUser('   Choose [d/k]: ');
     if (answer === 'd' || answer === 'delete') {
       const diskPath = safePath(m.file);
-      if (!diskPath) { console.error(`   âœ?Traversal rejected: ${m.file}`); modifiedFailed++; continue; }
+      if (!diskPath) { console.error(`   ï¿½?Traversal rejected: ${m.file}`); modifiedFailed++; continue; }
       try {
         unlinkSync(diskPath);
-        console.log(`   âœ?Deleted: ${m.file}`);
+        console.log(`   ï¿½?Deleted: ${m.file}`);
         modifiedRemoved++;
       } catch (e) {
-        console.error(`   âœ?Failed: ${m.file} â€?${e.message}`);
+        console.error(`   ï¿½?Failed: ${m.file} ï¿½?${e.message}`);
         modifiedFailed++;
       }
     } else {
-      console.log(`   âŠ?Kept: ${m.file}`);
+      console.log(`   ï¿½?Kept: ${m.file}`);
       modifiedKept++;
     }
   }
@@ -655,7 +672,7 @@ async function main() {
       }
     } else if (!existsSync(harPath) || (existsSync(harPath) && readdirSync(harPath).filter(f => f !== '.harness-version').length === 0)) {
       unlinkSync(VERSION_FILE);
-      console.log('âœ?Removed .harness-version (Harness directory empty).');
+      console.log('ï¿½?Removed .harness-version (Harness directory empty).');
     }
   }
 
@@ -674,7 +691,7 @@ async function main() {
     if (pruned > 0) {
       versionData.checksums = checksums;
       writeFileSync(VERSION_FILE, JSON.stringify(versionData, null, 2) + '\n', 'utf-8');
-      console.log(`âœ?Pruned ${pruned} stale checksum(s) from .harness-version.`);
+      console.log(`ï¿½?Pruned ${pruned} stale checksum(s) from .harness-version.`);
     }
   }
 
@@ -688,7 +705,7 @@ async function main() {
         // Strip the harness section: everything from "## 1. Harness Binding" to the next "## "
         const cleaned = content.replace(/## 1\. Harness Binding[\s\S]*?(?=## 2\.)/, '');
         writeFileSync(claudePath, cleaned, 'utf-8');
-        console.log('âœ?Stripped Harness binding section from CLAUDE.md.');
+        console.log('ï¿½?Stripped Harness binding section from CLAUDE.md.');
       }
     }
   }

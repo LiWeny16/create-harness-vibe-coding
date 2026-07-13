@@ -6,13 +6,13 @@
 
 - User explicitly invokes `/wf-auto-spark` or `$wf-auto-spark`
 - Auto-degrade from `/wf-auto` when user can't clarify direction at Re-Anchor Gate
-- Auto-activate when 8-angle scan returns empty for 3+ consecutive cycles AND oracle also empty
+- Auto-activate when adaptive internal coverage returns empty for 3+ consecutive cycles AND oracle also empty
 
 ## Core Philosophy
 
 **"Inspiration never runs dry, but direction must hold."**
 
-Spark mode replaces the 8-angle internal scan with EXTERNAL inspiration search. Unlike vanilla `/wf-auto` which can stop when no internal improvements are found, spark mode NEVER stops — it always looks outward for the next idea.
+Spark mode replaces the adaptive internal probe scan with EXTERNAL inspiration search. Unlike vanilla `/wf-auto` which can stop when no internal improvements are found, spark mode NEVER stops — it always looks outward for the next idea.
 
 But perpetual search without direction = drift. The **Roadmap** is the anchor.
 
@@ -77,7 +77,7 @@ Answers: "What does success look like in 6-12 months?">
 STARTUP: Declare roadmap (North Star + Milestones) → user confirms
   ↓
 ┌─────────────────────────────────────────────────────────┐
-│ SPARK: 8 parallel external searches → gather sparks     │
+│ SPARK: parallel external searches → gather sparks     │
 │   ↓                                                     │
 │ FILTER: Keep only sparks relevant to project stack/size  │
 │   ↓                                                     │
@@ -207,14 +207,14 @@ If CEO CANNOT write a convincing value reflection → spark was NOT valuable →
 | SP3 | **Copycat without context** | "Project X does Y so we should too" | Value Gate question 1 |
 | SP4 | **Silent North Star drift** | Small changes accumulate, direction shifts without noticing | Cumulative deviation check every 10 cycles |
 | SP5 | **Milestone rot** | Milestones become irrelevant but aren't updated | Milestone review at Re-Anchor Gate |
-| SP6 | **Spark tunnel vision** | Only looking at one type of source | Rotate through all 8 sources, don't skip any for >3 cycles |
+| SP6 | **Spark tunnel vision** | Only looking at one type of source | Rotate through the registered source families and record skipped sources |
 
 ## Integration with /wf-auto
 
 ```text
 /wf-auto (autonomous optimization)
   ↓
-Internal 8-angle scan per cycle
+Internal adaptive coverage scan per cycle
   ↓
 Re-Anchor Gate (every preset interval)
   ├── User gives clear direction → refine, continue /wf-auto

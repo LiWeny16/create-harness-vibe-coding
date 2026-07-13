@@ -29,31 +29,26 @@ test('package README stays English and links to Chinese README', () => {
 
   assert.doesNotMatch(readme, /[\u3400-\u9fff]/);
   assert.match(readme, /Chinese README: \[README-CN\.md\]\(README-CN\.md\)/);
-  assert.match(readme, /One Command/);
-  assert.match(readme, /Your Agent Knows/);
+  assert.match(readme, /operating contract for reliable AI coding agents/i);
   assert.match(readme, /npx create-harness-vibe-coding/);
   assert.match(readme, /Read and follow https:\/\/github\.com\/zingspark\/create-harness-vibe-coding exactly/);
-  assert.doesNotMatch(readme, /before editing, scan the project root and ask the Agent-link install intake questions/);
-  assert.match(readme, /Install or Upgrade Path/);
-  assert.match(readme, /machine-readable install report/i);
-  assert.match(readme, /scan\.markers/);
-  assert.match(readme, /agent\.aiMergeRequired/);
-  assert.match(readme, /Existing `Harness\/`/i);
-  assert.match(readme, /optional capabilities/i);
-  assert.match(readme, /Superpowers/);
-  assert.match(readme, /https:\/\/github\.com\/obra\/Superpowers/);
-  assert.match(readme, /https:\/\/github\.com\/JuliusBrussee\/caveman/);
-  assert.match(readme, /https:\/\/github\.com\/lingzhi227\/agent-research-skills/);
-  assert.match(readme, /https:\/\/github\.com\/colbymchenry\/codegraph/);
-  assert.match(readme, /code graph/i);
-  assert.match(readme, /Empty or new project/i);
-  assert.match(readme, /Legacy architecture or older project docs/i);
-  assert.match(readme, /dry-run first/i);
+  assert.match(readme, /measurable difference/i);
+  assert.match(readme, /Which WF command should you use\?/);
+  assert.match(readme, /\/wf-auto-spark/);
+  assert.match(readme, /\/wf-browser/);
+  assert.match(readme, /\/wf-update/);
+  assert.match(readme, /Harness\/WF-AUTO-ANGLES\.md/);
+  assert.match(readme, /Rework rate/);
+  assert.match(readme, /humanInterventions/);
+  assert.match(readme, /bare-agent/);
+  assert.match(readme, /harness-wf-max/);
+  assert.match(readme, /Loss aversion/);
+  assert.match(readme, /Leverage/);
+  assert.match(readme, /Blind spot/);
+  assert.match(readme, /harness-architecture-light\.png/);
   assert.match(readme, /Harness\/SETUP\.md/i);
-  assert.match(readme, /https:\/\/github\.com\/zingspark\/create-harness-vibe-coding/);
-  assert.match(readme, /already-installed skills\/plugins\/rules/i);
-  assert.match(readme, /If a file already exists/);
-  assert.match(readme, /The default is always \*\*preserve\*\*/);
+  assert.match(readme, /Optional workflows/);
+  assert.match(readme, /validate-harness\.mjs/);
 });
 
 test('template source stores harness docs under templates/common/Harness instead of docs', () => {
@@ -229,6 +224,11 @@ test('generated scaffold stores harness-owned payload under root Harness directo
     'Harness/memory/user-corrections-preferences.md',
     'Harness/memory/agent-lessons-patterns.md',
     '.codex/config.toml',
+    'opencode.json',
+    '.opencode/commands/wf-help.md',
+    '.opencode/agents/researcher.md',
+    '.opencode/agents/planner.md',
+    '.opencode/agents/implementer.md',
     '.claude/skills/wf/SKILL.md',
     '.agents/skills/wf/SKILL.md',
     '.claude/skills/wf-max/SKILL.md',
@@ -330,10 +330,45 @@ test('generated scaffold stores harness-owned payload under root Harness directo
   assert.match(codexConfig, /max_threads = 12/);
   assert.match(codexConfig, /max_depth = 1/);
 
+  const opencodeConfig = readRel(targetDir, 'opencode.json');
+  assert.match(opencodeConfig, /\$schema.*opencode\.ai\/config\.json/);
+  assert.match(opencodeConfig, /\.claude\/rules\/ecc\/common\.md/);
+
+  const opencodePlanner = readRel(targetDir, '.opencode/agents/planner.md');
+  assert.match(opencodePlanner, /mode: subagent/);
+  assert.match(opencodePlanner, /description:/);
+  assert.match(opencodePlanner, /edit: deny/);
+  assert.match(opencodePlanner, /bash: deny/);
+  assert.match(opencodePlanner, /websearch: deny/);
+  assert.match(opencodePlanner, /webfetch: deny/);
+  assert.doesNotMatch(opencodePlanner, /^name:/m);
+
+  const opencodeImplementer = readRel(targetDir, '.opencode/agents/implementer.md');
+  assert.match(opencodeImplementer, /mode: subagent/);
+  assert.doesNotMatch(opencodeImplementer, /edit: deny/);
+
+  const opencodeResearcher = readRel(targetDir, '.opencode/agents/researcher.md');
+  assert.doesNotMatch(opencodeResearcher, /websearch: deny/);
+  assert.doesNotMatch(opencodeResearcher, /webfetch: deny/);
+
+  const opencodeExploreManager = readRel(targetDir, '.opencode/agents/explore-manager.md');
+  assert.match(opencodeExploreManager, /"git \*": allow/);
+  assert.match(opencodeExploreManager, /"\*": deny/);
+
+  const opencodeWfHelp = readRel(targetDir, '.opencode/commands/wf-help.md');
+  assert.match(opencodeWfHelp, /description:/);
+  assert.match(opencodeWfHelp, /\/wf-help/);
+
   const wfAuto = readRel(targetDir, 'Harness/WF-AUTO.md');
   assert.match(wfAuto, /Inherited WF\/WF-MAX Constraints/);
   assert.match(wfAuto, /Mini PRD -> AC IDs -> test\/validation plan -> implementer -> verifier/);
   assert.match(wfAuto, /reflector PASS/);
+
+  const wfAutoAngles = readRel(targetDir, 'Harness/WF-AUTO-ANGLES.md');
+  assert.match(wfAutoAngles, /Selection algorithm/);
+  assert.match(wfAutoAngles, /Dynamic obligations/);
+  assert.match(wfAutoAngles, /Common probe recipes/);
+  assert.match(wfAutoAngles, /Context \/ memory quality/);
 
   const wfAutoSpark = readRel(targetDir, 'Harness/WF-AUTO-SPARK.md');
   assert.match(wfAutoSpark, /Inherited Execution Chain/);
@@ -530,64 +565,57 @@ test('without options accept known unselected ids as no-op', () => {
   assert.equal(fs.existsSync(path.join(targetDir, '.agents', 'skills', 'python-backend', 'SKILL.md')), false);
 });
 
-test('package README-CN gives Chinese install prompt and Harness-only docs contract', () => {
+test('package README-CN gives a concise Chinese quickstart and Harness-only docs contract', () => {
   const readmeCn = fs.readFileSync(path.join(process.cwd(), 'README-CN.md'), 'utf8');
   assert.doesNotMatch(readmeCn, /涓€/);
   assert.doesNotMatch(readmeCn, /鏂伴/);
-  assert.match(readmeCn, /一条命令/);
-  assert.match(readmeCn, /一句话交给 Agent/);
-  assert.match(readmeCn, /完整阅读并严格遵循/);
-  assert.match(readmeCn, /安装或升级路径/);
-  assert.match(readmeCn, /机器可读安装报告/);
-  assert.match(readmeCn, /scan\.markers/);
-  assert.match(readmeCn, /agent\.aiMergeRequired/);
-  assert.match(readmeCn, /已有 `Harness\/`/);
-  assert.match(readmeCn, /Agent-link 安装前置问题/);
-  assert.match(readmeCn, /不要把 Harness 文件放进 `docs\/`/);
-  assert.match(readmeCn, /--recommend superpowers,codegraph/);
+  assert.match(readmeCn, /一句话安装/);
+  assert.match(readmeCn, /WF 命令怎么选/);
+  assert.match(readmeCn, /\/wf-auto-spark/);
+  assert.match(readmeCn, /\/wf-browser/);
+  assert.match(readmeCn, /\/wf-update/);
+  assert.match(readmeCn, /Harness\/WF-AUTO-ANGLES\.md/);
+  assert.match(readmeCn, /让 AI agent 在真实仓库里先理解/);
+  assert.match(readmeCn, /三个核心支柱/);
+  assert.match(readmeCn, /嗔/);
+  assert.match(readmeCn, /贪/);
+  assert.match(readmeCn, /痴/);
+  assert.match(readmeCn, /harness-architecture-light\.png/);
   assert.match(readmeCn, /https:\/\/github\.com\/obra\/Superpowers/);
   assert.match(readmeCn, /https:\/\/github\.com\/JuliusBrussee\/caveman/);
   assert.match(readmeCn, /https:\/\/github\.com\/lingzhi227\/agent-research-skills/);
   assert.match(readmeCn, /https:\/\/github\.com\/colbymchenry\/codegraph/);
-  assert.match(readmeCn, /外部建议只写入 `Harness\/SETUP\.md`/);
-  assert.match(readmeCn, /不是已安装 Harness 的同步更新器/);
+  assert.match(readmeCn, /外部推荐/);
   assert.match(readmeCn, /验证/);
   assert.match(readmeCn, /https:\/\/github\.com\/zingspark\/create-harness-vibe-coding/);
-  assert.match(readmeCn, /空项目或新项目/);
-  assert.match(readmeCn, /老项目或老架构迁移/);
-  assert.match(readmeCn, /只合并缺失的 Harness 指南/);
-  assert.match(readmeCn, /遵循 `Harness\/SETUP\.md`/);
   assert.match(readmeCn, /\.agents\/skills/);
-  assert.match(readmeCn, /\$wf/);
+  assert.match(readmeCn, /Agent instruction/);
   assert.doesNotMatch(readmeCn, /commands\/wf\.toml/);
 });
 
-test('package README-CN contains required Chinese install contract clauses', () => {
+test('package README-CN contains required Chinese workflow and verification clauses', () => {
   const readmeCn = fs.readFileSync(path.join(process.cwd(), 'README-CN.md'), 'utf8');
 
-  assert.match(readmeCn, /\u4e00\u6761\u547d\u4ee4/u);
-  assert.match(readmeCn, /\u4e00\u53e5\u8bdd\u4ea4\u7ed9 Agent/u);
-  assert.match(readmeCn, /\u5b8c\u6574\u9605\u8bfb\u5e76\u4e25\u683c\u9075\u5faa/u);
-  assert.match(readmeCn, /\u5b89\u88c5\u6216\u5347\u7ea7\u8def\u5f84/u);
-  assert.match(readmeCn, /\u673a\u5668\u53ef\u8bfb\u5b89\u88c5\u62a5\u544a/u);
-  assert.match(readmeCn, /scan\.markers/);
-  assert.match(readmeCn, /agent\.aiMergeRequired/);
-  assert.match(readmeCn, /\u5df2\u6709 `Harness\/`/u);
-  assert.match(readmeCn, /Agent-link \u5b89\u88c5\u524d\u7f6e\u95ee\u9898/u);
-  assert.match(readmeCn, /\u4e0d\u8981\u628a Harness \u6587\u4ef6\u653e\u8fdb `docs\/`/u);
-  assert.match(readmeCn, /--recommend superpowers,codegraph/);
+  assert.match(readmeCn, /\u4e00\u53e5\u8bdd\u5b89\u88c5/u);
+  assert.match(readmeCn, /\u5df2\u6709\u9879\u76ee/u);
+  assert.match(readmeCn, /--on-conflict skip/);
+  assert.match(readmeCn, /\u7a33\u5b9a\u6027\u3001\u8fd4\u4fee\u7387\u4e0e\u4eba\u5de5\u7ea0\u504f/u);
+  assert.match(readmeCn, /humanInterventions/);
+  assert.match(readmeCn, /HarnessBench v0\.1/);
+  assert.match(readmeCn, /\u4e09\u4e2a\u6838\u5fc3\u652f\u67f1/u);
+  assert.match(readmeCn, /\u55d4/u);
+  assert.match(readmeCn, /\u8d2a/u);
+  assert.match(readmeCn, /\u75f4/u);
+  assert.match(readmeCn, /harness-architecture-light\.png/);
   assert.match(readmeCn, /https:\/\/github\.com\/obra\/Superpowers/);
   assert.match(readmeCn, /https:\/\/github\.com\/JuliusBrussee\/caveman/);
   assert.match(readmeCn, /https:\/\/github\.com\/lingzhi227\/agent-research-skills/);
   assert.match(readmeCn, /https:\/\/github\.com\/colbymchenry\/codegraph/);
-  assert.match(readmeCn, /\u5916\u90e8\u5efa\u8bae\u53ea\u5199\u5165 `Harness\/SETUP\.md`/u);
-  assert.match(readmeCn, /\u4e0d\u662f\u5df2\u5b89\u88c5 Harness \u7684\u540c\u6b65\u66f4\u65b0\u5668/u);
+  assert.match(readmeCn, /\u5916\u90e8\u63a8\u8350/u);
   assert.match(readmeCn, /\u9a8c\u8bc1/u);
   assert.match(readmeCn, /https:\/\/github\.com\/zingspark\/create-harness-vibe-coding/);
-  assert.match(readmeCn, /\u7a7a\u9879\u76ee\u6216\u65b0\u9879\u76ee/u);
-  assert.match(readmeCn, /\u8001\u9879\u76ee\u6216\u8001\u67b6\u6784\u8fc1\u79fb/u);
-  assert.match(readmeCn, /\u53ea\u5408\u5e76\u7f3a\u5931\u7684 Harness \u6307\u5357/u);
-  assert.match(readmeCn, /\u9075\u5faa `Harness\/SETUP\.md`/u);
+  assert.match(readmeCn, /\.agents\/skills/);
+  assert.match(readmeCn, /Agent instruction/);
 });
 
 test('external recommendations are recorded without installing third-party skills', () => {

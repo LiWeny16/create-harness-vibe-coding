@@ -35,11 +35,18 @@ tests/batch/.tmp/
 # Runtime mode state
 Harness/.runtime/
 
+# OpenCode runtime state/log/database artifacts
+.opencode-data*/
+.opencode-state*/
+
 # Local agent/editor state
 .claude/settings.local.json
 CLAUDE.local.md
 .vscode/
 .idea/
+
+# In-situ experiment / temporary repos
+caveman/
 
 # OS files
 .DS_Store

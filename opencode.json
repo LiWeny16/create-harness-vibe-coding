@@ -1,0 +1,19 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": [".claude/rules/ecc/common.md"],
+  "permission": {
+    "bash": {
+      "*": "ask",
+      "rm -rf *": "deny",
+      "sudo *": "deny",
+      "curl *": "deny",
+      "wget *": "deny"
+    },
+    "read": {
+      "**/.env*": "deny",
+      "**/secrets/**": "deny",
+      "**/*.key": "deny",
+      "**/*.pem": "deny"
+    }
+  }
+}

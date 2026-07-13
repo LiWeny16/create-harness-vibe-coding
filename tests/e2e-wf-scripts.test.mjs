@@ -329,6 +329,64 @@ assert(!existsSync(join(TMP, '.agents', 'skills', 'wf-max', 'SKILL.md')), '--app
 assert(!existsSync(join(TMP, '.agents', 'skills', 'wf-review', 'SKILL.md')), '--apply --yes removes legacy unchecksummed Codex review skill');
 assert(existsSync(join(TMP, '.claude', 'skills', 'custom-user-skill', 'SKILL.md')), '--apply --yes preserves custom Claude skill');
 assert(existsSync(join(TMP, '.agents', 'skills', 'custom-user-skill', 'SKILL.md')), '--apply --yes preserves custom Codex skill');
+	// Test 8.1: opencode.json without provenance is NOT auto-removed (preserve pre-existing user config)
+	const TMP_OPENCODE_PREEXIST = resolve(ROOT, 'tests', '.tmp-e2e-opencode-preexist');
+	rmSync(TMP_OPENCODE_PREEXIST, { recursive: true, force: true });
+	mkdirSync(TMP_OPENCODE_PREEXIST, { recursive: true });
+	mkdirSync(join(TMP_OPENCODE_PREEXIST, 'Harness'), { recursive: true });
+	mkdirSync(join(TMP_OPENCODE_PREEXIST, '.claude', 'agents'), { recursive: true });
+	const preexistOpencode = JSON.stringify({
+	  $schema: 'https://opencode.ai/config.json',
+	  instructions: ['.claude/rules/ecc/common.md'],
+	  permission: { bash: { '*': 'ask' }, read: { '**/.env*': 'deny' } },
+	}, null, 2) + '\n';
+	writeFileSync(join(TMP_OPENCODE_PREEXIST, 'opencode.json'), preexistOpencode, 'utf-8');
+	writeFileSync(join(TMP_OPENCODE_PREEXIST, 'CLAUDE.md'), 'Harness binding content here\n## 1. Harness Binding & Startup\n', 'utf-8');
+	writeFileSync(join(TMP_OPENCODE_PREEXIST, '.claude', 'agents', 'planner.md'), 'planner agent definition.', 'utf-8');
+	const preexistVersion = {
+	  generator: '0.8.0',
+	  generated: '2026-07-01T00:00:00.000Z',
+	  checksums: {
+	    'CLAUDE.md': sha256('Harness binding content here\n## 1. Harness Binding & Startup\n\n'),
+	    '.claude/agents/planner.md': sha256('planner agent definition.\n'),
+	    // NOTE: opencode.json is intentionally NOT in checksums — simulates pre-existing
+	  },
+	};
+	writeFileSync(join(TMP_OPENCODE_PREEXIST, 'Harness', '.harness-version'), JSON.stringify(preexistVersion, null, 2) + '\n', 'utf-8');
+	const preexistRemoveResult = runNode(REMOVE, '--json', TMP_OPENCODE_PREEXIST);
+	const preexistPlan = JSON.parse(preexistRemoveResult.stdout.trim());
+	assert(preexistPlan.modified.includes('opencode.json'), 'pre-existing opencode.json (not in checksums) is classified as MODIFIED (must confirm)');
+	assert(!preexistPlan.safe.includes('opencode.json'), 'pre-existing opencode.json (not in checksums) is NOT auto-removed as SAFE');
+	rmSync(TMP_OPENCODE_PREEXIST, { recursive: true, force: true });
+
+	// Test 8.2: generator-created opencode.json with matching checksum IS auto-removed as SAFE
+	const TMP_OPENCODE_HARNESS = resolve(ROOT, 'tests', '.tmp-e2e-opencode-harness');
+	rmSync(TMP_OPENCODE_HARNESS, { recursive: true, force: true });
+	mkdirSync(TMP_OPENCODE_HARNESS, { recursive: true });
+	mkdirSync(join(TMP_OPENCODE_HARNESS, 'Harness'), { recursive: true });
+	mkdirSync(join(TMP_OPENCODE_HARNESS, '.claude', 'agents'), { recursive: true });
+	const harnessOpencodeContent = JSON.stringify({
+	  $schema: 'https://opencode.ai/config.json',
+	  instructions: ['.claude/rules/ecc/common.md'],
+	  permission: { bash: { '*': 'ask' }, read: { '**/.env*': 'deny' } },
+	}, null, 2) + '\n';
+	writeFileSync(join(TMP_OPENCODE_HARNESS, 'opencode.json'), harnessOpencodeContent, 'utf-8');
+	writeFileSync(join(TMP_OPENCODE_HARNESS, 'CLAUDE.md'), 'Harness binding content here\n## 1. Harness Binding & Startup\n', 'utf-8');
+	writeFileSync(join(TMP_OPENCODE_HARNESS, '.claude', 'agents', 'planner.md'), 'planner agent definition.', 'utf-8');
+	const harnessVersion = {
+	  generator: '0.8.0',
+	  generated: '2026-07-01T00:00:00.000Z',
+	  checksums: {
+	    'CLAUDE.md': sha256('Harness binding content here\n## 1. Harness Binding & Startup\n\n'),
+	    '.claude/agents/planner.md': sha256('planner agent definition.\n'),
+	    'opencode.json': sha256(harnessOpencodeContent),
+	  },
+	};
+	writeFileSync(join(TMP_OPENCODE_HARNESS, 'Harness', '.harness-version'), JSON.stringify(harnessVersion, null, 2) + '\n', 'utf-8');
+	const harnessRemoveResult = runNode(REMOVE, '--json', TMP_OPENCODE_HARNESS);
+	const harnessPlan = JSON.parse(harnessRemoveResult.stdout.trim());
+	assert(harnessPlan.safe.includes('opencode.json'), 'Harness-created opencode.json with matching checksum IS auto-removed as SAFE');
+	rmSync(TMP_OPENCODE_HARNESS, { recursive: true, force: true });
 
 // ── TEST: wf-update-check.mjs ─────────────────────────────────────
 

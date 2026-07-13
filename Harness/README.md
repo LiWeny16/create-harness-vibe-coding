@@ -76,7 +76,7 @@ Routing priority: **direct mode is the default** when no `/wf-*` command is pres
 | Need architecture or boundaries | architecture, boundary, layer, port, adapter, dependency | [architecture.md](architecture.md) | layer map, ports, constraints |
 | Need WF command help | /wf-help, wf help, command list, list wf commands | `.claude/commands/wf-help.md` | direct command table; no skill invocation |
 | Need WF mode | wf, /wf, $wf, wf mode, workflow mode, wk mode, long task, difficult, stuck, repeated failure | [WF.md](WF.md), [PROGRESS.md](PROGRESS.md), the current task `tasks/<id>/PROGRESS.md` and `tasks/<id>/PLAN.md` | complete role chain, heartbeat, recovery loop; explicit WF/WK loads subagent docs immediately |
-| Need perpetual auto-optimization | /wf-auto, $wf-auto, wf auto, auto mode, never stop, self-improve, continuous optimize | [WF-AUTO.md](WF-AUTO.md), [subagents.md](subagents.md), [dispatch.md](dispatch.md) | perpetual loop, bounded ticks, optional wf-auto-only hook exception, 8-angle scan, spark search, intent checkpoint, evidence ledger; CEO never writes code |
+| Need perpetual auto-optimization | /wf-auto, $wf-auto, wf auto, auto mode, never stop, self-improve, continuous optimize | [WF-AUTO.md](WF-AUTO.md), [WF-AUTO-ANGLES.md](WF-AUTO-ANGLES.md), [subagents.md](subagents.md), [dispatch.md](dispatch.md) | perpetual loop, adaptive probe selection, dynamic risk obligations, spark search, intent checkpoint, evidence ledger; CEO never writes code |
 | Need perpetual inspiration mode | /wf-auto-spark, $wf-auto-spark, wf auto spark, spark mode, external inspiration, discover mode, never stop | [WF-AUTO-SPARK.md](WF-AUTO-SPARK.md), [WF-AUTO.md](WF-AUTO.md), [subagents.md](subagents.md), [dispatch.md](dispatch.md) | roadmap-anchored: North Star + milestones; external spark search; <=50% deviation guard; never auto-stops |
 | Need WF-MAX mode | /wf-max, $wf-max, wf max, maximum parallelism, CEO, Manager, Worker, fan-out | [WF-MAX.md](WF-MAX.md), [subagents.md](subagents.md), [dispatch.md](dispatch.md) | WF strict superset: complete role chain plus maximum fan-out, current runtime subagents first, cross-CLI overflow when available |
 | Need peer review | /wf-review, $wf-review, peer review, second opinion, cross-check, stuck | `.claude/skills/wf-review/SKILL.md`, `.agents/skills/wf-review/SKILL.md`, `Harness/README.md` | cross-model multi-dimension review with severity classification |
@@ -97,7 +97,7 @@ Routing priority: **direct mode is the default** when no `/wf-*` command is pres
 
 - Move phases in order unless the user asks for a fast lane.
 - Use `/wf <task>` in Claude Code, `$wf` in Codex, `/wf-max [task]` or `$wf-max`, `wf mode`, `workflow mode`, or `wk mode` when a task is long, difficult, uncertain, multi-file, or repeatedly failing.
-- Use `/wf-auto` for perpetual self-directed optimization that never stops until 8-angle exhaustion.
+- Use `/wf-auto` for perpetual self-directed optimization. It selects probes from project evidence and stops only after dynamic risk obligations and two different empty confirmation passes are recorded.
 - **WF-MAX Role Contract**: Three-layer architecture: global mode (`wf-max`), agent role (`ceo|manager|worker|verifier|reviewer|reflector`), dispatch permission (`writeSet`, `forbidden`, `verification`). CEO never writes source code. Workers edit only dispatch.writeSet. Compliance is checked through dispatch packets, independent review, validation evidence, and task capsules. See `CLAUDE.md#1a`.
 - **WF-REVIEW Anti-Self-Review**: Must invoke the OTHER CLI (Codex -> Claude, or Claude -> Codex). Same-model simulation is forbidden.
 - WF-MAX has no runtime hook state. The durable state is the task capsule, dispatch table, review findings, and validation evidence. The only runtime hook exception in Harness is the optional `/wf-auto` bounded tick hook described in `WF-AUTO.md`.
@@ -148,7 +148,7 @@ Routing priority: **direct mode is the default** when no `/wf-*` command is pres
 |---|---|---|
 | `/wf <task>` | `$wf <task>` | Complete role chain: plan, research/docs, architecture, test, implement, validation, cross-review, reflector, acceptance |
 | `/wf-max [task]` | `$wf-max [task]` | WF strict superset with maximum parallelism: CEO -> Manager -> Worker, cross-CLI overflow |
-| `/wf-auto` | `$wf-auto` | Perpetual auto-optimization: never stops until 8-angle exhaustion |
+| `/wf-auto` | `$wf-auto` | Perpetual adaptive auto-optimization: dynamic probes, risk obligations, evidence-based exhaustion |
 | `/wf-auto-spark` | `$wf-auto-spark` | Perpetual inspiration: spark search, roadmap-anchored, <=50% deviation guard, never auto-stops |
 | `/wf-review [focus]` | `$wf-review [focus]` | Cross-model peer review via Codex <-> Claude |
 | `/wf-learn` | `$wf-learn` | Force learning cycle: context-master -> memory-master |

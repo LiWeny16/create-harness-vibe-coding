@@ -128,7 +128,7 @@ if (argName || skipPrompts) {
   console.log(pc.dim('────────────────────────────────────────────'));
   console.log(`  Project     ${pc.green(projectName)}`);
   console.log(`  Directory   ${pc.green(targetDir)}`);
-  console.log(`  Creates     ${pc.cyan('CLAUDE.md, README.md, Harness/PROGRESS.md, Harness/, .claude/, .agents/, tests/')}`);
+  console.log(`  Creates     ${pc.cyan('CLAUDE.md, README.md, Harness/PROGRESS.md, Harness/, .claude/, .agents/, .opencode/, opencode.json, tests/')}`);
   if (generationOptions.dryRun) {
     console.log(`  Mode        ${pc.yellow('dry-run')}`);
   }
@@ -206,7 +206,7 @@ if (argName || skipPrompts) {
   console.log(pc.dim('────────────────────────────────────────────'));
   console.log(`  Project     ${pc.green(projectName)}`);
   console.log(`  Directory   ${pc.green(targetDir)}`);
-  console.log(`  Creates     ${pc.cyan('CLAUDE.md, README.md, Harness/PROGRESS.md, Harness/, .claude/, .agents/, tests/')}`);
+  console.log(`  Creates     ${pc.cyan('CLAUDE.md, README.md, Harness/PROGRESS.md, Harness/, .claude/, .agents/, .opencode/, opencode.json, tests/')}`);
   console.log(`  Conflicts   ${pc.cyan(generationOptions.onConflict)}`);
   if (generationOptions.withOptions.length > 0) {
     console.log(`  Optional    ${pc.cyan(generationOptions.withOptions.join(','))}`);
@@ -278,6 +278,7 @@ function printResult(result, targetDir) {
     console.log(`  ${pc.cyan(`cd ${targetDir}`)}`);
     console.log(`  ${pc.cyan('claude')}                          # Start Claude Code`);
     console.log(`  ${pc.cyan('codex')}                           # Or start Codex`);
+    console.log(`  ${pc.cyan('opencode')}                        # Or start OpenCode`);
     console.log(`  Tell your agent: "${pc.yellow('Read Harness/SETUP.md. Bootstrap this project from idea to first vertical slice.')}"`);
     console.log('');
     console.log(pc.dim('  Harness/SETUP.md is temporary. Delete it after initialization.'));
@@ -565,6 +566,7 @@ function scanTarget(targetDir) {
   const hasAgents = isDirectory && fs.existsSync(path.join(resolvedDir, 'AGENTS.md'));
   const hasAgentSkills = isDirectory && fs.existsSync(path.join(resolvedDir, '.agents'));
   const hasCodex = isDirectory && fs.existsSync(path.join(resolvedDir, '.codex'));
+  const hasOpencode = isDirectory && (fs.existsSync(path.join(resolvedDir, '.opencode')) || fs.existsSync(path.join(resolvedDir, 'opencode.json')));
   const hasDocs = isDirectory && fs.existsSync(path.join(resolvedDir, 'docs'));
   const hasReadme = isDirectory && fs.existsSync(path.join(resolvedDir, 'README.md'));
   const hasPackageJson = isDirectory && fs.existsSync(path.join(resolvedDir, 'package.json'));
@@ -583,6 +585,7 @@ function scanTarget(targetDir) {
     hasAgents,
     hasAgentSkills,
     hasCodex,
+    hasOpencode,
     hasDocs,
     hasReadme,
     hasPackageJson,
@@ -611,6 +614,7 @@ function createJsonScan(scan) {
       hasAgents: scan.hasAgents,
       hasAgentSkills: scan.hasAgentSkills,
       hasCodex: scan.hasCodex,
+      hasOpencode: scan.hasOpencode,
       hasDocs: scan.hasDocs,
       hasReadme: scan.hasReadme,
       hasPackageJson: scan.hasPackageJson,
@@ -785,5 +789,6 @@ function printScan(scan) {
   if (scan.hasAgents) console.log(`  AGENTS.md   ${pc.yellow('exists')}`);
   if (scan.hasAgentSkills) console.log(`  .agents/    ${pc.yellow('exists')}`);
   if (scan.hasCodex) console.log(`  .codex/     ${pc.yellow('exists')}`);
+  if (scan.hasOpencode) console.log(`  opencode     ${pc.yellow('exists')}  ${pc.dim('(.opencode/ or opencode.json)')}`);
   if (scan.hasDocs) console.log(`  docs/       ${pc.dim('project-owned; Harness stays in Harness/')}`);
 }

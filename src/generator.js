@@ -381,7 +381,7 @@ function registerOptionalContent(file, content, selectedSkills) {
     return `${next.trimEnd()}\n\n## Installed Optional Workflows\n\n${lines.join('\n')}\n`;
   }
 
-  if (file === '.claude/commands/wf-help.md' && hasBrowserE2e) {
+  if ((file === '.claude/commands/wf-help.md' || file === '.opencode/commands/wf-help.md') && hasBrowserE2e) {
     return content.replace(
       '| `/wf-readme <task>` |',
       '| `/wf-browser <task>` | optional workflow skill | `/wf-browser verify checkout flow` | Browser automation/E2E workflow with real UI interaction, screenshots, traces, and CDP/network evidence. |\n| `/wf-readme <task>` |',

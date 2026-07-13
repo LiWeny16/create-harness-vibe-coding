@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="draw.io" version="26.0.0">
+  <diagram name="Harness Architecture" id="h-arch">
+    <mxGraphModel dx="1300" dy="960" grid="1" gridSize="10" guides="1" tooltips="1"
+                  connect="1" arrows="1" fold="1" page="1" pageScale="1"
+                  pageWidth="1300" pageHeight="960">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="2" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8f9fc;strokeColor=none;" vertex="1" parent="0" >
+  <mxGeometry x="0" y="0" width="1300" height="960" as="geometry" />
+</mxCell>
+        <mxCell id="3" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#4f46e5;strokeColor=none;" vertex="1" parent="1" >
+  <mxGeometry x="0" y="0" width="1300" height="4" as="geometry" />
+</mxCell>
+        <mxCell id="4" value="&lt;b&gt;Harness&lt;/b&gt; — The Agent Success Infrastructure" style="text;html=1;align=center;verticalAlign=middle;fontSize=22;fontStyle=1;fontColor=#1e1b4b;" vertex="1" parent="1" >
+  <mxGeometry x="200" y="18" width="900" height="38" as="geometry" />
+</mxCell>
+        <mxCell id="5" value="Clear goals · Quality information · Closed-loop feedback  =  Agent success" style="text;html=1;align=center;verticalAlign=middle;fontSize=13;fontStyle=0;fontColor=#6b7280;" vertex="1" parent="1" >
+  <mxGeometry x="250" y="56" width="800" height="24" as="geometry" />
+</mxCell>
+        <mxCell id="6" value="▾  Three Pillars  ▾" style="text;html=1;align=center;verticalAlign=middle;fontSize=13;fontStyle=1;fontColor=#374151;" vertex="1" parent="1" >
+  <mxGeometry x="450" y="92" width="400" height="24" as="geometry" />
+</mxCell>
+        <mxCell id="10" value="I. Goal &amp;amp; Constraints" style="swimlane;startSize=38;fillColor=#eef2ff;strokeColor=#6366f1;fontSize=14;fontStyle=1;whiteSpace=wrap;html=1;rounded=1;" vertex="1" parent="1">
+  <mxGeometry x="40" y="130" width="390" height="440" as="geometry" />
+</mxCell>
+        <mxCell id="11" value="&quot;Here's the goal, constraints, tests —&amp;#xa;now iterate until correct.&quot;&amp;#xa;— Andrej Karpathy" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#818cf8;fontSize=9;fontStyle=2;fontColor=#6b7280;verticalAlign=middle;align=center;" vertex="1" parent="10">
+  <mxGeometry x="15" y="48" width="360" height="42" as="geometry" />
+</mxCell>
+        <mxCell id="12" value="PRD → Research → Architecture workflow" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e0e7ff;strokeColor=#818cf8;fontSize=11;verticalAlign=middle;align=center;" vertex="1" parent="10">
+  <mxGeometry x="15" y="105" width="360" height="52" as="geometry" />
+</mxCell>
+        <mxCell id="13" value="Task capsules — big goals into bounded units" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e0e7ff;strokeColor=#818cf8;fontSize=11;verticalAlign=middle;align=center;" vertex="1" parent="10">
+  <mxGeometry x="15" y="170" width="360" height="52" as="geometry" />
+</mxCell>
+        <mxCell id="14" value="16 role-bound agents — explicit writeSet each" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e0e7ff;strokeColor=#818cf8;fontSize=11;verticalAlign=middle;align=center;" vertex="1" parent="10">
+  <mxGeometry x="15" y="235" width="360" height="52" as="geometry" />
+</mxCell>
+        <mxCell id="15" value="Acceptance criteria — quantifiable boundaries" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e0e7ff;strokeColor=#818cf8;fontSize=11;verticalAlign=middle;align=center;" vertex="1" parent="10">
+  <mxGeometry x="15" y="300" width="360" height="52" as="geometry" />
+</mxCell>
+        <mxCell id="16" value="/wf-max: CEO → Manager → Worker dispatch" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e0e7ff;strokeColor=#818cf8;fontSize=11;verticalAlign=middle;align=center;" vertex="1" parent="10">
+  <mxGeometry x="15" y="365" width="360" height="52" as="geometry" />
+</mxCell>
+        <mxCell id="20" value="II. Context &amp;amp; Information" style="swimlane;startSize=38;fillColor=#ecfdf5;strokeColor=#10b981;fontSize=14;fontStyle=1;whiteSpace=wrap;html=1;rounded=1;" vertex="1" parent="1">
+  <mxGeometry x="450" y="130" width="390" height="440" as="geometry" />
+</mxCell>
+        <mxCell id="21" value="&quot;Context engineering — the art of providing&amp;#xa;all the context for the task.&quot;&amp;#xa;— Andrej Karpathy" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#34d399;fontSize=9;fontStyle=2;fontColor=#6b7280;verticalAlign=middle;align=center;" vertex="1" parent="20">
+  <mxGeometry x="15" y="48" width="360" height="42" as="geometry" />
+</mxCell>
+        <mxCell id="22" value="Router — loads only what the task needs" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d1fae5;strokeColor=#34d399;fontSize=11;verticalAlign=middle;align=center;" vertex="1" parent="20">
+  <mxGeometry x="15" y="105" width="360" height="52" as="geometry" />
+</mxCell>
+        <mxCell id="23" value="Context-loading protocol — docs tailored per role" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d1fae5;strokeColor=#34d399;fontSize=11;verticalAlign=middle;align=center;" vertex="1" parent="20">
+  <mxGeometry x="15" y="170" width="360" height="52" as="geometry" />
+</mxCell>
+        <mxCell id="24" value="Memory Master — durable cross-session learning" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d1fae5;strokeColor=#34d399;fontSize=11;verticalAlign=middle;align=center;" vertex="1" parent="20">
+  <mxGeometry x="15" y="235" width="360" height="52" as="geometry" />
+</mxCell>
+        <mxCell id="25" value="Context Master — compress when context fills" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d1fae5;strokeColor=#34d399;fontSize=11;verticalAlign=middle;align=center;" vertex="1" parent="20">
+  <mxGeometry x="15" y="300" width="360" height="52" as="geometry" />
+</mxCell>
+        <mxCell id="26" value="16 agents load only their slice — on-demand" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d1fae5;strokeColor=#34d399;fontSize=11;verticalAlign=middle;align=center;" vertex="1" parent="20">
+  <mxGeometry x="15" y="365" width="360" height="52" as="geometry" />
+</mxCell>
+        <mxCell id="30" value="III. Decomposition &amp;amp; Feedback" style="swimlane;startSize=38;fillColor=#fffbeb;strokeColor=#f59e0b;fontSize=14;fontStyle=1;whiteSpace=wrap;html=1;rounded=1;" vertex="1" parent="1">
+  <mxGeometry x="860" y="130" width="390" height="440" as="geometry" />
+</mxCell>
+        <mxCell id="31" value="&quot;You should be designing loops&amp;#xa;that prompt your agents.&quot;&amp;#xa;— Peter Steinberger" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#fbbf24;fontSize=9;fontStyle=2;fontColor=#6b7280;verticalAlign=middle;align=center;" vertex="1" parent="30">
+  <mxGeometry x="15" y="48" width="360" height="42" as="geometry" />
+</mxCell>
+        <mxCell id="32" value="/wf heartbeat + recovery — never lost mid-task" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fef3c7;strokeColor=#fbbf24;fontSize=11;verticalAlign=middle;align=center;" vertex="1" parent="30">
+  <mxGeometry x="15" y="105" width="360" height="52" as="geometry" />
+</mxCell>
+        <mxCell id="33" value="/wf-max parallel — CEO/Manager/Worker" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fef3c7;strokeColor=#fbbf24;fontSize=11;verticalAlign=middle;align=center;" vertex="1" parent="30">
+  <mxGeometry x="15" y="170" width="360" height="52" as="geometry" />
+</mxCell>
+        <mxCell id="34" value="/wf-auto — perpetual adaptive optimization" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fef3c7;strokeColor=#fbbf24;fontSize=11;verticalAlign=middle;align=center;" vertex="1" parent="30">
+  <mxGeometry x="15" y="235" width="360" height="52" as="geometry" />
+</mxCell>
+        <mxCell id="35" value="verify gate — AC-linked evidence before accept" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fef3c7;strokeColor=#fbbf24;fontSize=11;verticalAlign=middle;align=center;" vertex="1" parent="30">
+  <mxGeometry x="15" y="300" width="360" height="52" as="geometry" />
+</mxCell>
+        <mxCell id="36" value="/wf-update — scaffold refresh from upstream" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fef3c7;strokeColor=#fbbf24;fontSize=11;verticalAlign=middle;align=center;" vertex="1" parent="30">
+  <mxGeometry x="15" y="365" width="360" height="52" as="geometry" />
+</mxCell>
+        <mxCell id="40" value="▾  Execution Cycle  ▾" style="text;html=1;align=center;verticalAlign=middle;fontSize=13;fontStyle=1;fontColor=#374151;" vertex="1" parent="1" >
+  <mxGeometry x="450" y="588" width="400" height="24" as="geometry" />
+</mxCell>
+        <mxCell id="50" value="Execute" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eef2ff;strokeColor=#6366f1;fontSize=14;fontStyle=1;verticalAlign=middle;align=center;" vertex="1" parent="1" >
+  <mxGeometry x="68" y="625" width="220" height="72" as="geometry" />
+</mxCell>
+        <mxCell id="51" value="Verify" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fffbeb;strokeColor=#f59e0b;fontSize=14;fontStyle=1;verticalAlign=middle;align=center;" vertex="1" parent="1" >
+  <mxGeometry x="356" y="625" width="220" height="72" as="geometry" />
+</mxCell>
+        <mxCell id="52" value="Learn" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ecfdf5;strokeColor=#10b981;fontSize=14;fontStyle=1;verticalAlign=middle;align=center;" vertex="1" parent="1" >
+  <mxGeometry x="644" y="625" width="220" height="72" as="geometry" />
+</mxCell>
+        <mxCell id="53" value="Update" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f3ff;strokeColor=#8b5cf6;fontSize=14;fontStyle=1;verticalAlign=middle;align=center;" vertex="1" parent="1" >
+  <mxGeometry x="932" y="625" width="220" height="72" as="geometry" />
+</mxCell>
+        <mxCell id="74" value="feedback loop · /wf-update" style="text;html=1;align=center;verticalAlign=middle;fontSize=10;fontStyle=0;fontColor=#8b5cf6;" vertex="1" parent="1" >
+  <mxGeometry x="860" y="609" width="200" height="18" as="geometry" />
+</mxCell>
+        <mxCell id="80" value="One command. Zero drift. Agent success, life success." style="text;html=1;align=center;verticalAlign=middle;fontSize=12;fontStyle=0;fontColor=#374151;" vertex="1" parent="1" >
+  <mxGeometry x="350" y="880" width="600" height="24" as="geometry" />
+</mxCell>
+        <mxCell id="81" value="MIT © zingspark · github.com/zingspark/create-harness-vibe-coding" style="text;html=1;align=center;verticalAlign=middle;fontSize=10;fontStyle=0;fontColor=#9ca3af;" vertex="1" parent="1" >
+  <mxGeometry x="400" y="910" width="500" height="18" as="geometry" />
+</mxCell>
+        <mxCell id="82" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#4f46e5;strokeColor=none;opacity=30;" vertex="1" parent="1" >
+  <mxGeometry x="40" y="870" width="1220" height="2" as="geometry" />
+</mxCell>
+        <mxCell id="60" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.5;" edge="1" parent="1" source="10" target="50">
+  <mxGeometry relative="1" as="geometry">
+    <Array as="points">
+      <mxPoint x="235" y="595" />
+      <mxPoint x="178" y="595" />
+    </Array>
+  </mxGeometry>
+</mxCell>
+        <mxCell id="61" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.5;" edge="1" parent="1" source="20" target="51">
+  <mxGeometry relative="1" as="geometry">
+    <Array as="points">
+      <mxPoint x="645" y="595" />
+      <mxPoint x="466" y="595" />
+    </Array>
+  </mxGeometry>
+</mxCell>
+        <mxCell id="62" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.5;" edge="1" parent="1" source="30" target="52">
+  <mxGeometry relative="1" as="geometry">
+    <Array as="points">
+      <mxPoint x="1055" y="595" />
+      <mxPoint x="754" y="595" />
+    </Array>
+  </mxGeometry>
+</mxCell>
+        <mxCell id="70" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.5;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="50" target="51">
+  <mxGeometry relative="1" as="geometry">
+  </mxGeometry>
+</mxCell>
+        <mxCell id="71" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.5;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="51" target="52">
+  <mxGeometry relative="1" as="geometry">
+  </mxGeometry>
+</mxCell>
+        <mxCell id="72" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.5;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="52" target="53">
+  <mxGeometry relative="1" as="geometry">
+  </mxGeometry>
+</mxCell>
+        <mxCell id="73" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=1.5;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="53" target="10">
+  <mxGeometry relative="1" as="geometry">
+    <Array as="points">
+      <mxPoint x="1042" y="605" />
+      <mxPoint x="45" y="605" />
+      <mxPoint x="45" y="85" />
+      <mxPoint x="235" y="85" />
+    </Array>
+  </mxGeometry>
+</mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

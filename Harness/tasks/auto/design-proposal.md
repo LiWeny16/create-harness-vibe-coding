@@ -2,7 +2,7 @@
 
 ## Context
 
-The current `/wf-auto` system runs perpetual autonomous optimization cycles. Problem: after 2+ cycles, the system drifts from user intent. Also, when 8 angles return empty, the cross-model oracle helps — but there's no mechanism to handle the case where the user themselves doesn't know the direction.
+The current `/wf-auto` system runs perpetual autonomous optimization cycles. Problem: after 2+ cycles, the system drifts from user intent. Also, when adaptive internal coverage returns empty, the cross-model oracle helps — but there is no mechanism to handle the case where the user themselves doesn't know the direction.
 
 ## Feature 1: Intent Re-anchoring Gate (every 2 cycles)
 
@@ -49,30 +49,30 @@ CEO presents:
 ### Trigger
 - User explicitly says `/wf-auto-spark` or `wf auto spark`
 - Auto-degrade from `/wf-auto` when user can't clarify direction at re-anchor gate
-- Auto-activate when 8-angle scan returns empty for 3+ consecutive cycles AND oracle also empty
+- Auto-activate when adaptive internal coverage returns empty for 3+ consecutive cycles AND oracle also empty
 
 ### Core Philosophy
 **"Inspiration never runs dry, but value must be constantly questioned."**
 
-Spark mode replaces the 8-angle internal scan with EXTERNAL inspiration search. It looks OUTSIDE the codebase for ideas, then filters ruthlessly for value.
+Spark mode replaces the adaptive internal probe scan with EXTERNAL inspiration search. It looks OUTSIDE the codebase for ideas, then filters ruthlessly for value.
 
 ### Spark Sources (searched in parallel)
 
-| # | Source | Tool | What It Finds |
-|---|--------|------|---------------|
-| 1 | **GitHub Trending** | WebSearch / Tavily | Popular repos in same language/stack, new patterns |
-| 2 | **Ecosystem Pulse** | WebSearch / npm/PyPI | New libraries, version bumps, deprecated APIs replaced |
-| 3 | **Best Practices** | WebSearch + Docs | Latest official recommendations, style guides, security advisories |
-| 4 | **Competitor Analysis** | WebSearch | Similar open-source projects — what are they doing better? |
-| 5 | **Real-world Issues** | GitHub Issues / Stack Overflow | Common pain points users report for similar projects |
-| 6 | **Architecture Trends** | WebSearch | Emerging patterns (e.g., micro-frontends, island architecture, edge computing) |
-| 7 | **Developer Experience** | WebSearch / Docs | New tooling, better CLI patterns, improved error messages |
-| 8 | **Performance Benchmarks** | WebSearch | Industry benchmarks, optimization techniques, profiling tools |
+| Source candidate | Tool | What It Finds |
+|---|---|---|
+| **GitHub Trending** | WebSearch / Tavily | Popular repos in same language/stack, new patterns |
+| **Ecosystem Pulse** | WebSearch / npm/PyPI | New libraries, version bumps, deprecated APIs replaced |
+| **Best Practices** | WebSearch + Docs | Latest official recommendations, style guides, security advisories |
+| **Competitor Analysis** | WebSearch | Similar open-source projects — what are they doing better? |
+| **Real-world Issues** | GitHub Issues / Stack Overflow | Common pain points users report for similar projects |
+| **Architecture Trends** | WebSearch | Emerging patterns (e.g., micro-frontends, island architecture, edge computing) |
+| **Developer Experience** | WebSearch / Docs | New tooling, better CLI patterns, improved error messages |
+| **Performance Benchmarks** | WebSearch | Industry benchmarks, optimization techniques, profiling tools |
 
 ### Spark Loop
 
 ```text
-SPARK: 8 parallel external searches → gather inspiration sparks
+SPARK: select evidence-relevant external sources → gather inspiration sparks
   ↓
 FILTER: Keep only sparks relevant to THIS project's stack, size, and domain
   ↓
@@ -120,7 +120,7 @@ If CEO CANNOT write a convincing value reflection → the spark was NOT valuable
 | SP2 | **Fake value reflection** | Vague "this is better" without concrete evidence | Require specific metrics or user-visible impact |
 | SP3 | **Copycat without context** | "Project X does Y so we should too" without understanding why | Value Gate question 1 catches this |
 | SP4 | **Infinite inspiration loop** | Spark → implement → spark → implement without convergence | After 5 spark cycles, re-anchor: "Are we building toward something coherent?" |
-| SP5 | **Ignore internal state** | Only looking outward, ignoring project's own issues | Alternate: every 3rd spark cycle, run internal 8-angle scan too |
+| SP5 | **Ignore internal state** | Only looking outward, ignoring project's own issues | Alternate: every 3rd spark cycle, run adaptive internal coverage too |
 
 ### Spark Stop Condition
 

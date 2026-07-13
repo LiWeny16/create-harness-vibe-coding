@@ -8,7 +8,7 @@
 
 ## Core Principle
 
-**NEVER STOP.** WF-AUTO is a perpetual loop. It does not stop when a task is "done" — it finds the next improvement and continues. The ONLY permitted stop is the 8-Angle Exhaustion Gate: when all 8 independent perspectives agree there is no worthwhile optimization direction left.
+**NEVER STOP.** WF-AUTO is a perpetual loop. It does not stop when a task is "done" — it finds the next improvement and continues. The only permitted stop is the Adaptive Coverage Exhaustion Gate: when the project's dynamic risk obligations are covered, two different confirmation strategies find no worthwhile direction, and unresolved uncertainty is recorded.
 
 This fills the gap between:
 - `/wf` — task-bounded, stops on completion
@@ -44,14 +44,10 @@ explicitly invoked or the selected change exceeds the auto cycle cap and
 escalates. Auto mode stays one accepted change per cycle.
 
 ```
-CEO(1) ──┬── Angle-Agent₁ (correctness)
-         ├── Angle-Agent₂ (performance)
-         ├── Angle-Agent₃ (security)
-         ├── Angle-Agent₄ (maintainability)
-         ├── Angle-Agent₅ (test-coverage)
-         ├── Angle-Agent₆ (architecture)
-         ├── Angle-Agent₇ (ux-dx)
-         └── Angle-Agent₈ (robustness)
+CEO(1) ──┬── Probe-Agent (selected by risk and evidence)
+         ├── Probe-Agent (selected by changed surface)
+         ├── Probe-Agent (selected by user goal)
+         └── Probe-Agent (selected by evidence gap)
                 │
                 ▼
          CEO synthesizes → picks highest-impact direction
@@ -62,7 +58,7 @@ CEO(1) ──┬── Angle-Agent₁ (correctness)
                 ▼
          LOOP → W0 (re-sense)
 
-         ─── WHEN ALL 8 EXHAUSTED ───
+         ─── WHEN ADAPTIVE COVERAGE IS EXHAUSTED ───
 
          CEO → Cross-Model Oracle (Codex/Claude)
                 │
@@ -70,9 +66,9 @@ CEO(1) ──┬── Angle-Agent₁ (correctness)
                 └── Oracle also empty → Tier 2 confirm rounds → STOP
 ```
 
-CEO orchestrates the perpetual loop. CEO never writes production code — delegates all implementation. CEO synthesizes angle findings, picks direction, dispatches implement/review/verify, then loops.
+CEO orchestrates the perpetual loop. CEO never writes production code — delegates all implementation. CEO synthesizes probe findings, picks direction, dispatches implement/review/verify, then loops.
 
-When all 8 angles return exhausted, the CEO does NOT immediately enter confirmation — it first consults the other AI model (the Cross-Model Oracle) for a fresh perspective. Only when the oracle also finds nothing do confirmation rounds begin.
+When the selected probes return exhausted, the CEO does NOT immediately enter confirmation. It checks dynamic risk obligations and unresolved uncertainty, then consults the other AI model only when a fresh perspective is warranted. Confirmation rounds must use different scan strategies.
 
 ### State Machine
 
@@ -80,7 +76,7 @@ WF-AUTO operates in explicit states. Without a state machine, "auto-degrade", "s
 
 ```
                     ┌──────────────────────────────┐
-                    │         auto.internal         │ ←── W0-W5 loop (8-angle scan + oracle + spark)
+    │         auto.internal         │ ←── W0-W5 loop (adaptive probes + oracle + spark)
                     │  (active optimization cycle)  │
                     └──────────┬───────────────────┘
                                │
@@ -111,38 +107,44 @@ WF-AUTO operates in explicit states. Without a state machine, "auto-degrade", "s
 
 | State | Meaning | Entry Condition |
 |-------|---------|-----------------|
-| `auto.internal` | Running W0-W5 with internal 8-angle scan | Default, or return from checkpoint/spark |
-| `auto.spark` | Searching external sources for candidates when internal + oracle are empty | All 8 exhausted + oracle empty, OR user requested spark mode |
+| `auto.internal` | Running W0-W5 with dynamically selected probes | Default, or return from checkpoint/spark |
+| `auto.spark` | Searching external sources for candidates when internal + oracle are empty | Selected probes exhausted + oracle empty, OR user requested spark mode |
 | `auto.checkpoint` | Intent Checkpoint — brief user alignment check | Every N cycles (adaptive: 2→5→10) |
-| `auto.exhausted` | A-GATE passed permanently | 3 consecutive all-exhausted rounds + oracle confirmed |
+| `auto.exhausted` | A-GATE passed permanently | Two different confirmation strategies return no actionable finding |
 | `paused` | User interrupted, waiting for direction | User says "stop" or interrupts at any point |
 
 **State transitions are CEO-owned.** The CEO decides which state to enter based on W0 results and checkpoint responses. The state machine is recorded in `Harness/tasks/auto/PROGRESS.md` at each transition.
 
-## The 8 Angles (Exhaustion Dimensions)
+## Adaptive coverage instead of a magic angle count
 
-These are the ONLY lenses through which optimization is justified. An angle is "exhausted" when it finds zero actionable improvements.
+The old protocol dispatched a fixed set of eight angles every cycle. That made
+the stop condition easy to explain, but it also spent context on irrelevant
+surfaces and treated every repository as if it had the same risks.
 
-| # | Angle | Focus | Example Signals |
-|---|-------|-------|----------------|
-| 1 | **Correctness** | Bugs, logic errors, edge cases, null safety, race conditions, state inconsistency | Unhandled error paths, missing null checks, off-by-one, stale cache |
-| 2 | **Performance** | Speed, memory, I/O, algorithmic complexity, bundle size, query efficiency | O(n²) where O(n log n) exists, unnecessary allocations, blocking I/O |
-| 3 | **Security** | Injection, auth/authz, secret exposure, input validation, dependency CVEs | Unsanitized input, hardcoded keys, missing rate limits, outdated deps |
-| 4 | **Maintainability** | Code clarity, DRY violations, coupling, naming, comment accuracy, dead code | Duplicated logic, misleading names, god functions, stale comments |
-| 5 | **Test Coverage** | Missing tests, weak assertions, untested edge cases, flaky tests, test speed | Untested error branches, mock-only tests (no integration), slow suites |
-| 6 | **Architecture** | Boundary violations, dependency direction, interface stability, layer discipline | Circular deps, leaky abstractions, wrong layer ownership |
-| 7 | **UX / DX** | Error messages, API ergonomics, documentation, logging, CLI/API consistency | Cryptic errors, missing docs, inconsistent flags, poor discoverability |
-| 8 | **Robustness** | Resilience, retry/backoff, graceful degradation, observability, recovery | Missing retries, no circuit breaker, silent failures, no health checks |
+The current protocol uses a dynamic probe catalog and project obligations:
 
-These 8 angles are comprehensive by design. If ALL 8 return empty, the codebase is genuinely optimized to the point where further changes would be cosmetic or harmful.
+1. Build a profile from the repository, recent diff, failures, task capsule,
+   and user direction.
+2. Score candidate probes by risk, change relevance, evidence gap, expected
+   user value, novelty, and scan cost.
+3. Always keep Goal / value and Correctness / safety visible; add security,
+   recovery, performance, architecture, testing, UX/DX, dependency, or other
+   probes only when the evidence triggers them.
+4. Record selected probes, skipped probes, scan strategy, confidence, surface
+   coverage, and findings in the cycle ledger.
+5. Stop only after dynamic high-risk obligations are covered and two different
+   confirmation strategies find no actionable improvement.
+
+Read the complete selection algorithm, obligation matrix, scan strategies, and
+ledger schema in [WF-AUTO-ANGLES.md](WF-AUTO-ANGLES.md).
 
 ## Perpetual Loop
 
 ```text
 ┌──────────────────────────────────────────────────────────────┐
-│  W0: SENSE — 8 angle agents + oracle + spark (all parallel)  │
+│  W0: SENSE — adaptive probes + oracle + spark (as triggered)  │
 │  ↓                                                           │
-│  A-GATE: Angle Exhaustion Gate                               │
+│  A-GATE: Adaptive Coverage Exhaustion Gate                          │
 │  ├── Findings exist (any source) → continue to W1            │
 │  └── ALL sources empty? → CROSS-MODEL ORACLE                │
 │       ├── Oracle finds directions → feed into W1             │
@@ -172,84 +174,71 @@ These 8 angles are comprehensive by design. If ALL 8 return empty, the codebase 
 └──────────────────────────────────────────────────────────────┘
 ```
 
-### W0: SENSE (Parallel Angle Scan)
+### W0: SENSE (Adaptive Probe Selection)
 
-CEO dispatches ALL 8 angle agents in ONE message. Each agent:
+CEO dispatches the selected probe agents in one batch when the runtime allows
+it. The selection comes from [WF-AUTO-ANGLES.md](WF-AUTO-ANGLES.md), not from a
+fixed count. Each probe agent:
 
-- **Role**: Read-only scanner through one angle lens
+- **Role**: Read-only scanner through one selected probe lens
 - **Read set**: The project source tree (scoped by CEO to relevant paths)
-- **Return**: `{angle, findings: [{file, line, severity, description, suggestedFix}], exhausted: boolean, confidence: 0-1}`
+- **Return**: `{probe, findings: [{file, line, severity, description, suggestedFix}], exhausted: boolean, confidence: 0-1, coverage: 0-1, skippedReason?: string}`
 - **Stop condition**: Returns when scan is complete — does not implement anything
 
-Angle agents are READ-ONLY. They find, they don't fix.
+Probe agents are READ-ONLY. They find, they don't fix.
 
 Every cycle starts with a fresh W0 scan. The codebase changed since last cycle (due to W2-W5), so new findings may emerge.
 
-### A-GATE: Angle Exhaustion Gate (THE ONLY STOP)
+### A-GATE: Adaptive Coverage Exhaustion Gate (THE ONLY STOP)
 
 This is the single most important gate in WF-AUTO. It prevents both premature stopping and infinite busywork.
 
-**Gate Protocol (three-tier):**
+**Gate Protocol:**
 
 ```
-TIER 1 — All 8 angles return exhausted=true?
-  ├── NO → Findings exist. Continue to W1. Reset confirmCount to 0.
-  └── YES → Move to Tier 1.5 (Cross-Model Oracle).
+TIER 1 — Did selected probes cover all dynamic high-risk obligations?
+  ├── NO → Select the missing obligation and continue to W0.
+  └── YES → Check findings, confidence, coverage, and value threshold.
 
-TIER 1.5 — CROSS-MODEL ORACLE (fresh eyes before confirming exhaustion)
-  ├── CEO prepares a context pack: project summary, recent cycle history,
-  │   architecture overview, and the 8 angle exhaustion reports.
-  ├── CEO invokes the OTHER CLI (Codex if running as Claude, Claude if
-  │   running as Codex) — same detection rule as /wf-review.
-  │   Command: `git diff --stat && cat Harness/tasks/auto/PROGRESS.md |
-  │   codex exec "This project believes it is fully optimized. From 8
-  │   angles (correctness, performance, security, maintainability, test
-  │   coverage, architecture, UX/DX, robustness), find ANY optimization
-  │   direction that was missed. Be adversarial — prove us wrong."`
-  ├── Oracle returns: {findings: [...], empty: boolean}
-  ├── Oracle finds directions? → Feed into W1 as HIGH priority findings.
-  │   Reset confirmCount to 0. The oracle's fresh perspective broke the
-  │   local blind spot. Continue looping.
-  └── Oracle also empty? → Move to Tier 2. The external model agrees:
-      this codebase is genuinely optimized.
+TIER 2 — Did any selected probe find an actionable direction?
+  ├── YES → Feed the highest-value finding to W1. Reset confirmCount.
+  └── NO → Run a confirmation pass with a different scan strategy.
 
-TIER 2 — Confirmation round.
-  ├── confirmCount < 2? → Increment confirmCount. Re-run W0 with
-  │   DIFFERENT agent seeds/scopes to prevent false negatives.
-  │   (e.g., if first scan was broad, second scan is deep-dive on
-  │   recent change areas; if first used file-level, second uses
-  │   function-level.)
-  └── confirmCount ≥ 2? → 3 consecutive rounds with all 8 exhausted
-      AND cross-model oracle confirmed empty. PERMANENT STOP.
-      Record final exhaustion evidence.
+TIER 3 — Is uncertainty still high or coverage borderline?
+  ├── YES → Re-run only the uncertain probe, or invoke the cross-model oracle.
+  └── NO → Record an empty confirmation pass.
+
+TIER 4 — Two different confirmation strategies are empty?
+  ├── NO → Continue with another strategy or newly triggered obligation.
+  └── YES → Record exhaustion evidence and stop.
 ```
 
 **Oracle Rules (modeled on /wf-review):**
 
 - [ ] CEO detects which CLI is running: `which codex` / `which claude`
-- [ ] CEO invokes the OTHER CLI — never the same model
-- [ ] If neither CLI is available: skip oracle, move directly to Tier 2, record "oracle unavailable" in PROGRESS.md
-- [ ] Oracle is invoked at most ONCE per Tier 1 exhaustion event (not re-invoked per confirmation round — the confirmation rounds are local)
+- [ ] CEO invokes the OTHER CLI only when unresolved high-risk uncertainty or borderline coverage justifies it
+- [ ] If neither CLI is available, record "oracle unavailable" in PROGRESS.md and continue with local confirmation
+- [ ] Oracle is invoked at most once per adaptive exhaustion event
 - [ ] Oracle findings are treated as severity=high by default (external model perspective gets extra weight)
 
 **Gate Rules:**
 
-- [ ] All 8 angles returned structured findings (not just "looks good")
-- [ ] Each angle scanned ≥80% of its relevant surface area
-- [ ] No angle was skipped or timed out
-- [ ] Cross-Model Oracle was consulted (or unavailability recorded)
-- [ ] confirmCount ≥ 2 (three consecutive all-exhausted rounds)
-- [ ] CEO reviewed at least 2 angle returns that were borderline (confidence < 0.9)
+- [ ] Dynamic high-risk obligations are covered
+- [ ] Each selected probe returned structured findings, confidence, and surface coverage
+- [ ] Skipped obligations have an evidence-based reason
+- [ ] Cross-Model Oracle was consulted when uncertainty justified it, or unavailability was recorded
+- [ ] Two different confirmation strategies returned no actionable finding
+- [ ] CEO reviewed borderline probe returns (confidence < 0.8 or coverage < 0.8)
 
 **Anti-false-exhaustion measures:**
-- Angle agents MUST include confidence scores. Low confidence (0.5-0.7) on "exhausted" = CEO re-dispatches that angle with a deeper scope.
-- Between confirmation rounds, CEO varies the scan strategy: broad → deep, file-level → function-level, recent-changes → full-tree.
-- If any angle returns confidence < 0.8 on "exhausted", that angle MUST be re-run with expanded scope before counting toward confirmCount.
-- The Cross-Model Oracle is the ultimate blind-spot breaker — a different model family with different inductive biases. If it finds anything, the loop continues.
+- Probe agents MUST include confidence and relevant surface coverage. Low confidence or coverage on "exhausted" means the probe is re-run with a deeper scope.
+- Between confirmation rounds, CEO varies the scan strategy: breadth → depth, change-first → failure-first, or contract-first.
+- Re-run only the uncertain or under-covered probe instead of rescanning irrelevant surfaces.
+- The Cross-Model Oracle breaks blind spots when local evidence is insufficient; if it finds anything, the loop continues.
 
 ### W1: PRIORITIZE
 
-CEO takes all angle findings, deduplicates, and ranks:
+CEO takes all probe findings, deduplicates, and ranks:
 
 ```
 priorityScore = severity × impactRadius × reversibility
@@ -370,7 +359,7 @@ Hard boundaries:
 - only `/wf-auto` may use a runtime hook
 - the hook must run one bounded tick, not an unbounded process
 - the hook must respect `Harness/tasks/auto/STOP`, `state=paused`, user stop,
-  and the 8-Angle Exhaustion Gate
+  and the Adaptive Coverage Exhaustion Gate
 - the hook must not enforce WF-MAX roles, writeSet, or agent identity
 - the hook must not inject memory directly; use `MEMORY_PROTOCOL.md` scenario
   hints through controller/context-master
@@ -411,7 +400,7 @@ CEO presents:
 
 ### Spark: External Candidate Provider
 
-Spark is NOT a separate optimization engine. It is a **candidate provider** plugged into W0, alongside the internal 8-angle scan and the cross-model oracle. W1 still owns prioritization across ALL sources.
+Spark is NOT a separate optimization engine. It is a **candidate provider** plugged into W0, alongside the adaptive probe scan and the cross-model oracle. W1 still owns prioritization across ALL sources.
 
 **When spark activates:**
 - W0 internal scan returns empty AND oracle also empty → `auto.spark` state
@@ -448,7 +437,7 @@ Spark is NOT a separate optimization engine. It is a **candidate provider** plug
 **Spark candidates flow into W1 with `source=spark-<source-name>`:**
 
 W1 prioritization now handles three source types:
-- `source=internal` — from 8-angle scan
+- `source=internal` — from adaptive probe scan
 - `source=oracle` — from cross-model review
 - `source=spark-<name>` — from external inspiration search
 
@@ -511,14 +500,14 @@ The CEO operates under the same strict tool boundary as WF-MAX:
 |---|-------------|---------|-----|
 | AP1 | **CEO-as-Worker** | CEO writes production code | Delegate ALL implementation to Workers |
 | AP2 | **Premature stop** | CEO decides "good enough" before A-GATE | A-GATE is the ONLY stop. No exceptions. |
-| AP3 | **Shallow angle scan** | Angle returns "exhausted" after scanning 1-2 files | Require ≥80% surface coverage per angle |
+| AP3 | **Shallow probe scan** | Probe returns "exhausted" after scanning 1-2 files | Require ≥80% relevant-surface coverage and record the coverage basis |
 | AP4 | **Batch implementation** | Multiple unrelated changes in one cycle | ONE finding per cycle. Split if needed. |
-| AP5 | **Sequential angle scan** | Angles dispatched one at a time | ALL 8 angles in ONE message, every cycle |
+| AP5 | **Wasteful probe scan** | Every catalog item is dispatched every cycle | Select probes by risk, relevance, evidence gap, novelty, and scan cost |
 | AP6 | **Skip review** | Implementation → verify without review | Review gate is mandatory, every cycle |
 | AP7 | **Scope creep** | A "simple fix" grows to 5+ files | Hard cap: ≤3 files per cycle. Split larger changes across cycles. |
-| AP8 | **False exhaustion** | Angle returns exhausted=true with low confidence | Require confidence ≥0.8 on exhausted. Re-dispatch low-confidence angles. |
-| AP9 | **Stale angle agents** | Same scan strategy every cycle → blind spots emerge | Vary scan depth and scope between cycles |
-| AP10 | **Skip oracle** | All 8 exhausted → CEO goes straight to confirm rounds without consulting other CLI | Oracle is mandatory at Tier 1.5. If CLI unavailable, record it and proceed — but never skip because "it's probably fine." |
+| AP8 | **False exhaustion** | Probe returns exhausted=true with low confidence | Require confidence and coverage ≥0.8 on exhausted. Re-dispatch only the uncertain probe. |
+| AP9 | **Stale probe strategy** | Same scan strategy every cycle → blind spots emerge | Rotate breadth, depth, change-first, failure-first, and contract-first scans |
+| AP10 | **Unjustified oracle** | CEO invokes another CLI on every empty scan | Invoke the oracle only for unresolved high-risk uncertainty or borderline coverage |
 | AP11 | **Spark as escape hatch** | Using spark to avoid the discipline of internal scan | Spark activates ONLY when internal + oracle are empty. It augments W0, not replaces it. |
 | AP12 | **Fake value scoring** | Inflating Value Gate scores to pass candidates through | CEO must justify each dimension score. Reviewer checks Value Gate scores as part of spec review. |
 | AP13 | **Shiny object syndrome** | Implementing every spark candidate without Value Gate filtering | All spark candidates MUST pass the Value Gate (≥18/25, no dimension <3). |
@@ -539,7 +528,7 @@ Before W2, CEO checks: does this change delete functionality, change public API,
 
 ### Idle Detection
 - If 5 consecutive cycles produce 0-line changes (all findings rejected at review), trigger IDLE alarm
-- IDLE → CEO re-evaluates: are angle agents scoped too narrowly? Is the codebase actually done?
+- IDLE → CEO re-evaluates: are probes scoped too narrowly? Are obligations missing? Is the codebase actually done?
 - After IDLE alarm + re-scope + 2 more empty cycles → consider A-GATE
 
 ### User Interrupt
@@ -552,7 +541,7 @@ Before W2, CEO checks: does this change delete functionality, change public API,
 - Explicit user task with defined completion criteria → use `/wf` or `/wf-max`
 - Single known bug → just fix it directly
 - User wants to review every change before it's made → /wf-auto is autonomous by design
-- Codebase is <100 lines → angle scan overhead > benefit
+- Codebase is <100 lines → adaptive scan overhead > benefit
 - Production hotfix needed urgently → direct fix, not optimization loop
 
 ## /wf vs /wf-max vs /wf-auto
@@ -563,14 +552,14 @@ Mini PRD-derived AC IDs in `/wf-auto`.
 | Dimension | /wf | /wf-max | /wf-auto |
 |-----------|-----|---------|----------|
 | Scope | Task-bounded | Task-bounded | Unbounded |
-| Stop condition | Task complete | Task complete | 8-angle exhaustion + oracle + spark exhausted + 2 confirm rounds |
+| Stop condition | Task complete | Task complete | Dynamic obligations covered + two different empty confirmation passes |
 | Direction | User-specified | User-specified | AI-inferred + cross-model oracle + external spark |
-| Organization | Flat (CEO + agents) | 3-tier (CEO→Mgr→Worker) | Flat (CEO + angle agents + oracle + spark searchers + build agents) |
+| Organization | Flat (CEO + agents) | 3-tier (CEO→Mgr→Worker) | Flat (CEO + selected probes + oracle + spark searchers + build agents) |
 | Duration | One task | One task | Perpetual |
 | User interaction | At key gates | At key gates | Adaptive checkpoint (2→5→10 cycles), 2 questions only |
 | Cycle count | 1 | 1 (multi-wave) | ∞ (until exhaustion) |
 | Files/cycle | Per task | Per wave (many) | ≤3 per cycle |
-| Exploration | 3-5 agents once | 5-10 agents once | 8 angles + oracle + 8 spark sources EVERY cycle |
+| Exploration | 3-5 agents once | 5-10 agents once | Dynamic probes + triggered spark sources per cycle |
 | Cross-model check | No (wf-review is separate) | No (wf-review is separate) | Yes — Cross-Model Oracle built into A-GATE Tier 1.5 |
 | External inspiration | No | No | Yes — Spark candidate provider when internal sources empty |
 | Evidence tracking | Per task | Per task | Evidence ledger per cycle with measured impact |
@@ -588,7 +577,7 @@ Unlike normal task capsules, this one is never archived — it's the permanent h
 
 Closeout happens exactly once, when A-GATE passes permanently:
 
-1. CEO records final exhaustion evidence from all 8 angles (3 consecutive rounds)
+1. CEO records final exhaustion evidence: dynamic obligations, selected and skipped probes, coverage, confidence, and two different confirmation strategies
 2. CEO writes summary: total cycles, files changed, findings addressed, findings rejected, residual risk
 3. CEO marks `Harness/tasks/auto/PROGRESS.md` as "WF-AUTO EXHAUSTED" with timestamp
 4. `Harness/PROGRESS.md` is updated with the auto session outcome
