@@ -50,6 +50,17 @@ const commonSkills = [
   'wf-auto-spark',
 ];
 
+const opencodeWorkflowCommands = [
+  'wf',
+  'wf-max',
+  'wf-auto',
+  'wf-auto-spark',
+  'wf-learn',
+  'wf-review',
+  'wf-readme',
+  'wf-remove',
+];
+
 const memoryFiles = [
   'Harness/memory/tool-usage-reflections.md',
   'Harness/memory/user-corrections-preferences.md',
@@ -83,6 +94,7 @@ const required = [
   '.claude/commands/wf-update.md',
   '.opencode/commands/wf-help.md',
   '.opencode/commands/wf-update.md',
+  ...opencodeWorkflowCommands.map(command => `.opencode/commands/${command}.md`),
   '.claude/rules/ecc/common.md',
   ...commonAgents.map(agent => `.claude/agents/${agent}.md`),
   ...commonAgents.map(agent => `.opencode/agents/${agent}.md`),
@@ -344,6 +356,10 @@ requireText('Harness/MEMORY_PROTOCOL.md', 'same tool or command pattern fails 3+
 requireText('Harness/MEMORY_PROTOCOL.md', 'user corrects the same assumption or preference 2+ times', 'user correction reflection trigger');
 requireText('CLAUDE.md', 'If `Harness/` exists, this repository is governed by the Harness contract', 'Harness binding contract');
 requireText('CLAUDE.md', 'memory and resource router', 'memory/resource router');
+requireText('CLAUDE.md', '## 5a. Low-Noise Progress', 'low-noise progress section');
+requireText('CLAUDE.md', 'Keep intermediate user updates to 1-2 short sentences', 'low-noise intermediate update rule');
+requireText('.claude/rules/ecc/common.md', '## Low-Noise Progress', 'ECC low-noise progress section');
+requireText('.claude/rules/ecc/common.md', 'Do not recap plans, paste logs, or narrate obvious file reads', 'ECC low-noise no-recap rule');
 requireText('Harness/README.md', 'Load By Task', 'Harness task router');
 requireText('CLAUDE.md', 'Harness/SETUP.md` is a bootstrap-only document', 'setup bootstrap-only contract');
 forbidText('CLAUDE.md', 'follow it before normal project work', 'installed-project SETUP hot-path routing');
@@ -732,6 +748,16 @@ requireText('.claude/skills/wf-update/SKILL.md', 'Codex compatibility', 'wf-upda
 // OpenCode command parity
 requireText('.opencode/commands/wf-help.md', 'Do not invoke a skill', 'OpenCode wf-help direct command boundary');
 requireText('.opencode/commands/wf-update.md', 'Do not invoke a skill', 'OpenCode wf-update direct command boundary');
+for (const command of opencodeWorkflowCommands) {
+  requireText(`.opencode/commands/${command}.md`, 'workflow command', `OpenCode ${command} workflow command classification`);
+  requireText(`.opencode/commands/${command}.md`, `.claude/skills/${command}/SKILL.md`, `OpenCode ${command} wrapper skill routing`);
+  requireText(`.opencode/commands/${command}.md`, 'Harness/MEMORY.md', `OpenCode ${command} wrapper router load`);
+}
+
+// wf-max adapter must stay tier-aware, not the old unconditional contract
+forbidText('.claude/skills/wf-max/SKILL.md', 'every WF role, gate, and acceptance rule still', 'old wf-max unconditional role/gate inheritance');
+forbidText('.claude/skills/wf-max/SKILL.md', 'Final acceptance requires verifier evidence, cross-review, and reflector PASS', 'old wf-max unconditional final acceptance');
+requireText('.claude/skills/wf-max/SKILL.md', 'Final acceptance is tier-aware', 'wf-max tier-aware final acceptance');
 
 // New small-fast agents
 requireText('.claude/agents/task-scribe.md', 'model: haiku', 'task-scribe must use haiku model');

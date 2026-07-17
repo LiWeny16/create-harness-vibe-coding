@@ -21,6 +21,13 @@ alwaysApply: true
 - Bug fix: reproduction first.
 - Before release, add CI for the chosen stack and run the full verification path.
 
+## Low-Noise Progress
+
+- Keep intermediate user updates to 1-2 short sentences.
+- Do not recap plans, paste logs, or narrate obvious file reads while working.
+- Put the detailed summary in the final response: files changed, verification, risks, and commit hash when relevant.
+- During long-running work, report only phase changes, blockers, failed commands, or user decisions needed.
+
 ## Subagents
 
 - Use `Harness/subagents.md` before orchestrating multiple agents.

@@ -227,6 +227,14 @@ test('generated scaffold stores harness-owned payload under root Harness directo
     'opencode.json',
     '.opencode/commands/wf-help.md',
     '.opencode/commands/wf-update.md',
+    '.opencode/commands/wf.md',
+    '.opencode/commands/wf-max.md',
+    '.opencode/commands/wf-auto.md',
+    '.opencode/commands/wf-auto-spark.md',
+    '.opencode/commands/wf-learn.md',
+    '.opencode/commands/wf-review.md',
+    '.opencode/commands/wf-readme.md',
+    '.opencode/commands/wf-remove.md',
     '.claude/commands/wf-help.md',
     '.claude/commands/wf-update.md',
     '.opencode/agents/researcher.md',
@@ -251,6 +259,7 @@ test('generated scaffold stores harness-owned payload under root Harness directo
   }
   assert.equal(fs.existsSync(path.join(targetDir, '.claude', 'skills', 'wf-browser', 'SKILL.md')), false);
   assert.equal(fs.existsSync(path.join(targetDir, '.agents', 'skills', 'wf-browser', 'SKILL.md')), false);
+  assert.equal(fs.existsSync(path.join(targetDir, '.opencode', 'commands', 'wf-browser.md')), false);
 
   assert.equal(fs.existsSync(path.join(targetDir, 'SETUP.md')), false);
   assert.equal(fs.existsSync(path.join(targetDir, 'MEMORY.md')), false);
@@ -269,6 +278,8 @@ test('generated scaffold stores harness-owned payload under root Harness directo
   assert.match(claude, /## 3\. Simplicity First/);
   assert.match(claude, /## 4\. Surgical Changes/);
   assert.match(claude, /## 5\. Goal-Driven Execution/);
+  assert.match(claude, /## 5a\. Low-Noise Progress/);
+  assert.match(claude, /Keep intermediate user updates to 1-2 short sentences/);
   assert.ok(claude.split(/\r?\n/).length <= 200);
   assert.match(claude, /No features beyond what was asked/);
   assert.match(claude, /No unrequested flexibility/);
@@ -276,6 +287,10 @@ test('generated scaffold stores harness-owned payload under root Harness directo
   assert.match(claude, /every changed line traceable to the user's request/);
   assert.match(claude, /verifiable success criteria/);
   assert.doesNotMatch(claude, /docs\/README\.md/);
+
+  const eccCommon = readRel(targetDir, '.claude/rules/ecc/common.md');
+  assert.match(eccCommon, /## Low-Noise Progress/);
+  assert.match(eccCommon, /Do not recap plans, paste logs, or narrate obvious file reads/);
 
   const rootReadme = readRel(targetDir, 'README.md');
   assert.match(rootReadme, /Development Commands/);
@@ -287,6 +302,8 @@ test('generated scaffold stores harness-owned payload under root Harness directo
   assert.match(rootReadme, /\.agents\/skills/);
   assert.match(rootReadme, /\.codex/);
   assert.doesNotMatch(rootReadme, /commands\/wf\.toml/);
+  assert.doesNotMatch(rootReadme, /long, difficult, multi-agent work/);
+  assert.match(rootReadme, /explicitly invokes a WF command/);
 
   const wfHelp = readRel(targetDir, '.claude/commands/wf-help.md');
   assert.match(wfHelp, /# \/wf-help/);
@@ -317,7 +334,8 @@ test('generated scaffold stores harness-owned payload under root Harness directo
 
   const wfMax = readRel(targetDir, 'Harness/WF-MAX.md');
   assert.match(wfMax, /CEO may NOT proceed to W2 implementation dispatch with a failing gate/);
-  assert.match(wfMax, /strict superset/);
+  assert.match(wfMax, /parallelism superset/);
+  assert.doesNotMatch(wfMax, /strict superset/);
   assert.match(wfMax, /cross-CLI overflow/i);
   assert.match(wfMax, /claude -p/);
   assert.match(wfMax, /codex exec/);
@@ -364,6 +382,26 @@ test('generated scaffold stores harness-owned payload under root Harness directo
   const opencodeWfHelp = readRel(targetDir, '.opencode/commands/wf-help.md');
   assert.match(opencodeWfHelp, /description:/);
   assert.match(opencodeWfHelp, /\/wf-help/);
+  assert.match(opencodeWfHelp, /\.opencode\/commands\//);
+
+  const opencodeWfCommand = readRel(targetDir, '.opencode/commands/wf.md');
+  assert.match(opencodeWfCommand, /description:/);
+  assert.match(opencodeWfCommand, /workflow command/);
+  assert.match(opencodeWfCommand, /Harness\/MEMORY\.md/);
+  assert.match(opencodeWfCommand, /\.claude\/skills\/wf\/SKILL\.md/);
+
+  const opencodeWfMaxCommand = readRel(targetDir, '.opencode/commands/wf-max.md');
+  assert.match(opencodeWfMaxCommand, /workflow command/);
+  assert.match(opencodeWfMaxCommand, /\.claude\/skills\/wf-max\/SKILL\.md/);
+
+  const wfMaxSkill = readRel(targetDir, '.claude/skills/wf-max/SKILL.md');
+  assert.match(wfMaxSkill, /inherits the selected WF tier/);
+  assert.match(wfMaxSkill, /Final acceptance is tier-aware/);
+  assert.match(wfMaxSkill, /D-GATE is mandatory before implementation waves/);
+  assert.match(wfMaxSkill, /never edits production source/);
+  assert.doesNotMatch(wfMaxSkill, /every WF role, gate, and acceptance rule still/);
+  assert.doesNotMatch(wfMaxSkill, /Final acceptance requires verifier evidence, cross-review, and reflector PASS/);
+  assert.equal(readRel(targetDir, '.agents/skills/wf-max/SKILL.md'), wfMaxSkill);
 
   const wfAuto = readRel(targetDir, 'Harness/WF-AUTO.md');
   assert.match(wfAuto, /Inherited WF\/WF-MAX Constraints/);
@@ -810,6 +848,9 @@ test('generated optional workflows are registered under Harness workflows', () =
   assert.match(harnessReadme, /\]\(workflows\/browser-e2e\.md\)/);
   assert.match(harnessReadme, /\/wf-browser/);
   assert.match(wfHelp, /\/wf-browser/);
+  const opencodeWfBrowser = readRel(targetDir, '.opencode/commands/wf-browser.md');
+  assert.match(opencodeWfBrowser, /workflow command/);
+  assert.match(opencodeWfBrowser, /\.claude\/skills\/wf-browser\/SKILL\.md/);
   assert.match(memoryIndex, /workflows\/browser-e2e\.md/);
   assert.match(browserSkill, /Harness\/workflows\/browser-e2e\.md/);
   assert.equal(browserCodexSkill, browserSkill);

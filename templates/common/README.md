@@ -37,7 +37,7 @@ The agentic engineering harness lives in `Harness/`.
 - Start at `Harness/README.md`.
 - Load memory and resource registrations from `Harness/MEMORY.md`.
 - Track active work in `Harness/PROGRESS.md` and `Harness/tasks/<task-id>/PROGRESS.md`.
-- Use `Harness/WF.md` for long, difficult, multi-agent work.
+- Use `Harness/WF.md` only when the user explicitly invokes a WF command such as `/wf` or `/wf-max`; complex work may still use direct planning, tests, and subagents without entering WF.
   - Claude Code: invoke the `wf` skill with `/wf`.
   - Codex: invoke the `wf` skill with `$wf` or `/skills`.
 - Use `Harness/subagents.md` when coordinating multiple agents.

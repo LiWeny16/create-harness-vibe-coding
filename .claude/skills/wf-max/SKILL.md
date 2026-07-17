@@ -31,8 +31,10 @@ routes and summarizes hard constraints.
 
 ## Rules
 
-WF-MAX is a WF strict superset: every WF role, gate, and acceptance rule still
-applies, then execution expands through:
+WF-MAX inherits the selected WF tier and the shared WF-KERNEL gates
+(`Harness/WF-KERNEL.md`), then expands safe parallelism. WF-Max-Useful is
+default; WF-Max-Strict only on explicit strict request. Execution expands
+through:
 
 1. Global mode: `wf-max`
 2. Agent role: `ceo | manager | worker | reviewer | verifier | reflector`
@@ -50,7 +52,11 @@ WF-Max-Strict (explicit override): user says `--strict`, `strict wf-max`, or
 - Managers coordinate and synthesize. Reviewers read/report only.
 - D-GATE is mandatory before implementation waves: dispatch table, AC IDs,
   disjoint file claims, self-audit, and reviewer plan.
-- Final acceptance requires verifier evidence, cross-review, and reflector PASS.
+- Final acceptance is tier-aware per `Harness/WF-KERNEL.md`:
+  - WF-Light + `/wf-max`: verification + state evidence suffices unless risk
+    triggers review/reflector.
+  - WF-Standard + `/wf-max`: verifier evidence + one independent review PASS.
+  - WF-Full or risk-triggered `/wf-max`: cross-review PASS + reflector PASS.
 
 ## Fan-Out Discipline
 

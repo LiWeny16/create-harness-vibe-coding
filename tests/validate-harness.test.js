@@ -198,6 +198,24 @@ test('validation fails when compact task record guidance is removed', () => {
   assert.match(output, /Harness\/tasks\/_template\/PLAN\.md missing compact task PLAN template/);
 });
 
+test('validation fails when low-noise progress guidance is removed', () => {
+  const targetDir = generateProject();
+  writeRel(
+    targetDir,
+    'CLAUDE.md',
+    readRel(targetDir, 'CLAUDE.md').replace('## 5a. Low-Noise Progress', '## 5a. Verbose Progress'),
+  );
+
+  const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
+    cwd: targetDir,
+    encoding: 'utf8',
+  });
+  const output = `${result.stdout}\n${result.stderr}`;
+
+  assert.notEqual(result.status, 0);
+  assert.match(output, /CLAUDE\.md missing low-noise progress section/);
+});
+
 test('validation fails when optional web workflows lose stable selector requirements', () => {
   const targetDir = generateProject({ withOptions: ['browser-e2e,ts-react-frontend'] });
   writeRel(
@@ -435,6 +453,36 @@ test('validation fails when CLAUDE.md routes installed projects back to Harness/
 
   assert.notEqual(result.status, 0);
   assert.match(output, /installed-project SETUP hot-path routing/);
+});
+
+test('validation fails when an OpenCode workflow command wrapper is missing', () => {
+  const targetDir = generateProject();
+  fs.rmSync(path.join(targetDir, '.opencode', 'commands', 'wf-max.md'), { force: true });
+
+  const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
+    cwd: targetDir,
+    encoding: 'utf8',
+  });
+  const output = `${result.stdout}\n${result.stderr}`;
+
+  assert.notEqual(result.status, 0);
+  assert.match(output, /missing required file: \.opencode\/commands\/wf-max\.md/);
+});
+
+test('validation fails when old unconditional wf-max acceptance wording returns to the skill adapter', () => {
+  const targetDir = generateProject();
+  const body = `${readRel(targetDir, '.claude/skills/wf-max/SKILL.md')}\n- Final acceptance requires verifier evidence, cross-review, and reflector PASS.\n`;
+  writeRel(targetDir, '.claude/skills/wf-max/SKILL.md', body);
+  writeRel(targetDir, '.agents/skills/wf-max/SKILL.md', body);
+
+  const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
+    cwd: targetDir,
+    encoding: 'utf8',
+  });
+  const output = `${result.stdout}\n${result.stderr}`;
+
+  assert.notEqual(result.status, 0);
+  assert.match(output, /old wf-max unconditional final acceptance/);
 });
 
 test('strict validation fails when Harness/tasks exceeds the outer task capsule cap', () => {

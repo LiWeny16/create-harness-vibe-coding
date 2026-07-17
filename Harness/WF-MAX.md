@@ -1,6 +1,6 @@
 # WF-MAX — Maximum Safe Parallelism
 
-`/wf-max` = `/wf` kernel + maximum safe fan-out. It is NOT a separate workflow. It is a strict superset of `/wf` and inherits the full [WF-KERNEL.md](WF-KERNEL.md) orchestration engine and [WF.md](WF.md) tier contract, then expands execution through a three-layer architecture (CEO → Manager → Worker) with dispatch permissions (writeSet, forbidden, verification). Global mode != every agent is CEO.
+`/wf-max` = `/wf` kernel + maximum safe fan-out. It is NOT a separate workflow. It is a parallelism superset of `/wf` and inherits the full [WF-KERNEL.md](WF-KERNEL.md) orchestration engine and [WF.md](WF.md) tier contract, then expands execution through a three-layer architecture (CEO → Manager → Worker) with dispatch permissions (writeSet, forbidden, verification). Global mode != every agent is CEO.
 
 WF-MAX is **explicit only**. Enter ONLY when the user explicitly types `/wf-max`, `$wf-max`, or `/skills wf-max`.
 

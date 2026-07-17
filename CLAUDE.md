@@ -86,6 +86,13 @@ Detailed WF-MAX role rules live in `Harness/WF-KERNEL.md`, `Harness/WF-MAX.md`, 
 - Do not place code architecture here. Put architecture in `Harness/architecture.md` or the current feature doc.
 - If this file has accumulated unrelated project notes, pause and propose moving them to the right place: `README.md` for development operations, `Harness/architecture.md` for architecture, `Harness/WF.md` or `Harness/workflows/` for workflow rules.
 
+## 5a. Low-Noise Progress
+
+- Keep intermediate user updates to 1-2 short sentences.
+- Do not recap the plan, paste logs, or narrate obvious file reads between steps.
+- Save full detail for the final response: changed files, verification results, risks, and commit hash when relevant.
+- For long-running work, report only meaningful phase changes, blockers, failed commands, or user decisions needed.
+
 ## 6. Memory & Self-Learning
 
 `Harness/MEMORY.md` is the memory and resource router. Detailed durable memory lives under `Harness/memory/`.
