@@ -27,8 +27,8 @@ Mode differences are organizational only:
 
 | Mode | Organization | Same Acceptance Flow |
 | --- | --- | --- |
-| `/wf` / `$wf` | Complete role chain | yes |
-| `/wf-max` / `$wf-max` | Complete role chain plus CEO -> Manager -> Worker fan-out | yes |
+| `/wf` / `$wf` | WF-KERNEL tier selection (WF-Light / WF-Standard / WF-Full); WF-Full uses the complete role chain | yes |
+| `/wf-max` / `$wf-max` | WF kernel plus CEO -> Manager -> Worker fan-out; WF-Max-Useful by default, WF-Max-Strict only on explicit strict request | yes |
 | `/wf-auto` / `$wf-auto` | Repeating optimization loop | yes, per cycle |
 
 ## Gates

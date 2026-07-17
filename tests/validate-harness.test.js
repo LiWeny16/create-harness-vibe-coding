@@ -167,7 +167,7 @@ test('validation fails when WF complete role chain contract is removed', () => {
   writeRel(
     targetDir,
     'Harness/WF.md',
-    readRel(targetDir, 'Harness/WF.md').replace('WF mode requires the complete role chain by default', 'WF mode may use one or more passes'),
+    readRel(targetDir, 'Harness/WF.md').replace('Orchestration Loop', 'WF mode may use one or more passes'),
   );
 
   const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
@@ -177,7 +177,7 @@ test('validation fails when WF complete role chain contract is removed', () => {
   const output = `${result.stdout}\n${result.stderr}`;
 
   assert.notEqual(result.status, 0);
-  assert.match(output, /Harness\/WF\.md missing WF complete role chain default/);
+  assert.match(output, /Harness\/WF\.md missing WF orchestration loop/);
 });
 
 test('validation fails when compact task record guidance is removed', () => {
@@ -375,4 +375,90 @@ test('validation passes when WF-AUTO-SPARK.md uses non-fixed-count spark search'
   const wfAutoSpark = readRel(targetDir, 'Harness/WF-AUTO-SPARK.md');
   assert.doesNotMatch(wfAutoSpark, /8 parallel external searches/);
   assert.match(wfAutoSpark, /parallel external searches/);
+});
+
+test('validation fails when old default complete-role-chain contract returns to a hot-path doc', () => {
+  const targetDir = generateProject();
+  writeRel(
+    targetDir,
+    'Harness/dispatch.md',
+    `${readRel(targetDir, 'Harness/dispatch.md')}\n- /wf requires the complete role chain by default.\n`,
+  );
+
+  const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
+    cwd: targetDir,
+    encoding: 'utf8',
+  });
+  const output = `${result.stdout}\n${result.stderr}`;
+
+  assert.notEqual(result.status, 0);
+  assert.match(output, /old \/wf default complete-role-chain contract/);
+});
+
+test('validation fails when old unconditional wf-max fan-out contract returns to a hot-path doc', () => {
+  const targetDir = generateProject();
+  writeRel(
+    targetDir,
+    'Harness/WF-AUTO.md',
+    readRel(targetDir, 'Harness/WF-AUTO.md').replace(
+      'does not inherit WF-MAX fan-out modes (Useful or Strict)',
+      'does not inherit WF-MAX mandatory maximum fan-out',
+    ),
+  );
+
+  const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
+    cwd: targetDir,
+    encoding: 'utf8',
+  });
+  const output = `${result.stdout}\n${result.stderr}`;
+
+  assert.notEqual(result.status, 0);
+  assert.match(output, /old \/wf-max unconditional fan-out contract/);
+});
+
+test('validation fails when CLAUDE.md routes installed projects back to Harness/SETUP.md', () => {
+  const targetDir = generateProject();
+  writeRel(
+    targetDir,
+    'CLAUDE.md',
+    readRel(targetDir, 'CLAUDE.md').replace(
+      '`Harness/SETUP.md` is a bootstrap-only document',
+      'If `Harness/SETUP.md` exists, follow it before normal project work; it is `Harness/SETUP.md` is a bootstrap-only document',
+    ),
+  );
+
+  const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
+    cwd: targetDir,
+    encoding: 'utf8',
+  });
+  const output = `${result.stdout}\n${result.stderr}`;
+
+  assert.notEqual(result.status, 0);
+  assert.match(output, /installed-project SETUP hot-path routing/);
+});
+
+test('strict validation fails when Harness/tasks exceeds the outer task capsule cap', () => {
+  const targetDir = generateProject();
+  writeResolvedProjectFacts(targetDir);
+  for (let i = 1; i <= 6; i += 1) {
+    const dir = path.join(targetDir, 'Harness', 'tasks', `task-test-capsule-${i}`);
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, 'PROGRESS.md'), '# PROGRESS\n\n## Phase\n\nCurrent: Build\n', 'utf8');
+  }
+
+  const strictResult = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs', '--strict'], {
+    cwd: targetDir,
+    encoding: 'utf8',
+  });
+  const strictOutput = `${strictResult.stdout}\n${strictResult.stderr}`;
+  assert.notEqual(strictResult.status, 0);
+  assert.match(strictOutput, /outer task capsules \(cap 5\)/);
+
+  const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
+    cwd: targetDir,
+    encoding: 'utf8',
+  });
+  const output = `${result.stdout}\n${result.stderr}`;
+  assert.equal(result.status, 0);
+  assert.match(output, /outer task capsules \(cap 5\)/);
 });

@@ -1,6 +1,6 @@
 # MEMORY.md - create-harness-vibe-coding Project Resource Index
 
-> The project fact source is reached via `CLAUDE.md -> Harness/README.md`. This file persists cross-session context: resource index, user preferences, tool usage standards.
+> `CLAUDE.md` is the session entry router; `Harness/README.md` is the Harness documentation index. This file persists cross-session context: resource index, user preferences, tool usage standards.
 > Detailed memory lives in `Harness/memory/`. Keep entries short, newest first, and free of secrets.
 
 ## Agents (Sub-agents)
@@ -16,6 +16,8 @@
 - [reviewer](../.claude/agents/reviewer.md) - read-only spec/AC and code/architecture/test review.
 - [verifier](../.claude/agents/verifier.md) - verification commands and AC evidence matrix.
 - [reflector](../.claude/agents/reflector.md) - closeout synthesis, contradiction check, and final acceptance gate verdict.
+- [task-scribe](../.claude/agents/task-scribe.md) - task state, heartbeat, dispatch ledger, evidence pointers — small-fast chore agent.
+- [codebase-explorer](../.claude/agents/codebase-explorer.md) - scoped read-only source exploration, file discovery, symbol tracing — small-fast.
 - [memory-master](../.claude/agents/memory-master.md) - memory writing, dedup, consolidation, and cross-project knowledge extraction.
 - [context-master](../.claude/agents/context-master.md) - context analysis, compression alerts, and session knowledge extraction for memory-master.
 - [explore-manager](../.claude/agents/explore-manager.md) - WF-MAX W0 exploration: spawn 5-10 read-only researchers, synthesize, report to CEO.
@@ -27,14 +29,14 @@ Stack-specific agents can be added after the product shape is known.
 
 ## Skills (Workflows)
 
-- [WF Mode](WF.md) - complete role chain: plan, research/docs, architecture, test, implement, validation, cross-review, reflector, acceptance.
+- [WF Mode](WF.md) - WF-KERNEL tiered orchestration: WF-Light (minimal roles), WF-Standard (adds review), WF-Full (complete role chain incl. reflector and cross-review).
 - [wf](../.claude/skills/wf/SKILL.md) - Claude Code WF skill command; mirrored for Codex at `../.agents/skills/wf/SKILL.md`.
 - [subagent-orchestrator](../.claude/skills/subagent-orchestrator/SKILL.md) - controller-led subagent orchestration, parallel read-only passes, review gates, and recovery handoffs.
 - [wf-readme](../.claude/skills/wf-readme/SKILL.md) - README preservation, append-only development sections, structured tables, and approved architecture diagrams.
 - [wf-review](../.claude/skills/wf-review/SKILL.md) - cross-model peer review: invoke the other agent CLI (Codex/Claude) for independent review.
 - [wf-update](../.claude/skills/wf-update/SKILL.md) - GitHub-based incremental harness update, checksum comparison, and safe in-place updates.
 - [wf-learn](../.claude/skills/wf-learn/SKILL.md) - force memory learning cycle: context-master -> memory-master -> project + global memory.
-- [wf-max](../.claude/skills/wf-max/SKILL.md) - WF strict superset: complete role chain plus maximum parallelism, current runtime subagents first, cross-CLI overflow when available.
+- [wf-max](../.claude/skills/wf-max/SKILL.md) - WF kernel + maximum safe fan-out: WF-Max-Useful by default (fan out only where independent), WF-Max-Strict only on explicit strict request; current runtime subagents first, cross-CLI overflow when available.
 - [wf-auto](../.claude/skills/wf-auto/SKILL.md) - perpetual adaptive auto-optimization: evidence-selected probes, dynamic obligations, intent checkpoints, evidence ledger.
 - [wf-auto-spark](../.claude/skills/wf-auto-spark/SKILL.md) - perpetual inspiration mode: external spark search, long-term roadmap with staged milestones, <=50% deviation guard.
 - [tdd](../.claude/skills/tdd/SKILL.md) - acceptance-driven TDD: AC-linked RED tests, real UI clicks for browser-visible behavior, Playwright/CDP evidence, and configured coverage gate.
@@ -47,6 +49,8 @@ Codex repo-skill mirrors live under `../.agents/skills/` with the same skill nam
 - [wf-help](../.claude/commands/wf-help.md) - direct `/wf-help` command that returns a WF command table without invoking a skill.
 
 Stack-specific skills can be added after the product shape is known.
+
+- [browser-e2e](workflows/browser-e2e.md)
 
 ## Rules (Harness Constraints)
 
@@ -65,6 +69,9 @@ Located under `.claude/rules/ecc/`, auto-loaded by the CC engine:
 - [Memory protocol](MEMORY_PROTOCOL.md)
 - [WF mode](WF.md)
 - [WF Max mode](WF-MAX.md)
+- [WF kernel contract](WF-KERNEL.md)
+- [WF state machine / resume](WF-STATE.md)
+- [Task archive mechanism](TASK_ARCHIVE.md)
 - [0-1 lifecycle](lifecycle.md)
 - [Research protocol](research/README.md)
 - [Context loading protocol](context-loading.md)

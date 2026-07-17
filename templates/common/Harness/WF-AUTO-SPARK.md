@@ -18,20 +18,9 @@ But perpetual search without direction = drift. The **Roadmap** is the anchor.
 
 ## Inherited Execution Chain
 
-WF-AUTO-SPARK inherits WF-AUTO and WF constraints. External spark search replaces discovery only; it does not replace acceptance, implementation, review, verification, reflection, or evidence.
+WF-AUTO-SPARK is a `/wf` variant layered on WF-AUTO: it inherits the WF-KERNEL contract via WF-AUTO and WF constraints, and does not define an independent heavy process. External spark search replaces discovery only; it does not replace acceptance, implementation, review, verification, reflection, or evidence.
 
-Every accepted spark candidate must re-enter the same per-cycle chain:
-
-```text
-spark search -> Value Gate -> deviation check -> Mini PRD -> AC IDs
--> test/validation plan -> implementer -> verifier -> cross-review
--> reflector PASS -> evidence ledger -> next spark cycle
-```
-
-Spark searchers are read-only. Any implementation must use the dispatch packet
-from `Harness/dispatch.md` with explicit write set, forbidden truth files, AC
-IDs, and verification commands. A candidate with no verifier evidence or no
-reflector PASS is not accepted, even if the idea is valuable.
+Accepted spark candidates re-enter the standard W2-W5 gates per [WF-KERNEL.md](WF-KERNEL.md): implementer (one file_claim, ≤3 files, ≤50 lines), verifier, reviewer(s), reflector. Spark searchers are read-only. Any implementation must use the dispatch packet from `Harness/dispatch.md` with explicit write set, forbidden truth files, AC IDs, and verification commands. A candidate with no verifier evidence or no reflector PASS is not accepted, even if the idea is valuable.
 
 ## Startup: Roadmap Declaration
 

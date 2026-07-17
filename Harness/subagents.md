@@ -2,7 +2,7 @@
 
 Purpose: coordinate subagents for speed without losing control of scope, evidence, or integration.
 
-Use this file when work needs multiple roles, parallel reading, independent review, broad context, repeated failures, or `/wf`.
+Use this file when work needs multiple roles, parallel reading, independent review, broad context, repeated failures, or explicit `/wf` / `/wf-max` invocation.
 
 project files are the only durable communication channel; chat/subagent transcript state is non-authoritative. Important assumptions, decisions, blockers, evidence, and handoffs must be written to `Harness/tasks/<task-id>/PROGRESS.md` and `Harness/tasks/<task-id>/PLAN.md`, the current feature doc, `Harness/MEMORY.md`, or `Harness/memory/*` as appropriate.
 
@@ -43,20 +43,22 @@ Subagents provide bounded work. They do not own final scope, architecture, relea
 
 Use the installed roster under `.claude/agents/` before inventing ad hoc roles.
 
-| Agent | Default Use |
-| --- | --- |
-| `planner` | decompose goals, map unknowns, define success criteria and write sets |
-| `researcher` | local/external ecosystem context, comparable projects, current facts |
-| `docs-researcher` | official docs, SDK/API behavior, browser/tool constraints |
-| `architect` | boundaries, interface decoupling, state ownership, data flow, migration risk |
-| `test-writer` | failing tests, manual check contracts, browser/API evidence plan |
-| `implementer` | bounded code or doc changes after the second plan |
-| `reviewer` | spec compliance, code quality, maintainability, security, missing tests |
-| `debugger` | reproduced failures, root cause isolation, smallest safe fix |
-| `verifier` | command execution, real browser/API checks, final evidence |
-| `reflector` | closeout synthesis, unresolved-risk check, acceptance gate verdict |
-| `memory-master` | write/consolidate memory entries, dedup, cross-project extraction; dispatched on repeated failures, user corrections, and WF closeout |
-| `context-master` | analyze context usage, recommend compression at ~85% window, extract durable session knowledge during closeout |
+| Agent | Default Use | Model Tier |
+| --- | --- | --- |
+| `planner` | decompose goals, map unknowns, define success criteria and write sets | standard |
+| `researcher` | local/external ecosystem context, comparable projects, current facts | standard |
+| `docs-researcher` | official docs, SDK/API behavior, browser/tool constraints | standard |
+| `architect` | boundaries, interface decoupling, state ownership, data flow, migration risk | standard |
+| `test-writer` | failing tests, manual check contracts, browser/API evidence plan | standard |
+| `implementer` | bounded code or doc changes after the second plan | standard |
+| `reviewer` | spec compliance, code quality, maintainability, security, missing tests | standard |
+| `debugger` | reproduced failures, root cause isolation, smallest safe fix | standard |
+| `verifier` | command execution, real browser/API checks, final evidence | standard or small-fast |
+| `reflector` | closeout synthesis, unresolved-risk check, acceptance gate verdict | standard |
+| `task-scribe` | task state, heartbeat, dispatch ledger, evidence pointers — NEVER source code | small-fast (haiku) |
+| `codebase-explorer` | scoped read-only source exploration, file discovery, symbol tracing | small-fast (haiku) |
+| `context-master` | analyze context usage, recommend compression at ~85% window, extract durable session knowledge during closeout | small-fast (haiku) |
+| `memory-master` | write/consolidate memory entries, dedup, cross-project extraction; dispatched on repeated failures, user corrections, and WF closeout | standard |
 
 ## Acceptance Role Passes
 
@@ -80,8 +82,10 @@ Hard rule: implementer may not be the independent validator for the same AC ID.
 
 ## WF Default Fan-Out
 
-Explicit `/wf`, `wf mode`, `workflow mode`, or `wk mode` requires complete
-role-chain coverage from `.claude/agents/` before closeout: plan,
+Explicit `/wf`, `$wf`, or `/skills wf` requires tier-specific role coverage per `Harness/WF.md`.
+WF-Light: planner + test-writer + implementer + verifier.
+WF-Standard: adds research/docs + one review lens.
+WF-Full: complete role-chain coverage from `.claude/agents/` before closeout: plan,
 research/docs research as needed, architecture, test, implement, independent
 validation, cross-review, reflector, and accept.
 
@@ -102,7 +106,7 @@ Then add phase-specific agents:
 - `context-master` before closeout for knowledge extraction
 - `memory-master` after repeated failures and during closeout for consolidation
 
-Collaboration mode is determined by concrete conditions, not a fixed ratio. See `Harness/WF.md#Complete Role Chain Requirement` for the full decision tree. Summary: explicit WF/WK mode always uses the complete role chain. 3+ files or cross-layer work uses multi-agent orchestration. 1-2 local files, well-understood, not in WF mode can be solo. Repeated failure stops solo work and switches to multi-agent.
+Collaboration mode is determined by WF tier and concrete conditions, not a fixed ratio. See `Harness/WF.md` for the tier decision guide. Summary: WF-Light uses minimal roles. WF-Standard uses moderate roles with one review lens. WF-Full always uses the complete role chain. Non-WF complex work may still use subagents and planning without entering any WF mode. Repeated failure after two attempts escalates to next tier.
 
 ## Efficiency Ladder
 
@@ -115,7 +119,7 @@ Choose the cheapest coordination level that is safe.
 | Parallel read-only | broad reading, research, architecture, multiple independent failures | 2-3 read-only agents |
 | Serial build lane | normal feature or fix | acceptance/contract -> test-writer -> implementer -> verifier evidence -> cross-review -> reflector -> acceptance |
 | Isolated lanes | disjoint write sets or competing approaches | separate worktrees, then review and merge |
-| Max parallelism | 5+ disjoint files, fan-out benefit > coordination cost | /wf max: write-set coloring -> wave dispatch -> parallel review |
+| Max parallelism | 5+ disjoint files, fan-out benefit > coordination cost | /wf-max: write-set coloring -> wave dispatch -> parallel review |
 
 Max parallelism removes the Harness default cap, not the runtime's physical or
 account cap. For WF-MAX, record the current runtime budget, use native
@@ -127,10 +131,7 @@ bottleneck, ask the user before raising `agents.max_threads` and keep
 `max_depth = 1` unless recursive delegation is explicitly approved. Do not rely
 on undocumented fork/derive bypasses as stable capacity.
 
-Default for automatic WF triggers: 3-5 active read-only agents before second
-planning. For explicit WF/WK mode, never use the solo pass; schedule the
-complete role chain and use bounded role passes as the recorded fallback when
-subagents are unavailable.
+Default for explicit WF invocation: tier-based. WF-Light: planner + test-writer + implementer + verifier (bounded passes acceptable). WF-Standard: adds research/docs + one independent review lens. WF-Full: complete role chain, use bounded role passes as the recorded fallback when subagents are unavailable.
 
 ## WF Orchestration Shape
 
@@ -148,10 +149,10 @@ controller intake
 -> close with evidence
 ```
 
-Use this shape for `/wf`, long tasks, multi-file changes, architecture work, migrations, browser/API behavior, or repeated failures.
+Use this shape for explicit `/wf`, `/wf-max`, or non-WF complex work with subagents.
 
 ```text
-/wf max orchestration shape:
+/wf-max orchestration shape:
 controller intake
 -> wave 0: max-parallel exploration (4-14 read-only agents)
 -> E-GATE: Exploration Gate - all questions answered, findings synthesized (per WF-MAX.md)
@@ -167,14 +168,14 @@ controller intake
 
 ## Dispatch Pack
 
-Use the canonical dispatch input and handoff format in `Harness/dispatch.md`. Every subagent dispatch must be self-contained - inject only the docs selected by `Harness/README.md` and `Harness/context-loading.md`.
+Use the canonical dispatch input and handoff format in `Harness/dispatch.md`. Every subagent dispatch must be self-contained - inject only the docs selected by `Harness/README.md` and `Harness/context-loading.md`. On session start, the controller reads `Harness/tasks/<task-id>/STATE.json` per [WF-STATE.md](WF-STATE.md) to resume the dispatch ledger and ready queue.
 
 ## Parallelism Rules
 
 - Read-only agents may run in parallel.
 - Writing agents run serially unless write sets are disjoint and the controller has chosen an isolated worktree.
 - Reviewers may run in parallel after implementation, but spec compliance is evaluated before code-quality approval.
-- Subagents are readers and reporters. They return findings and PLAN patch suggestions. Only the controller (main agent) commits state changes to task files.
+- Subagents are readers and reporters. They return findings and PLAN patch suggestions. Only the controller (main agent) or task-scribe commits state changes to task files. Production source agents (implementer, debugger, test-writer) never write task state unless explicitly dispatched as task-scribe.
 - Do not let two agents edit `Harness/tasks/<task-id>/PROGRESS.md`, `Harness/tasks/<task-id>/PLAN.md`, `Harness/MEMORY.md`, or `Harness/memory/*` concurrently. The controller writes durable state.
 - If two agents disagree, the controller records the conflict in `Harness/tasks/<task-id>/PLAN.md` and chooses the smallest reversible next step.
 

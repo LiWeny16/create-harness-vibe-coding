@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-wf-ux-compatibility",
+  "status": "complete",
+  "mode": "direct",
+  "tier": "none",
+  "phase": "verified",
+  "gate": null,
+  "updatedAt": "2026-07-17T02:25:07.000Z",
+  "activeQuestion": null,
+  "nextAction": "All acceptance checks passed; ready to commit.",
+  "acceptance": [
+    "npm test passes all tests",
+    "validate-harness.mjs passes",
+    "archive-tasks.mjs --dry-run --json works",
+    "WF-MAX.md contains D-GATE safety text",
+    "WF-STATE.md and TASK_ARCHIVE.md exist in root and templates/common",
+    "STATE.json template is valid JSON",
+    "CLAUDE.md has Active Task Resume rule",
+    "Harness/README.md has Resume Routing",
+    "WF-AUTO.md and WF-AUTO-SPARK.md reference WF-KERNEL"
+  ],
+  "queues": {
+    "ready": [],
+    "running": [],
+    "blocked": [],
+    "done": [
+      "WF-KERNEL.md shared orchestration engine + WF.md/WF-MAX.md thinning",
+      "task-scribe + codebase-explorer agents (haiku) with STATE.json scope",
+      "WF-STATE.md + STATE.json template + current task STATE.json",
+      "TASK_ARCHIVE.md + archive-tasks.mjs; old tasks archived to _archive/",
+      "CLAUDE.md Active Task Resume + Harness/README.md Resume Routing",
+      "WF-AUTO/WF-AUTO-SPARK thinned to reference WF-KERNEL",
+      "D-GATE safety text restored in WF-MAX.md; tests fixed",
+      "Root Harness/SETUP.md removed from startup path (template copy kept)",
+      "Full verification: git diff --check, validate-harness (+strict), npm test, pack:smoke, build:version, archive dry-run"
+    ]
+  },
+  "dispatchLedger": [
+    {
+      "id": "audit-001",
+      "agent": "state-resume-auditor",
+      "role": "codebase-explorer",
+      "status": "done",
+      "evidence": "audit report returned"
+    },
+    {
+      "id": "audit-002",
+      "agent": "archive-design-auditor",
+      "role": "codebase-explorer",
+      "status": "done",
+      "evidence": "18 task dirs, 13 verified/closed, no archive dir yet"
+    },
+    {
+      "id": "audit-003",
+      "agent": "test-validator-auditor",
+      "role": "codebase-explorer",
+      "status": "done",
+      "evidence": "D-GATE text missing from WF-MAX.md, specific assertions listed"
+    },
+    {
+      "id": "audit-004",
+      "agent": "template-parity-auditor",
+      "role": "codebase-explorer",
+      "status": "done",
+      "evidence": "mirror mappings listed"
+    },
+    {
+      "id": "audit-005",
+      "agent": "auto-variant-auditor",
+      "role": "codebase-explorer",
+      "status": "done",
+      "evidence": "thinning plan for WF-AUTO/WF-AUTO-SPARK"
+    }
+  ],
+  "decisions": [
+    "WF-KERNEL.md already created in prior work",
+    "task-scribe and codebase-explorer already have haiku model",
+    "D-GATE fix: add safety text to WF-MAX.md, not revert to old long doc",
+    "STATE.json uses valid sample values instead of {{PLACEHOLDER}} to pass strict validator"
+  ],
+  "risks": [],
+  "artifacts": []
+}

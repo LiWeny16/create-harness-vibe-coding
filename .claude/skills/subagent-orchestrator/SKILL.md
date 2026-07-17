@@ -8,6 +8,12 @@ description: Use when work needs bounded subagent coordination, parallel read-on
 This skill is runtime-neutral. Claude Code and Codex expose different
 subagent surfaces; follow the same Harness role contract either way.
 
+## Memory Preflight
+
+1. Direct simple tasks and `/wf-help` are exempt.
+2. For non-direct work, load `CLAUDE.md`, `Harness/MEMORY.md` index only, then `Harness/README.md` before planning, dispatch, edits/deletes, validation, or peer review.
+3. Load `Harness/memory/*` only when `MEMORY_PROTOCOL.md` scenario hints match; otherwise record "memory hints: none".
+
 ## Load
 
 - `Harness/subagents.md`
@@ -16,7 +22,7 @@ subagent surfaces; follow the same Harness role contract either way.
 - `Harness/agent-workflow.md`
 - `Harness/PROGRESS.md`
 - Active `Harness/tasks/<task-id>/PROGRESS.md` and `PLAN.md`, when present
-- `Harness/WF.md` when in `/wf`, `wf mode`, `workflow mode`, or `wk mode`
+- `Harness/WF.md` when in explicit `/wf`, `$wf`, or `/skills wf`
 
 ## Runtime Mapping
 
@@ -36,9 +42,7 @@ subagent surfaces; follow the same Harness role contract either way.
   integrates returns, and owns final verification.
 - Subagents or bounded passes are readers and reporters unless a write set is
   explicitly assigned and disjoint.
-- Explicit WF/WK mode requires complete role-chain coverage from intake through
-  final acceptance: plan, research/docs research as needed, architecture, test,
-  implement, independent validation, cross-review, reflector, and accept.
+- Explicit WF/WF-MAX requires tier-specific role coverage per `Harness/WF.md`.
 - Every dispatch needs role, goal, mode, read set, write set, forbidden scope,
   injected docs, dependencies, evidence, stop condition, and return format.
 - Prefer parallel read-only exploration first. Serialize writers unless write

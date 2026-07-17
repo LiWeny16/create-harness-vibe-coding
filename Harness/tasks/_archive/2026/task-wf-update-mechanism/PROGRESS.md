@@ -6,7 +6,7 @@ Fix CRITICAL PLAN.md reference bugs + implement `/wf update` GitHub-based increm
 
 ## Phase
 
-Current: Build
+Current: Done (deliverables shipped: /wf-update command + skill + .harness-version live in repo; archived 2026-07-16)
 
 ## Heartbeat
 

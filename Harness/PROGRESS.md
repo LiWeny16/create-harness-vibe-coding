@@ -4,28 +4,16 @@ Global task index. Load at session start to see what is active and what was done
 
 ## Active Task
 
-- task-opencode-compatibility
+- none
 
 ## Task Index
 
+Non-archived tasks only (max 5). Archived tasks are listed in `Harness/tasks/_archive/INDEX.md` (see `Harness/TASK_ARCHIVE.md`).
+
 | ID | Goal | Phase | Closed |
 |----|------|-------|--------|
-| dogfood-bootstrap | Dogfood Harness scaffold into this repo | Verified | 2026-06-24 |
-| wf-conflict-fix | Fix WF-mode orphaned files, add memory/context masters | Verified | 2026-06-24 |
-| progress-restructure | Replace monolithic PLAN.md with PROGRESS.md + tasks/ capsules | Build | - |
-| wf-update-mechanism | Fix PLAN.md refs + implement /wf update | Build | - |
-| install-intake-improvements | Improve install intake, root scan, optional selections, and Codex support | Verified | 2026-07-01 |
-| install-flow-log-analysis | Analyze Codex install log and add script-first JSON install guidance | Verified | 2026-07-01 |
-| remove-flow-log-analysis | Analyze removal/update logs and add script-first cleanup/update guidance | Verified | 2026-07-01 |
-| framework-metrics-and-entry-contract | Define slim CLAUDE entry contract and HarnessBench v0.1 methodology | Ready | - |
-| task-acceptance-driven-workflow | Upgrade Harness to acceptance-driven agent workflow | Verified | 2026-07-02 |
-| task-remove-hook-docs | Remove WF hook enforcement artifacts and stale hook docs | Verified | 2026-07-02 |
-| task-add-wf-help | Add direct /wf-help command listing WF commands | Verified | 2026-07-02 |
-| task-wf-remove-residual-cleanup | Remove legacy Harness discovery leftovers during wf-remove | Verified | 2026-07-02 |
-| task-wf-update-finalize-cleanup | Make wf-update finalize safely and clean update residue like install/remove | Verified | 2026-07-03 |
-| task-install-update-switch | Auto-route existing Harness installs to update and fix optional command consistency | Build | - |
-| task-wf-full-role-chain | Make /wf use complete mandatory role chain with reflector and cross-review gate | Verified | 2026-07-03 |
-| task-opencode-compatibility | Add OpenCode as 3rd install target alongside CC and Codex | Verified | 2026-07-13 |
+| task-framework-metrics-and-entry-contract | Define slim CLAUDE entry contract and HarnessBench v0.1 methodology | Ready | - |
+| task-wf-ux-compatibility | Improve WF speed, explicit entry, command compatibility, AGENTS routing, memory preflight, WF-KERNEL, task-scribe, codebase-explorer, STATE/archive, WF-AUTO thinning | Verified | 2026-07-17 |
 
 ## Cross-Task Decisions
 

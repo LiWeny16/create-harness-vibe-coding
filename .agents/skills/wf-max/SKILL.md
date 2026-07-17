@@ -1,6 +1,6 @@
 ---
 name: wf-max
-description: Use for /wf-max in Claude Code, $wf-max or /skills wf-max in Codex, or maximum-parallelism Harness work with WF strict-superset gates and CEO -> manager -> worker decomposition.
+description: Use for /wf-max in Claude Code, $wf-max or /skills wf-max in Codex. WF-MAX is explicit only — the user must type /wf-max, $wf-max, or /skills wf-max.
 ---
 
 # WF-MAX Adapter
@@ -13,10 +13,16 @@ routes and summarizes hard constraints.
 - Claude Code: `/wf-max [task]`
 - Codex: `$wf-max` or `/skills` then choose `wf-max`
 
+## Memory Preflight
+
+1. Direct simple tasks and `/wf-help` are exempt.
+2. For non-direct work, load `CLAUDE.md`, `Harness/MEMORY.md` index only, then `Harness/README.md` before planning, dispatch, edits/deletes, validation, or peer review.
+3. Load `Harness/memory/*` only when `MEMORY_PROTOCOL.md` scenario hints match; otherwise record "memory hints: none".
+
 ## Load
 
 1. `CLAUDE.md`
-2. `Harness/MEMORY.md`
+2. `Harness/MEMORY.md` (index only per Memory Preflight)
 3. `Harness/README.md`
 4. `Harness/WF-MAX.md`
 5. `Harness/subagents.md`
@@ -31,6 +37,12 @@ applies, then execution expands through:
 1. Global mode: `wf-max`
 2. Agent role: `ceo | manager | worker | reviewer | verifier | reflector`
 3. Dispatch permission: `writeSet`, `forbidden`, `verification`
+
+WF-Max-Useful (default): `/wf-max` fans out only where write sets or review
+lenses are meaningfully independent. Overhead > 0.30 degrades the wave.
+
+WF-Max-Strict (explicit override): user says `--strict`, `strict wf-max`, or
+`strict mode`. Unconditional fan-out per the original span formula.
 
 - CEO reads, plans, dispatches, synthesizes, and writes task state only. CEO
   never edits production source.

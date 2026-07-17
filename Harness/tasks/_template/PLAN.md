@@ -35,6 +35,11 @@ Forbidden:
 -
 - Truth files (PRD, ACs, UI/API contracts, test plan, validation report) unless a Change Request is recorded.
 
+## Memory Preflight
+
+- Memory preflight: done | exempt | blocked
+- Memory hints: none | <file/path + reason>
+
 ## Context
 
 - Loaded:

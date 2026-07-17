@@ -7,7 +7,8 @@ alwaysApply: true
 
 ## Context
 
-- Start with `CLAUDE.md`, `Harness/MEMORY.md`, and `Harness/README.md`.
+- Start with `CLAUDE.md`. When the user invokes a `/wf-*` command or the task is inherently complex, also load `Harness/MEMORY.md` and `Harness/README.md`.
+- For simple single-step tasks without `/wf-*`, operate in direct mode: skip the Harness router and execute directly.
 - Do not bulk-read `Harness/`. Load by router trigger.
 - Keep `Harness/tasks/<task-id>/PROGRESS.md` and `Harness/tasks/<task-id>/PLAN.md` current when work has multiple steps, files, or agents.
 - project files are the only durable communication channel. chat/subagent transcript state is non-authoritative.

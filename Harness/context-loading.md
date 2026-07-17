@@ -4,7 +4,7 @@ Use when context is growing, subagents are needed, or an agent is unsure which h
 
 ## Routing Authority
 
-`Harness/README.md` is the primary router. This file is a secondary context-splitting protocol for subagents and long tasks.
+`CLAUDE.md` is the session entry router. `Harness/README.md` is the primary Harness documentation router. This file is a secondary context-splitting protocol for subagents and long tasks.
 
 If this file and `Harness/README.md` disagree, follow `Harness/README.md`, record the assumption in `Harness/tasks/<task-id>/PROGRESS.md`, and update this file later.
 
@@ -33,8 +33,8 @@ Load other docs only by trigger.
 | research, competitors, stack choice | `Harness/research/README.md`, `Harness/research/research-results.md` |
 | task split, owner, write set | `Harness/tasks/<task-id>/PROGRESS.md`, `Harness/tasks/<task-id>/PLAN.md`, `Harness/agent-workflow.md` |
 | parallel agents, dispatch, worktree decision | `Harness/subagents.md`, `Harness/dispatch.md`, `Harness/tasks/<task-id>/PLAN.md` |
-| `/wf` mode, long task, multi-file, multi-agent | `Harness/WF.md`, `Harness/subagents.md`, `Harness/dispatch.md`, `Harness/tasks/<task-id>/PLAN.md` |
-| `/wf max`, 5+ disjoint files, maximum parallelism | `Harness/WF-MAX.md`, `Harness/subagents.md`, `Harness/dispatch.md`, `Harness/tasks/<task-id>/PLAN.md` |
+| `/wf` mode (explicit only) | [Harness/WF.md](WF.md), [Harness/subagents.md](subagents.md), [Harness/dispatch.md](dispatch.md), [Harness/tasks/<task-id>/PLAN.md](tasks/<task-id>/PLAN.md) |
+| `/wf-max` (explicit only) | [Harness/WF-MAX.md](WF-MAX.md), [Harness/subagents.md](subagents.md), [Harness/dispatch.md](dispatch.md), [Harness/tasks/<task-id>/PLAN.md](tasks/<task-id>/PLAN.md) |
 | memory, scenario memory, repeated tool failure, repeated user correction, reusable lesson | `Harness/MEMORY.md`, `Harness/MEMORY_PROTOCOL.md`, the relevant `Harness/memory/*.md` file |
 | subagent spawn | `Harness/subagents.md`, `Harness/AGENT_ISOLATION.md`, this file plus the role pack below |
 

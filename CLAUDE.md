@@ -10,11 +10,29 @@ Use **direct mode** for simple, single-step, low-risk requests: commit, push, on
 
 In direct mode, do not load the full Harness router. Inspect only the files needed for the task and execute directly.
 
-Use **workflow mode** when the user explicitly invokes a `/wf-*` command, or when the task is multi-step, ambiguous, risky, architectural, cross-file, or requires coordination.
+Complex work may use direct planning, task capsules, tests, and subagents without entering WF. WF mode is explicit only: the user must type `/wf`, `$wf`, `/skills wf`, `/wf-max`, `$wf-max`, `/skills wf-max`, or explicitly say `wf` / `wf-max` to enter WF.
 
-In workflow mode, load `Harness/MEMORY.md` first, then `Harness/README.md`.
+`/wf-help` and `/wf-update` are **direct commands** — do NOT load `Harness/MEMORY.md`, do NOT enter WF, do NOT invoke a skill. Execute them immediately as static help / script commands respectively.
 
-If `Harness/SETUP.md` exists, follow it before normal project work; it is the install/bootstrap contract and may be deleted after setup is complete.
+For actual workflow commands (`/wf`, `/wf-max`, `/wf-auto`, `/wf-review`, `/wf-learn`, `/wf-readme`, `/wf-remove`, `/wf-browser`, `/wf-auto-spark`), load `Harness/MEMORY.md` first, then `Harness/README.md`.
+
+### Active Task Resume
+
+If the user says "continue", "resume", "last task", "current task", "status", "where were we", or similar resume language, or the current work is not a simple direct task:
+
+1. Read `Harness/PROGRESS.md` → find Active Task.
+2. If Active Task exists, read `Harness/tasks/<active-task>/STATE.json` first.
+3. Read `Harness/tasks/<active-task>/PROGRESS.md`.
+4. Read `Harness/tasks/<active-task>/PLAN.md` only if decisions or scope need review.
+5. From STATE.json, recover: phase, gate, tier, ready/running/blocked/done queues, activeQuestion, nextAction.
+6. Do NOT bulk-read `Harness/tasks/` to find context. Use the active pointer.
+7. Direct simple tasks may skip STATE/PLAN/PROGRESS unless the user says "continue"/"resume".
+
+See `Harness/WF-STATE.md` for the full state machine contract. Completed/abandoned tasks are archived to `Harness/tasks/_archive/` per `Harness/TASK_ARCHIVE.md`.
+
+Use **/wf** for multi-step work that needs structured coordination. Use **/wf-max** for maximum-parallelism with CEO/Manager/Worker decomposition. See `Harness/WF.md` for tier selection (WF-Light, WF-Standard, WF-Full) and `Harness/WF-MAX.md` for fan-out rules (WF-Max-Useful, WF-Max-Strict).
+
+`Harness/SETUP.md` is a bootstrap-only document: it exists only while the harness install is not yet finalized. If it exists, finish the bootstrap it describes once, then delete or archive it. Installed projects must not keep `Harness/SETUP.md` in the startup path, and normal sessions must not route through it.
 
 ### 1a. WF-MAX Role Contract
 
@@ -28,7 +46,7 @@ Each Worker dispatch must define: role, objective, allowed writeSet, forbidden f
 
 Workers may edit only inside their assigned writeSet. Reviewers and verifiers must be independent from the Worker whose output they evaluate.
 
-Detailed WF-MAX role rules live in `Harness/WF-MAX.md` and `Harness/subagents.md`.
+Detailed WF-MAX role rules live in `Harness/WF-KERNEL.md`, `Harness/WF-MAX.md`, and `Harness/subagents.md`.
 
 ## 2. Think Before Coding
 
@@ -60,8 +78,8 @@ Detailed WF-MAX role rules live in `Harness/WF-MAX.md` and `Harness/subagents.md
 
 - Define verifiable success criteria before implementation.
 - For bugs, reproduce the failure or document why reproduction is impossible before fixing.
-- For multi-step work, keep `Harness/tasks/<task-id>/PROGRESS.md` and `Harness/tasks/<task-id>/PLAN.md` current. The main agent is the only state committer; subagents return suggestions only.
-- State assumptions before implementation and record durable assumptions, decisions, blockers, handoffs, and verification evidence in `Harness/tasks/<task-id>/PLAN.md`.
+- For multi-step work, keep `Harness/tasks/<task-id>/PROGRESS.md` and `Harness/tasks/<task-id>/PLAN.md` current. Only the controller or task-scribe writes task state; subagents return suggestions only.
+- State assumptions before implementation and record only durable assumptions, decisions, blockers, handoffs, and verification evidence in `Harness/tasks/<task-id>/PLAN.md`.
 - Every task needs a test, build check, validator run, or recorded manual check.
 - Do not claim web/UI acceptance without real-browser evidence from Chrome DevTools, CDP, Playwright, or documented manual browser checks.
 - Do not place project build scripts, git conventions, run commands, or release process in this file. Put them in `README.md`.

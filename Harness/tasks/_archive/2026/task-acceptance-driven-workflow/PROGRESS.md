@@ -8,7 +8,7 @@ Upgrade Harness workflow docs and templates to make PRD-derived acceptance crite
 
 ## Phase
 
-Current: Intake
+Current: Verified (closed 2026-07-02 per Harness/PROGRESS.md Task Index; capsule phase was never updated)
 
 ## Heartbeat
 

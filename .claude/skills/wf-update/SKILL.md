@@ -1,14 +1,17 @@
 ---
 name: wf-update
-description: Use for /wf-update in Claude Code, $wf-update or /skills wf-update in Codex, or any request to check for or apply Harness scaffold updates.
+description: Codex compatibility: use $wf-update or /skills wf-update in Codex. In Claude Code and OpenCode, /wf-update is a direct command (see .claude/commands/wf-update.md and .opencode/commands/wf-update.md).
 ---
 
 # WF Update Adapter
 
+This skill is a Codex compatibility shim plus script-flow reference. Claude Code and OpenCode handle `/wf-update` as a direct command; do not route them through this skill.
+
 ## Invocation
 
-- Claude Code: use `/wf-update` or select the `wf-update` skill.
 - Codex CLI or IDE: use `$wf-update` or `/skills` then choose `wf-update`.
+- Claude Code: `/wf-update` is a direct command. Use `.claude/commands/wf-update.md`, not this skill.
+- OpenCode: `/wf-update` is a direct command. Use `.opencode/commands/wf-update.md`, not this skill.
 
 ## Load
 

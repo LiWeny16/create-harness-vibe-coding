@@ -226,9 +226,14 @@ test('generated scaffold stores harness-owned payload under root Harness directo
     '.codex/config.toml',
     'opencode.json',
     '.opencode/commands/wf-help.md',
+    '.opencode/commands/wf-update.md',
+    '.claude/commands/wf-help.md',
+    '.claude/commands/wf-update.md',
     '.opencode/agents/researcher.md',
     '.opencode/agents/planner.md',
     '.opencode/agents/implementer.md',
+    '.opencode/agents/task-scribe.md',
+    '.opencode/agents/codebase-explorer.md',
     '.claude/skills/wf/SKILL.md',
     '.agents/skills/wf/SKILL.md',
     '.claude/skills/wf-max/SKILL.md',
@@ -240,6 +245,7 @@ test('generated scaffold stores harness-owned payload under root Harness directo
     '.claude/skills/subagent-orchestrator/SKILL.md',
     '.agents/skills/subagent-orchestrator/SKILL.md',
     '.claude/agents/reflector.md',
+    'Harness/WF-KERNEL.md',
   ]) {
     assert.ok(fs.existsSync(path.join(targetDir, ...rel.split('/'))), `Expected ${rel} to be generated`);
   }
@@ -257,7 +263,7 @@ test('generated scaffold stores harness-owned payload under root Harness directo
   assert.match(claude, /If `Harness\/` exists, this repository is governed by the Harness contract/);
   assert.match(claude, /memory and resource router/);
   assert.match(claude, /Harness\/README\.md/);
-  assert.match(claude, /Harness\/SETUP\.md` exists, follow it before normal project work/);
+  assert.match(claude, /Harness\/SETUP\.md` is a bootstrap-only document/);
   assert.match(claude, /Harness\/subagents\.md/);
   assert.match(claude, /## 2\. Think Before Coding/);
   assert.match(claude, /## 3\. Simplicity First/);
@@ -290,36 +296,36 @@ test('generated scaffold stores harness-owned payload under root Harness directo
   assert.doesNotMatch(wfHelp, /\/wf-browser/);
 
   const docsReadme = readRel(targetDir, 'Harness/README.md');
-  assert.doesNotMatch(docsReadme, /\/wf-browser/);
-  assert.doesNotMatch(docsReadme, /wf-browser skill/);
+  // wf-browser is always listed in the Skill Commands table as an optional workflow skill
+  assert.match(docsReadme, /\/wf-browser/);
 
   const memoryIndex = readRel(targetDir, 'Harness/MEMORY.md');
-  assert.doesNotMatch(memoryIndex, /browser-e2e/);
+  // browser-e2e is always listed under Skills in MEMORY.md as an optional workflow
+  assert.match(memoryIndex, /browser-e2e/);
 
   const wf = readRel(targetDir, 'Harness/WF.md');
-  assert.match(wf, /Ralph-style/i);
-  assert.match(wf, /Heartbeat Protocol/);
-  assert.match(wf, /Chrome DevTools|CDP|Playwright/);
-  assert.match(wf, /Harness\/subagents\.md/);
-  assert.match(wf, /WF mode requires the complete role chain by default/);
-  assert.match(wf, /MUST cover every mandatory role class before closeout/);
-  assert.match(wf, /Independent Validation/);
-  assert.match(wf, /reflector/);
+  assert.match(wf, /Orchestration Loop/);
+  assert.match(wf, /Task Type Routing/);
+  assert.match(wf, /WF-KERNEL\.md/);
+  assert.match(wf, /WF-KERNEL\.md/);
+  assert.match(wf, /controller \+ task-scribe/);
+  assert.match(wf, /delegated to appropriate subagents/);
+  assert.match(wf, /Cross-review and reflector NOT mandatory/);
   assert.doesNotMatch(wf, /MUST use at least 3 distinct role passes/);
   assert.match(wf, /\.claude\/agents\//);
-  assert.match(wf, /replaces the old "7:3" heuristic/);
+  assert.match(wf, /WF Tiers/);
 
   const wfMax = readRel(targetDir, 'Harness/WF-MAX.md');
   assert.match(wfMax, /CEO may NOT proceed to W2 implementation dispatch with a failing gate/);
   assert.match(wfMax, /strict superset/);
-  assert.match(wfMax, /cross-CLI overflow/);
+  assert.match(wfMax, /cross-CLI overflow/i);
   assert.match(wfMax, /claude -p/);
   assert.match(wfMax, /codex exec/);
   assert.match(wfMax, /agents\.max_threads/);
   assert.match(wfMax, /agents\.max_depth/);
   assert.match(wfMax, /max_threads = 12/);
   assert.match(wfMax, /max_depth = 1/);
-  assert.match(wfMax, /ask the user before raising `agents\.max_threads`/);
+  assert.match(wfMax, /ask the user before raising/i);
   assert.match(wfMax, /Close completed agents/);
   assert.match(wfMax, /Codex\+\+/);
   assert.doesNotMatch(wfMax, /proceed to W1 with a failing gate/);
@@ -396,7 +402,7 @@ test('generated scaffold stores harness-owned payload under root Harness directo
   assert.match(orchestratorSkill, /runtime-neutral/);
   assert.match(orchestratorSkill, /bounded passes/);
   assert.match(orchestratorSkill, /\.claude\/agents\//);
-  assert.match(orchestratorSkill, /complete role-chain coverage/);
+  assert.match(orchestratorSkill, /tier-specific role coverage/);
   assert.match(orchestratorSkill, /cross-CLI overflow/);
   assert.doesNotMatch(orchestratorSkill, /^description:.*repeated failures/m);
   assert.equal(
@@ -700,9 +706,9 @@ test('generated scaffold includes memory folder registrations and reflection tri
   assert.match(docsReadme, /README optimization/);
   assert.match(docsReadme, /wf-readme/);
   assert.match(docsReadme, /Routing priority/);
-  assert.match(docsReadme, /wk mode/);
-  assert.match(docsReadme, /\| Need WF mode[^\n]*\[WF\.md\]\(WF\.md\), \[PROGRESS\.md\]\(PROGRESS\.md\)[^\n]*explicit WF\/WK loads subagent docs immediately/);
-  assert.doesNotMatch(docsReadme, /\| Need WF mode[^\n]*subagents\.md/);
+  assert.match(docsReadme, /explicit WF token/);
+  assert.match(docsReadme, /\| Need WF mode \(explicit only\)[^\n]*\[WF\.md\]\(WF\.md\), \[WF-KERNEL\.md\]\(WF-KERNEL\.md\), \[PROGRESS\.md\]\(PROGRESS\.md\)[^\n]*tier-gated acceptance/);
+  assert.match(docsReadme, /\| Need WF mode \(explicit only\)/);
   assert.match(wfUpdateSkill, /wf-update-check\.mjs/);
   assert.match(wfUpdateSkill, /scan-clean\.mjs/);
   assert.match(memoryIndex, /subagent-orchestrator/);
@@ -877,18 +883,18 @@ test('build-version produces valid semver and populated checksums/sources', asyn
     'Harness/WF.md should be mapped from Harness/WF.md'
   );
 
-  // Specifically assert that scripts/scan-clean.mjs maps to Harness/scripts/scan-clean.mjs
+  // Harness/scripts/* files now live under templates/common/Harness/scripts/
   assert.equal(
     harnessVersion.sources['Harness/scripts/scan-clean.mjs'],
-    'scripts/scan-clean.mjs',
-    'Harness/scripts/scan-clean.mjs should be mapped from scripts/scan-clean.mjs'
+    'Harness/scripts/scan-clean.mjs',
+    'Harness/scripts/scan-clean.mjs should be mapped from Harness/scripts/scan-clean.mjs'
   );
 
   // Verify scripts/ prefix mapping for other script files
   assert.equal(
     harnessVersion.sources['Harness/scripts/validate-harness.mjs'],
-    'scripts/validate-harness.mjs',
-    'Harness/scripts/validate-harness.mjs should be mapped from scripts/validate-harness.mjs'
+    'Harness/scripts/validate-harness.mjs',
+    'Harness/scripts/validate-harness.mjs should be mapped from Harness/scripts/validate-harness.mjs'
   );
 });
 

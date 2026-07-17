@@ -8,7 +8,7 @@ Create all files for `/wf max` maximum-parallelism workflow mode: templates, dog
 
 ## Phase
 
-Current: Build
+Current: Done (deliverables shipped: Harness/WF-MAX.md + wf-max skill/command live in repo; archived 2026-07-16)
 
 ## Heartbeat
 

@@ -6,7 +6,7 @@ Replace monolithic PLAN.md with Harness/PROGRESS.md (global index) + Harness/tas
 
 ## Phase
 
-Current: Build
+Current: Done (deliverables shipped: Harness/PROGRESS.md + tasks/ capsule structure live in repo; archived 2026-07-16)
 
 ## Heartbeat
 

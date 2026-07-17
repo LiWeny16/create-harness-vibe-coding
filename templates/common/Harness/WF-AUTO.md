@@ -12,7 +12,7 @@
 
 This fills the gap between:
 - `/wf` — task-bounded, stops on completion
-- `/wf-max` - task-bounded WF strict superset: complete role chain plus maximum parallelism
+- `/wf-max` - task-bounded `/wf` variant on the same WF kernel: maximum safe fan-out, WF-Max-Useful by default, WF-Max-Strict only on explicit strict request
 - `/wf-auto` — **unbounded, self-directed, perpetual improvement**
 
 ## Organization Model
@@ -39,7 +39,7 @@ does not edit production source. Implementation happens only through dispatched
 workers with explicit write sets, forbidden truth files, and verification
 commands.
 
-WF-AUTO does not inherit WF-MAX mandatory maximum fan-out unless `/wf-max` is
+WF-AUTO does not inherit WF-MAX fan-out modes (Useful or Strict) unless `/wf-max` is
 explicitly invoked or the selected change exceeds the auto cycle cap and
 escalates. Auto mode stays one accepted change per cycle.
 
@@ -260,53 +260,13 @@ Before W2, CEO writes a cycle Mini PRD:
 - UI/API/state contracts, if touched
 - Verification commands and evidence expected
 
-### W2: IMPLEMENT
+### W2-W5: IMPLEMENT → REVIEW → DEBUG → VERIFY
 
-Modeled on WF's build loop but scoped to ONE change:
+WF-AUTO inherits the standard WF-KERNEL write/review/fix/verify gates per cycle. Each accepted finding follows:
 
-1. CEO writes the change spec in `Harness/tasks/auto/PROGRESS.md` (cycle number, angle, finding, planned change, write set ≤3 files)
-2. CEO dispatches `implementer` with the change spec
-3. Implementer changes ONLY the declared write set
+[WF-KERNEL.md](WF-KERNEL.md) write gate (implementer, one file_claim per cycle, ≤3 files, ≤50 lines net), review gate (at least one independent reviewer; two for critical/security), fix gate (debugger on failure, max 2 fix attempts per cycle), and verify gate (test suite, real browser/API check, AC-by-AC evidence).
 
-CEO NEVER writes production code — this rule is inherited from WF-MAX (AP1: CEO-as-Worker).
-
-Acceptance-specific implementation rules:
-
-- Dispatch `test-writer` when AC IDs need new or updated tests.
-- Dispatch `implementer` with forbidden truth files: PRD, AC, UI/API contracts, test plan, and validation report.
-- Implementer may not rewrite ACs/contracts to make the implementation pass.
-
-### W3: REVIEW
-
-Two-gate review (from WF/subagents.md), then reflection:
-
-1. **Spec review**: Did the change address the finding without introducing extras?
-2. **Code-quality review**: Is the change correct, maintainable, safe?
-3. **Reflector gate**: Does review evidence, verifier evidence, and residual
-   risk support acceptance?
-
-At least one `reviewer` subagent. For critical/security findings, dispatch two independent reviewers.
-Do not record the cycle as accepted until `reflector` returns PASS.
-
-### W4: DEBUG (Recovery)
-
-If review or verification fails:
-1. `debugger` isolates the smallest failing path
-2. Fix and re-review (max 2 attempts per cycle)
-3. On 3rd failure: record the finding as "attempted, blocked" and move to next finding in W1
-4. Blocked findings are revisited after 3 cycles (the codebase may have changed enough to unblock)
-
-### W5: VERIFY
-
-- Run project test suite (or relevant subset)
-- For browser-visible changes: real browser check
-- For API changes: real request/response check
-- Record evidence in `Harness/tasks/auto/PROGRESS.md`
-- Final acceptance still requires cross-review and reflector PASS after
-  verification. A passing command alone is not acceptance.
-
-Validation must include AC-by-AC evidence in `Harness/tasks/auto/PROGRESS.md`,
-not only a generic pass/fail command result.
+CEO NEVER writes production code (per WF-KERNEL State Ownership). Implementer writes ONLY the declared write set. Production agents never write task state.
 
 ### RECORD
 
@@ -483,36 +443,13 @@ If a spark cycle's measured result is NEGLIGIBLE or REVERTED, increment `weakSpa
 
 ## CEO Constraints
 
-The CEO operates under the same strict tool boundary as WF-MAX:
-
-| CEO Has | CEO MUST NOT Use (on source code) |
-|---------|-----------------------------------|
-| Task (spawn agents) | Edit (on source files) |
-| Read (for scoping) | Write (on source files) |
-| Grep/Glob (for scoping) | MultiEdit (on source files) |
-| Write (to PROGRESS.md only) | Bash (except final verification) |
-
-**Exception**: CEO MAY write to `Harness/tasks/auto/PROGRESS.md` and `Harness/tasks/auto/PLAN.md` — these are task-tracking artifacts.
+CEO tool boundaries follow [WF-KERNEL.md](WF-KERNEL.md) State Ownership: CEO plans, dispatches, synthesizes, and writes ONLY the auto task capsule (`Harness/tasks/auto/PROGRESS.md`, `Harness/tasks/auto/PLAN.md`). CEO never writes production source code — all implementation is delegated to Workers.
 
 ## Anti-Pattern Catalog
 
-| # | Anti-Pattern | Symptom | Fix |
-|---|-------------|---------|-----|
-| AP1 | **CEO-as-Worker** | CEO writes production code | Delegate ALL implementation to Workers |
-| AP2 | **Premature stop** | CEO decides "good enough" before A-GATE | A-GATE is the ONLY stop. No exceptions. |
-| AP3 | **Shallow probe scan** | Probe returns "exhausted" after scanning 1-2 files | Require ≥80% relevant-surface coverage and record the coverage basis |
-| AP4 | **Batch implementation** | Multiple unrelated changes in one cycle | ONE finding per cycle. Split if needed. |
-| AP5 | **Wasteful probe scan** | Every catalog item is dispatched every cycle | Select probes by risk, relevance, evidence gap, novelty, and scan cost |
-| AP6 | **Skip review** | Implementation → verify without review | Review gate is mandatory, every cycle |
-| AP7 | **Scope creep** | A "simple fix" grows to 5+ files | Hard cap: ≤3 files per cycle. Split larger changes across cycles. |
-| AP8 | **False exhaustion** | Probe returns exhausted=true with low confidence | Require confidence and coverage ≥0.8 on exhausted. Re-dispatch only the uncertain probe. |
-| AP9 | **Stale probe strategy** | Same scan strategy every cycle → blind spots emerge | Rotate breadth, depth, change-first, failure-first, and contract-first scans |
-| AP10 | **Unjustified oracle** | CEO invokes another CLI on every empty scan | Invoke the oracle only for unresolved high-risk uncertainty or borderline coverage |
-| AP11 | **Spark as escape hatch** | Using spark to avoid the discipline of internal scan | Spark activates ONLY when internal + oracle are empty. It augments W0, not replaces it. |
-| AP12 | **Fake value scoring** | Inflating Value Gate scores to pass candidates through | CEO must justify each dimension score. Reviewer checks Value Gate scores as part of spec review. |
-| AP13 | **Shiny object syndrome** | Implementing every spark candidate without Value Gate filtering | All spark candidates MUST pass the Value Gate (≥18/25, no dimension <3). |
-| AP14 | **Inspiration theater** | Spark cycles without evidence ledger → no way to know if they worked | Evidence ledger is mandatory per cycle. Weak spark count tracked. |
-| AP15 | **Interrogation checkpoint** | Asking 5+ aggressive questions → user tunes out | Exactly 2 questions: "Still aligned?" + "What should change?" |
+Core anti-patterns AP1 (CEO-as-Worker), AP4 (batch implementation), AP6 (skip review), AP7 (scope creep) are covered by [WF-KERNEL.md](WF-KERNEL.md) State Ownership and Tier-Aware Acceptance Gates.
+
+WF-AUTO-specific anti-patterns:
 
 ## Safety Controls
 

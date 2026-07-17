@@ -6,7 +6,7 @@ Design a Harness scaffold version management and update mechanism: `wf update` c
 
 ## Phase
 
-Current: Explore
+Current: Obsolete (superseded by task-wf-update-mechanism and task-scan-clean; archived 2026-07-16)
 
 ## Heartbeat
 

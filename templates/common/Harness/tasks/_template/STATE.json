@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-example",
+  "status": "active",
+  "mode": "direct",
+  "tier": "none",
+  "phase": "intake",
+  "gate": null,
+  "updatedAt": "2026-07-16T00:00:00.000Z",
+  "activeQuestion": null,
+  "nextAction": "Define goal and acceptance criteria",
+  "acceptance": [],
+  "queues": {
+    "ready": [],
+    "running": [],
+    "blocked": [],
+    "done": []
+  },
+  "dispatchLedger": [],
+  "decisions": [],
+  "risks": [],
+  "artifacts": []
+}

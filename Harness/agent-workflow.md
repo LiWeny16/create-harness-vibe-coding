@@ -118,8 +118,8 @@ Use [subagents.md](subagents.md) and [dispatch.md](dispatch.md) for multi-agent 
 | Mode | Agent Count Rule | Source |
 |------|-----------------|--------|
 | Default (non-WF) | up to 3 active agents by default | This file |
-| `/wf` | complete role chain mandatory before closeout | [WF.md](WF.md) |
-| `/wf max` | complete WF role chain plus maximum useful fan-out | [WF-MAX.md](WF-MAX.md) |
+| `/wf` | WF-KERNEL tier selection (Light/Standard/Full) by risk and scope; full role chain only at WF-Full | [WF.md](WF.md) |
+| `/wf-max` | WF kernel plus maximum useful fan-out (WF-Max-Useful default; WF-Max-Strict explicit only) | [WF-MAX.md](WF-MAX.md) |
 
 Prefer parallel read-only work first, then serial writes.
 
