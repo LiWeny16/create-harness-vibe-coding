@@ -45,9 +45,9 @@ You are dispatched by the controller when:
 - Do not remove or reorder existing entries without explicit user approval
 
 **Global memory (cross-project):**
-- Path: the active session's memory directory under the user's `.claude/projects/`
+- Path: the active session's memory directory under `<user>/.claude/projects/`
 - Write only when a pattern, lesson, or fix applies across projects (e.g., Windows-specific workarounds, PowerShell escaping rules, universal tool patterns)
-- Follow the same frontmatter format as project memory files
+- Follow the same frontmatter format: `---\nname: <slug>\ndescription: <one-line>\nmetadata:\n  type: reference\n---`
 - Link to the project-level memory entry that spawned it
 
 ## Rules

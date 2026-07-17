@@ -29,5 +29,18 @@
       "Read(**/*.key)",
       "Read(**/*.pem)"
     ]
+  },
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node Harness/scripts/wf-auto-update-prompt.mjs --format claude"
+          }
+        ]
+      }
+    ]
   }
 }

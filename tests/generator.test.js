@@ -218,13 +218,16 @@ test('generated scaffold stores harness-owned payload under root Harness directo
     'Harness/agent-workflow.md',
     'Harness/scripts/validate-harness.mjs',
     'Harness/scripts/wf-update-check.mjs',
+    'Harness/scripts/wf-auto-update-prompt.mjs',
     'Harness/scripts/wf-remove.mjs',
     'Harness/scripts/scan-clean.mjs',
     'Harness/memory/tool-usage-reflections.md',
     'Harness/memory/user-corrections-preferences.md',
     'Harness/memory/agent-lessons-patterns.md',
     '.codex/config.toml',
+    '.codex/hooks.json',
     'opencode.json',
+    '.opencode/plugins/harness-wf-status.mjs',
     '.opencode/commands/wf-help.md',
     '.opencode/commands/wf-update.md',
     '.opencode/commands/wf.md',
@@ -354,9 +357,22 @@ test('generated scaffold stores harness-owned payload under root Harness directo
   assert.match(codexConfig, /max_threads = 12/);
   assert.match(codexConfig, /max_depth = 1/);
 
+  const codexHooks = readRel(targetDir, '.codex/hooks.json');
+  assert.match(codexHooks, /UserPromptSubmit/);
+  assert.match(codexHooks, /wf-auto-update-prompt\.mjs/);
+
+  const claudeSettings = readRel(targetDir, '.claude/settings.json');
+  assert.match(claudeSettings, /UserPromptSubmit/);
+  assert.match(claudeSettings, /wf-auto-update-prompt\.mjs/);
+
   const opencodeConfig = readRel(targetDir, 'opencode.json');
   assert.match(opencodeConfig, /\$schema.*opencode\.ai\/config\.json/);
   assert.match(opencodeConfig, /\.claude\/rules\/ecc\/common\.md/);
+
+  const opencodePlugin = readRel(targetDir, '.opencode/plugins/harness-wf-status.mjs');
+  assert.match(opencodePlugin, /HarnessWfStatusPlugin/);
+  assert.match(opencodePlugin, /mode on/);
+  assert.match(opencodePlugin, /wf-auto-update-prompt\.mjs/);
 
   const opencodePlanner = readRel(targetDir, '.opencode/agents/planner.md');
   assert.match(opencodePlanner, /mode: subagent/);

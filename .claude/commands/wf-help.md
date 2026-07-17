@@ -18,4 +18,8 @@ do not dispatch agents, and do not edit files.
 | `/wf-remove` | workflow skill | `/wf-remove` | Safely remove Harness files while preserving project/user data unless explicitly purged. |
 
 Source of truth: `Harness/README.md#Skill Commands` plus installed skills under
-`.claude/skills/`.
+`.claude/skills/` (Claude Code) or `.agents/skills/` (Codex). In OpenCode the
+same skills load from `.claude/skills/`, `.agents/skills/`, and `.opencode/skills/`.
+In OpenCode, every workflow command above is also visible as a thin command
+wrapper under `.opencode/commands/` (e.g. `/wf`, `/wf-max`); each wrapper only
+routes to the matching skill adapter and does not duplicate the workflow.

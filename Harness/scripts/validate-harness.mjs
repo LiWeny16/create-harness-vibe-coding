@@ -548,6 +548,46 @@ for (const agent of commonAgents) {
   }
 }
 
+// OpenCode mirror sync: .claude is the only editable source; .opencode files are
+// format-converted mirrors. Frontmatter is platform-specific, but description and
+// markdown body must match the .claude source exactly (edit .claude, then copy).
+function markdownBody(text) {
+  return text.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, '').replace(/\r\n/g, '\n').trim();
+}
+
+for (const opencodeRel of listMarkdownFiles('.opencode/agents')) {
+  const fileName = opencodeRel.split('/').pop();
+  const claudeRel = `.claude/agents/${fileName}`;
+  const opencodeText = read(opencodeRel);
+  if (!opencodeText) continue;
+  const claudeText = read(claudeRel);
+  if (!claudeText) {
+    errors.push(`${opencodeRel} has no .claude source: ${claudeRel} (add the .claude agent first)`);
+    continue;
+  }
+  if (frontmatterField(opencodeText, 'description') !== frontmatterField(claudeText, 'description')) {
+    errors.push(`${opencodeRel} description must mirror ${claudeRel} (edit the .claude source, then copy)`);
+  }
+  if (markdownBody(opencodeText) !== markdownBody(claudeText)) {
+    errors.push(`${opencodeRel} body must mirror ${claudeRel} (edit the .claude source, then copy)`);
+  }
+}
+
+for (const claudeRel of listMarkdownFiles('.claude/commands')) {
+  const fileName = claudeRel.split('/').pop();
+  const opencodeRel = `.opencode/commands/${fileName}`;
+  const claudeText = read(claudeRel);
+  if (!claudeText) continue;
+  const opencodeText = read(opencodeRel);
+  if (!opencodeText) {
+    errors.push(`missing OpenCode command mirror: ${opencodeRel} (copy from ${claudeRel})`);
+    continue;
+  }
+  if (markdownBody(opencodeText) !== markdownBody(claudeText)) {
+    errors.push(`${opencodeRel} body must mirror ${claudeRel} (edit the .claude source, then copy)`);
+  }
+}
+
 requireText('Harness/extension.md', 'Skills should extend the harness');
 requireText('Harness/agent-workflow.md', 'Harness/tasks/<task-id>/PROGRESS.md');
 requireText('Harness/README.md', 'Task records are compact by default', 'compact task record router rule');

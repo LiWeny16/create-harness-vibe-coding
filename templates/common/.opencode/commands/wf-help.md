@@ -2,6 +2,8 @@
 description: Show the Harness WF command table
 ---
 
+# /wf-help
+
 Return this help table directly. Do not invoke a skill, do not start WF mode,
 do not dispatch agents, and do not edit files.
 

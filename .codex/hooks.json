@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/Harness/scripts/wf-auto-update-prompt.mjs\" --format codex",
+            "commandWindows": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"$root=(git rev-parse --show-toplevel 2>$null); if (-not $root) { $root=(Get-Location).Path }; node (Join-Path $root 'Harness/scripts/wf-auto-update-prompt.mjs') --format codex\"",
+            "statusMessage": "Checking Harness updates",
+            "timeout": 35
+          }
+        ]
+      }
+    ]
+  }
+}

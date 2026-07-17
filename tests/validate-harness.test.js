@@ -485,6 +485,36 @@ test('validation fails when old unconditional wf-max acceptance wording returns 
   assert.match(output, /old wf-max unconditional final acceptance/);
 });
 
+test('validation fails when an OpenCode agent body drifts from its .claude source', () => {
+  const targetDir = generateProject();
+  const rel = '.opencode/agents/planner.md';
+  writeRel(targetDir, rel, `${readRel(targetDir, rel)}\nOpenCode-only extra rule.\n`);
+
+  const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
+    cwd: targetDir,
+    encoding: 'utf8',
+  });
+  const output = `${result.stdout}\n${result.stderr}`;
+
+  assert.notEqual(result.status, 0);
+  assert.match(output, /\.opencode\/agents\/planner\.md body must mirror \.claude\/agents\/planner\.md/);
+});
+
+test('validation fails when the OpenCode wf-help body drifts from the .claude source', () => {
+  const targetDir = generateProject();
+  const rel = '.opencode/commands/wf-help.md';
+  writeRel(targetDir, rel, `${readRel(targetDir, rel)}\nOpenCode-only footer line.\n`);
+
+  const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
+    cwd: targetDir,
+    encoding: 'utf8',
+  });
+  const output = `${result.stdout}\n${result.stderr}`;
+
+  assert.notEqual(result.status, 0);
+  assert.match(output, /\.opencode\/commands\/wf-help\.md body must mirror \.claude\/commands\/wf-help\.md/);
+});
+
 test('strict validation fails when Harness/tasks exceeds the outer task capsule cap', () => {
   const targetDir = generateProject();
   writeResolvedProjectFacts(targetDir);

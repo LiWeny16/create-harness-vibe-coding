@@ -30,6 +30,9 @@ Thumbs.db
 .claude/settings.local.json
 CLAUDE.local.md
 
+# Harness runtime state
+Harness/.runtime/
+
 # Env & secrets
 .env
 .env.local
