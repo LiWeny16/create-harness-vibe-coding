@@ -483,7 +483,7 @@ writeFileSync(join(updateRemoteDir, '.harness-version'), JSON.stringify({
 }, null, 2) + '\n', 'utf-8');
 
 const updateRemoteBase = pathToFileURL(updateRemoteDir).href + '/';
-const localUpdateResult = runNode(UPDATE, '--json', TMP, { WF_SOURCE_BASE: updateRemoteBase });
+const localUpdateResult = runNode(UPDATE, '--json --full-plan', TMP, { WF_SOURCE_BASE: updateRemoteBase });
 let localUpdatePlan = {};
 try {
   localUpdatePlan = JSON.parse(localUpdateResult.stdout.trim());
@@ -561,7 +561,7 @@ const optionalRemoteVersion = JSON.parse(readFileSync(optionalRemoteVersionPath,
 optionalRemoteVersion.generator = '9.9.9';
 writeFileSync(optionalRemoteVersionPath, JSON.stringify(optionalRemoteVersion, null, 2) + '\n', 'utf-8');
 const optionalRemoteBase = pathToFileURL(TMP_OPTIONAL_REMOTE + sep).href;
-const optionalUpdateResult = runNode(UPDATE, '--json', TMP_OPTIONAL, { WF_SOURCE_BASE: optionalRemoteBase });
+const optionalUpdateResult = runNode(UPDATE, '--json --full-plan', TMP_OPTIONAL, { WF_SOURCE_BASE: optionalRemoteBase });
 assert(optionalUpdateResult.ok, 'wf-update-check JSON runs against optional install');
 const optionalUpdatePlan = JSON.parse(optionalUpdateResult.stdout.trim());
 assert(

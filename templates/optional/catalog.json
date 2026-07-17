@@ -74,6 +74,14 @@
       "tags": ["code graph", "architecture", "analysis"]
     },
     {
+      "id": "grill-me",
+      "title": "Grill Me",
+      "description": "External Matt Pocock skill for relentlessly interviewing a plan or design before implementation.",
+      "installMode": "recommend-only",
+      "url": "https://github.com/mattpocock/skills/tree/main/skills/productivity/grill-me",
+      "tags": ["planning", "design", "interview", "skills"]
+    },
+    {
       "id": "oh-my-openagent",
       "title": "oh-my-openagent",
       "description": "Community OpenCode plugin harness: curated agents (Sisyphus/Prometheus/Hephaestus), lifecycle hooks, hash-anchored edits, and Team Mode. For OpenCode and Codex CLI.",

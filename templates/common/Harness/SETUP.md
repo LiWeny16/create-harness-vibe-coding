@@ -241,6 +241,7 @@ After the architecture stage reveals your stack, inspect existing `.claude/skill
 | Caveman | <https://github.com/JuliusBrussee/caveman> | terse, low-token agent behavior and memory compression |
 | Agent Research | <https://github.com/lingzhi227/agent-research-skills> | research-agent skills for literature, product, dependency, and ecosystem investigation |
 | CodeGraph | <https://github.com/colbymchenry/codegraph> | code graph or repository-map tooling |
+| Grill Me | <https://github.com/mattpocock/skills/tree/main/skills/productivity/grill-me> | plan/design stress-test through a relentless interview before implementation |
 
 These are links for the user's agent to evaluate. This scaffold does not maintain third-party install steps. If a user selects one, first check whether an equivalent capability is already installed; then present the GitHub link and ask for approval before the user's agent follows that project's own README.
 

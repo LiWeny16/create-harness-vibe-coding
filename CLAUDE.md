@@ -6,11 +6,13 @@ This repository dogfoods the generated Harness scaffold. Scaffold source files l
 
 If `Harness/` exists, this repository is governed by the Harness contract.
 
+At session start, after loading `CLAUDE.md`, read `Harness/memory/startup-hints.md` (L2 lightweight digest, 5-10 hints). This is NOT loading `Harness/MEMORY.md`, `Harness/README.md`, or PROGRESS — it is a minimal startup hint file only.
+
 Use **direct mode** for simple, single-step, low-risk requests: commit, push, one-line fix, file read, code question, git log, git status, or similar small operations.
 
 In direct mode, do not load the full Harness router. Inspect only the files needed for the task and execute directly.
 
-Complex work may use direct planning, task capsules, tests, and subagents without entering WF. WF mode is explicit only: the user must type `/wf`, `$wf`, `/skills wf`, `/wf-max`, `$wf-max`, `/skills wf-max`, or explicitly say `wf` / `wf-max` to enter WF.
+Complex work may use direct planning, task capsules, tests, and subagents without entering WF. WF mode is explicit only: the user must type `/wf`, `$wf`, `/skills wf`, `/wf-max`, `$wf-max`, `/skills wf-max`, `/wf-auto`, `$wf-auto`, `/skills wf-auto`, `/wf-auto-spark`, `$wf-auto-spark`, or `/skills wf-auto-spark` to enter WF. No other phrasing, complexity heuristic, or inferred intent triggers WF.
 
 `/wf-help` and `/wf-update` are **direct commands** — do NOT load `Harness/MEMORY.md`, do NOT enter WF, do NOT invoke a skill. Execute them immediately as static help / script commands respectively.
 

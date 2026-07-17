@@ -5,10 +5,20 @@
   <img src="https://img.shields.io/github/stars/zingspark/create-harness-vibe-coding?style=social" alt="GitHub stars">
 </p>
 
+<p align="center">
+  <img src="docs/images/harness-icon.png" alt="Harness icon" width="112">
+</p>
+
 <h1 align="center">create-harness-vibe-coding</h1>
 <p align="center">
   <b>An operating contract for reliable AI coding agents.</b><br>
   <sub>Goals. Context. Loops. Evidence.</sub>
+</p>
+
+<p align="center">
+  <a href="README-CN.md">Chinese</a> ·
+  <a href="https://github.com/zingspark/create-harness-vibe-coding">GitHub</a> ·
+  <a href="https://www.npmjs.com/package/create-harness-vibe-coding">npm</a>
 </p>
 
 `create-harness-vibe-coding` is a Node.js CLI that scaffolds a repo-local harness for AI-assisted software development: research, PRD, architecture, task decomposition, implementation, testing, review, recovery, and durable memory.
@@ -44,7 +54,8 @@ After reading this README, the agent selects the path that matches the project:
 |---|---|
 | New project | `npx create-harness-vibe-coding@latest my-project -y` |
 | Existing project | `npx create-harness-vibe-coding@latest my-project . -y --on-conflict skip --json` |
-| Existing `Harness/` | `node Harness/scripts/wf-update-check.mjs`; do not reinstall |
+| Existing `Harness/` with `Harness/scripts/wf-update-check.mjs` | `node Harness/scripts/wf-update-check.mjs --json`; update, do not reinstall |
+| Existing `Harness/` but missing `Harness/scripts/wf-update-check.mjs` | `npx create-harness-vibe-coding@latest my-project . -y --on-conflict skip --json`. Then run `node Harness/scripts/wf-update-check.mjs --json` |
 | After install or update | `node Harness/scripts/validate-harness.mjs --strict` |
 
 After installation, read `CLAUDE.md`, `AGENTS.md`, `Harness/SETUP.md`, and `Harness/README.md`; preserve project boundaries; research and plan before editing; run tests, validation, and review before claiming completion.
@@ -141,7 +152,7 @@ Read and follow https://github.com/zingspark/create-harness-vibe-coding exactly 
 
 The agent-first path previews the target before writing and preserves project-owned files. If you need the detailed CLI contract, the agent can read `Harness/SETUP.md` after setup.
 
-If `Harness/` already exists, use `/wf-update`, `$wf-update`, or `node Harness/scripts/wf-update-check.mjs` instead of reinstalling blindly.
+If `Harness/` already exists, first check whether `Harness/scripts/wf-update-check.mjs` exists. If it does, use `/wf-update`, `$wf-update`, or `node Harness/scripts/wf-update-check.mjs --json` instead of reinstalling blindly. If it is missing, run the safe CLI recovery command from the installation table first, then run the updater.
 
 ## Optional workflows
 
@@ -158,6 +169,14 @@ Ask your agent to add the capability you need:
 | `github-pr-review` | PR diff review and CI evidence |
 
 External recommendations are recorded in `Harness/SETUP.md`; they are not auto-installed.
+
+| Recommendation | Use it for | Source |
+|---|---|---|
+| `superpowers` | Community agent skills and coding workflows | [Superpowers](https://github.com/obra/Superpowers) |
+| `caveman` | Terse, low-token agent behavior | [Caveman](https://github.com/JuliusBrussee/caveman) |
+| `agent-research` | Literature, product, dependency, and ecosystem research | [agent-research-skills](https://github.com/lingzhi227/agent-research-skills) |
+| `codegraph` | Repository graph and architecture mapping | [CodeGraph](https://github.com/colbymchenry/codegraph) |
+| `grill-me` | Relentless plan/design interview before implementation | [Grill Me](https://github.com/mattpocock/skills/tree/main/skills/productivity/grill-me) |
 
 ## Verify
 

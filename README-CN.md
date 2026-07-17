@@ -5,6 +5,10 @@
   <img src="https://img.shields.io/github/stars/zingspark/create-harness-vibe-coding?style=social" alt="GitHub stars">
 </p>
 
+<p align="center">
+  <img src="docs/images/harness-icon.png" alt="Harness 图标" width="112">
+</p>
+
 <h1 align="center">create-harness-vibe-coding</h1>
 <p align="center">
   <b>让 AI agent 在真实仓库里先理解，再执行，最后验证。</b><br>
@@ -39,7 +43,8 @@ Agent 读取本 README 后，按项目状态选择安装路径：
 |---|---|
 | 新项目 | `npx create-harness-vibe-coding@latest my-project -y` |
 | 已有项目 | `npx create-harness-vibe-coding@latest my-project . -y --on-conflict skip --json` |
-| 已有 `Harness/` | `node Harness/scripts/wf-update-check.mjs`，不要重复安装 |
+| 已有 `Harness/` 且存在 `Harness/scripts/wf-update-check.mjs` | `node Harness/scripts/wf-update-check.mjs --json`，走更新流程，不要重复安装 |
+| 已有 `Harness/` 但缺少 `Harness/scripts/wf-update-check.mjs` | `npx create-harness-vibe-coding@latest my-project . -y --on-conflict skip --json`。然后执行 `node Harness/scripts/wf-update-check.mjs --json` |
 | 安装或更新完成 | `node Harness/scripts/validate-harness.mjs --strict` |
 
 安装后的 instruction：先读取 `CLAUDE.md`、`AGENTS.md`、`Harness/SETUP.md` 和 `Harness/README.md`；遵守项目已有边界；先研究和计划，再修改代码；完成后运行测试、校验和审查，未验证不要声称完成。
@@ -173,6 +178,7 @@ Harness 把一次模糊请求变成一条可以追踪的路径：
 | `caveman` | 简洁、低 token 的 agent 行为 | [Caveman](https://github.com/JuliusBrussee/caveman) |
 | `agent-research` | 文献、产品、依赖和生态研究 | [agent-research-skills](https://github.com/lingzhi227/agent-research-skills) |
 | `codegraph` | 代码图谱和仓库地图 | [Codegraph](https://github.com/colbymchenry/codegraph) |
+| `grill-me` | 实现前对计划或设计做高压追问 | [Grill Me](https://github.com/mattpocock/skills/tree/main/skills/productivity/grill-me) |
 
 ## 验证
 

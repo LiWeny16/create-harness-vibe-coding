@@ -7,15 +7,16 @@ Write here when:
 - A more reliable command pattern replaces a brittle one.
 - The environment needs a durable fix, flag, path rule, shell syntax, or startup sequence.
 
-Entry format, newest first:
+Entry format (compact, default no date):
 
 ```markdown
-## YYYY-MM-DD - Short Pattern Name
-
-- Trigger: what failed or repeated.
-- Better pattern: the command, tool usage, or sequence to use next time.
-- Evidence: command output summary, error text, or affected environment.
-- Scope: when this applies and when it does not.
+- When <scenario>: <rule>. Avoid <over-application>. Signals: <signals>.
 ```
 
-Keep entries concise. Do not record secrets, credentials, private tokens, or one-off noise.
+Only use date/timestamp headings when:
+- Entry supersedes prior conflicting guidance
+- Time-sensitive context (version, deprecation)
+- Conflict resolution needed
+
+Never record one-off command failures. Never store secrets, credentials, or private tokens.
+- Entry supersedes prior conflicting guidance: add date stamp.

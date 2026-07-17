@@ -69,6 +69,10 @@ test('optional catalog includes recommendation-only external capability choices'
   assert.ok(ids.includes('caveman'));
   assert.ok(ids.includes('agent-research'));
   assert.ok(ids.includes('codegraph'));
+  assert.ok(ids.includes('grill-me'));
+  const grillMe = catalog.externalRecommendations.find(item => item.id === 'grill-me');
+  assert.match(grillMe.description, /plan|design|interview/i);
+  assert.equal(grillMe.url, 'https://github.com/mattpocock/skills/tree/main/skills/productivity/grill-me');
   for (const item of catalog.externalRecommendations) {
     assert.equal(item.installMode, 'recommend-only');
     assert.equal(item.files, undefined);
@@ -645,6 +649,7 @@ test('package README-CN gives a concise Chinese quickstart and Harness-only docs
   assert.match(readmeCn, /https:\/\/github\.com\/JuliusBrussee\/caveman/);
   assert.match(readmeCn, /https:\/\/github\.com\/lingzhi227\/agent-research-skills/);
   assert.match(readmeCn, /https:\/\/github\.com\/colbymchenry\/codegraph/);
+  assert.match(readmeCn, /https:\/\/github\.com\/mattpocock\/skills\/tree\/main\/skills\/productivity\/grill-me/);
   assert.match(readmeCn, /外部推荐/);
   assert.match(readmeCn, /验证/);
   assert.match(readmeCn, /https:\/\/github\.com\/zingspark\/create-harness-vibe-coding/);
@@ -671,6 +676,7 @@ test('package README-CN contains required Chinese workflow and verification clau
   assert.match(readmeCn, /https:\/\/github\.com\/JuliusBrussee\/caveman/);
   assert.match(readmeCn, /https:\/\/github\.com\/lingzhi227\/agent-research-skills/);
   assert.match(readmeCn, /https:\/\/github\.com\/colbymchenry\/codegraph/);
+  assert.match(readmeCn, /https:\/\/github\.com\/mattpocock\/skills\/tree\/main\/skills\/productivity\/grill-me/);
   assert.match(readmeCn, /\u5916\u90e8\u63a8\u8350/u);
   assert.match(readmeCn, /\u9a8c\u8bc1/u);
   assert.match(readmeCn, /https:\/\/github\.com\/zingspark\/create-harness-vibe-coding/);
@@ -685,7 +691,7 @@ test('external recommendations are recorded without installing third-party skill
   const result = generate({
     projectName: 'external-recommendations',
     targetDir,
-    externalOptions: ['superpowers,codegraph'],
+    externalOptions: ['superpowers,codegraph,grill-me'],
   });
 
   assert.equal(result.success, true);
@@ -694,17 +700,21 @@ test('external recommendations are recorded without installing third-party skill
   assert.match(setup, /Selected External Recommendations/);
   assert.match(setup, /superpowers/);
   assert.match(setup, /codegraph/);
+  assert.match(setup, /grill-me/);
   assert.match(setup, /https:\/\/github\.com\/obra\/Superpowers/);
   assert.match(setup, /https:\/\/github\.com\/colbymchenry\/codegraph/);
+  assert.match(setup, /https:\/\/github\.com\/mattpocock\/skills\/tree\/main\/skills\/productivity\/grill-me/);
   assert.match(setup, /recommendation only/i);
   assert.doesNotMatch(setup, /install hint/i);
   assert.equal(fs.existsSync(path.join(targetDir, '.claude', 'skills', 'superpowers', 'SKILL.md')), false);
   assert.equal(fs.existsSync(path.join(targetDir, '.agents', 'skills', 'superpowers', 'SKILL.md')), false);
   assert.equal(fs.existsSync(path.join(targetDir, '.claude', 'skills', 'codegraph', 'SKILL.md')), false);
   assert.equal(fs.existsSync(path.join(targetDir, '.agents', 'skills', 'codegraph', 'SKILL.md')), false);
+  assert.equal(fs.existsSync(path.join(targetDir, '.claude', 'skills', 'grill-me', 'SKILL.md')), false);
+  assert.equal(fs.existsSync(path.join(targetDir, '.agents', 'skills', 'grill-me', 'SKILL.md')), false);
 
   const harnessVersion = JSON.parse(readRel(targetDir, 'Harness/.harness-version'));
-  assert.deepEqual(harnessVersion.externalRecommendations, ['superpowers', 'codegraph']);
+  assert.deepEqual(harnessVersion.externalRecommendations, ['superpowers', 'codegraph', 'grill-me']);
 });
 
 test('unknown without options fail with list-options guidance', () => {

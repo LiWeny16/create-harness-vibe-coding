@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.8.9] - 2026-07-17
+
+- Add safe recovery for older Harness installs missing `wf-update-check.mjs`.
+- Tighten update-check JSON output and WF-AUTO hook output to keep default agent context small.
+- Add L2 startup memory hints and L3 memory route indexing to generated Harness installs.
+- Add symlink write-path protection and P0 regressions for scaffold safety.
+- Include the README icon in the published npm package.
+
 ## [0.5.0] - 2026-06-25
 
 - `/wf-learn` command: force memory learning cycle (context-master → memory-master → project + global memory).

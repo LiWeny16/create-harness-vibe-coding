@@ -10,9 +10,13 @@ consolidates. Use the active runtime's available subagent mechanism when
 present, otherwise emulate the same roles as bounded passes and record that
 fallback.
 
+**Note:** Explicit user preferences (remember/next time/never/always/记住/下次/不要再) can be written immediately via candidate detection without waiting for `/wf-learn`. `/wf-learn` is for proactive pattern consolidation and closeout extraction.
+
 ## Load
 
 - `Harness/MEMORY.md`
+- `Harness/memory/routes.md`
+- `Harness/memory/startup-hints.md`
 - `Harness/memory/tool-usage-reflections.md`
 - `Harness/memory/user-corrections-preferences.md`
 - `Harness/memory/agent-lessons-patterns.md`
@@ -22,8 +26,11 @@ fallback.
 
 1. Analyze the session for repeated failures, durable user corrections, and
    reusable review/debug lessons.
-2. Deduplicate against existing memory.
-3. Write only concise, durable, non-secret lessons to `Harness/memory/*`.
+2. Check `Harness/memory/routes.md` for existing entries before writing.
+3. Deduplicate against existing memory.
+4. Write only concise, durable, non-secret lessons to `Harness/memory/*`.
+   Use compact format (default no date):
+   `- When <scenario>: <rule>. Avoid <over-application>. Signals: <signals>.`
 
 ## Return
 

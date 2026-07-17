@@ -254,6 +254,28 @@ function duplicateDests(fileSpecs) {
   return [...duplicates].sort();
 }
 
+/**
+ * Walk the directory chain from rootDir down to the parent of absPath.
+ * Returns the first ancestor that is a symbolic link, or null if none.
+ * Prevents writes from escaping the workspace via symlinked parent dirs
+ * (e.g. .claude/, Harness/, .opencode/ pointing outside the project).
+ */
+function symlinkInChain(rootDir, absPath) {
+  const root = path.resolve(rootDir);
+  const target = path.resolve(absPath);
+  const rel = path.relative(root, target);
+  if (!rel || rel.startsWith("..") || path.isAbsolute(rel)) return null;
+  const parts = rel.split(path.sep).filter(Boolean);
+  let cur = root;
+  for (let i = 0; i < parts.length - 1; i += 1) {
+    cur = path.join(cur, parts[i]);
+    try {
+      if (fs.lstatSync(cur).isSymbolicLink()) return cur;
+    } catch (_) { /* directory not created yet */ }
+  }
+  return null;
+}
+
 function createPlan(resolvedDir, fileSpecs) {
   const plan = {
     create: [],
@@ -528,12 +550,20 @@ export function generate({
       const dirPath = dir === './'
         ? resolvedDir
         : path.join(resolvedDir, ...dir.slice(0, -1).split('/'));
+      const __slMkdir = symlinkInChain(resolvedDir, dirPath);
+      if (__slMkdir) throw new Error(`Cannot create directory ${dir}: symlinked directory in path (${__slMkdir})`);
       fs.mkdirSync(dirPath, { recursive: true });
       created.push(dir === './' ? './ (directory)' : `${dir} (directory)`);
     }
 
     for (const file of plan.backup) {
       const destPath = path.join(resolvedDir, ...file.split('/'));
+      const __slBackup = symlinkInChain(resolvedDir, destPath);
+      if (__slBackup) throw new Error(`Cannot backup ${file}: symlinked directory in path (${__slBackup})`);
+      // Symlink safety: never rename or follow symlinks to avoid path traversal
+      if (fs.existsSync(destPath)) {
+        try { if (fs.lstatSync(destPath).isSymbolicLink()) throw new Error('Symlink rejected'); } catch (e) { throw new Error(`Cannot backup ${file}: ${e.message}`); }
+      }
       fs.renameSync(destPath, nextBackupPath(destPath));
     }
 
@@ -554,6 +584,12 @@ export function generate({
       }
       const spec = specsByDest.get(file);
       const destPath = path.join(resolvedDir, ...file.split('/'));
+      const __slWrite = symlinkInChain(resolvedDir, destPath);
+      if (__slWrite) throw new Error(`Cannot create/overwrite ${file}: symlinked directory in path (${__slWrite})`);
+      // Symlink safety: reject symlinks before writing to prevent path traversal outside workspace
+      if (fs.existsSync(destPath)) {
+        try { if (fs.lstatSync(destPath).isSymbolicLink()) throw new Error('Symlink rejected'); } catch (e) { throw new Error(`Cannot create/overwrite ${file}: ${e.message}`); }
+      }
       let content = spec.type === 'empty'
         ? ''
         : renderTemplate(spec.src, vars);

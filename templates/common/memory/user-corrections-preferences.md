@@ -3,19 +3,21 @@
 Purpose: record repeated user corrections, durable preferences, and common-sense course corrections.
 
 Write here when:
-- The user says "remember", "never", "next time", "always", or "I prefer".
+- The user says "remember", "never", "next time", "always", "I prefer", "记住", "下次", "不要再" etc.
+- Explicit, safe, scoped user preferences can be written immediately without `/wf-learn`.
 - The user corrects the same assumption/pattern 2+ times.
 - A correction changes how future work should be scoped, explained, verified, or handed off.
 
-Entry format, newest first:
+Entry format (compact, default no date):
 
 ```markdown
-## YYYY-MM-DD - Short Preference Name
-
-- Correction/preference: the durable instruction.
-- Trigger: what prompted the correction.
-- Apply when: future contexts where this should guide behavior.
-- Avoid: contexts where this should not be over-applied.
+- When <scenario>: <rule>. Avoid <over-application>. Signals: <signals>.
 ```
 
-Do not record ordinary chat. If the preference is ambiguous, ask before writing it. Never store secrets.
+Only use date/timestamp headings when:
+- Entry supersedes prior conflicting guidance
+- Time-sensitive context (version, deprecation)
+- Conflict resolution needed
+
+Do not record ordinary chat, task logs, process summaries, one-time emotions, or transient preferences. If the preference is ambiguous, ask before writing it. Never store secrets.
+- Entry supersedes prior conflicting guidance: add date stamp.

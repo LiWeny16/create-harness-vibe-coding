@@ -53,6 +53,18 @@ Manager_max = min(max(Manager_min * 2, Manager_min), 7)
 - Workers return <=250 tokens + evidence/file paths
 - task-scribe (haiku) runs alongside any wave
 
+## Token Budget and Fan-Out Caps
+
+WF-MAX fan-out is bounded. Unbounded worker dispatch is forbidden.
+
+- **Total worker cap**: Maximum 15 agents per WF-MAX task (all waves combined). Managers, reviewers, and verifiers count toward this cap. Read-only scouts and task-scribe do not count.
+- **Per-wave cap**: Maximum 7 Workers per implementation wave (enforced by implement-manager span formula).
+- **Reviewer cap**: Maximum 4 reviewers per wave (review-manager).
+- **Manager cap**: Maximum 4 Managers total (explore, architect, implement, review).
+- **Token budget**: If `budget.total` is set (user-specified budget), CEO MUST reserve >=30% for review/verify/reflect phases. Stop dispatching Workers when remaining budget is below 50k tokens.
+- **Overflow discipline**: Cross-CLI overflow (Codex → Claude, Claude → Codex) is allowed only after native subagent pool is genuinely exhausted (not just busy). Each overflow dispatch costs context; prefer closing completed agents first.
+- **Idle workers**: Close completed agents before declaring the pool exhausted. Do not spawn new workers while idle capacity is available.
+
 ## Organization Model
 
 ```

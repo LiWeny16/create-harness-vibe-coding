@@ -86,6 +86,12 @@ Located under `.claude/rules/ecc/`, auto-loaded by the CC engine:
 
 ## Memory Folder
 
+> L2 startup digest: `memory/startup-hints.md` — lightweight hints loaded at session start.
+> L3 route index: `memory/routes.md` — scenario hit-rules index (not detailed memory).
+> L3 detailed files: loaded only when scenario matches via routes.
+
+- [Startup hints](memory/startup-hints.md) - L2 lightweight startup digest (5-10 hints, no dates). Loaded at Harness session start; not a replacement for full router.
+- [Memory routes](memory/routes.md) - L3 route index with signals/scoring/avoid rules. Not detailed memory — hit-rules only.
 - [Tool usage/reflections](memory/tool-usage-reflections.md) - repeated tool failures, better command patterns, environment-specific fixes.
 - [User corrections/preferences](memory/user-corrections-preferences.md) - repeated user corrections, durable preferences, common-sense course corrections.
 - [Agent lessons/patterns](memory/agent-lessons-patterns.md) - reusable lessons from review, debugging, validation, and handoff loops.

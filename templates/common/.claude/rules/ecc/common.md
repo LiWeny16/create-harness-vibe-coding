@@ -7,7 +7,8 @@ alwaysApply: true
 
 ## Context
 
-- Start with `CLAUDE.md`. When the user invokes a `/wf-*` command or the task is inherently complex, also load `Harness/MEMORY.md` and `Harness/README.md`.
+- Start with `CLAUDE.md`. When `Harness/` exists, also read `Harness/memory/startup-hints.md` (L2 lightweight digest, not full router).
+- When the user explicitly invokes a `/wf-*` command, load `Harness/MEMORY.md` and `Harness/README.md`.
 - For simple single-step tasks without `/wf-*`, operate in direct mode: skip the Harness router and execute directly.
 - Do not bulk-read `Harness/`. Load by router trigger.
 - Keep `Harness/tasks/<task-id>/PROGRESS.md` and `Harness/tasks/<task-id>/PLAN.md` current when work has multiple steps, files, or agents.
@@ -41,10 +42,14 @@ alwaysApply: true
 
 ## Memory
 
+- Detect memory candidates when user says: `remember`, `next time`, `don't`, `do not`, `never`, `always`, `I prefer`, `I want you to`, `记住`, `下次`, `以后`, `不要再`, `总是`, `永远不要`, `我偏好`, `我希望你以后`.
+- Explicit user preference that is clear, safe, and scoped can be written to L3 immediately without waiting for `/wf-learn`.
+- Use `Harness/memory/routes.md` for deterministic route matching before loading detailed L3 memory.
 - Record a lightweight reflection in `Harness/memory/tool-usage-reflections.md` when the same tool/use pattern fails 3+ times.
 - Record repeated user corrections or durable preferences in `Harness/memory/user-corrections-preferences.md` when the user corrects the same assumption/pattern 2+ times.
 - Record reusable review/debug lessons in `Harness/memory/agent-lessons-patterns.md`.
-- Keep memory entries concise and never include secrets.
+- Never record task logs, process summaries, one-time emotions, transient notes, raw logs, or secrets.
+- Keep memory entries compact and default to no date; only add date/timestamp for superseded, conflicting, or time-sensitive entries.
 
 ## Security
 

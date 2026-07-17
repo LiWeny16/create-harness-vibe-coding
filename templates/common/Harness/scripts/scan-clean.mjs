@@ -54,6 +54,13 @@ const FRAMEWORK_DIRS = [
   'Harness/workflows',
 ];
 
+/** Framework-managed dirs also tracked via checksums — files here are NOT orphans. */
+const MANAGED_SUBDIRS = new Set([
+  '.opencode/agents',
+  '.opencode/commands',
+  '.opencode/plugins',
+]);
+
 // ── Helpers ──────────────────────────────────────────────────────────
 
 /** Reject paths that escape ROOT (traversal, absolute, .., etc.). */
@@ -109,7 +116,17 @@ function optionalSkillFromSource(source) {
 
 function isInstalledOptionalFile(file, localVersion) {
   const skillId = optionalSkillFromSource(localVersion?.sources?.[file]);
-  return Boolean(skillId && selectedOptionIds(localVersion).has(skillId));
+  if (skillId && selectedOptionIds(localVersion).has(skillId)) return true;
+  // Also check if the file is in the optional file patterns (not tracked in common checksums)
+  // e.g. .opencode/commands/wf-browser.md from browser-e2e
+  const canonical = canonicalPath(file);
+  if (/^\.opencode\/commands\/wf-browser\.md$/.test(canonical)) {
+    return selectedOptionIds(localVersion).has('browser-e2e');
+  }
+  if (/^\.claude\/skills\/wf-browser\//.test(canonical)) {
+    return selectedOptionIds(localVersion).has('browser-e2e');
+  }
+  return false;
 }
 
 /** Detect template placeholders in remote content. */
@@ -175,6 +192,16 @@ function findOrphanFiles(localChecksums, remoteChecksums) {
       if (allTracked.has(file)) continue;
       if (isPreserved(file)) continue;
       orphans.push({ file, reason: 'untracked in framework directory' });
+    }
+  }
+
+  // Check MANAGED_SUBDIRS for orphans too (directories tracked via checksums, not in FRAMEWORK_DIRS)
+  for (const dir of MANAGED_SUBDIRS) {
+    const diskFiles = listFilesRecursive(dir);
+    for (const file of diskFiles) {
+      if (allTracked.has(file)) continue;
+      if (isPreserved(file)) continue;
+      orphans.push({ file, reason: 'untracked in managed subdirectory' });
     }
   }
 

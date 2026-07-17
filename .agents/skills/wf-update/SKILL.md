@@ -40,6 +40,16 @@ This skill is a Codex compatibility shim plus script-flow reference. Claude Code
    JSON plan has zero conflicts.
 6. After update, run the validator and then scan-clean.
 
+## Recovery
+
+If `Harness/scripts/wf-update-check.mjs` is missing (old install without updater), or `Harness/.harness-version` is missing or corrupted, do NOT reinstall from scratch. Recover by regenerating missing infrastructure:
+
+```
+npx create-harness-vibe-coding@latest <project-name> . -y --on-conflict skip
+```
+
+The `--on-conflict skip` policy preserves all existing user files (CLAUDE.md, README.md, tasks, memory, research, architecture) and only creates missing Harness infrastructure files. After recovery, re-run the update check.
+
 ## Return
 
 Report version, SAFE/NEW updates, conflicts and decisions, preserved files,

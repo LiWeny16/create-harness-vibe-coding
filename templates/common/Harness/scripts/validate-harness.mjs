@@ -62,6 +62,8 @@ const opencodeWorkflowCommands = [
 ];
 
 const memoryFiles = [
+  'Harness/memory/startup-hints.md',
+  'Harness/memory/routes.md',
   'Harness/memory/tool-usage-reflections.md',
   'Harness/memory/user-corrections-preferences.md',
   'Harness/memory/agent-lessons-patterns.md',
@@ -352,8 +354,32 @@ for (const rel of durableCommunicationDocs) {
   requireText(rel, 'chat/subagent transcript state is non-authoritative', 'non-authoritative transcript invariant');
 }
 
+requireText('Harness/MEMORY_PROTOCOL.md', 'L1/L2/L3 Memory Architecture', 'L2/L3 memory architecture section');
+requireText('Harness/MEMORY_PROTOCOL.md', 'Memory Candidate Detection', 'memory candidate detection section');
+requireText('Harness/MEMORY_PROTOCOL.md', 'explicit user preference', 'explicit user preference immediate write rule');
+requireText('Harness/MEMORY_PROTOCOL.md', 'Memory Routing (L3)', 'memory routing section');
+requireText('Harness/MEMORY_PROTOCOL.md', 'Scenario pack', 'route scoring scenario pack');
 requireText('Harness/MEMORY_PROTOCOL.md', 'same tool or command pattern fails 3+ times', 'tool reflection trigger');
 requireText('Harness/MEMORY_PROTOCOL.md', 'user corrects the same assumption or preference 2+ times', 'user correction reflection trigger');
+requireText('CLAUDE.md', 'startup-hints.md', 'CLAUDE startup-hints routing');
+requireText('.claude/rules/ecc/common.md', 'startup-hints.md', 'ECC startup-hints routing');
+requireText('.claude/rules/ecc/common.md', 'memory candidates', 'ECC memory candidate detection');
+requireText('.claude/rules/ecc/common.md', 'remember', 'ECC explicit memory trigger');
+requireText('.claude/agents/memory-master.md', 'remember', 'memory-master explicit trigger');
+requireText('.claude/agents/memory-master.md', 'compact format', 'memory-master compact format');
+requireText('.claude/agents/memory-master.md', 'superseded', 'memory-master date only for superseded');
+requireText('.opencode/agents/memory-master.md', 'remember', 'OpenCode memory-master explicit trigger');
+requireText('.claude/skills/wf-learn/SKILL.md', 'without waiting for', 'wf-learn explicit preference immediate write');
+requireText('.agents/skills/wf-learn/SKILL.md', 'without waiting for', 'Codex wf-learn explicit preference immediate write');
+requireText('Harness/memory/startup-hints.md', 'Memory Candidate Detection', 'startup-hints memory candidate section');
+requireText('Harness/memory/startup-hints.md', '记住', 'startup-hints chinese triggers');
+requireText('Harness/memory/routes.md', 'signals', 'routes has signals column');
+requireText('Harness/memory/routes.md', 'avoid', 'routes has avoid column');
+requireText('Harness/memory/user-corrections-preferences.md', 'supersedes', 'memory template date only for superseded');
+requireText('Harness/memory/tool-usage-reflections.md', 'supersedes', 'tool reflections template date rule');
+requireText('Harness/memory/agent-lessons-patterns.md', 'supersedes', 'agent lessons template date rule');
+requireText('Harness/MEMORY.md', 'startup-hints.md', 'MEMORY.md startup-hints registration');
+requireText('Harness/MEMORY.md', 'Memory routes', 'MEMORY.md routes.md registration');
 requireText('CLAUDE.md', 'If `Harness/` exists, this repository is governed by the Harness contract', 'Harness binding contract');
 requireText('CLAUDE.md', 'memory and resource router', 'memory/resource router');
 requireText('CLAUDE.md', '## 5a. Low-Noise Progress', 'low-noise progress section');

@@ -211,25 +211,31 @@ test('--list-options prints built-in optional catalog', () => {
   assert.match(output, /External recommendations/);
   assert.match(output, /superpowers/);
   assert.match(output, /codegraph/);
+  assert.match(output, /grill-me/);
   assert.match(output, /https:\/\/github\.com\/obra\/Superpowers/);
   assert.match(output, /https:\/\/github\.com\/colbymchenry\/codegraph/);
+  assert.match(output, /https:\/\/github\.com\/mattpocock\/skills\/tree\/main\/skills\/productivity\/grill-me/);
 });
 
 test('--recommend records external recommendations without installing them', () => {
   const root = tmpdir();
   const target = path.join(root, 'recommended');
 
-  execFileSync(process.execPath, [bin, 'recommended', target, '-y', '--recommend', 'superpowers,codegraph'], { encoding: 'utf8' });
+  execFileSync(process.execPath, [bin, 'recommended', target, '-y', '--recommend', 'superpowers,codegraph,grill-me'], { encoding: 'utf8' });
 
   const setup = fs.readFileSync(path.join(target, 'Harness', 'SETUP.md'), 'utf8');
   assert.match(setup, /Selected External Recommendations/);
   assert.match(setup, /superpowers/);
   assert.match(setup, /codegraph/);
+  assert.match(setup, /grill-me/);
   assert.match(setup, /https:\/\/github\.com\/obra\/Superpowers/);
   assert.match(setup, /https:\/\/github\.com\/colbymchenry\/codegraph/);
+  assert.match(setup, /https:\/\/github\.com\/mattpocock\/skills\/tree\/main\/skills\/productivity\/grill-me/);
   assert.doesNotMatch(setup, /install hint/i);
   assert.equal(fs.existsSync(path.join(target, '.claude', 'skills', 'superpowers', 'SKILL.md')), false);
   assert.equal(fs.existsSync(path.join(target, '.agents', 'skills', 'superpowers', 'SKILL.md')), false);
+  assert.equal(fs.existsSync(path.join(target, '.claude', 'skills', 'grill-me', 'SKILL.md')), false);
+  assert.equal(fs.existsSync(path.join(target, '.agents', 'skills', 'grill-me', 'SKILL.md')), false);
 });
 
 test('--with copies optional skills and workflows', () => {

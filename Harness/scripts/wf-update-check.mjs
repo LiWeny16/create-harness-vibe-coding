@@ -7,8 +7,12 @@
  * Usage:
  *   node Harness/scripts/wf-update-check.mjs              # full dry-run plan
  *   node Harness/scripts/wf-update-check.mjs --json       # JSON output for AI consumption
+ *   node Harness/scripts/wf-update-check.mjs --json              # summary/counts + short agent hints only (token-safe)
+ *   node Harness/scripts/wf-update-check.mjs --json --full-plan  # also include full plan + conflict details (verbose)
  *   node Harness/scripts/wf-update-check.mjs --apply-safe # apply SAFE+NEW, leave CONFLICT for AI
  *   node Harness/scripts/wf-update-check.mjs --apply      # apply only when no CONFLICT exists
+ *
+ *   --full-plan and --verbose are aliases.
  */
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync, lstatSync } from 'fs';
@@ -187,9 +191,18 @@ async function main() {
   // 1. Read local state
   if (!existsSync(VERSION_FILE)) {
     if (jsonOut) {
-      console.log(JSON.stringify({ status: 'error', message: 'Local Harness/.harness-version not found.' }));
+      console.log(JSON.stringify({
+        status: 'error',
+        message: 'Local Harness/.harness-version not found. Is Harness installed?',
+        recovery: 'If this is an old Harness install that predates .harness-version, do not reinstall blindly. Restore Harness/.harness-version from backup if available. If the updater script is also missing, run from the project root: npx create-harness-vibe-coding@latest <name> . -y --on-conflict skip --json to restore missing updater infrastructure without overwriting user files.',
+      }));
     } else {
       console.error('ERROR: Harness/.harness-version not found. Is Harness installed?');
+      console.error('  If this is an old Harness install without version tracking, do not reinstall blindly.');
+      console.error('  Restore Harness/.harness-version from backup if available.');
+      console.error('  If the updater script is also missing, recover with:');
+      console.error('    npx create-harness-vibe-coding@latest <project-name> . -y --on-conflict skip --json');
+      console.error('  This restores missing updater infrastructure without overwriting user data.');
     }
     process.exitCode = 1;
     return;
@@ -200,10 +213,16 @@ async function main() {
     localVersion = JSON.parse(readFileSync(VERSION_FILE, 'utf-8'));
   } catch (e) {
     if (jsonOut) {
-      console.log(JSON.stringify({ status: 'error', message: 'Failed to parse Harness/.harness-version: ' + e.message }));
+      console.log(JSON.stringify({
+        status: 'error',
+        message: 'Failed to parse Harness/.harness-version: ' + e.message,
+        recovery: 'The .harness-version file may be corrupted. Do not overwrite user files. Back up or move the corrupted Harness/.harness-version before manual recovery. If the updater script is also missing, run from the project root: npx create-harness-vibe-coding@latest <name> . -y --on-conflict skip --json to restore missing updater infrastructure.',
+      }));
     } else {
       console.error('ERROR: Failed to parse Harness/.harness-version:', e.message);
-      console.error('  The file may be corrupted. If this is an old project, try reinstalling the harness.');
+      console.error('  The file may be corrupted. Back up or move Harness/.harness-version before manual recovery.');
+      console.error('  If the updater script is also missing, recover with:');
+      console.error('    npx create-harness-vibe-coding@latest <project-name> . -y --on-conflict skip --json');
     }
     process.exitCode = 1;
     return;
@@ -320,16 +339,26 @@ async function main() {
   }
 
   function buildJsonPlan() {
+    const verbose = args.includes('--verbose') || args.includes('--full-plan');
     return {
       updated: plan.updated.map(withRemoteMeta),
       created: plan.created.map(withRemoteMeta),
       adopted: plan.adopted.map(withRemoteMeta),
-      conflict: plan.conflict.map(withConflictActions),
+      conflict: verbose ? plan.conflict.map(withConflictActions) : plan.conflict.map(withConflictActions).slice(0, 5),
+      conflictTruncated: !verbose && plan.conflict.length > 5 ? plan.conflict.length - 5 : undefined,
       skipped: plan.skipped.map(withRemoteMeta),
     };
   }
 
   function buildAgentHints(jsonPlan) {
+    // Token-safe by default: omit the conflict array; full list available via --json --verbose (or --full-plan)
+    const verbose = args.includes('--verbose') || args.includes('--full-plan');
+    const maxConflictDetails = verbose ? Infinity : 5;
+    const totalConflicts = plan.conflict.length;
+    const conflicts = jsonPlan.conflict.slice(0, maxConflictDetails);
+    const truncated = totalConflicts > maxConflictDetails
+      ? totalConflicts - maxConflictDetails
+      : 0;
     return {
       mode: 'script-first-ai-conflicts',
       dryRunJsonCommand: 'node Harness/scripts/wf-update-check.mjs --json',
@@ -338,8 +367,10 @@ async function main() {
       finalizeCommand: 'node Harness/scripts/wf-update-check.mjs --finalize',
       partialUpdate: localVersion.partialUpdate || null,
       acceptedConflicts: localVersion.acceptedConflicts || {},
-      aiMergeRequired: jsonPlan.conflict,
-      aiMergeRequiredCount: jsonPlan.conflict.length,
+      // aiMergeRequired array is attached only in verbose mode to keep default output token-safe.
+      ...(verbose ? { aiMergeRequired: conflicts } : {}),
+      aiMergeRequiredCount: totalConflicts,
+      aiMergeRequiredTruncated: truncated > 0 ? truncated : undefined,
       conflictPolicy: 'Use the script for SAFE/NEW/adopted files. For each CONFLICT file, compare local content with templateHint/remoteUrl, then record the decision with --accept-local, --accept-merged, or --accept-template. Do not hand-edit Harness/.harness-version.',
       postUpdateCommands: [
         'node Harness/scripts/validate-harness.mjs',
@@ -512,6 +543,7 @@ async function main() {
 
   // 3. Output
   if (jsonOut) {
+    const verbose = args.includes('--verbose') || args.includes('--full-plan');
     const jsonPlan = buildJsonPlan();
     console.log(JSON.stringify({
       status: localVersion.partialUpdate ? 'partial-update' : 'update-available',
@@ -525,7 +557,8 @@ async function main() {
       adopted: plan.adopted.length,
       conflict: plan.conflict.length,
       skipped: plan.skipped.length,
-      plan: jsonPlan,
+      // Token-safe by default: attach the full plan only when --verbose / --full-plan is passed.
+      ...(verbose ? { plan: jsonPlan } : {}),
       agent: buildAgentHints(jsonPlan),
     }, null, 2));
     return;

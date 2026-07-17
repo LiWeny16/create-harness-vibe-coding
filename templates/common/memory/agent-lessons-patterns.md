@@ -7,15 +7,16 @@ Write here when:
 - A validation failure exposes a missing regression check.
 - A handoff, dispatch, or context-loading pattern should be repeated or avoided.
 
-Entry format, newest first:
+Entry format (compact, default no date):
 
 ```markdown
-## YYYY-MM-DD - Short Lesson Name
-
-- Lesson: the reusable pattern.
-- Source: review finding, debug loop, failed verification, or handoff.
-- Apply when: the task shape or files where this matters.
-- Regression guard: test, validator check, docs update, or manual evidence to keep it from recurring.
+- When <scenario>: <rule>. Avoid <over-application>. Signals: <signals>.
 ```
 
-Keep entries lightweight and actionable. Avoid secrets and speculative lessons.
+Only use date/timestamp headings when:
+- Entry supersedes prior conflicting guidance
+- Time-sensitive context (version, deprecation)
+- Conflict resolution needed
+
+Keep entries lightweight and actionable. Avoid secrets, speculative lessons, task logs, and process summaries.
+- Entry supersedes prior conflicting guidance: add date stamp.

@@ -2,9 +2,9 @@
 
 ## Trigger
 
-- Explicit: `/wf-auto`, `wf auto`, `auto mode`
-- The user wants continuous improvement that never stops on its own.
-- The user is done giving instructions and wants the system to self-direct.
+- Explicit: `/wf-auto`, `$wf-auto`, `/skills wf-auto`
+- The user must type one of these exact tokens to enter WF-AUTO.
+- These phrases are NOT triggers and must NOT auto-enter WF-AUTO: "auto mode", "never stop", "self-improve", "continuous optimize", "unbounded self-directed optimization", "keep going", or any natural-language description of perpetual work. Only explicit command tokens enter.
 
 ## Core Principle
 

@@ -142,13 +142,16 @@ function buildMessage(update) {
     `Harness update available: ${from} -> ${to}.`,
     `Before unrelated work, ask the user whether to run /wf-update.`,
   ];
+  // Only include summary counts — never list individual conflict files in hook output
   if (update.conflict > 0) {
     parts.push(`${update.conflict} conflict file(s) will need agent/user merge decisions.`);
   }
-  if (update.updated > 0 || update.created > 0) {
-    parts.push(`${update.updated || 0} safe update(s), ${update.created || 0} new file(s).`);
+  if ((update.updated > 0 || update.created > 0) && update.updated !== undefined) {
+    const safeCount = (update.updated || 0) + (update.created || 0);
+    parts.push(`${safeCount} safe file update(s) available.`);
   }
-  return parts.join(' ');
+  // Max 2 lines total, never include plan details
+  return parts.slice(0, 2).join(' ');
 }
 
 function readModeLabel() {

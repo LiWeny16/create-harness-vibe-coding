@@ -1,6 +1,6 @@
 ---
 name: wf-auto
-description: Perpetual adaptive auto-optimization mode. Selects probes from project evidence instead of a fixed angle count. Inherits WF acceptance gates and subagent orchestration per cycle. Use for Claude /wf-auto, Codex $wf-auto, auto mode, or unbounded self-directed optimization.
+description: Perpetual adaptive auto-optimization mode. Selects probes from project evidence instead of a fixed angle count. Inherits WF acceptance gates and subagent orchestration per cycle. Use for Claude /wf-auto, Codex $wf-auto. Explicit only — the user must type /wf-auto, $wf-auto, or /skills wf-auto.
 ---
 
 # WF Auto - Perpetual Auto-Optimization
@@ -18,7 +18,8 @@ description: Perpetual adaptive auto-optimization mode. Selects probes from proj
 
 - Claude `/wf-auto`
 - Codex `$wf-auto`
-- `wf auto`, `auto mode`, or a request for continuous self-directed improvement
+
+Do not use unless the user explicitly invokes `/wf-auto`, `$wf-auto`, or `/skills wf-auto`. The phrases "auto mode", "never stop", "self-improve", "continuous optimize", "unbounded self-directed optimization" are NOT triggers — only an explicit command token enters WF-AUTO.
 
 Do not use when the user gives a bounded task, requests maximum parallelism
 (`/wf-max`), needs an urgent production hotfix, or the codebase is tiny enough

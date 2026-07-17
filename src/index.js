@@ -89,6 +89,12 @@ if (generationOptions.json) {
   const projectName = argName || DEFAULT_NAME;
   const targetDir = argDir || `./${projectName}`;
   const scan = scanTarget(targetDir);
+  if (needsScaffoldRecovery(scan)) {
+    const recovery = createScaffoldRecoveryResult({ projectName, targetDir, options: generationOptions, scan });
+    printJsonResult(recovery);
+    process.exit(recovery.success ? 0 : 1);
+  }
+
   if (scan.hasHarness) {
     printJsonResult(createUpdateSwitchResult(scan, { json: true }));
     process.exit(0);
@@ -120,6 +126,10 @@ if (argName || skipPrompts) {
   projectName = argName || DEFAULT_NAME;
   targetDir = argDir || `./${projectName}`;
   const scan = scanTarget(targetDir);
+
+  if (needsScaffoldRecovery(scan)) {
+    process.exit(runScaffoldRecovery({ projectName, targetDir, options: generationOptions, scan }));
+  }
 
   if (scan.hasHarness) {
     process.exit(runUpdateSwitch(scan, { json: false }));
@@ -171,6 +181,10 @@ if (argName || skipPrompts) {
 
   const scan = scanTarget(targetDir);
   printScan(scan);
+
+  if (needsScaffoldRecovery(scan)) {
+    process.exit(runScaffoldRecovery({ projectName, targetDir, options: generationOptions, scan }));
+  }
 
   if (scan.hasHarness) {
     process.exit(runUpdateSwitch(scan, { json: false }));
@@ -447,6 +461,49 @@ function printJsonResult(result) {
   }
 }
 
+function updateScriptPath(scan) {
+  return path.join(scan.resolvedDir, 'Harness', 'scripts', 'wf-update-check.mjs');
+}
+
+function missingRecoveryReasons(scan) {
+  const reasons = [];
+  if (!fs.existsSync(updateScriptPath(scan))) reasons.push('Harness/scripts/wf-update-check.mjs');
+  return reasons;
+}
+
+function needsScaffoldRecovery(scan) {
+  return scan.hasHarness && missingRecoveryReasons(scan).length > 0;
+}
+
+function recoveryOptions(options) {
+  return {
+    ...options,
+    onConflict: 'skip',
+  };
+}
+
+function createScaffoldRecoveryResult({ projectName, targetDir, options, scan }) {
+  const reasons = missingRecoveryReasons(scan);
+  const recovery = generate({
+    projectName,
+    targetDir,
+    ...recoveryOptions(options),
+  });
+  recovery.mode = 'recovery';
+  recovery.recoveryNote = `Missing ${reasons.join(' and ')}. Re-ran generate with --on-conflict ${recoveryOptions(options).onConflict} to restore missing Harness infrastructure without overwriting existing files.`;
+  return recovery;
+}
+
+function runScaffoldRecovery({ projectName, targetDir, options, scan }) {
+  const reasons = missingRecoveryReasons(scan);
+  console.log('');
+  console.log(pc.yellow(`Old Harness detected: missing ${reasons.join(' and ')}. Running safe recovery (--on-conflict ${recoveryOptions(options).onConflict}).`));
+  const recovery = createScaffoldRecoveryResult({ projectName, targetDir, options, scan });
+  printResult(recovery, targetDir);
+  if (recovery.success) console.log(pc.green('Recovery complete. Now run: node Harness/scripts/wf-update-check.mjs'));
+  return recovery.success ? 0 : 1;
+}
+
 function runUpdateSwitch(scan, { json }) {
   const updateResult = createUpdateSwitchResult(scan, { json });
   if (json) {
@@ -513,8 +570,19 @@ function createUpdateSwitchResult(scan, { json }) {
   if (!fs.existsSync(scriptPath)) {
     return {
       ...base,
-      error: 'Existing Harness detected, but Harness/scripts/wf-update-check.mjs was not found. Install writes were skipped; inspect the existing Harness before updating manually.',
+      success: false,
+      error: 'Existing Harness detected, but Harness/scripts/wf-update-check.mjs was not found. The Harness install is incomplete or was created by an older version that did not include the update checker script. Install writes were skipped — no files were overwritten.',
       errors: ['Harness/scripts/wf-update-check.mjs not found'],
+      agent: {
+        ...base.agent,
+        next: [{
+          action: 'recovery',
+          reason: 'This Harness install predates the update-checker script.',
+          recoveryPath: 'Run npx create-harness-vibe-coding@latest <project-name> . -y --on-conflict skip --json from the project root. Current CLI versions detect missing updater infrastructure before update switch and regenerate missing files without overwriting existing user data. After recovery, run node Harness/scripts/wf-update-check.mjs --json to check for updates.',
+          command: 'npx create-harness-vibe-coding@latest <project-name> . -y --on-conflict skip',
+          note: 'The --on-conflict skip policy preserves all existing files and only creates missing ones. You may still need to merge CLAUDE.md changes manually after recovery.',
+        }],
+      },
     };
   }
 

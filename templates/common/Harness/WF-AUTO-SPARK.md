@@ -4,9 +4,11 @@
 
 ## Trigger
 
-- User explicitly invokes `/wf-auto-spark` or `$wf-auto-spark`
+- User explicitly invokes `/wf-auto-spark`, `$wf-auto-spark`, or `/skills wf-auto-spark`
 - Auto-degrade from `/wf-auto` when user can't clarify direction at Re-Anchor Gate
 - Auto-activate when adaptive internal coverage returns empty for 3+ consecutive cycles AND oracle also empty
+
+Note: Natural-language phrases like "spark mode", "external inspiration", "discover mode", "never stop" are NOT triggers — only explicit command tokens or documented auto-degrade/auto-activate paths from inside WF-AUTO enter WF-AUTO-SPARK.
 
 ## Core Philosophy
 
