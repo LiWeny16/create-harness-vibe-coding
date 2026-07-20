@@ -80,7 +80,7 @@ D-GATE is mandatory before implementation waves per [WF-KERNEL.md](WF-KERNEL.md)
 
 1. Current runtime subagents first.
 2. Close completed agents; fill idle slots immediately.
-3. Cross-CLI overflow: Codex → `claude -p`, Claude → `codex exec`.
+3. Cross-CLI overflow: use an available peer CLI with explicit dispatch packets: `claude -p`, `codex exec`, or `opencode run --agent <role> --dir .`.
 4. Bounded-pass fallback only when subagents and overflow are exhausted.
 5. Generated Codex config defaults to `agents.max_threads = 12` and `agents.max_depth = 1`. Ask the user before raising `agents.max_threads` above that default. Keep `max_depth = 1` unless recursive delegation is explicitly approved.
 6. Do not rely on Codex++, undocumented config, environment variables, forked/derived conversations, or third-party forks as stable capacity.

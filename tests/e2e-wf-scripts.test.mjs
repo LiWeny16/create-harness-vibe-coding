@@ -448,12 +448,18 @@ const localAlreadyCurrentPath = join(TMP, 'Harness', 'WF.md');
 mkdirSync(dirname(localAlreadyCurrentPath), { recursive: true });
 writeFileSync(localAlreadyCurrentPath, mockFiles['Harness/WF.md'] + '\n', 'utf-8');
 
+const localModifiedRuntimePath = join(TMP, 'Harness', 'dispatch.md');
+mkdirSync(dirname(localModifiedRuntimePath), { recursive: true });
+writeFileSync(localModifiedRuntimePath, 'local runtime edit should be replaced\n', 'utf-8');
+
 const updateLocalVersionPath = join(TMP, 'Harness', '.harness-version');
 const updateLocalVersion = JSON.parse(readFileSync(updateLocalVersionPath, 'utf-8'));
 updateLocalVersion.generator = '0.6.1';
 updateLocalVersion.checksums = {
   ...(updateLocalVersion.checksums || {}),
   '.claude/agents/planner.md': checksums['.claude/agents/planner.md'],
+  'Harness/dispatch.md': checksums['Harness/dispatch.md'],
+  'Harness/SETUP.md': sha256('old bootstrap setup\n'),
   'Harness/WF.md': checksums['Harness/WF.md'],
   'Harness/README.md': checksums['Harness/README.md'],
 };
@@ -464,6 +470,8 @@ const remoteUpdateFiles = {
   '.claude/agents/planner.md': 'planner agent definition v2.\n',
   '.claude/settings.json': 'settings template\n',
   'Harness/NEW.md': 'new runtime file\n',
+  'Harness/dispatch.md': 'remote dispatch template v2\n',
+  'Harness/SETUP.md': 'remote bootstrap setup v2\n',
   'Harness/README.md': 'remote router template v2\n',
   'Harness/WF.md': mockFiles['Harness/WF.md'] + '\n',
 };
@@ -496,6 +504,11 @@ assert(localUpdatePlan.status === 'update-available', 'local-source update repor
 assert(localUpdatePlan.agent?.safeApplyCommand?.includes('--apply-safe'), 'JSON agent hints include --apply-safe command');
 assert(localUpdatePlan.agent?.aiMergeRequired?.some(c => c.file === 'Harness/README.md' && c.templateHint === 'Harness/README.md' && c.remoteUrl?.startsWith('file://')), 'JSON agent hints include remote conflict source');
 assert(localJsonPlan.updated.some(x => x.file === '.claude/agents/planner.md'), 'local-source update marks missing safe file as updated');
+assert(localJsonPlan.updated.some(x => x.file === 'Harness/dispatch.md'), 'local-source update marks modified runtime file as updated');
+assert(!localJsonPlan.conflict.some(x => x.file === 'Harness/dispatch.md'), 'local-source update does not route modified runtime file through AI conflict');
+assert(localJsonPlan.skipped.some(x => x.file === 'Harness/SETUP.md' && x.reason.includes('bootstrap-only')), 'local-source update does not recreate removed bootstrap-only SETUP.md');
+assert(!localJsonPlan.created.some(x => x.file === 'Harness/SETUP.md'), 'local-source update does not mark removed SETUP.md as created');
+assert(!localJsonPlan.updated.some(x => x.file === 'Harness/SETUP.md'), 'local-source update does not mark removed SETUP.md as updated');
 assert(localJsonPlan.adopted?.some(x => x.file === '.claude/settings.json'), 'AC-001 byte-matching new remote file is adopted without AI conflict');
 assert(!localJsonPlan.conflict.some(x => x.file === '.claude/settings.json'), 'AC-001 byte-matching new remote file is not a conflict');
 assert(localJsonPlan.created.some(x => x.file === 'Harness/NEW.md'), 'local-source update marks new runtime file as created');
@@ -509,7 +522,9 @@ assert(existsSync(plannerAfterApply), '--apply-safe restored safe planner file')
 if (existsSync(plannerAfterApply)) {
   assert(readFileSync(plannerAfterApply, 'utf-8') === remoteUpdateFiles['.claude/agents/planner.md'], '--apply-safe wrote planner remote content');
 }
+assert(readFileSync(localModifiedRuntimePath, 'utf-8') === remoteUpdateFiles['Harness/dispatch.md'], '--apply-safe overwrote modified runtime file from template');
 assert(existsSync(join(TMP, 'Harness', 'NEW.md')), '--apply-safe created new runtime file');
+assert(!existsSync(join(TMP, 'Harness', 'SETUP.md')), '--apply-safe does not recreate removed bootstrap-only SETUP.md');
 assert(readFileSync(localMergePath, 'utf-8') === 'local router conflict\n', '--apply-safe preserved conflict file');
 const versionAfterApplySafe = JSON.parse(readFileSync(join(TMP, 'Harness', '.harness-version'), 'utf-8'));
 assert(versionAfterApplySafe.generator === '0.6.1', '--apply-safe does not bump generator while conflicts remain');

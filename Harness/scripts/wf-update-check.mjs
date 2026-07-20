@@ -56,6 +56,10 @@ const OPTIONAL_REGISTRATION_FILES = new Set([
   'Harness/README.md',
 ]);
 
+const BOOTSTRAP_ONLY_FILES = new Set([
+  'Harness/SETUP.md',
+]);
+
 // ── Helpers ────────────────────────────────────────────────────────
 
 /** Reject paths that escape ROOT (traversal, absolute, .., etc.). */
@@ -153,9 +157,11 @@ function classify(file, localHash, storedHash) {
       return 'CONFLICT'; // user modified, needs decision
     }
   }
-  // Everything else is SAFE runtime file
-  if (localHash === storedHash || localHash === null) return 'SAFE';
-  return 'CONFLICT'; // modified runtime file — unexpected
+  // Everything else is SAFE runtime file — always overwrite.
+  // Harness system files (scripts, skills, agents, commands, WF docs) are
+  // not user data; the template is authoritative. Only PRESERVE and MERGE
+  // files should ever require conflict resolution.
+  return 'SAFE';
 }
 
 async function fetchRemote(url, timeoutMs = 30000) {
@@ -466,6 +472,11 @@ async function main() {
         continue;
       }
       plan.skipped.push({ file, reason: 'not in remote' });
+      continue;
+    }
+
+    if (BOOTSTRAP_ONLY_FILES.has(canonical) && localHash === null) {
+      plan.skipped.push({ file, reason: 'bootstrap-only file already removed locally' });
       continue;
     }
 

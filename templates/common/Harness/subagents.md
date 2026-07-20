@@ -124,7 +124,7 @@ Choose the cheapest coordination level that is safe.
 Max parallelism removes the Harness default cap, not the runtime's physical or
 account cap. For WF-MAX, record the current runtime budget, use native
 subagents first, close completed agents before declaring the pool exhausted,
-then overflow to the other CLI (`claude -p` or `codex exec`) with explicit
+then overflow to a peer CLI (`claude -p`, `codex exec`, or `opencode run --agent <role> --dir .`) with explicit
 dispatch packets. Generated Harness Codex config defaults to
 `agents.max_threads = 12` and `agents.max_depth = 1`; if that becomes the
 bottleneck, ask the user before raising `agents.max_threads` and keep
@@ -191,6 +191,13 @@ Validation is separate from review. Validator must produce an AC-by-AC result
 matrix from running behavior and evidence, not from the implementer's summary.
 
 If either reviewer finds issues, the implementer or debugger fixes them and the same gate runs again. Do not move to final acceptance with open critical/high findings or without reflector PASS.
+
+For `/wf-review`, use the installed `reviewer` role before inventing any
+ad hoc review prompt. If no peer CLI is available, dispatch `reviewer` as an
+independent same-runtime subagent context; for broad WF-MAX review, dispatch
+`review-manager` when the runtime supports nested reviewer fan-out. Reviewer
+agents report suggestions only. The controller accepts, rejects, or escalates
+each finding and owns the final decision.
 
 ## Subagent Status Handling
 

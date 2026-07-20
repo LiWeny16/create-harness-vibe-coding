@@ -205,7 +205,7 @@ TIER 2 — Did any selected probe find an actionable direction?
   └── NO → Run a confirmation pass with a different scan strategy.
 
 TIER 3 — Is uncertainty still high or coverage borderline?
-  ├── YES → Re-run only the uncertain probe, or invoke the cross-model oracle.
+  ├── YES → Re-run only the uncertain probe, or invoke the peer-review oracle.
   └── NO → Record an empty confirmation pass.
 
 TIER 4 — Two different confirmation strategies are empty?
@@ -215,9 +215,10 @@ TIER 4 — Two different confirmation strategies are empty?
 
 **Oracle Rules (modeled on /wf-review):**
 
-- [ ] CEO detects which CLI is running: `which codex` / `which claude`
-- [ ] CEO invokes the OTHER CLI only when unresolved high-risk uncertainty or borderline coverage justifies it
-- [ ] If neither CLI is available, record "oracle unavailable" in PROGRESS.md and continue with local confirmation
+- [ ] CEO detects available peer CLIs: `claude`, `codex`, and `opencode`
+- [ ] CEO invokes a peer CLI only when unresolved high-risk uncertainty or borderline coverage justifies it
+- [ ] If no peer CLI is available, dispatch the installed `reviewer` role as an independent subagent context
+- [ ] If neither peer CLI nor subagent surface is available, record "oracle unavailable" in PROGRESS.md and continue with local confirmation
 - [ ] Oracle is invoked at most once per adaptive exhaustion event
 - [ ] Oracle findings are treated as severity=high by default (external model perspective gets extra weight)
 
@@ -360,7 +361,7 @@ CEO presents:
 
 ### Spark: External Candidate Provider
 
-Spark is NOT a separate optimization engine. It is a **candidate provider** plugged into W0, alongside the adaptive probe scan and the cross-model oracle. W1 still owns prioritization across ALL sources.
+Spark is NOT a separate optimization engine. It is a **candidate provider** plugged into W0, alongside the adaptive probe scan and the peer-review oracle. W1 still owns prioritization across ALL sources.
 
 **When spark activates:**
 - W0 internal scan returns empty AND oracle also empty → `auto.spark` state
@@ -398,7 +399,7 @@ Spark is NOT a separate optimization engine. It is a **candidate provider** plug
 
 W1 prioritization now handles three source types:
 - `source=internal` — from adaptive probe scan
-- `source=oracle` — from cross-model review
+- `source=oracle` — from peer CLI or reviewer-subagent review
 - `source=spark-<name>` — from external inspiration search
 
 Tie-breaking: internal > oracle > spark (local context beats external inspiration).
@@ -490,14 +491,14 @@ Mini PRD-derived AC IDs in `/wf-auto`.
 |-----------|-----|---------|----------|
 | Scope | Task-bounded | Task-bounded | Unbounded |
 | Stop condition | Task complete | Task complete | Dynamic obligations covered + two different empty confirmation passes |
-| Direction | User-specified | User-specified | AI-inferred + cross-model oracle + external spark |
+| Direction | User-specified | User-specified | AI-inferred + peer-review oracle + external spark |
 | Organization | Flat (CEO + agents) | 3-tier (CEO→Mgr→Worker) | Flat (CEO + selected probes + oracle + spark searchers + build agents) |
 | Duration | One task | One task | Perpetual |
 | User interaction | At key gates | At key gates | Adaptive checkpoint (2→5→10 cycles), 2 questions only |
 | Cycle count | 1 | 1 (multi-wave) | ∞ (until exhaustion) |
 | Files/cycle | Per task | Per wave (many) | ≤3 per cycle |
 | Exploration | 3-5 agents once | 5-10 agents once | Dynamic probes + triggered spark sources per cycle |
-| Cross-model check | No (wf-review is separate) | No (wf-review is separate) | Yes — Cross-Model Oracle built into A-GATE Tier 1.5 |
+| Peer review check | No (wf-review is separate) | No (wf-review is separate) | Yes — peer-review oracle built into A-GATE Tier 1.5 |
 | External inspiration | No | No | Yes — Spark candidate provider when internal sources empty |
 | Evidence tracking | Per task | Per task | Evidence ledger per cycle with measured impact |
 

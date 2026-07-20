@@ -132,7 +132,7 @@ The A-GATE is evidence-based:
 5. the CEO records unresolved uncertainty, skipped probes, and why oracle or
    spark search was or was not needed.
 
-The cross-model oracle is triggered by unresolved high-risk uncertainty or a
+The peer-review oracle is triggered by unresolved high-risk uncertainty or a
 borderline exhaustion result. Spark search is triggered by a genuine value gap,
 not merely because a catalog was empty. This prevents both premature stopping
 and pointless full-tree scanning.

@@ -70,9 +70,9 @@ WF-Max-Strict (explicit override): user says `--strict`, `strict wf-max`, or
   or global Codex config.
 - Keep `agents.max_depth = 1` unless the user explicitly approves recursive
   delegation.
-- If the current runtime is exhausted, overflow to the other CLI with explicit
-  dispatch packets: Codex -> `claude -p`; Claude -> available Codex CLI such as
-  `codex exec`.
+- If the current runtime is exhausted, overflow to a peer CLI with explicit
+  dispatch packets: `claude -p`, `codex exec`, or
+  `opencode run --agent <role> --dir .`.
 - Do not rely on undocumented config, environment variables, forked/derived
   conversations, Codex++, local patches, or third-party forks as stable ways to
   remove subagent limits.

@@ -31,8 +31,8 @@ subagent surfaces; follow the same Harness role contract either way.
 - Codex: use the available subagent tool or role mechanism in the current
   surface. If unavailable, emulate the same roles as separate bounded passes.
 - WF-MAX cross-CLI overflow: prefer the current runtime's subagents first; if that pool
-  is exhausted, overflow to the other CLI with explicit dispatch packets
-  (Codex -> `claude -p`, Claude -> available Codex CLI such as `codex exec`)
+  is exhausted, overflow to a peer CLI with explicit dispatch packets
+  (`claude -p`, `codex exec`, or `opencode run --agent <role> --dir .`)
   before bounded-pass fallback.
 - In every runtime, record fallback and role coverage in the task plan.
 
