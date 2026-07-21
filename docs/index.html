@@ -35,6 +35,7 @@
       --wipe-alpha: 0;
       --transition-alpha: 1;
       --transition-y: 0px;
+      --transition-content-wipe: 0%;
     }
 
     *, *::before, *::after { box-sizing: border-box; }
@@ -114,10 +115,10 @@
 
     .wipe-invert {
       inset: 0;
-      z-index: 20;
-      background: #fff;
-      mix-blend-mode: difference;
+      z-index: 1;
+      background: #fafafa;
       clip-path: polygon(0 0, var(--wipe) 0, var(--wipe) 100%, 0 100%);
+      will-change: clip-path, opacity;
     }
 
     .wipe-line {
@@ -470,16 +471,30 @@
     .transition-content {
       text-align: center;
       z-index: 3;
-      max-width: min(var(--max), calc(100% - 40px));
+      width: min(var(--max), calc(100% - 40px));
       padding: 40px 0;
       position: relative;
+      color: #fff;
       opacity: var(--transition-alpha);
       transform: translateY(var(--transition-y));
     }
 
+    .transition-content.wipe-copy {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      z-index: 4;
+      color: #111;
+      pointer-events: none;
+      clip-path: polygon(0 0, var(--transition-content-wipe) 0, var(--transition-content-wipe) 100%, 0 100%);
+      transform: translate(-50%, calc(-50% + var(--transition-y)));
+      will-change: clip-path, opacity, transform;
+    }
+
     .transition-eyebrow {
       margin: 0 0 20px;
-      color: var(--muted);
+      color: inherit;
+      opacity: 0.66;
       font-size: 13px;
       font-weight: 780;
       text-transform: uppercase;
@@ -498,7 +513,8 @@
 
     .transition-sub {
       margin: 0;
-      color: var(--muted);
+      color: inherit;
+      opacity: 0.66;
       font-size: 18px;
       line-height: 1.65;
       max-width: 560px;
@@ -846,6 +862,11 @@
           <h2 class="evidence-text">Evidence is the interface.</h2>
           <p class="transition-sub">Harness makes verification part of the operating contract, not an afterthought.</p>
         </div>
+        <div class="transition-content wipe-copy" aria-hidden="true">
+          <p class="transition-eyebrow">From system to evidence</p>
+          <h2 class="evidence-text">Evidence is the interface.</h2>
+          <p class="transition-sub">Harness makes verification part of the operating contract, not an afterthought.</p>
+        </div>
       </section>
 
       <section class="advantages-section" id="advantages">
@@ -953,6 +974,7 @@
     const copyButton = document.getElementById('copyPrompt');
     const promptText = document.getElementById('promptText');
     const copyStatus = document.getElementById('copyStatus');
+    const transitionContent = document.querySelector('.transition-content:not(.wipe-copy)');
 
     async function copyPrompt() {
       const value = promptText.value;
@@ -1525,6 +1547,53 @@
         root.setProperty('--surface', 'rgb(' + Math.round(8 + (245 - 8) * t) + ',' + Math.round(8 + (245 - 8) * t) + ',' + Math.round(8 + (245 - 8) * t) + ')');
         root.setProperty('--button-secondary-bg', 'rgba(255,255,255,' + (0.05 * (1 - t) + 0.08 * t).toFixed(3) + ')');
         root.setProperty('--evidence-shadow', '0 26px 90px rgba(0,0,0,' + (0.08 + 0.12 * t).toFixed(3) + ')');
+        root.colorScheme = t > 0.5 ? 'light' : 'dark';
+      }
+
+      function clamp01(value) {
+        return Math.max(0, Math.min(1, value));
+      }
+
+      function smoothstep(value) {
+        var t = clamp01(value);
+        return t * t * (3 - 2 * t);
+      }
+
+      function applyTransitionState(progress) {
+        var t = clamp01(progress);
+        var root = document.documentElement.style;
+        var wipeT = smoothstep((t - 0.04) / 0.88);
+        var exitT = smoothstep(t / 0.3);
+        var copyT = smoothstep((t - 0.26) / 0.2);
+        var isComplete = t >= 0.965;
+        var isAtStart = t <= 0.012;
+        var contentWipe = isComplete ? 1 : wipeT;
+
+        if (transitionContent) {
+          var contentRect = transitionContent.getBoundingClientRect();
+          var wipeX = window.innerWidth * (isComplete ? 1 : wipeT);
+          contentWipe = clamp01((wipeX - contentRect.left) / Math.max(1, contentRect.width));
+        }
+
+        sceneState.exit = exitT;
+        sceneState.spread = 1;
+        sceneState.groupX = -18 * exitT;
+        sceneState.groupScale = 1.02 - 0.16 * exitT;
+        sceneState.camX = 4.25 - 4.6 * exitT;
+        sceneState.lookX = 4.55 - 6.1 * exitT;
+        sceneState.camZ = 8.35 + 0.9 * exitT;
+        sceneState.camY = 3.54;
+        sceneState.sceneAlpha = Math.max(0, 1 - t / 0.36);
+
+        root.setProperty('--wipe', (isComplete ? 100 : wipeT * 100).toFixed(2) + '%');
+        root.setProperty('--wipe-alpha', (!isAtStart && !isComplete) ? '1' : '0');
+        root.setProperty('--grid-scale', String(1.14 + t * 0.16));
+        root.setProperty('--grid-x', String(Math.round(-64 - 72 * t)) + 'px');
+        root.setProperty('--grid-y', String(Math.round(42 + 24 * t)) + 'px');
+        root.setProperty('--transition-alpha', copyT.toFixed(3));
+        root.setProperty('--transition-y', Math.round((1 - copyT) * 22) + 'px');
+        root.setProperty('--transition-content-wipe', (contentWipe * 100).toFixed(2) + '%');
+        setThemeProgress(isComplete ? 1 : 0);
       }
 
       function setupScrollTriggers() {
@@ -1571,29 +1640,12 @@
           pin: true,
           scrub: 0.65,
           onUpdate: function (self) {
-            var t = self.progress;
-            var root = document.documentElement.style;
-            var wipe = Math.min(100, Math.max(0, t * 112 - 6));
-            var themeT = t > 0.985 ? (t - 0.985) / 0.015 : 0;
-            var exitT = Math.min(1, t / 0.28);
-            var copyT = Math.max(0, Math.min(1, (t - 0.28) / 0.18));
-            var copyEase = 1 - Math.pow(1 - copyT, 3);
-            sceneState.exit = exitT;
-            sceneState.spread = 1;
-            sceneState.groupX = -18 * exitT;
-            sceneState.groupScale = 1.02 - 0.16 * exitT;
-            sceneState.camX = 4.25 - 4.6 * exitT;
-            sceneState.lookX = 4.55 - 6.1 * exitT;
-            sceneState.camZ = 8.35 + 0.9 * exitT;
-            sceneState.sceneAlpha = Math.max(0, 1 - t / 0.36);
-            root.setProperty('--wipe', wipe.toFixed(2) + '%');
-            root.setProperty('--wipe-alpha', t > 0.015 && t < 0.998 ? '1' : '0');
-            root.setProperty('--grid-scale', String(1.14 + t * 0.16));
-            root.setProperty('--grid-x', String(Math.round(-64 - 72 * t)) + 'px');
-            root.setProperty('--transition-alpha', copyEase.toFixed(3));
-            root.setProperty('--transition-y', Math.round((1 - copyEase) * 22) + 'px');
-            setThemeProgress(themeT);
-          }
+            applyTransitionState(self.progress);
+          },
+          onEnter: function (self) { applyTransitionState(self.progress); },
+          onLeave: function () { applyTransitionState(1); },
+          onEnterBack: function (self) { applyTransitionState(self.progress); },
+          onLeaveBack: function () { applyTransitionState(0); }
         });
 
         /* Advantage cards fade-in */
