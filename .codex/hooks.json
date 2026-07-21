@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"const fs=require('fs'),p=require('path'),cp=require('child_process');let d=process.cwd();for(;;){const s=p.join(d,'Harness','scripts','wf-auto-update-prompt.mjs');if(fs.existsSync(s)){const r=cp.spawnSync(process.execPath,[s,'--format','codex'],{stdio:'inherit',cwd:d,env:process.env});process.exitCode=(r.status==null)?0:r.status;break}const u=p.dirname(d);if(u===d)break;d=u}\"",
+            "timeout": 35,
+            "statusMessage": "Checking Harness updates"
+          }
+        ]
+      }
+    ]
+  }
+}

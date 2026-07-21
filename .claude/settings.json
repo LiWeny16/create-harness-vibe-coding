@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(git *)",
+      "Bash(npm *)",
+      "Bash(npx *)",
+      "Bash(python *)",
+      "Bash(pytest *)",
+      "Bash(pip *)",
+      "Bash(go *)",
+      "Bash(cargo *)",
+      "Bash(node *)",
+      "Read",
+      "Glob",
+      "Grep",
+      "WebFetch",
+      "WebSearch"
+    ],
+    "deny": [
+      "EnterPlanMode",
+      "Bash(rm -rf *)",
+      "Bash(sudo *)",
+      "Bash(curl *)",
+      "Bash(wget *)",
+      "Bash(> *)",
+      "Read(.env*)",
+      "Read(**/secrets/**)",
+      "Read(**/*.key)",
+      "Read(**/*.pem)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"const fs=require('fs'),p=require('path'),cp=require('child_process');let d=process.env.CLAUDE_PROJECT_DIR||process.cwd();for(;;){const s=p.join(d,'Harness','scripts','wf-auto-update-prompt.mjs');if(fs.existsSync(s)){const r=cp.spawnSync(process.execPath,[s,'--format','claude'],{stdio:'inherit',cwd:d,env:process.env});process.exitCode=(r.status==null)?0:r.status;break}const u=p.dirname(d);if(u===d)break;d=u}\""
+          }
+        ]
+      }
+    ]
+  }
+}

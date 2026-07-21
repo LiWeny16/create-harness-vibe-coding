@@ -1,0 +1,54 @@
+# Dependencies
+node_modules/
+
+# Package manager artifacts
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build, coverage, and packed releases
+dist/
+build/
+coverage/
+*.tgz
+
+# Runtime caches and temp files
+.cache/
+.npm/
+.pnpm-store/
+tmp/
+temp/
+
+# Local env and secrets
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+
+# Batch test temp projects
+tests/batch/.tmp/
+
+# Runtime mode state
+Harness/.runtime/
+
+# OpenCode runtime state/log/database artifacts
+.opencode-data*/
+.opencode-state*/
+
+# Local agent/editor state
+.claude/settings.local.json
+CLAUDE.local.md
+.vscode/
+.idea/
+
+# In-situ experiment / temporary repos
+caveman/
+
+# OS files
+.DS_Store
+Thumbs.db
+npm.key

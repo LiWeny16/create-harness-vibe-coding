@@ -1,0 +1,862 @@
+#!/usr/bin/env node
+import * as p from '@clack/prompts';
+import fs from 'node:fs';
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
+import pc from 'picocolors';
+import { askConflictPolicy, askOptionalSelections, askProjectName, askTargetDir } from './prompts.js';
+import { generate, getOptionalCatalog } from './generator.js';
+
+const UPDATE_SUCCESS_STATUSES = new Set(['up-to-date', 'update-available', 'partial-update']);
+const UPDATE_FAILURE_STATUSES = new Set(['error', 'offline', 'template-remote', 'downgrade-refused']);
+
+// ── CLI flags ──────────────────────────────────────────────
+const raw = process.argv.slice(2);
+const parsed = parseArgs(raw);
+const showHelp = parsed.flags.help || parsed.flags.h;
+const skipPrompts = parsed.flags.yes || parsed.flags.y;
+const conflictPolicyProvided = parsed.flags.onConflict !== undefined;
+
+if (parsed.errors.length > 0) {
+  for (const err of parsed.errors) {
+    console.error(pc.red(`Error: ${err}`));
+  }
+  process.exit(1);
+}
+
+if (showHelp) {
+  console.log('');
+  console.log('  create-harness-vibe-coding');
+  console.log('');
+  console.log('  Usage:');
+  console.log('    npx create-harness-vibe-coding@latest [project-name] [target-dir] [flags]');
+  console.log('');
+  console.log('  Arguments:');
+  console.log('    project-name   Name for the new project (default: my-vibe-project)');
+  console.log('    target-dir     Directory to create the project in (default: ./<project-name>)');
+  console.log('');
+  console.log('  Flags:');
+  console.log('    -y, --yes                    Skip all prompts, use defaults or provided args');
+  console.log('    -h, --help                   Show this help');
+  console.log('    --dry-run                    Print the planned writes without creating files');
+  console.log('    --on-conflict <policy>       fail, skip, backup, or overwrite (default: fail)');
+  console.log('    --with <id,id>               Add optional local workflow skills');
+  console.log('    --without <id,id>            Remove optional workflow skills selected by --preset or --with');
+  console.log('    --recommend <id,id>          Record recommendation-only external capabilities');
+  console.log('    --preset <name>              Add a built-in optional workflow preset');
+  console.log('    --list-options               Print optional workflow skills and presets');
+  console.log('    --json                       Output machine-readable JSON (use with --dry-run for planning)');
+  console.log('');
+  console.log('  Interactive mode offers checkbox selection for optional workflows and external recommendations.');
+  console.log('');
+  console.log('  Examples:');
+  console.log('    npx create-harness-vibe-coding@latest');
+  console.log('    npx create-harness-vibe-coding@latest -y');
+  console.log('    npx create-harness-vibe-coding@latest my-project');
+  console.log('    npx create-harness-vibe-coding@latest my-project ./dist/my-project -y');
+  console.log('    npx create-harness-vibe-coding@latest legacy ./legacy -y --dry-run');
+  console.log('    npx create-harness-vibe-coding@latest legacy ./legacy -y --on-conflict skip');
+  console.log('    npx create-harness-vibe-coding@latest web ./web -y --with ts-react-frontend,browser-e2e');
+  console.log('    npx create-harness-vibe-coding@latest web ./web -y --preset web-app');
+  console.log('    npx create-harness-vibe-coding@latest api ./api -y --preset fullstack --without github-pr-review');
+  console.log('');
+  process.exit(0);
+}
+
+if (parsed.flags.listOptions) {
+  printOptions();
+  process.exit(0);
+}
+
+// Positional args (non-flag)
+const positional = parsed.positionals;
+const argName = positional[0];
+const argDir = positional[1];
+const generationOptions = {
+  dryRun: Boolean(parsed.flags.dryRun),
+  onConflict: parsed.flags.onConflict || 'fail',
+  withOptions: parsed.flags.with || [],
+  withoutOptions: parsed.flags.without || [],
+  externalOptions: parsed.flags.recommend || [],
+  preset: parsed.flags.preset,
+  json: Boolean(parsed.flags.json),
+};
+
+const DEFAULT_NAME = 'my-vibe-project';
+
+// --json: machine-readable output, no prompts, no decorative output
+if (generationOptions.json) {
+  const projectName = argName || DEFAULT_NAME;
+  const targetDir = argDir || `./${projectName}`;
+  const scan = scanTarget(targetDir);
+  if (needsScaffoldRecovery(scan)) {
+    const recovery = createScaffoldRecoveryResult({ projectName, targetDir, options: generationOptions, scan });
+    printJsonResult(recovery);
+    process.exit(recovery.success ? 0 : 1);
+  }
+
+  if (scan.hasHarness) {
+    printJsonResult(createUpdateSwitchResult(scan, { json: true }));
+    process.exit(0);
+  }
+  const result = generate({ projectName, targetDir, ...generationOptions });
+  result.scan = createJsonScan(scan);
+  result.agent = createAgentGuidance(result, {
+    projectName,
+    targetDir,
+    options: generationOptions,
+    scan,
+  });
+  printJsonResult(result);
+  // printJsonResult exits with 1 on failure; we only reach here on success
+  process.exit(0);
+}
+
+console.log('');
+console.log(pc.magenta('╔══════════════════════════════════════════╗'));
+console.log(pc.magenta('║   create-harness-vibe-coding             ║'));
+console.log(pc.magenta('║   0-1 Product Harness Scaffold           ║'));
+console.log(pc.magenta('╚══════════════════════════════════════════╝'));
+console.log('');
+
+let projectName, targetDir;
+
+// Non-interactive: positionals provided OR -y/--yes flag set
+if (argName || skipPrompts) {
+  projectName = argName || DEFAULT_NAME;
+  targetDir = argDir || `./${projectName}`;
+  const scan = scanTarget(targetDir);
+
+  if (needsScaffoldRecovery(scan)) {
+    process.exit(runScaffoldRecovery({ projectName, targetDir, options: generationOptions, scan }));
+  }
+
+  if (scan.hasHarness) {
+    process.exit(runUpdateSwitch(scan, { json: false }));
+  }
+
+  console.log(pc.dim('────────────────────────────────────────────'));
+  console.log(`  Project     ${pc.green(projectName)}`);
+  console.log(`  Directory   ${pc.green(targetDir)}`);
+  console.log(`  Creates     ${pc.cyan('CLAUDE.md, README.md, Harness/PROGRESS.md, Harness/, .claude/, .agents/, .opencode/, opencode.json, tests/')}`);
+  if (generationOptions.dryRun) {
+    console.log(`  Mode        ${pc.yellow('dry-run')}`);
+  }
+  console.log(`  Conflicts   ${pc.cyan(generationOptions.onConflict)}`);
+  if (generationOptions.withOptions.length > 0) {
+    console.log(`  Optional    ${pc.cyan(generationOptions.withOptions.join(','))}`);
+  }
+  if (generationOptions.withoutOptions.length > 0) {
+    console.log(`  Without     ${pc.cyan(generationOptions.withoutOptions.join(','))}`);
+  }
+  if (generationOptions.externalOptions.length > 0) {
+    console.log(`  Recommend   ${pc.cyan(generationOptions.externalOptions.join(','))}`);
+  }
+  if (generationOptions.preset) {
+    console.log(`  Preset      ${pc.cyan(generationOptions.preset)}`);
+  }
+  if (skipPrompts) {
+    console.log(`  Mode        ${pc.dim('non-interactive (-y)')}`);
+  }
+  console.log(pc.dim('────────────────────────────────────────────'));
+  console.log('');
+
+  const result = generate({ projectName, targetDir, ...generationOptions });
+  printResult(result, targetDir);
+} else {
+  // Interactive mode
+  try {
+    projectName = await askProjectName();
+  } catch {
+    projectName = 'my-vibe-project';
+    console.log(pc.dim(`  Project: ${projectName} (default)`));
+  }
+
+  try {
+    targetDir = await askTargetDir(projectName);
+  } catch {
+    targetDir = `./${projectName}`;
+    console.log(pc.dim(`  Directory: ${targetDir} (default)`));
+  }
+
+  const scan = scanTarget(targetDir);
+  printScan(scan);
+
+  if (needsScaffoldRecovery(scan)) {
+    process.exit(runScaffoldRecovery({ projectName, targetDir, options: generationOptions, scan }));
+  }
+
+  if (scan.hasHarness) {
+    process.exit(runUpdateSwitch(scan, { json: false }));
+  }
+
+  if (!generationOptions.dryRun && !conflictPolicyProvided && scan.needsConflictPolicy) {
+    try {
+      generationOptions.onConflict = await askConflictPolicy(scan);
+    } catch {
+      generationOptions.onConflict = 'skip';
+      console.log(pc.dim('  Conflicts: skip (preserve existing files default)'));
+    }
+  }
+
+  const optionFlagsProvided = generationOptions.withOptions.length > 0
+    || generationOptions.withoutOptions.length > 0
+    || generationOptions.externalOptions.length > 0
+    || generationOptions.preset;
+
+  if (!optionFlagsProvided) {
+    try {
+      const selected = await askOptionalSelections(getOptionalCatalog());
+      generationOptions.withOptions = selected.withOptions;
+      generationOptions.externalOptions = selected.externalOptions;
+    } catch {
+      generationOptions.withOptions = [];
+      generationOptions.externalOptions = [];
+      console.log(pc.dim('  Optional: none (default)'));
+    }
+  }
+
+  console.log('');
+  console.log(pc.dim('────────────────────────────────────────────'));
+  console.log(`  Project     ${pc.green(projectName)}`);
+  console.log(`  Directory   ${pc.green(targetDir)}`);
+  console.log(`  Creates     ${pc.cyan('CLAUDE.md, README.md, Harness/PROGRESS.md, Harness/, .claude/, .agents/, .opencode/, opencode.json, tests/')}`);
+  console.log(`  Conflicts   ${pc.cyan(generationOptions.onConflict)}`);
+  if (generationOptions.withOptions.length > 0) {
+    console.log(`  Optional    ${pc.cyan(generationOptions.withOptions.join(','))}`);
+  }
+  if (generationOptions.externalOptions.length > 0) {
+    console.log(`  Recommend   ${pc.cyan(generationOptions.externalOptions.join(','))}`);
+  }
+  console.log(pc.dim('────────────────────────────────────────────'));
+  console.log('');
+
+  const preview = generate({ projectName, targetDir, ...generationOptions, dryRun: true });
+  if (!preview.success) {
+    printResult(preview, targetDir);
+  }
+
+  console.log(pc.yellow('Planned changes: no files have been written yet.'));
+  printSummary(preview.summary);
+  printPlan(preview.plan);
+  printWarnings(preview);
+  console.log('');
+
+  if (generationOptions.dryRun) {
+    process.exit(0);
+  }
+
+  let proceed = true;
+  try {
+    proceed = await p.confirm({
+      message: 'Confirm generation with this plan?',
+      initialValue: true,
+    });
+    if (p.isCancel(proceed)) proceed = false;
+  } catch {
+    proceed = true;
+  }
+
+  if (!proceed) {
+    p.cancel('Cancelled');
+    process.exit(0);
+  }
+
+  console.log('');
+  const result = generate({ projectName, targetDir, ...generationOptions });
+  printResult(result, targetDir);
+}
+
+function printResult(result, targetDir) {
+  if (result.success) {
+    if (result.dryRun) {
+      console.log(pc.yellow('\nDry run: no files or directories were written.'));
+      printSummary(result.summary);
+      printPlan(result.plan);
+      if (result.warnings.length > 0) {
+        console.log(pc.yellow('\nWarning(s):'));
+        for (const warning of result.warnings) {
+          console.log(pc.yellow(`  - ${warning}`));
+        }
+      }
+      console.log('');
+      return;
+    }
+
+    console.log(pc.green('\nGeneration complete.\n'));
+    printSummary(result.summary);
+
+    printWarnings(result);
+
+    console.log(pc.bold('Next steps:'));
+    console.log(`  ${pc.cyan(`cd ${targetDir}`)}`);
+    console.log(`  ${pc.cyan('claude')}                          # Start Claude Code`);
+    console.log(`  ${pc.cyan('codex')}                           # Or start Codex`);
+    console.log(`  ${pc.cyan('opencode')}                        # Or start OpenCode`);
+    console.log(`  Tell your agent: "${pc.yellow('Read Harness/SETUP.md. Bootstrap this project from idea to first vertical slice.')}"`);
+    console.log('');
+    console.log(pc.dim('  Harness/SETUP.md is temporary. Delete it after initialization.'));
+    console.log('');
+
+  } else {
+    console.log(pc.red('\nGeneration failed:'));
+    for (const err of result.errors) {
+      console.log(pc.red(`  - ${err}`));
+    }
+    process.exit(1);
+  }
+}
+
+function parseArgs(args) {
+  const flags = {
+    with: [],
+    without: [],
+  };
+  const positionals = [];
+  const errors = [];
+
+  function readValue(flagName, index) {
+    const value = args[index + 1];
+    if (!value || value.startsWith('-')) {
+      errors.push(`${flagName} requires a value`);
+      return { value: undefined, nextIndex: index };
+    }
+    return { value, nextIndex: index + 1 };
+  }
+
+  function readEqualsValue(flagName, value) {
+    if (!value || value.startsWith('-')) {
+      errors.push(`${flagName} requires a value`);
+      return undefined;
+    }
+    return value;
+  }
+
+  for (let i = 0; i < args.length; i += 1) {
+    const arg = args[i];
+
+    if (arg === '-h') {
+      flags.h = true;
+    } else if (arg === '--help') {
+      flags.help = true;
+    } else if (arg === '-y') {
+      flags.y = true;
+    } else if (arg === '--yes') {
+      flags.yes = true;
+    } else if (arg === '--dry-run') {
+      flags.dryRun = true;
+    } else if (arg === '--list-options') {
+      flags.listOptions = true;
+    } else if (arg === '--json') {
+      flags.json = true;
+    } else if (arg === '--on-conflict') {
+      const parsedValue = readValue('--on-conflict', i);
+      flags.onConflict = parsedValue.value;
+      i = parsedValue.nextIndex;
+    } else if (arg.startsWith('--on-conflict=')) {
+      flags.onConflict = readEqualsValue('--on-conflict', arg.slice('--on-conflict='.length));
+    } else if (arg === '--with') {
+      const parsedValue = readValue('--with', i);
+      if (parsedValue.value !== undefined) flags.with.push(parsedValue.value);
+      i = parsedValue.nextIndex;
+    } else if (arg.startsWith('--with=')) {
+      const value = readEqualsValue('--with', arg.slice('--with='.length));
+      if (value !== undefined) flags.with.push(value);
+    } else if (arg === '--without') {
+      const parsedValue = readValue('--without', i);
+      if (parsedValue.value !== undefined) flags.without.push(parsedValue.value);
+      i = parsedValue.nextIndex;
+    } else if (arg.startsWith('--without=')) {
+      const value = readEqualsValue('--without', arg.slice('--without='.length));
+      if (value !== undefined) flags.without.push(value);
+    } else if (arg === '--recommend') {
+      const parsedValue = readValue('--recommend', i);
+      if (parsedValue.value !== undefined) {
+        if (!flags.recommend) flags.recommend = [];
+        flags.recommend.push(parsedValue.value);
+      }
+      i = parsedValue.nextIndex;
+    } else if (arg.startsWith('--recommend=')) {
+      const value = readEqualsValue('--recommend', arg.slice('--recommend='.length));
+      if (value !== undefined) {
+        if (!flags.recommend) flags.recommend = [];
+        flags.recommend.push(value);
+      }
+    } else if (arg === '--preset') {
+      const parsedValue = readValue('--preset', i);
+      flags.preset = parsedValue.value;
+      i = parsedValue.nextIndex;
+    } else if (arg.startsWith('--preset=')) {
+      flags.preset = readEqualsValue('--preset', arg.slice('--preset='.length));
+    } else if (arg.startsWith('-')) {
+      errors.push(`Unknown flag "${arg}"`);
+    } else {
+      positionals.push(arg);
+    }
+  }
+
+  return { flags, positionals, errors };
+}
+
+function printOptions() {
+  const catalog = getOptionalCatalog();
+
+  console.log('');
+  console.log(pc.bold('Optional workflow skills:'));
+  for (const skill of catalog.skills) {
+    console.log(`  ${pc.cyan(skill.id)} - ${skill.description}`);
+  }
+
+  console.log('');
+  console.log(pc.bold('Presets:'));
+  for (const [name, skills] of Object.entries(catalog.presets)) {
+    console.log(`  ${pc.cyan(name)} - ${skills.join(', ')}`);
+  }
+
+  if (catalog.externalRecommendations?.length) {
+    console.log('');
+    console.log(pc.bold('External recommendations:'));
+    for (const item of catalog.externalRecommendations) {
+      console.log(`  ${pc.cyan(item.id)} - ${item.description} (${item.installMode}) ${item.url || ''}`.trimEnd());
+    }
+  }
+  console.log('');
+}
+
+function printSummary(summary) {
+  console.log(`  created     ${pc.green(summary.created)}`);
+  console.log(`  skipped     ${pc.yellow(summary.skipped)}`);
+  console.log(`  backed up   ${pc.cyan(summary.backedUp)}`);
+  console.log(`  overwritten ${pc.cyan(summary.overwritten)}`);
+  console.log(`  conflicts   ${summary.conflicts > 0 ? pc.red(summary.conflicts) : pc.dim(summary.conflicts)}`);
+  console.log(`  directories ${pc.dim(summary.mkdir)}`);
+  console.log('');
+}
+
+function printPlan(plan) {
+  for (const [label, files] of Object.entries(plan)) {
+    if (!files.length) continue;
+    console.log(`  ${label}:`);
+    for (const file of files) {
+      console.log(`    - ${file}`);
+    }
+  }
+}
+
+function printWarnings(result) {
+  if (!result.warnings.length) return;
+
+  console.log(pc.yellow('\nWarning(s):'));
+  for (const warning of result.warnings) {
+    console.log(pc.yellow(`  - ${warning}`));
+  }
+}
+
+function printJsonResult(result) {
+  // Remove `created` array from output — it is already in the plan, avoid duplication
+  const { created, ...rest } = result;
+  console.log(JSON.stringify(rest, null, 2));
+  if (!result.success) {
+    process.exit(1);
+  }
+}
+
+function updateScriptPath(scan) {
+  return path.join(scan.resolvedDir, 'Harness', 'scripts', 'wf-update-check.mjs');
+}
+
+function missingRecoveryReasons(scan) {
+  const reasons = [];
+  if (!fs.existsSync(updateScriptPath(scan))) reasons.push('Harness/scripts/wf-update-check.mjs');
+  return reasons;
+}
+
+function needsScaffoldRecovery(scan) {
+  return scan.hasHarness && missingRecoveryReasons(scan).length > 0;
+}
+
+function recoveryOptions(options) {
+  return {
+    ...options,
+    onConflict: 'skip',
+  };
+}
+
+function createScaffoldRecoveryResult({ projectName, targetDir, options, scan }) {
+  const reasons = missingRecoveryReasons(scan);
+  const recovery = generate({
+    projectName,
+    targetDir,
+    ...recoveryOptions(options),
+  });
+  recovery.mode = 'recovery';
+  recovery.recoveryNote = `Missing ${reasons.join(' and ')}. Re-ran generate with --on-conflict ${recoveryOptions(options).onConflict} to restore missing Harness infrastructure without overwriting existing files.`;
+  return recovery;
+}
+
+function runScaffoldRecovery({ projectName, targetDir, options, scan }) {
+  const reasons = missingRecoveryReasons(scan);
+  console.log('');
+  console.log(pc.yellow(`Old Harness detected: missing ${reasons.join(' and ')}. Running safe recovery (--on-conflict ${recoveryOptions(options).onConflict}).`));
+  const recovery = createScaffoldRecoveryResult({ projectName, targetDir, options, scan });
+  printResult(recovery, targetDir);
+  if (recovery.success) console.log(pc.green('Recovery complete. Now run: node Harness/scripts/wf-update-check.mjs'));
+  return recovery.success ? 0 : 1;
+}
+
+function runUpdateSwitch(scan, { json }) {
+  const updateResult = createUpdateSwitchResult(scan, { json });
+  if (json) {
+    printJsonResult(updateResult);
+    return updateResult.success ? 0 : 1;
+  }
+
+  console.log('');
+  console.log(pc.yellow('Existing Harness detected. Switching to wf-update check.'));
+  console.log(pc.dim(`Directory   ${scan.resolvedDir}`));
+  console.log(pc.dim('Command     node Harness/scripts/wf-update-check.mjs'));
+  console.log('');
+
+  if (!updateResult.success && updateResult.error) {
+    console.error(pc.red(updateResult.error));
+    return 1;
+  }
+
+  if (updateResult.stdout) process.stdout.write(updateResult.stdout);
+  if (updateResult.stderr) process.stderr.write(updateResult.stderr);
+  return updateResult.exitCode ?? 0;
+}
+
+function getUpdateStatusError(update) {
+  if (!update || typeof update !== 'object' || typeof update.status !== 'string') {
+    return 'Update checker did not return a machine-readable status.';
+  }
+  if (UPDATE_FAILURE_STATUSES.has(update.status)) {
+    return `Update checker reported ${update.status}${update.message ? `: ${update.message}` : ''}`;
+  }
+  if (!UPDATE_SUCCESS_STATUSES.has(update.status)) {
+    return `Update checker returned unrecognized status: ${update.status}`;
+  }
+  return null;
+}
+
+function createUpdateSwitchResult(scan, { json }) {
+  const args = ['Harness/scripts/wf-update-check.mjs'];
+  if (json) args.push('--json');
+
+  const scriptPath = path.join(scan.resolvedDir, 'Harness', 'scripts', 'wf-update-check.mjs');
+  const command = `node ${args.join(' ')}`;
+  const base = {
+    success: false,
+    mode: 'update',
+    scan: createJsonScan(scan),
+    agent: {
+      sourceOfTruth: 'Existing Harness detected; install automatically switched to the target update checker. Do not continue install writes.',
+      updateCommand: json
+        ? 'node Harness/scripts/wf-update-check.mjs --json'
+        : 'node Harness/scripts/wf-update-check.mjs',
+      next: [
+        {
+          action: 'update',
+          command: json
+            ? 'node Harness/scripts/wf-update-check.mjs --json'
+            : 'node Harness/scripts/wf-update-check.mjs',
+          reason: 'Harness already exists, so updates must use the installed Harness update flow.',
+        },
+      ],
+    },
+  };
+
+  if (!fs.existsSync(scriptPath)) {
+    return {
+      ...base,
+      success: false,
+      error: 'Existing Harness detected, but Harness/scripts/wf-update-check.mjs was not found. The Harness install is incomplete or was created by an older version that did not include the update checker script. Install writes were skipped — no files were overwritten.',
+      errors: ['Harness/scripts/wf-update-check.mjs not found'],
+      agent: {
+        ...base.agent,
+        next: [{
+          action: 'recovery',
+          reason: 'This Harness install predates the update-checker script.',
+          recoveryPath: 'Run npx create-harness-vibe-coding@latest <project-name> . -y --on-conflict skip --json from the project root. Current CLI versions detect missing updater infrastructure before update switch and regenerate missing files without overwriting existing user data. After recovery, run node Harness/scripts/wf-update-check.mjs --json to check for updates.',
+          command: 'npx create-harness-vibe-coding@latest <project-name> . -y --on-conflict skip',
+          note: 'The --on-conflict skip policy preserves all existing files and only creates missing ones. You may still need to merge CLAUDE.md changes manually after recovery.',
+        }],
+      },
+    };
+  }
+
+  const result = spawnSync(process.execPath, args, {
+    cwd: scan.resolvedDir,
+    encoding: 'utf8',
+  });
+  const stdout = result.stdout || '';
+  const stderr = result.stderr || '';
+  const status = result.status ?? 1;
+
+  let update = undefined;
+  if (json && stdout.trim()) {
+    try {
+      update = JSON.parse(stdout.trim());
+    } catch {
+      update = { rawOutput: stdout };
+    }
+  }
+
+  const errors = [];
+  if (status !== 0) errors.push(`Update checker exited with status ${status}`);
+  if (json) {
+    const statusError = getUpdateStatusError(update);
+    if (statusError) errors.push(statusError);
+  }
+
+  return {
+    ...base,
+    success: errors.length === 0,
+    exitCode: status,
+    command,
+    stdout,
+    stderr,
+    ...(json ? { update } : {}),
+    ...(errors.length === 0 ? {} : { error: errors[0], errors }),
+  };
+}
+
+function scanTarget(targetDir) {
+  const resolvedDir = path.resolve(process.cwd(), targetDir);
+  const exists = fs.existsSync(resolvedDir);
+  const isDirectory = exists && fs.statSync(resolvedDir).isDirectory();
+  const entries = isDirectory
+    ? fs.readdirSync(resolvedDir)
+    : [];
+  const hasHarness = isDirectory && fs.existsSync(path.join(resolvedDir, 'Harness'));
+  const hasClaude = isDirectory && fs.existsSync(path.join(resolvedDir, 'CLAUDE.md'));
+  const hasAgents = isDirectory && fs.existsSync(path.join(resolvedDir, 'AGENTS.md'));
+  const hasAgentSkills = isDirectory && fs.existsSync(path.join(resolvedDir, '.agents'));
+  const hasCodex = isDirectory && fs.existsSync(path.join(resolvedDir, '.codex'));
+  const hasOpencode = isDirectory && (fs.existsSync(path.join(resolvedDir, '.opencode')) || fs.existsSync(path.join(resolvedDir, 'opencode.json')));
+  const hasDocs = isDirectory && fs.existsSync(path.join(resolvedDir, 'docs'));
+  const hasReadme = isDirectory && fs.existsSync(path.join(resolvedDir, 'README.md'));
+  const hasPackageJson = isDirectory && fs.existsSync(path.join(resolvedDir, 'package.json'));
+  const hasPyproject = isDirectory && fs.existsSync(path.join(resolvedDir, 'pyproject.toml'));
+  const hasGoMod = isDirectory && fs.existsSync(path.join(resolvedDir, 'go.mod'));
+  const hasGithub = isDirectory && fs.existsSync(path.join(resolvedDir, '.github'));
+  const hasGitignore = isDirectory && fs.existsSync(path.join(resolvedDir, '.gitignore'));
+
+  return {
+    resolvedDir,
+    exists,
+    isDirectory,
+    entries,
+    hasHarness,
+    hasClaude,
+    hasAgents,
+    hasAgentSkills,
+    hasCodex,
+    hasOpencode,
+    hasDocs,
+    hasReadme,
+    hasPackageJson,
+    hasPyproject,
+    hasGoMod,
+    hasGithub,
+    hasGitignore,
+    needsConflictPolicy: exists && (!isDirectory || entries.length > 0 || hasHarness),
+  };
+}
+
+function createJsonScan(scan) {
+  const topLevelEntries = scan.entries.slice(0, 50);
+
+  return {
+    resolvedDir: scan.resolvedDir,
+    exists: scan.exists,
+    isDirectory: scan.isDirectory,
+    entryCount: scan.entries.length,
+    topLevelEntries,
+    topLevelEntriesTruncated: scan.entries.length > topLevelEntries.length,
+    needsConflictPolicy: scan.needsConflictPolicy,
+    markers: {
+      hasHarness: scan.hasHarness,
+      hasClaude: scan.hasClaude,
+      hasAgents: scan.hasAgents,
+      hasAgentSkills: scan.hasAgentSkills,
+      hasCodex: scan.hasCodex,
+      hasOpencode: scan.hasOpencode,
+      hasDocs: scan.hasDocs,
+      hasReadme: scan.hasReadme,
+      hasPackageJson: scan.hasPackageJson,
+      hasPyproject: scan.hasPyproject,
+      hasGoMod: scan.hasGoMod,
+      hasGithub: scan.hasGithub,
+      hasGitignore: scan.hasGitignore,
+    },
+  };
+}
+
+function createAgentGuidance(result, { projectName, targetDir, options, scan }) {
+  const attentionFiles = [...new Set([
+    ...(result.plan?.conflict || []),
+    ...(result.plan?.skip || []),
+  ])].sort();
+  const aiMergeRequired = attentionFiles.map(file => createFileGuidance(file));
+  const hasBlockingConflicts = (result.plan?.conflict || []).length > 0;
+  const safeMergeCommand = commandFor(projectName, targetDir, {
+    ...options,
+    dryRun: false,
+    onConflict: 'skip',
+    json: true,
+  });
+  const previewCommand = commandFor(projectName, targetDir, {
+    ...options,
+    dryRun: true,
+    json: true,
+  });
+  const next = [];
+
+  if (scan.hasHarness) {
+    next.push({
+      action: 'stop',
+      reason: 'Harness already exists; use wf-update or Harness/scripts/wf-update-check.mjs instead of reinstalling blindly.',
+    });
+  } else if (result.dryRun && !hasBlockingConflicts) {
+    next.push({
+      action: 'install',
+      command: safeMergeCommand,
+      reason: 'Dry-run has no blocking conflicts; let the script create missing files.',
+    });
+  } else if (result.dryRun && hasBlockingConflicts) {
+    next.push({
+      action: 'safe-merge',
+      command: safeMergeCommand,
+      reason: 'Default dry-run found existing files; rerun with --on-conflict skip so the script creates missing files and preserves existing ones.',
+    });
+  } else if (result.success) {
+    next.push({
+      action: 'bootstrap',
+      command: 'Read Harness/SETUP.md and use this JSON plan before opening any package templates.',
+      reason: 'Scaffold files were written; bootstrap project facts from local evidence.',
+    });
+  } else {
+    next.push({
+      action: 'inspect-errors',
+      reason: 'Generation failed before safe scaffold output was available.',
+    });
+  }
+
+  if (aiMergeRequired.length > 0) {
+    next.push({
+      action: 'ai-merge',
+      files: aiMergeRequired.map(item => item.file),
+      reason: 'Only these existing/conflicting files need semantic review. Files in plan.create are script-owned.',
+    });
+  }
+
+  return {
+    sourceOfTruth: 'Use this JSON scan/plan first. Do not read package source or templates unless aiMergeRequired lists a file.',
+    previewCommand,
+    safeMergeCommand,
+    scriptHandled: {
+      create: result.plan?.create?.length || 0,
+      mkdir: result.plan?.mkdir?.length || 0,
+      backup: result.plan?.backup?.length || 0,
+      overwrite: result.plan?.overwrite?.length || 0,
+    },
+    aiMergeRequired,
+    next,
+  };
+}
+
+function createFileGuidance(file) {
+  const normalized = file.replace(/\\/g, '/');
+  const guidance = {
+    file: normalized,
+    templateHint: templateHintFor(normalized),
+    requiresUserConsent: false,
+    defaultAction: 'preserve',
+    reason: 'Existing file or path needs semantic review before any merge.',
+  };
+
+  if (normalized.endsWith('/')) {
+    return {
+      ...guidance,
+      templateHint: null,
+      defaultAction: 'stop',
+      reason: 'A file blocks a required scaffold directory. Stop and ask before moving or replacing it.',
+    };
+  }
+
+  if (normalized === 'CLAUDE.md' || normalized === 'AGENTS.md') {
+    return {
+      ...guidance,
+      requiresUserConsent: true,
+      reason: 'Root agent entry contract. Preserve project rules and ask before merging Harness startup guidance.',
+    };
+  }
+
+  if (normalized === 'README.md') {
+    return {
+      ...guidance,
+      reason: 'Project-owned public/development documentation. Preserve by default; append development notes only after review.',
+    };
+  }
+
+  if (normalized === 'Harness/README.md' || normalized === 'Harness/MEMORY.md') {
+    return {
+      ...guidance,
+      reason: 'Harness router/registry conflict. Merge only missing routing or registration entries.',
+    };
+  }
+
+  return guidance;
+}
+
+function templateHintFor(file) {
+  if (file === 'Harness/SETUP.md') return 'templates/common/SETUP.md';
+  return `templates/common/${file}`;
+}
+
+function commandFor(projectName, targetDir, options) {
+  const args = [
+    'npx',
+    'create-harness-vibe-coding@latest',
+    projectName,
+    targetDir,
+    '-y',
+  ];
+
+  if (options.dryRun) args.push('--dry-run');
+  if (options.onConflict) args.push('--on-conflict', options.onConflict);
+  if (options.withOptions?.length) args.push('--with', options.withOptions.join(','));
+  if (options.withoutOptions?.length) args.push('--without', options.withoutOptions.join(','));
+  if (options.externalOptions?.length) args.push('--recommend', options.externalOptions.join(','));
+  if (options.preset) args.push('--preset', options.preset);
+  if (options.json) args.push('--json');
+
+  return args.map(shellQuoteArg).join(' ');
+}
+
+function shellQuoteArg(arg) {
+  if (/^[A-Za-z0-9@._/\\:-]+$/.test(arg)) return arg;
+  return JSON.stringify(arg);
+}
+
+function printScan(scan) {
+  if (!scan.exists) return;
+
+  console.log('');
+  console.log(pc.bold('Root scan:'));
+  console.log(`  Directory   ${pc.dim(scan.resolvedDir)}`);
+  if (!scan.isDirectory) {
+    console.log(`  Conflict    ${pc.yellow('target path exists and is not a directory')}`);
+    return;
+  }
+  console.log(`  Entries     ${pc.cyan(scan.entries.length)}`);
+  if (scan.hasHarness) console.log(`  Harness     ${pc.yellow('exists')}`);
+  if (scan.hasClaude) console.log(`  CLAUDE.md   ${pc.yellow('exists')}`);
+  if (scan.hasAgents) console.log(`  AGENTS.md   ${pc.yellow('exists')}`);
+  if (scan.hasAgentSkills) console.log(`  .agents/    ${pc.yellow('exists')}`);
+  if (scan.hasCodex) console.log(`  .codex/     ${pc.yellow('exists')}`);
+  if (scan.hasOpencode) console.log(`  opencode     ${pc.yellow('exists')}  ${pc.dim('(.opencode/ or opencode.json)')}`);
+  if (scan.hasDocs) console.log(`  docs/       ${pc.dim('project-owned; Harness stays in Harness/')}`);
+}

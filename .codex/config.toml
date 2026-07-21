@@ -1,0 +1,5 @@
+[agents]
+# Harness WF-MAX default: higher than Codex's unset default of 6.
+# Keep depth at 1 unless the user explicitly approves recursive delegation.
+max_threads = 12
+max_depth = 1

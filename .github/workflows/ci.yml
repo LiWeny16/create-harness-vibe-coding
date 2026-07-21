@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  harness-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Verify harness-version is up to date
+        run: node scripts/build-version.mjs --check
+
+      - name: Validate harness scaffold
+        run: node templates/common/Harness/scripts/validate-harness.mjs --strict
+
+  test:
+    needs: harness-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run all tests
+        run: npm test
+
+      - name: Run workflow script E2E tests
+        run: npm run test:e2e
+
+      - name: Run package smoke tests
+        run: npm run pack:smoke

@@ -1,0 +1,93 @@
+{
+  "skills": [
+    {
+      "id": "browser-e2e",
+      "title": "Browser E2E",
+      "description": "Mandatory real-browser smoke workflow using Playwright, Chrome DevTools/CDP, or documented manual evidence.",
+      "files": ["skills/browser-e2e"],
+      "tags": ["e2e", "browser", "playwright", "cdp"]
+    },
+    {
+      "id": "ui-ux-review",
+      "title": "UI/UX Review",
+      "description": "Screenshot-driven responsive, accessibility, and visual polish review workflow.",
+      "files": ["skills/ui-ux-review"],
+      "tags": ["ui", "ux", "accessibility", "review"]
+    },
+    {
+      "id": "github-pr-review",
+      "title": "GitHub PR Review",
+      "description": "GitHub CLI based PR diff, checks, review findings, and CI evidence workflow.",
+      "files": ["skills/github-pr-review"],
+      "tags": ["github", "pr", "review", "ci"]
+    },
+    {
+      "id": "python-backend",
+      "title": "Python Backend",
+      "description": "Python backend workflow for FastAPI or similar APIs with unittest or pytest verification.",
+      "files": ["skills/python-backend"],
+      "tags": ["python", "fastapi", "unittest", "pytest", "api"]
+    },
+    {
+      "id": "ts-react-frontend",
+      "title": "TypeScript React Frontend",
+      "description": "TypeScript React workflow for typecheck, component tests, builds, and browser smoke.",
+      "files": ["skills/ts-react-frontend"],
+      "tags": ["typescript", "react", "vite", "frontend"]
+    }
+  ],
+  "presets": {
+    "web-app": ["ts-react-frontend", "browser-e2e", "ui-ux-review"],
+    "fullstack": ["ts-react-frontend", "python-backend", "browser-e2e", "github-pr-review"]
+  },
+  "externalRecommendations": [
+    {
+      "id": "superpowers",
+      "title": "Superpowers",
+      "description": "Community skill registry for agent workflows and reusable coding skills.",
+      "installMode": "recommend-only",
+      "url": "https://github.com/obra/Superpowers",
+      "tags": ["skills", "community", "subagents"]
+    },
+    {
+      "id": "caveman",
+      "title": "Caveman",
+      "description": "External terse-agent capability to evaluate for low-token behavior and memory compression.",
+      "installMode": "recommend-only",
+      "url": "https://github.com/JuliusBrussee/caveman",
+      "tags": ["workflow", "implementation", "style"]
+    },
+    {
+      "id": "agent-research",
+      "title": "Agent Research",
+      "description": "External research-agent capability for broader product, dependency, and ecosystem investigation.",
+      "installMode": "recommend-only",
+      "url": "https://github.com/lingzhi227/agent-research-skills",
+      "tags": ["research", "agents", "discovery"]
+    },
+    {
+      "id": "codegraph",
+      "title": "Code Graph",
+      "description": "External code graph or repository map capability for dependency and architecture exploration.",
+      "installMode": "recommend-only",
+      "url": "https://github.com/colbymchenry/codegraph",
+      "tags": ["code graph", "architecture", "analysis"]
+    },
+    {
+      "id": "grill-me",
+      "title": "Grill Me",
+      "description": "External Matt Pocock skill for relentlessly interviewing a plan or design before implementation.",
+      "installMode": "recommend-only",
+      "url": "https://github.com/mattpocock/skills/tree/main/skills/productivity/grill-me",
+      "tags": ["planning", "design", "interview", "skills"]
+    },
+    {
+      "id": "oh-my-openagent",
+      "title": "oh-my-openagent",
+      "description": "Community OpenCode plugin harness: curated agents (Sisyphus/Prometheus/Hephaestus), lifecycle hooks, hash-anchored edits, and Team Mode. For OpenCode and Codex CLI.",
+      "installMode": "recommend-only",
+      "url": "https://github.com/code-yeongyu/oh-my-openagent",
+      "tags": ["opencode", "agents", "harness", "ecosystem"]
+    }
+  ]
+}
