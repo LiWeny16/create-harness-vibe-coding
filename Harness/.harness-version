@@ -1,6 +1,6 @@
 {
-  "generator": "0.8.9",
-  "generated": "2026-07-17T08:41:21.757Z",
+  "generator": "0.8.11",
+  "generated": "2026-07-21T07:49:38.353Z",
   "options": [
     "browser-e2e"
   ],
@@ -80,7 +80,7 @@
     ".opencode/commands/wf-auto-spark.md": "sha256-febe76ec28b1650886a81d79e19ec53db725da3ed7777cf739ec8e2bbc5d6564",
     ".opencode/commands/wf-auto.md": "sha256-8e27d4d567a980d4d6a2ed0832c4f1f7f7439f172ea03a79c9d24468d01fdf38",
     ".opencode/commands/wf-browser.md": "sha256-97de46407f559dbfedc53c3c1decbc68b35bde6cd7c38d00f2176016d7b11a6e",
-    ".opencode/commands/wf-help.md": "sha256-aece97e06d75cf5b811935d5e9d11b3a0c2f4e06746d9751d14b291d6c3774d2",
+    ".opencode/commands/wf-help.md": "sha256-2776d41e78577896f90f0de3ebdbc032ab9808b96c17ebecbff1319d4e6142b1",
     ".opencode/commands/wf-learn.md": "sha256-dc8e75ef4b2c2ef90c749a23dc2cd99eaf2727955d0670bdb2d6f24086f6d0ed",
     ".opencode/commands/wf-max.md": "sha256-39ebd1e0252b9b72a16a539c8f2afd678bf63aad38c4b964238b287c359a49a2",
     ".opencode/commands/wf-readme.md": "sha256-276e80255bd38f51e17b158650d182401304bf06388407d259f47850306556e8",
@@ -101,7 +101,7 @@
     "Harness/README.md": "sha256-4c8f30de9face43960088d240127860b43a2b821d1988c23a9cd1c0502ba35f7",
     "Harness/TASK_ARCHIVE.md": "sha256-d815f2c99a7dc98b9956bb876e9ee07dfb66a283c758124d7b4eb8965dea1f6a",
     "Harness/TDD-GUIDE.md": "sha256-602084530fd0dea7499a023ce75738351e5d97a0c222b64d405f36da6b59a162",
-    "Harness/WF-AUTO-ANGLES.md": "sha256-263134228ffe03abdc437f8625fec9f4bf619d696774380dd5e46944d5881252",
+    "Harness/WF-AUTO-ANGLES.md": "sha256-b9641d871f728e8112ad0d8c7f87bcbec0a06aa572c5f3060efdd26496abdf9b",
     "Harness/WF-AUTO-SPARK.md": "sha256-8fc879261f71f81c5a64e37a6aed8b72fd78ca01c5c9f318a15f4a0a594b4783",
     "Harness/WF-AUTO.md": "sha256-7898a38ee9ce9cf1c49aa7e3603c17afc68544981dca7d91e2e4149ca2fc5aea",
     "Harness/WF-KERNEL.md": "sha256-97c626574f62dceaa590829d99e46889b86cab5658d7827c704788e4afdda030",
@@ -275,5 +275,15 @@
     "README.md": "README.md",
     "opencode.json": "opencode.json"
   },
-  "externalRecommendations": []
+  "externalRecommendations": [],
+  "acceptedConflicts": {
+    ".claude/commands/wf-help.md": {
+      "decision": "accept-local",
+      "targetGenerator": "0.8.11",
+      "localHash": "sha256-3176b33c6c8de6a4b8322f21a1dca8448894b1d57c11dd94f45056f95c0a3db2",
+      "remoteHash": "sha256-aaaa6834c6cb61d2ecbeb41ad8fcf77de10ac1638b2009a3822284c01cf41fac",
+      "templateHint": ".claude/commands/wf-help.md",
+      "updatedAt": "2026-07-21T07:49:13.557Z"
+    }
+  }
 }

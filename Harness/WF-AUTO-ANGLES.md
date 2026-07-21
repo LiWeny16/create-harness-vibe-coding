@@ -23,7 +23,6 @@ The catalog is extensible. These are probe families, not mandatory agents:
 | Context / memory quality | Does the agent receive the right context at the right time without noise or loss? | long tasks, repeated rediscovery, oversized prompts, stale memory |
 | Correctness / safety | Can the change be wrong, destructive, or inconsistent? | changed logic, state transitions, file writes, data mutations |
 | Security / privacy | Can an attacker or accidental disclosure exploit this path? | auth, permissions, input, secrets, network, personal data |
-| Security / privacy | Can an attacker or accidental disclosure exploit this path? | auth, permissions, input, secrets, network, personal data |
 | Reliability / recovery | What happens on timeout, interruption, retry, partial failure, or restart? | external calls, queues, persistence, background work, flaky tests |
 | Performance / cost | Is time, memory, token, I/O, or bundle cost becoming material? | hot paths, large data, repeated scans, slow tests, cost evidence |
 | Architecture / changeability | Will this make the next change harder or violate boundaries? | new dependency, cross-layer edit, duplicated state, large diff |
