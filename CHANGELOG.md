@@ -1,10 +1,14 @@
 # Changelog
 
-## [0.8.9] - 2026-07-21
+## [0.8.10] - 2026-07-21
 
 - Move Harness update reminders to startup-only hooks for Claude, Codex, and OpenCode.
 - Harden `wf-update-check.mjs` so stable updates prefer a usable GitHub release, ignore prerelease generators, and fall back to `main` when release metadata is stale.
 - Add validator, generator, E2E, pack-smoke, and CI/pre-push coverage for startup-only update checks.
+- Reject drive-letter paths in Harness update/remove/clean scripts across platforms.
+
+## [0.8.9] - 2026-07-17
+
 - Add safe recovery for older Harness installs missing `wf-update-check.mjs`.
 - Tighten update-check JSON output and WF-AUTO hook output to keep default agent context small.
 - Add L2 startup memory hints and L3 memory route indexing to generated Harness installs.
