@@ -1,0 +1,20 @@
+{
+  "taskId": "docs-3d-refactor",
+  "created": "2026-07-21",
+  "phase": "archived",
+  "gate": "ACCEPT-GATE",
+  "tier": "WF-Standard",
+  "activeQuestion": null,
+  "ready": [],
+  "running": [],
+  "blocked": [],
+  "done": [
+    "planner-design",
+    "implementer-main-rewrite",
+    "implementer-css-transition-fix",
+    "verifier-browser-checks"
+  ],
+  "nextAction": "Closeout — all ACs pass, npm test clean",
+  "status": "archived",
+  "updatedAt": "2026-07-21T14:30:34.899Z"
+}
