@@ -97,6 +97,7 @@ const required = [
   '.opencode/commands/wf-help.md',
   '.opencode/commands/wf-update.md',
   ...opencodeWorkflowCommands.map(command => `.opencode/commands/${command}.md`),
+  '.opencode/plugins/harness-wf-status.mjs',
   '.claude/rules/ecc/common.md',
   ...commonAgents.map(agent => `.claude/agents/${agent}.md`),
   ...commonAgents.map(agent => `.opencode/agents/${agent}.md`),
@@ -771,6 +772,12 @@ forbidText('.claude/settings.json', 'wf-mode-hook.mjs', 'Claude WF hook command 
 forbidText('.codex/hooks.json', 'wf-mode-hook.mjs', 'Codex WF hook command registration');
 const codexHookConfig = read('.codex/hooks.json');
 const claudeSettings = read('.claude/settings.json');
+requireText('.codex/hooks.json', '"SessionStart"', 'Codex startup-only update hook');
+requireText('.claude/settings.json', '"SessionStart"', 'Claude startup-only update hook');
+forbidText('.codex/hooks.json', 'UserPromptSubmit', 'Codex turn-by-turn update hook');
+forbidText('.claude/settings.json', 'UserPromptSubmit', 'Claude turn-by-turn update hook');
+requireText('.opencode/plugins/harness-wf-status.mjs', 'opencode.startup', 'OpenCode startup-only update check');
+forbidText('.opencode/plugins/harness-wf-status.mjs', "'chat.message'", 'OpenCode turn-by-turn update hook');
 if (codexHookConfig && !codexHookConfig.includes('wf-auto')) {
   errors.push('.codex/hooks.json may only exist for a wf-auto hook configuration');
 }

@@ -362,12 +362,16 @@ test('generated scaffold stores harness-owned payload under root Harness directo
   assert.match(codexConfig, /max_depth = 1/);
 
   const codexHooks = readRel(targetDir, '.codex/hooks.json');
-  assert.match(codexHooks, /UserPromptSubmit/);
+  assert.match(codexHooks, /SessionStart/);
+  assert.match(codexHooks, /startup\|resume\|clear/);
   assert.match(codexHooks, /wf-auto-update-prompt\.mjs/);
+  assert.doesNotMatch(codexHooks, /UserPromptSubmit/);
 
   const claudeSettings = readRel(targetDir, '.claude/settings.json');
-  assert.match(claudeSettings, /UserPromptSubmit/);
+  assert.match(claudeSettings, /SessionStart/);
+  assert.match(claudeSettings, /startup\|resume\|clear/);
   assert.match(claudeSettings, /wf-auto-update-prompt\.mjs/);
+  assert.doesNotMatch(claudeSettings, /UserPromptSubmit/);
 
   const opencodeConfig = readRel(targetDir, 'opencode.json');
   assert.match(opencodeConfig, /\$schema.*opencode\.ai\/config\.json/);
@@ -377,6 +381,8 @@ test('generated scaffold stores harness-owned payload under root Harness directo
   assert.match(opencodePlugin, /HarnessWfStatusPlugin/);
   assert.match(opencodePlugin, /mode on/);
   assert.match(opencodePlugin, /wf-auto-update-prompt\.mjs/);
+  assert.match(opencodePlugin, /opencode\.startup/);
+  assert.doesNotMatch(opencodePlugin, /'chat\.message'/);
 
   const opencodePlanner = readRel(targetDir, '.opencode/agents/planner.md');
   assert.match(opencodePlanner, /mode: subagent/);

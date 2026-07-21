@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
-import { dirname, resolve } from 'node:path';
+import { resolve } from 'node:path';
 
 const WF_COMMANDS = new Map([
   ['wf', 'WF'],
@@ -53,14 +53,14 @@ function clearMode(root) {
   }
 }
 
-function runUpdatePrompt(root, prompt) {
+function runUpdatePrompt(root, prompt = '', hookEventName = 'opencode.startup') {
   const script = resolve(root, 'Harness', 'scripts', 'wf-auto-update-prompt.mjs');
   if (!existsSync(script)) return null;
   const result = spawnSync(process.execPath, [script, '--format', 'json'], {
     cwd: root,
     input: JSON.stringify({
       cwd: root,
-      hook_event_name: 'chat.message',
+      hook_event_name: hookEventName,
       prompt,
     }),
     encoding: 'utf-8',
@@ -72,13 +72,6 @@ function runUpdatePrompt(root, prompt) {
   } catch {
     return null;
   }
-}
-
-function textFromParts(parts) {
-  return (parts || [])
-    .filter(part => part?.type === 'text' && typeof part.text === 'string')
-    .map(part => part.text)
-    .join('\n');
 }
 
 async function showToast(client, directory, body) {
@@ -94,19 +87,17 @@ async function showToast(client, directory, body) {
 
 export const HarnessWfStatusPlugin = async ({ client, directory, worktree }) => {
   const root = worktree || directory || process.cwd();
+  const startupUpdate = runUpdatePrompt(root);
+  if (startupUpdate?.message) {
+    await showToast(client, root, {
+      title: 'Harness update available',
+      message: startupUpdate.message,
+      variant: 'warning',
+      duration: 12000,
+    });
+  }
 
   return {
-    'chat.message': async (_input, output) => {
-      const update = runUpdatePrompt(root, textFromParts(output.parts));
-      if (!update?.message) return;
-      await showToast(client, root, {
-        title: 'Harness update available',
-        message: update.message,
-        variant: 'warning',
-        duration: 12000,
-      });
-    },
-
     'command.execute.before': async (input) => {
       const mode = WF_COMMANDS.get(commandName(input.command));
       if (!mode) return;

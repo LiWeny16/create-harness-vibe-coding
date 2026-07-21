@@ -142,7 +142,7 @@ function buildMessage(update) {
     `Harness update available: ${from} -> ${to}.`,
     `Before unrelated work, ask the user whether to run /wf-update.`,
   ];
-  // Only include summary counts — never list individual conflict files in hook output
+  // Only include summary counts; never list individual conflict files in hook output.
   if (update.conflict > 0) {
     parts.push(`${update.conflict} conflict file(s) will need agent/user merge decisions.`);
   }
@@ -174,7 +174,7 @@ function emit(message, payload = {}) {
     if (context) {
       console.log(JSON.stringify({
         hookSpecificOutput: {
-          hookEventName: input.hook_event_name || 'UserPromptSubmit',
+          hookEventName: input.hook_event_name || 'SessionStart',
           additionalContext: context,
         },
       }));

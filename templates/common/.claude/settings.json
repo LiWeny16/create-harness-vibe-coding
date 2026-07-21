@@ -31,9 +31,9 @@
     ]
   },
   "hooks": {
-    "UserPromptSubmit": [
+    "SessionStart": [
       {
-        "matcher": "",
+        "matcher": "startup|resume|clear",
         "hooks": [
           {
             "type": "command",

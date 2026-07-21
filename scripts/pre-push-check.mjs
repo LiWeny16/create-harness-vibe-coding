@@ -15,7 +15,10 @@ const ROOT = join(__dirname, '..');
 const CHECKS = [
   { label: 'harness-version up to date', cmd: 'node scripts/build-version.mjs --check' },
   { label: 'harness validator', cmd: 'node Harness/scripts/validate-harness.mjs --strict' },
-  { label: 'tests pass', cmd: 'node --test tests/*.test.js' },
+  { label: 'template harness validator', cmd: 'node templates/common/Harness/scripts/validate-harness.mjs --strict' },
+  { label: 'tests pass', cmd: 'npm test' },
+  { label: 'wf script e2e tests', cmd: 'npm run test:e2e' },
+  { label: 'package smoke tests', cmd: 'npm run pack:smoke' },
 ];
 
 let failed = 0;

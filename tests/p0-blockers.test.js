@@ -132,9 +132,11 @@ test('AC-ONE-LINE-002 README one-line install routes old Harness without updater
 });
 
 // ── #2: hook command exits 0 from project root AND a Harness/memory subdir ─
-test('hook: settings.json command exits 0 from project root and from Harness/memory subdir', () => {
+test('hook: SessionStart settings command exits 0 from project root and from Harness/memory subdir', () => {
   const settings = JSON.parse(fs.readFileSync(path.join(ROOT, '.claude', 'settings.json'), 'utf8'));
-  const cmd = settings.hooks.UserPromptSubmit[0].hooks[0].command;
+  assert.ok(settings.hooks.SessionStart, 'SessionStart hook present');
+  assert.ok(!settings.hooks.UserPromptSubmit, 'UserPromptSubmit hook not used for update checks');
+  const cmd = settings.hooks.SessionStart[0].hooks[0].command;
   assert.ok(cmd && cmd.length > 0, 'hook command present');
 
   // Use a generated project (has Harness/.harness-version + the helper script).
@@ -196,6 +198,48 @@ test('update-check: default --json hides plan/conflict details; --full-plan reve
 });
 
 // ── #6: scan-clean does not flag Harness-managed OpenCode commands as orphan ─
+test('update-check: prereleases are ignored and explicit older sources still refuse downgrade', () => {
+  const root = tmpdir();
+  const proj = path.join(root, 'proj');
+  const remote = path.join(root, 'remote');
+  fs.mkdirSync(path.join(proj, 'Harness', 'scripts'), { recursive: true });
+  fs.copyFileSync(path.join(SCRIPTS, 'wf-update-check.mjs'), path.join(proj, 'Harness', 'scripts', 'wf-update-check.mjs'));
+  fs.writeFileSync(path.join(proj, 'Harness', '.harness-version'), JSON.stringify({
+    generator: '0.8.9',
+    generated: '2026-07-01T00:00:00Z',
+    checksums: {},
+  }, null, 2) + '\n');
+  fs.mkdirSync(remote, { recursive: true });
+  fs.writeFileSync(path.join(remote, '.harness-version'), JSON.stringify({
+    generator: '0.9.0-beta.1',
+    generated: '2026-07-01T00:00:00Z',
+    checksums: {},
+  }, null, 2) + '\n');
+
+  const prerelease = runNode(path.join(proj, 'Harness', 'scripts', 'wf-update-check.mjs'), ['--json'], {
+    cwd: proj,
+    env: { WF_SOURCE_BASE: fileSourceBase(remote) },
+  });
+  assert.equal(prerelease.status, 0, 'prerelease check should exit 0');
+  const prereleaseJson = JSON.parse(prerelease.stdout.trim());
+  assert.equal(prereleaseJson.status, 'up-to-date', 'prerelease remote is ignored');
+  assert.equal(prereleaseJson.remote, '0.9.0-beta.1');
+
+  fs.writeFileSync(path.join(remote, '.harness-version'), JSON.stringify({
+    generator: '0.8.8',
+    generated: '2026-07-01T00:00:00Z',
+    checksums: {},
+  }, null, 2) + '\n');
+  const downgrade = runNode(path.join(proj, 'Harness', 'scripts', 'wf-update-check.mjs'), ['--json'], {
+    cwd: proj,
+    env: { WF_SOURCE_BASE: fileSourceBase(remote) },
+  });
+  assert.equal(downgrade.status, 1, 'explicit older source should fail');
+  const downgradeJson = JSON.parse(downgrade.stdout.trim());
+  assert.equal(downgradeJson.status, 'downgrade-refused');
+  fs.rmSync(root, { recursive: true, force: true });
+});
+
 test('scan-clean: managed .opencode/commands and installed optional wf-browser are not orphaned', () => {
   const base = fileSourceBase(path.join(ROOT, 'templates', 'common'));
 

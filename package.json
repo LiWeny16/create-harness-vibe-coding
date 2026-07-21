@@ -20,6 +20,7 @@
     "build:version": "node scripts/build-version.mjs",
     "prepush": "node scripts/pre-push-check.mjs",
     "test": "node --test tests/*.test.js",
+    "test:e2e": "node tests/e2e-wf-scripts.test.mjs",
     "test:smoke": "node --test tests/cli-smoke.test.js",
     "pack:smoke": "node --test tests/pack-smoke.test.js"
   },

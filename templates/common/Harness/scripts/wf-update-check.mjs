@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * wf-update-check.mjs — Fast harness update comparison.
+ * wf-update-check.mjs - Fast harness update comparison.
  * Fetches remote checksums, compares locally, classifies all files instantly.
  * Only CONFLICT files need AI/user decision.
  *
@@ -23,9 +23,13 @@ import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = process.env.WF_ROOT ? resolve(process.env.WF_ROOT) : resolve(__dirname, '..', '..');
 const VERSION_FILE = resolve(ROOT, 'Harness', '.harness-version');
-const DEFAULT_SOURCE_BASE = 'https://raw.githubusercontent.com/zingspark/create-harness-vibe-coding/main/templates/common/';
+const GITHUB_REPO = 'zingspark/create-harness-vibe-coding';
+const GITHUB_LATEST_STABLE = `https://api.github.com/repos/${GITHUB_REPO}/releases/latest`;
+const RAW_GITHUB = `https://raw.githubusercontent.com/${GITHUB_REPO}`;
+const TEMPLATE_SUBPATH = 'templates/common/';
+const DEFAULT_SOURCE_BASE = `${RAW_GITHUB}/main/${TEMPLATE_SUBPATH}`;
 
-// ── Tier classification ──────────────────────────────────────────
+// Tier classification
 
 /** Files we NEVER overwrite or delete. */
 const PRESERVE_PATTERNS = [
@@ -60,7 +64,7 @@ const BOOTSTRAP_ONLY_FILES = new Set([
   'Harness/SETUP.md',
 ]);
 
-// ── Helpers ────────────────────────────────────────────────────────
+// Helpers
 
 /** Reject paths that escape ROOT (traversal, absolute, .., etc.). */
 function safePath(file) {
@@ -140,7 +144,7 @@ function sha256(content) {
 function sha256File(path) {
   if (!existsSync(path)) return null;
   let content = readFileSync(path, 'utf-8');
-  // Normalize CRLF → LF
+  // Normalize CRLF to LF.
   content = content.replace(/\r\n/g, '\n');
   return sha256(content);
 }
@@ -150,14 +154,14 @@ function classify(file, localHash, storedHash) {
   for (const p of PRESERVE_PATTERNS) {
     if (p.test(file)) return 'PRESERVE';
   }
-  // MERGE — dual-purpose, check if user modified
+  // MERGE: dual-purpose, check if user modified.
   for (const p of MERGE_PATTERNS) {
     if (p.test(file)) {
       if (localHash === storedHash) return 'SAFE'; // unmodified, safe
       return 'CONFLICT'; // user modified, needs decision
     }
   }
-  // Everything else is SAFE runtime file — always overwrite.
+  // Everything else is SAFE runtime file: always overwrite.
   // Harness system files (scripts, skills, agents, commands, WF docs) are
   // not user data; the template is authoritative. Only PRESERVE and MERGE
   // files should ever require conflict resolution.
@@ -180,7 +184,49 @@ async function fetchRemote(url, timeoutMs = 30000) {
   }
 }
 
-// ── Main ───────────────────────────────────────────────────────────
+// Main
+
+function isPrerelease(v) {
+  if (!v || typeof v !== 'string') return false;
+  return /-[0-9A-Za-z.-]+/.test(v.replace(/^[^0-9]*/, ''));
+}
+
+async function resolveStableSourceBase() {
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 15000);
+    let res;
+    try {
+      res = await fetch(GITHUB_LATEST_STABLE, {
+        signal: controller.signal,
+        headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'harness-wf-update-check' },
+      });
+    } finally {
+      clearTimeout(timer);
+    }
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = JSON.parse(await res.text());
+    const tag = data && data.tag_name;
+    if (!tag || data.prerelease) return null;
+    const source = `${RAW_GITHUB}/${tag}/${TEMPLATE_SUBPATH}`;
+    const versionController = new AbortController();
+    const versionTimer = setTimeout(() => versionController.abort(), 15000);
+    try {
+      const versionRes = await fetch(source + '.harness-version', {
+        signal: versionController.signal,
+        headers: { 'User-Agent': 'harness-wf-update-check' },
+      });
+      if (!versionRes.ok) return null;
+      const raw = await versionRes.text();
+      if (isTemplate(raw)) return null;
+    } finally {
+      clearTimeout(versionTimer);
+    }
+    return source;
+  } catch {
+    return null;
+  }
+}
 
 async function main() {
   const args = process.argv.slice(2);
@@ -192,7 +238,16 @@ async function main() {
   const acceptMerged = readRepeatedFlagValues(args, '--accept-merged');
   const acceptTemplate = readRepeatedFlagValues(args, '--accept-template');
   const ignoreVersion = args.includes('--ignore-version') || args.includes('--force-check');
-  const sourceBase = normalizeSourceBase(readFlagValue(args, '--source-base') || process.env.WF_SOURCE_BASE || DEFAULT_SOURCE_BASE);
+  const explicitSource = readFlagValue(args, '--source-base') || process.env.WF_SOURCE_BASE;
+  let sourceBase = normalizeSourceBase(explicitSource || DEFAULT_SOURCE_BASE);
+  let stableTagResolved = false;
+  if (!explicitSource) {
+    const resolved = await resolveStableSourceBase();
+    if (resolved) {
+      sourceBase = normalizeSourceBase(resolved);
+      stableTagResolved = true;
+    }
+  }
 
   // 1. Read local state
   if (!existsSync(VERSION_FILE)) {
@@ -254,9 +309,9 @@ async function main() {
       if (jsonOut) {
         console.log(JSON.stringify({ status: 'template-remote', message: 'Remote .harness-version has not been generated yet.' }));
       } else {
-        console.log('⚠ Remote .harness-version is a template (contains {{placeholders}}).');
+        console.log('WARN: Remote .harness-version is a template (contains {{placeholders}}).');
         console.log('  The generate step has not been run on the remote repo. No update possible.');
-        console.log('  This is expected during development — the update mechanism works once the remote is live.');
+        console.log('  This is expected during development; the update mechanism works once the remote is live.');
       }
       process.exitCode = 1;
       return;
@@ -273,10 +328,10 @@ async function main() {
     return;
   }
 
-  // Compare versions — warn if remote is older (downgrade prevention)
+  // Compare versions and prevent downgrades from explicit custom sources.
   function parseSemver(v) {
     if (!v || typeof v !== 'string') return [0, 0, 0];
-    return v.replace(/^[^0-9]*/, '').split('-')[0].split('.').map(Number);
+    return v.replace(/^[^0-9]*/, '').split('.').slice(0, 3).map(n => Number(n) || 0);
   }
   function cmpSemver(a, b) {
     const va = parseSemver(a), vb = parseSemver(b);
@@ -286,27 +341,38 @@ async function main() {
 
   const localGen = localVersion.generator || '0.0.0';
   const remoteGen = remoteVersion.generator || '0.0.0';
+
+  if (!ignoreVersion && isPrerelease(remoteGen)) {
+    if (jsonOut) {
+      console.log(JSON.stringify({ status: 'up-to-date', version: localGen, remote: remoteGen, sourceBase }));
+    } else {
+      console.log(`Already up to date (v${localGen}). Remote ${remoteGen} is a prerelease and is ignored.`);
+    }
+    return;
+  }
+
   const versionCmp = cmpSemver(remoteGen, localGen);
 
   if (!ignoreVersion && versionCmp <= 0) {
+    const reportDowngrade = !stableTagResolved;
     if (jsonOut) {
       console.log(JSON.stringify({
-        status: versionCmp < 0 ? 'downgrade-refused' : 'up-to-date',
+        status: (versionCmp < 0 && reportDowngrade) ? 'downgrade-refused' : 'up-to-date',
         version: localGen,
         remote: remoteGen,
         sourceBase,
       }));
-    } else if (versionCmp < 0) {
-      console.log(`⚠ Remote (v${remoteGen}) is OLDER than local (v${localGen}). Downgrade refused.`);
+    } else if (versionCmp < 0 && reportDowngrade) {
+      console.log(`WARN: Remote (v${remoteGen}) is OLDER than local (v${localGen}). Downgrade refused.`);
     } else {
-      console.log(`✅ Already up to date (v${localGen})`);
+      console.log(`Already up to date (v${localGen})`);
     }
-    if (versionCmp < 0) process.exitCode = 1;
+    if (versionCmp < 0 && reportDowngrade) process.exitCode = 1;
     return;
   }
 
   if (ignoreVersion) {
-    if (!jsonOut) console.log('🔧 Version check bypassed (--ignore-version). Comparing files anyway.');
+    if (!jsonOut) console.log('Version check bypassed (--ignore-version). Comparing files anyway.');
   }
 
   const remoteChecksums = remoteVersion.checksums || {};
@@ -481,7 +547,7 @@ async function main() {
     }
 
     if (!storedHash) {
-      // New file from remote — if local file exists, it's a CONFLICT
+      // New file from remote: if local file exists, it is a CONFLICT.
       if (localHash) {
         if (localHash === remoteHash) {
           plan.adopted.push({ file, localHash, remoteHash, reason: 'new remote file already matches local file' });
@@ -494,10 +560,10 @@ async function main() {
         plan.conflict.push({ file, localHash, storedHash: 'none', remoteHash, reason: 'new remote file conflicts with existing local file' });
         continue;
       }
-      // New file — still respect PRESERVE classification
+      // New file: still respect PRESERVE classification.
       const tier = classify(canonical, null, null);
       if (tier === 'PRESERVE') {
-        plan.skipped.push({ file, reason: 'PRESERVE — new file would overwrite user data' });
+        plan.skipped.push({ file, reason: 'PRESERVE: new file would overwrite user data' });
       } else {
         plan.created.push({ file, remoteHash });
       }
@@ -528,7 +594,7 @@ async function main() {
     const tier = classify(canonical, localHash, storedHash);
 
     if (tier === 'PRESERVE') {
-      plan.skipped.push({ file, reason: 'PRESERVE — user data' });
+      plan.skipped.push({ file, reason: 'PRESERVE: user data' });
     } else if (tier === 'SAFE') {
       if (localHash === remoteHash) {
         plan.skipped.push({ file, reason: 'already current' });
@@ -575,14 +641,14 @@ async function main() {
     return;
   }
 
-  console.log(`\n🔄 Update: v${localGen} → v${remoteGen}`);
+  console.log(`\nUpdate: v${localGen} -> v${remoteGen}`);
   console.log(`   ${plan.updated.length} safe update, ${plan.created.length} new, ${plan.conflict.length} conflict, ${plan.skipped.length} skipped\n`);
 
   // Show conflicts (these need AI/user decision)
   if (plan.conflict.length > 0) {
-    console.log('⚠ CONFLICTS (need your decision):');
+    console.log('CONFLICTS (need your decision):');
     for (const c of plan.conflict) {
-      console.log(`   📄 ${c.file}  [${c.reason}]`);
+      console.log(`   ! ${c.file}  [${c.reason}]`);
     }
     if (plan.updated.length + plan.created.length > 0) {
       console.log('   Tip: run --apply-safe to apply SAFE/NEW files first, then merge conflicts.');
@@ -592,17 +658,17 @@ async function main() {
 
   // Show what will be auto-updated
   if (plan.updated.length + plan.created.length > 0) {
-    console.log('✅ AUTO (safe to apply):');
-    for (const u of plan.updated) console.log(`   ↑ ${u.file}`);
+    console.log('AUTO (safe to apply):');
+    for (const u of plan.updated) console.log(`   ^ ${u.file}`);
     for (const c of plan.created) console.log(`   + ${c.file}`);
     console.log('');
   }
 
   // 4. Apply if requested
   if (apply || applySafe) {
-    // Refuse to apply when conflicts exist — must resolve first
+    // Refuse to apply when conflicts exist; must resolve first.
     if (apply && !applySafe && plan.conflict.length > 0) {
-      console.log(`❌ Cannot apply: ${plan.conflict.length} conflicts must be resolved first.`);
+      console.log(`Cannot apply: ${plan.conflict.length} conflicts must be resolved first.`);
       console.log('   Run --apply-safe to apply SAFE/NEW files first, or resolve conflicts manually then re-run --apply.');
       process.exitCode = 1;
       return plan;
@@ -618,23 +684,23 @@ async function main() {
     for (const u of plan.updated) {
       try {
         const dest = safePath(u.file);
-        if (!dest) { console.error(`   ✗ Traversal rejected: ${u.file}`); failed++; continue; }
-        // Symlink rejection — don't follow symlinks
+        if (!dest) { console.error(`   x Traversal rejected: ${u.file}`); failed++; continue; }
+        // Symlink rejection: do not follow symlinks.
         if (lexists(dest)) {
-          try { if (lstatSync(dest).isSymbolicLink()) { console.error(`   ✗ Symlink rejected: ${u.file}`); failed++; continue; } } catch (_) {}
+          try { if (lstatSync(dest).isSymbolicLink()) { console.error(`   x Symlink rejected: ${u.file}`); failed++; continue; } } catch (_) {}
         }
         const content = await fetchRemote(sourceBase + remotePath(u.file));
         const normalized = content.replace(/\r\n/g, '\n');
         const fetchedHash = sha256(normalized);
         if (fetchedHash !== u.remoteHash) {
-          console.error(`   ✗ Hash mismatch: ${u.file}`);
+          console.error(`   x Hash mismatch: ${u.file}`);
           failed++; continue;
         }
         mkdirSync(dirname(dest), { recursive: true });
         writeFileSync(dest, normalized, 'utf-8');
         applied++;
       } catch (e) {
-        console.error(`   ✗ Failed: ${u.file} — ${e.message}`);
+        console.error(`   x Failed: ${u.file} - ${e.message}`);
         failed++;
       }
     }
@@ -642,25 +708,25 @@ async function main() {
     for (const c of plan.created) {
       try {
         const dest = safePath(c.file);
-        if (!dest) { console.error(`   ✗ Traversal rejected: ${c.file}`); failed++; continue; }
+        if (!dest) { console.error(`   x Traversal rejected: ${c.file}`); failed++; continue; }
         // TOCTOU: recheck file didn't appear since planning
         if (lexists(dest)) {
-          try { if (lstatSync(dest).isSymbolicLink()) { console.error(`   ✗ Symlink rejected: ${c.file}`); failed++; continue; } } catch (_) {}
-          console.error(`   ✗ File created since plan: ${c.file} — treating as CONFLICT`);
+          try { if (lstatSync(dest).isSymbolicLink()) { console.error(`   x Symlink rejected: ${c.file}`); failed++; continue; } } catch (_) {}
+          console.error(`   x File created since plan: ${c.file} - treating as CONFLICT`);
           failed++; continue;
         }
         const content = await fetchRemote(sourceBase + remotePath(c.file));
         const normalized = content.replace(/\r\n/g, '\n');
         const fetchedHash = sha256(normalized);
         if (fetchedHash !== c.remoteHash) {
-          console.error(`   ✗ Hash mismatch: ${c.file}`);
+          console.error(`   x Hash mismatch: ${c.file}`);
           failed++; continue;
         }
         mkdirSync(dirname(dest), { recursive: true });
         writeFileSync(dest, normalized, 'utf-8');
         applied++;
       } catch (e) {
-        console.error(`   ✗ Failed: ${c.file} — ${e.message}`);
+        console.error(`   x Failed: ${c.file} - ${e.message}`);
         failed++;
       }
     }
@@ -687,12 +753,12 @@ async function main() {
       }
       writeFileSync(VERSION_FILE, JSON.stringify(localVersion, null, 2) + '\n', 'utf-8');
       if (plan.conflict.length === 0) {
-        console.log(`✅ Applied ${applied} files. Version updated to ${remoteVersion.generator}.`);
+        console.log(`Applied ${applied} files. Version updated to ${remoteVersion.generator}.`);
       } else {
-        console.log(`✅ Applied ${applied} SAFE/NEW files. Version remains ${localGen}; ${plan.conflict.length} conflicts still need merge.`);
+        console.log(`Applied ${applied} SAFE/NEW files. Version remains ${localGen}; ${plan.conflict.length} conflicts still need merge.`);
       }
     } else {
-      console.log(`❌ ${failed} failures. NO files were version-tracked. Fix and re-run.`);
+      console.log(`${failed} failures. NO files were version-tracked. Fix and re-run.`);
       process.exitCode = 1;
     }
   }

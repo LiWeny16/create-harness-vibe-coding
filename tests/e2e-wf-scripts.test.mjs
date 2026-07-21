@@ -27,6 +27,7 @@ const TMP_OPTIONAL_REMOTE = resolve(ROOT, 'tests', '.tmp-e2e-optional-remote');
 const REMOVE = join(SCRIPTS, 'wf-remove.mjs');
 const UPDATE = join(SCRIPTS, 'wf-update-check.mjs');
 const SCAN = join(SCRIPTS, 'scan-clean.mjs');
+const COMMON_TEMPLATE_BASE = pathToFileURL(resolve(ROOT, 'templates', 'common') + sep).href;
 
 let passed = 0;
 let failed = 0;
@@ -392,7 +393,7 @@ assert(existsSync(join(TMP, '.agents', 'skills', 'custom-user-skill', 'SKILL.md'
 
 console.log('\n─── wf-update-check.mjs E2E Tests ───\n');
 
-const updateResult = runNode(UPDATE, '--json', TMP);
+const updateResult = runNode(UPDATE, '--json', TMP, { WF_SOURCE_BASE: COMMON_TEMPLATE_BASE });
 let updatePlan;
 try {
   updatePlan = JSON.parse(updateResult.stdout.trim());
