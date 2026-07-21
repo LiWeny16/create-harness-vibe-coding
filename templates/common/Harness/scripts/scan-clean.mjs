@@ -65,6 +65,7 @@ const MANAGED_SUBDIRS = new Set([
 
 /** Reject paths that escape ROOT (traversal, absolute, .., etc.). */
 function safePath(file) {
+  if (/^[A-Za-z]:/.test(file)) return null;
   let normalized = file.replace(/\\/g, '/').replace(/^\/+/, '');
   if (/\/\//.test(normalized)) return null;
   if (normalized.split('/').some(p => p === '..')) return null;

@@ -642,11 +642,12 @@ for (const [input, shouldPass] of traversalTests) {
   let normalized = input.replace(/\\/g, '/').replace(/^\/+/, '');
   const hasDblSlash = normalized.includes('//');
   const hasDots = normalized.split('/').some(p => p === '..');
+  const hasDrive = /^[A-Za-z]:/.test(input);
   const isAbs = input.startsWith('/') || input.startsWith('\\');
   const isEmpty = normalized === '.' || normalized === '';
   const resolved = resolve(TMP, normalized);
   const inRoot = resolved.startsWith(TMP + sep) || resolved === TMP;
-  const result = !hasDblSlash && !hasDots && !isAbs && !isEmpty && inRoot;
+  const result = !hasDrive && !hasDblSlash && !hasDots && !isAbs && !isEmpty && inRoot;
 
   assert(result === shouldPass, `safePath: "${input}" → ${result} (expected ${shouldPass})`);
 }

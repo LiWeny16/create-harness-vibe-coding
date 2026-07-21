@@ -214,6 +214,7 @@ const CLEANUP_DIRS = [
 
 /** Reject paths that escape ROOT (traversal, absolute, .., etc.). Sync with wf-update-check. */
 function safePath(file) {
+  if (/^[A-Za-z]:/.test(file)) return null;
   let normalized = file.replace(/\\/g, '/').replace(/^\/+/, '');
   if (normalized.includes('//')) return null;  // double slash bypass
   if (normalized.split('/').some(p => p === '..')) return null;
