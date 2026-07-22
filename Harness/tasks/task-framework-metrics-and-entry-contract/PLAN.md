@@ -788,6 +788,8 @@ Out of scope for this wave: HarnessBench Phase B/C docs and runner.
 
 ### Worker Fallback Rationale
 
+> ANTI-PATTERN (historical, do not repeat): the fallback below violated the WF-MAX role contract. Per `Harness/WF-MAX.md` "Worker Channel Degradation & Independence", an in-process MCP tool call is NEVER a Worker. This record is retained as a lesson only.
+
 Read-only Worker attempts using `mcp__codex.codex_query` and `mcp__claude.claude_query` failed because the named Codex model was unavailable, Claude CLI was not installed, and the default Codex read-only query timed out after 300 seconds. To preserve the CEO no-source-edit invariant and still progress, source edits are delegated to `mcp__codex.codex_implement` with the exact user write scope and this dispatch table.
 
 ## WF-MAX Narrow Phase A Dispatch - 2026-07-01

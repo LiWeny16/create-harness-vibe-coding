@@ -325,6 +325,23 @@ for (const taskDir of taskDirs) {
   }
 }
 
+// M2: MCP-as-Worker fake-compliance guard.
+// Task capsules MUST NOT record mcp__codex.codex_implement / mcp__claude.claude_implement
+// as Worker execution. Historical do-not-repeat references are allowed only when the
+// file is marked ANTI-PATTERN. See Harness/WF-MAX.md "Worker Channel Degradation & Independence".
+const MCP_AS_WORKER_RE = /mcp__(?:codex)\.codex_implement|mcp__(?:claude)\.claude_implement/;
+for (const taskDir of taskDirs) {
+  if (!taskDir.startsWith('task-')) continue;
+  for (const f of ['PLAN.md', 'PROGRESS.md']) {
+    const rel = `Harness/tasks/${taskDir}/${f}`;
+    const text = read(rel);
+    if (!text) continue;
+    if (MCP_AS_WORKER_RE.test(text) && !/ANTI-PATTERN/i.test(text)) {
+      errors.push(`${rel} records mcp__*.implement as Worker execution (fake compliance; see WF-MAX.md "Worker Channel Degradation & Independence"). Mark historical references with "ANTI-PATTERN" or remove the tool call.`);
+    }
+  }
+}
+
 if (fs.existsSync(path.join(root, 'Harness/research/scaffolds.md'))) {
   errors.push('legacy research file should be renamed: Harness/research/scaffolds.md -> Harness/research/research-results.md');
 }
