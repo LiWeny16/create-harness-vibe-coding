@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.12] - 2026-07-22
+
+- Harden `/wf-auto-spark` with documented search fallbacks, reflector escalation, and drift/delegation anti-pattern guards.
+- Make task-scribe the default process-file writer for spark and WF-MAX task-state updates.
+- Add validator and generator coverage for the new spark protocol contract.
+- Refresh the homepage 3D Act 1 opening layout and interaction refinements.
+
 ## [0.8.11] - 2026-07-21
 
 - Move repository metadata, README links, and Harness update sources to `LiWeny16/create-harness-vibe-coding`.

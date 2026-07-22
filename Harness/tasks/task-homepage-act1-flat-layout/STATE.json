@@ -1,0 +1,14 @@
+{
+  "taskId": "task-homepage-act1-flat-layout",
+  "phase": "implementation",
+  "gate": "CONTRACT-GATE passed; TEST-GATE = manual browser verification (no test framework)",
+  "tier": "WF-Standard",
+  "ready": ["implementer: apply E1-E4b in docs/index.html"],
+  "running": [],
+  "blocked": [],
+  "done": ["intake", "bounded-exploration", "plan"],
+  "activeQuestion": null,
+  "nextAction": "dispatch implementer, then browser-verify AC1-AC6",
+  "writeSet": ["docs/index.html"],
+  "acceptance": ["AC1 positions", "AC2 flat/zero-tilt/no-float", "AC3 no singled-out box", "AC4 transition preserved", "AC5 no regressions", "AC6 browser evidence"]
+}

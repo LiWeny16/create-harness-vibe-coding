@@ -1,15 +1,34 @@
 {
+  "schemaVersion": 1,
   "taskId": "task-spark-protocol-hardening",
-  "created": "2026-07-21",
-  "phase": "requirements",
-  "gate": "PRD-GATE",
+  "status": "complete",
+  "mode": "direct",
   "tier": "none",
-  "mode": "wf-auto-spark",
+  "phase": "verified",
+  "gate": "VALIDATION-GATE passed",
+  "updatedAt": "2026-07-22T08:15:00.000Z",
   "activeQuestion": null,
-  "ready": [],
-  "running": [],
-  "blocked": [],
-  "done": [],
-  "nextAction": "新 session：评估 4 改进点优先级（过程文件 task-scribe 化最高价值），决定执行模式（wf-auto-spark 自反 vs direct），细化 AC + write set。注意：若用 spark，本任务过程文件要 task-scribe 写（吃自己狗粮，验证 AC-TOKEN）。",
-  "status": "active"
+  "nextAction": "Closed; ready to commit with the spark protocol hardening changes.",
+  "acceptance": [
+    "AC-STABLE: WF-AUTO-SPARK documents search/scoped-skill fallbacks and discovery-only fallback boundaries.",
+    "AC-TOKEN: task-state writing is delegated to task-scribe by default, with explicit CEO degradation behavior.",
+    "AC-DELEGATION: WF-AUTO-SPARK and WF-MAX specify CEO bullets plus task-scribe formatting for process files.",
+    "AC-EDGE: anti-pattern/drift/fake-delegation guards are documented.",
+    "AC-SYNC: root docs, templates, validators, tests, and .harness-version are synchronized."
+  ],
+  "queues": {
+    "ready": [],
+    "running": [],
+    "blocked": [],
+    "done": [
+      "Updated Harness/WF-AUTO-SPARK.md and template mirror.",
+      "Updated Harness/WF-MAX.md and template mirror.",
+      "Added validator requireText coverage in root and template validators.",
+      "Added generator and validator tests for new spark protocol clauses.",
+      "Ran build-version to refresh templates/common/.harness-version and root Harness/.harness-version.",
+      "Verified targeted tests, strict validators, checksum checks, and npm test."
+    ]
+  },
+  "risks": [],
+  "artifacts": []
 }

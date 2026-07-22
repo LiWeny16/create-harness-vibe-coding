@@ -26,7 +26,7 @@ WF-MAX is **explicit only**. Enter ONLY when the user explicitly types `/wf-max`
 
 CEO reads, plans, dispatches, synthesizes, and writes task state only.
 - **CEO never writes production source code.** All source edits are delegated to Workers.
-- CEO may spawn task-scribe (haiku) to maintain dispatch ledger and heartbeat.
+- CEO spawns task-scribe (haiku) by default to maintain dispatch ledger, heartbeat, and evidence pointers; if unavailable, CEO records the degradation and writes only the smallest durable checkpoint.
 - CEO may spawn codebase-explorer(s) (haiku) for scoped source discovery.
 
 ## Worker Channel Degradation & Independence
@@ -85,7 +85,7 @@ Manager_max = min(max(Manager_min * 2, Manager_min), 7)
 - One file_claim per write Worker
 - WriteSet must be disjoint across parallel Workers
 - Workers return <=250 tokens + evidence/file paths
-- task-scribe (haiku) runs alongside any wave
+- task-scribe (haiku) runs alongside any wave when available; process-file delegation is the default, not a token-heavy CEO formatting task
 
 ## Token Budget and Fan-Out Caps
 

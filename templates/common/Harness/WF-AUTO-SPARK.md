@@ -24,6 +24,8 @@ WF-AUTO-SPARK is a `/wf` variant layered on WF-AUTO: it inherits the WF-KERNEL c
 
 Accepted spark candidates re-enter the standard W2-W5 gates per [WF-KERNEL.md](WF-KERNEL.md): implementer (one file_claim, ≤3 files, ≤50 lines), verifier, reviewer(s), reflector. Spark searchers are read-only. Any implementation must use the dispatch packet from `Harness/dispatch.md` with explicit write set, forbidden truth files, AC IDs, and verification commands. A candidate with no verifier evidence or no reflector PASS is not accepted, even if the idea is valuable.
 
+For task-state writes, CEO provides concise bullets and decisions; task-scribe formats task-state writes for roadmap, cycle PLAN, heartbeat, evidence pointers, and closeout. If task-scribe is unavailable, CEO may write the smallest durable checkpoint and must record that degradation in `PROGRESS.md`. This keeps the high-reasoning controller focused on decisions instead of spending tokens formatting process files.
+
 ## Startup: Roadmap Declaration
 
 Before first spark cycle, CEO MUST declare a roadmap. This is written to `Harness/tasks/auto/SPARK-ROADMAP.md`.
@@ -89,12 +91,12 @@ STARTUP: Declare roadmap (North Star + Milestones) → user confirms
 │   ↓                                                     │
 │ VERIFY + CROSS-REVIEW + REFLECTOR PASS                  │
 │   ↓                                                     │
-│ VALUE REFLECTION: CEO writes in PROGRESS.md             │
+│ VALUE REFLECTION: CEO gives bullets; task-scribe writes PROGRESS.md │
 │   "Driven by [source]. Matters because [reason].        │
 │    Without this [consequence]. User notices [evidence]." │
 │   ↓                                                     │
 │ MILESTONE CHECK: Is current milestone complete?         │
-│   Yes → update SPARK-ROADMAP.md, celebrate in PROGRESS  │
+│   Yes → task-scribe updates SPARK-ROADMAP.md + PROGRESS │
 │   No  → continue                                       │
 │   ↓                                                     │
 │ RE-ANCHOR GATE (every 10 cycles):                       │
@@ -121,6 +123,13 @@ STARTUP: Declare roadmap (North Star + Milestones) → user confirms
 | 6 | **Architecture Trends** | WebSearch | Emerging patterns (e.g., micro-frontends, island architecture, edge computing) |
 | 7 | **Developer Experience** | WebSearch / Docs | New tooling, better CLI patterns, improved error messages |
 | 8 | **Performance Benchmarks** | WebSearch | Industry benchmarks, optimization techniques, profiling tools |
+
+### Spark Search Fallbacks
+
+- If a researcher/search subagent is filtered, unavailable, or blocked by tool policy, CEO may run direct WebSearch/Tavily for discovery only and records `searchFallback: ceo-direct`.
+- If a scoped skill name is unavailable, use the unscoped skill name plus a dispatch packet; if that still fails, continue with direct search and record the failure.
+- Discovery fallback never authorizes source edits. Any accepted candidate still needs the standard implementer/verifier/reviewer/reflector chain.
+- Search breadth is adaptive. Rotate source families and record skipped families; do not require a fixed count of external searches.
 
 ## Deviation Guard (50% Rule)
 
@@ -161,7 +170,7 @@ Milestones CANNOT be changed without user confirmation IF:
 
 ## Value Reflection (per cycle)
 
-After EVERY spark cycle, CEO writes:
+After EVERY spark cycle, CEO gives the value-reflection bullets and task-scribe writes:
 
 ```text
 ## Cycle N — Value Reflection
@@ -176,6 +185,10 @@ Cumulative deviation (10-cycle): [X]%
 ```
 
 If CEO CANNOT write a convincing value reflection → spark was NOT valuable → record as rejected and move on.
+
+### Reflector Escalation
+
+CEO may self-score low-risk candidates during pre-implementation triage, but final acceptance for an implemented spark still requires verifier evidence, cross-review, and reflector PASS. Use a reflector subagent for milestone completion, cumulative deviation concerns, high-risk changes, multi-file implementation, conflicting reviewer findings, or unclear value.
 
 ## Stop Condition
 
@@ -199,6 +212,10 @@ If CEO CANNOT write a convincing value reflection → spark was NOT valuable →
 | SP4 | **Silent North Star drift** | Small changes accumulate, direction shifts without noticing | Cumulative deviation check every 10 cycles |
 | SP5 | **Milestone rot** | Milestones become irrelevant but aren't updated | Milestone review at Re-Anchor Gate |
 | SP6 | **Spark tunnel vision** | Only looking at one type of source | Rotate through the registered source families and record skipped sources |
+| SP7 | **Literal anti-pattern matching** | A rule only catches one exact phrase and misses nearby violations | State the invariant and forbidden behavior, not just a magic string |
+| SP8 | **Checksum drift after doc changes** | Root docs, templates, or `.harness-version` disagree after edits | Sync root + templates, then run `node scripts/build-version.mjs --check` |
+| SP9 | **Process-file token burn** | CEO spends high-reasoning tokens formatting PLAN/PROGRESS/ROADMAP | CEO sends bullets; task-scribe formats task-state writes |
+| SP10 | **Fake delegation** | In-process helper calls are logged as independent workers | Record channel fallback honestly; discovery fallback is not implementation delegation |
 
 ## Integration with /wf-auto
 
@@ -260,7 +277,7 @@ WF-AUTO-SPARK uses a dedicated task capsule at `Harness/tasks/auto/`. Shared wit
 
 ### PLAN.md Format (per cycle)
 
-Before implementing, CEO writes one cycle plan:
+Before implementing, CEO gives one cycle-plan brief and task-scribe writes:
 
 ```markdown
 # Cycle N Plan

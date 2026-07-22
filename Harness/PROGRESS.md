@@ -4,7 +4,8 @@ Global task index. Load at session start to see what is active and what was done
 
 ## Active Task
 
-- [task-spark-protocol-hardening](tasks/task-spark-protocol-hardening/PROGRESS.md) — 加固 wf-auto-spark：稳定 + 省 token + 过程文件 delegate task-scribe（待新窗口继续）
+- [task-homepage-act1-flat-layout](tasks/task-homepage-act1-flat-layout/PROGRESS.md) — 首页 Act 1 开篇：5 个平面错落盒子、零倾斜、无悬浮、无 singled-out 可打开盒子（Act 2 行为保留）
+
 
 ## Task Index
 
@@ -14,7 +15,8 @@ Non-archived tasks only (max 5). Archived tasks are listed in `Harness/tasks/_ar
 |----|------|-------|--------|
 | task-framework-metrics-and-entry-contract | Define slim CLAUDE entry contract and HarnessBench v0.1 methodology | Blocked | - |
 | task-wf-ux-compatibility | Improve WF speed, explicit entry, command compatibility, AGENTS routing, memory preflight, WF-KERNEL, task-scribe, codebase-explorer, STATE/archive, WF-AUTO thinning | Verified | 2026-07-17 |
-| task-spark-protocol-hardening | Harden wf-auto-spark: stability + token-saving + task-scribe delegation of process files | Requirements | - |
+| task-spark-protocol-hardening | Harden wf-auto-spark: stability + token-saving + task-scribe delegation of process files | Verified | 2026-07-22 |
+| task-homepage-act1-flat-layout | Redesign Act 1 opening: 5 flat staggered boxes, zero tilt, no float, no singled-out openable box | Implementation | - |
 
 ## Cross-Task Decisions
 

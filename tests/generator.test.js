@@ -444,6 +444,13 @@ test('generated scaffold stores harness-owned payload under root Harness directo
   assert.match(wfAutoSpark, /Inherited Execution Chain/);
   assert.match(wfAutoSpark, /External spark search replaces discovery only/);
   assert.match(wfAutoSpark, /reflector PASS/);
+  assert.match(wfAutoSpark, /task-scribe formats task-state writes/);
+  assert.match(wfAutoSpark, /searchFallback: ceo-direct/);
+  assert.match(wfAutoSpark, /pre-implementation triage/);
+  assert.match(wfAutoSpark, /Literal anti-pattern matching/);
+  assert.match(wfAutoSpark, /node scripts\/build-version\.mjs --check/);
+
+  assert.match(wfMax, /process-file delegation is the default/);
 
   const subagents = readRel(targetDir, 'Harness/subagents.md');
   assert.match(subagents, /## Source Attribution/);

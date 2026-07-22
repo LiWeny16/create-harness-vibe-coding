@@ -359,6 +359,27 @@ test('validation fails when stale eight-spark fixed-count search is present in W
   assert.match(output, /stale eight-spark fixed-count search/);
 });
 
+test('validation fails when wf-auto-spark task-scribe recorder delegation is missing', () => {
+  const targetDir = generateProject();
+  writeRel(
+    targetDir,
+    'Harness/WF-AUTO-SPARK.md',
+    readRel(targetDir, 'Harness/WF-AUTO-SPARK.md').replaceAll(
+      'task-scribe formats task-state writes',
+      'CEO writes task-state files directly',
+    ),
+  );
+
+  const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
+    cwd: targetDir,
+    encoding: 'utf8',
+  });
+  const output = `${result.stdout}\n${result.stderr}`;
+
+  assert.notEqual(result.status, 0);
+  assert.match(output, /wf-auto-spark task-scribe recorder delegation/);
+});
+
 test('validation passes when WF-AUTO.md uses adaptive coverage contract exclusively', () => {
   const targetDir = generateProject();
 
@@ -393,6 +414,11 @@ test('validation passes when WF-AUTO-SPARK.md uses non-fixed-count spark search'
   const wfAutoSpark = readRel(targetDir, 'Harness/WF-AUTO-SPARK.md');
   assert.doesNotMatch(wfAutoSpark, /8 parallel external searches/);
   assert.match(wfAutoSpark, /parallel external searches/);
+  assert.match(wfAutoSpark, /task-scribe formats task-state writes/);
+  assert.match(wfAutoSpark, /searchFallback: ceo-direct/);
+  assert.match(wfAutoSpark, /pre-implementation triage/);
+  assert.match(wfAutoSpark, /Literal anti-pattern matching/);
+  assert.match(wfAutoSpark, /node scripts\/build-version\.mjs --check/);
 });
 
 test('validation fails when old default complete-role-chain contract returns to a hot-path doc', () => {

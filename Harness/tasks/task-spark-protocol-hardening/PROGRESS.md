@@ -1,21 +1,51 @@
 # task-spark-protocol-hardening - PROGRESS
 
+Compact heartbeat for hardening `/wf-auto-spark` after the previous spark self-evaluation found stability, token, and delegation gaps.
+
 ## Status
 
-- **Phase**: requirements（待新 session 规划）
-- **next**: 新 session 评估 4 改进点优先级 + 决定执行模式（wf-auto-spark 自反 / direct）
+- Phase: Verified/Complete
+- Next: commit
+- Blocker: none
 
-## Origin
+## Acceptance
 
-本次 spark session（M1-M4 修 WF-MAX，North Star 达成）结束后 `/wf-learn` + 用户要求评估 wf-auto-spark 的稳定性 / 效率 / token / flash-delegation。评估结论见 [PLAN.md](PLAN.md)：达成目标但不稳 + 费 token + 过程文件 CEO 写（设计就让 CEO 写，task-scribe 可选未用）。
+- [x] AC-STABLE: documented fallback behavior when researcher/search subagents are filtered, scoped skill names are unavailable, or external search needs to degrade to direct CEO discovery.
+- [x] AC-TOKEN: task-state/process-file writing now defaults to task-scribe formatting from CEO bullets instead of high-reasoning CEO prose drafting.
+- [x] AC-DELEGATION: `WF-AUTO-SPARK.md` and `WF-MAX.md` both state the default task-scribe path and the honest degradation rule.
+- [x] AC-EDGE: added explicit guards for literal anti-pattern matching, checksum drift, process-file token burn, and fake delegation.
+- [x] AC-SYNC: root Harness docs, templates, validator assertions, tests, and `.harness-version` are synchronized.
 
-## Key Context（新 session 必读）
+## Changes
 
-- 本次 spark 5 cycles 实证：M1-M4 全程过程文件由 CEO (opus) Write/Edit，**0 次派 task-scribe** —— 这是 AC-TOKEN/AC-DELEGATION 要修的核心
-- `WF-AUTO-SPARK.md:92/164/263` 说 "CEO writes"（设计如此）；`WF-MAX.md:29/88` task-scribe "may"（可选）
-- spark search researcher 被 settings-json 过滤吞的 fallback 已实证（CEO WebSearch 可靠）
-- 同步教训：改 WF-AUTO-SPARK.md → 同步 templates + validator + `.harness-version`（M2/M3 学的）
+- Updated `Harness/WF-AUTO-SPARK.md` and `templates/common/Harness/WF-AUTO-SPARK.md`:
+  - task-scribe formats task-state writes from CEO bullets.
+  - added `Spark Search Fallbacks`.
+  - added `Reflector Escalation`.
+  - added SP7-SP10 edge guards.
+  - changed per-cycle value reflection and cycle PLAN wording away from CEO direct drafting.
+- Updated `Harness/WF-MAX.md` and `templates/common/Harness/WF-MAX.md`:
+  - task-scribe now runs by default for dispatch ledger, heartbeat, and evidence pointers when available.
+  - fallback is explicit when task-scribe is unavailable.
+- Updated root and template `validate-harness.mjs`:
+  - requires task-scribe recorder delegation, search fallback, reflector escalation, anti-pattern guard, checksum drift guard, and WF-MAX process-file delegation text.
+- Updated tests:
+  - `tests/validate-harness.test.js`
+  - `tests/generator.test.js`
+- Ran `node scripts/build-version.mjs`:
+  - refreshed `templates/common/.harness-version`.
+  - synced root `Harness/.harness-version`.
 
-## Heartbeat
+## Verification
 
-2026-07-21: 任务创建。源自 spark 自我评估。用户将新开窗口继续。
+- [x] `node --test tests/validate-harness.test.js tests/generator.test.js` - PASS, 58 passed.
+- [x] `node scripts/build-version.mjs --check` - PASS.
+- [x] `node scripts/check-root-harness-version.mjs` - PASS, 123 files checked with 2 accepted-local skips.
+- [x] `node Harness/scripts/validate-harness.mjs --strict` - PASS.
+- [x] `node templates/common/Harness/scripts/validate-harness.mjs --strict` - PASS.
+- [x] `npm test` - PASS, 102 passed, 1 skipped.
+
+## Notes
+
+- This closeout intentionally did not touch `docs/index.html` or the homepage Act 1 task files.
+- The active homepage task remains separate in `Harness/PROGRESS.md`.
