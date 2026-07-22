@@ -139,6 +139,33 @@ if (CHECK_MODE) {
 
 fs.writeFileSync(HARNESS_VERSION_PATH, output, 'utf8');
 
+// --- root sync: keep root Harness/.harness-version checksums in lockstep with templates ---
+// The root install artifact carries extra fields (acceptedConflicts, options,
+// externalRecommendations, source) that the templates file does not. Only its
+// checksums object is re-derived from templates here; every other field is preserved.
+const ROOT_HARNESS_VERSION = path.join(ROOT, 'Harness', '.harness-version');
+const ROOT_CHECKSUMS = versionObj.checksums;
+if (fs.existsSync(ROOT_HARNESS_VERSION)) {
+  let root;
+  try {
+    root = JSON.parse(fs.readFileSync(ROOT_HARNESS_VERSION, 'utf8'));
+  } catch (err) {
+    console.warn(`[build-version] WARNING: could not parse root Harness/.harness-version, skipping sync: ${err.message}`);
+    root = null;
+  }
+  if (root && typeof root === 'object' && root.checksums && typeof root.checksums === 'object') {
+    let rootUpdatedKeys = 0;
+    for (const key of Object.keys(ROOT_CHECKSUMS)) {
+      if (Object.prototype.hasOwnProperty.call(root.checksums, key)) {
+        root.checksums[key] = ROOT_CHECKSUMS[key];
+        rootUpdatedKeys++;
+      }
+    }
+    fs.writeFileSync(ROOT_HARNESS_VERSION, JSON.stringify(root, null, 2) + '\n', 'utf8');
+    console.log(`[build-version] synced root Harness/.harness-version checksums (${rootUpdatedKeys} keys updated)`);
+  }
+}
+
 console.log(`[build-version] wrote templates/common/.harness-version`);
 console.log(`  generator:          ${generatorVersion}`);
 console.log(`  generated:          ${versionObj.generated}`);

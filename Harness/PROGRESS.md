@@ -4,7 +4,7 @@ Global task index. Load at session start to see what is active and what was done
 
 ## Active Task
 
-- [auto-spark](tasks/auto/PROGRESS.md) — WF-MAX 可靠性修复 · M1 Worker 渠道可用性探测（wf-auto-spark）
+- none
 
 ## Task Index
 

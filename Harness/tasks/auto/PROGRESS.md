@@ -1,6 +1,6 @@
 # WF-AUTO Progress
 
-## Status: ACTIVE — WF-MAX Reliability Repair
+## Status: COMPLETED — North Star reached (user stop, 2026-07-21) — WF-MAX Reliability Repair
 
 - **Mode**: wf-auto-spark
 - **Started**: 2026-07-21
@@ -94,3 +94,24 @@
 
 #### 待修（M4 候选根因）
 根 `.harness-version` drift 的根因：`npm run build:version` 只写 templates，根要手动补 checksum。cycle 2/3 implementer 手动补，cycle 4 漏补（CEO 补救）。M4 可用 WF-MAX 跑"让 build:version 同步根 + pre-push 加根 drift 检查"——自反验证 + 修维护链。
+
+### Cycle 5 — M4 (WF-MAX 自反验证: drift 根因) ✅ PASS (2026-07-21)
+**Milestone**: M4 — 自反验证
+**Mode**: WF-MAX (WF-Max-Useful) within spark cycle 5
+**Change**: W1 `build-version.mjs` 同步根 checksums（防未来 drift）+ W2 `check-root-harness-version.mjs` + pre-push 第 7 项 drift 检查 + W-fix check-root 跳过 acceptedConflicts（含镜像推导）+ `tests/check-harness-version.test.js`（4 测试）
+**Workers**: W1/W2/W-fix 全 native subagent（W1+W2 并行 wave 1 disjoint writeSets，W-fix wave 2）+ CEO D-GATE + verify + reviewer cross-review。**零 mcp 冒充。**
+**Deviation**: ~5%（直接 M4 + North Star）
+**AC**: W1-SYNC/PRESERVE/CHECK + W2-DETECT/PRE-PUSH/CLEAN/NODEPS + WFIX-SKIP/PRE-PUSH/TEST/NOREGRESS 全 PASS
+**独立 verify（CEO）**: check-root PASS（123 file, 2 accepted-local skipped）+ pre-push 7/7 + npm test 102（含新 4）
+**Cross-review（reviewer）**: APPROVE-WITH-NON-BLOCKING-NOTES（5 findings 全 low/none；**North Star zero-mcp PASS**；镜像规则匹配 generator；sha256 byte-identical generator）
+**Reflector**: PASS
+
+#### Value Reflection
+- Why: 用 WF-MAX 真跑通一个本项目多步任务（drift 根因修复），证明 CEO/Worker 角色链端到端工作、零 mcp 冒充。**补上"旗舰模式从未跑通"的 dogfood 缺口——North Star 达成。**
+- Without: WF-MAX 协议改了（M1-M3）但从未在本项目真跑过，仍是纸上。
+- User would notice: drift 根因修复（build-version 同步根 + pre-push 7/7 drift 检测 + acceptedConflicts 不误报）；WF-MAX 不再是空中楼阁。
+- Milestone: M4 100%。**Roadmap M1-M4 全完成，North Star 达成。**
+- Cumulative deviation (10-cycle): ~8%（5 cycles）。
+
+#### North Star 达成证据
+WF-MAX 角色链本项目端到端跑通（cycle 5：CEO + 3 Worker + D-GATE + verify + cross-review + reflector）；角色分离实质（全 native subagent，零 mcp 冒充，reviewer 确认）；dogfood 缺口补上；framework-metrics:791 失败根因被多重建制消化（probe 事实 + 降级链协议 + validator 强制禁冒充 + timeout/retry 防挂死）。
