@@ -45,6 +45,7 @@ WF-MAX Workers MUST execute as **independent agent contexts** — never as in-pr
 
 When delegating source edits to a Worker, try channels in order; descend on failure; when all independent channels are unavailable, stop honestly and ask the user — do NOT fall back to an in-process MCP tool:
 
+0. **Probe first** — before dispatching any Worker, run `node Harness/scripts/probe-worker-channels.mjs` and read the live matrix (`Harness/tasks/auto/CHANNEL-MATRIX.md`). Degrade based on facts, not assumptions. Start the chain at the highest-priority channel the probe reports `available`.
 1. native subagent (preferred — independent context, bounded writeSet)
 2. `claude -p` peer CLI (independent process)
 3. `codex exec` peer CLI (independent process)
@@ -53,6 +54,10 @@ When delegating source edits to a Worker, try channels in order; descend on fail
 ### Hard Prohibition
 
 `mcp__codex.codex_implement`, `mcp__claude.claude_implement`, and any CEO-thread MCP tool call MUST NOT be recorded or used as Worker execution. An in-process tool call has no independent context boundary and no enforced writeSet — using it and logging "CEO did not edit source" is fake compliance. Historical instance: `tasks/task-framework-metrics-and-entry-contract/PLAN.md:791`.
+
+### Timeout & Retry
+
+Every channel probe is bounded to ≤15s via `Promise.race` (see `probe-worker-channels.mjs`). A Worker dispatch that returns `unavailable-timeout` or `unavailable-error` (transient) is retried **once**; a second failure descends to the next channel in the chain. WF-MAX MUST NEVER hang on an unresponsive channel (historical failure: a 300s Codex read-only query hang, `tasks/task-framework-metrics-and-entry-contract/PLAN.md`). Bounded probes + single retry + honest descent replace silent hangs.
 
 ### Probe the current environment
 

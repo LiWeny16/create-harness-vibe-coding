@@ -74,3 +74,23 @@
 
 #### 待用户决定（非 spark 范围）
 `docs/index.html` 有 81+/49- 的 3D 视觉打磨改动（材质 depthWrite + 新 payload 几何），不在任何 spark Worker write set，判断为用户并行手动打磨。未碰，待用户确认保留/revert。
+
+### Cycle 4 — M3 (probe 预检协议化 + timeout/retry) ✅ PASS (2026-07-21)
+**Milestone**: M3 — 超时/重试/CLI 预检工程化
+**Spark Source**: 2+3 (graceful degradation retry+backoff；M1 probe 已覆盖 bounded 超时)
+**Change**: WF-MAX.md（根 + templates）降级链增 **Step 0（派 Worker 前先跑 probe）** + **Timeout & Retry** 小节（bounded ≤15s + 单次重试 + 300s 教训）+ validator requireText WF-MAX.md 引用 `probe-worker-channels.mjs`（防回归）+ 补根 `.harness-version` drift
+**Deviation**: ~10%
+**Implementer**: native subagent（未用 mcp 冒充）+ CEO 补根 checksum drift
+**AC**: AC-M3-PROBE-STEP / RETRY / REQUIRETEXT / SYNC 全 PASS（含 swap-test anti-regression 验证）
+**独立 verify（CEO）**: validator strict 根+templates pass；Step 0 (:48) + Timeout&Retry (:58-60) 实存；根 .harness-version drift 实锤（根 lag cycle 2/3 值）→ 补根 checksum（根==templates：WF-MAX.md e2c17e31 / validator 19f480e1）
+**Reflector**: PASS
+
+#### Value Reflection
+- Why: probe 从"可选提及"升为降级链 Step 0（派 Worker 前必跑）+ timeout/retry 协议化 + 防回归 requireText。WF-MAX 现在机械强制"基于事实降级 + 永不挂死"。
+- Without: probe 仍可选，CEO 可能跳过预检凭假设派 Worker（重蹈 framework-metrics 覆辙）。
+- User would notice: WF-MAX 派 Worker 前先出 probe 矩阵；卡死不再可能（bounded + retry + descent）。
+- Milestone: M3 100% → M4。
+- Cumulative deviation (10-cycle): ~10% (cycle 4)。
+
+#### 待修（M4 候选根因）
+根 `.harness-version` drift 的根因：`npm run build:version` 只写 templates，根要手动补 checksum。cycle 2/3 implementer 手动补，cycle 4 漏补（CEO 补救）。M4 可用 WF-MAX 跑"让 build:version 同步根 + pre-push 加根 drift 检查"——自反验证 + 修维护链。

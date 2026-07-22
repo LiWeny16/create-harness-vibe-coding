@@ -869,6 +869,7 @@ requireText('Harness/WF-KERNEL.md', 'small-fast', 'WF-KERNEL small-fast tier map
 // WF variants reference WF-KERNEL
 requireText('Harness/WF.md', 'WF-KERNEL.md', 'WF.md references WF-KERNEL');
 requireText('Harness/WF-MAX.md', 'WF-KERNEL.md', 'WF-MAX.md references WF-KERNEL');
+requireText('Harness/WF-MAX.md', 'probe-worker-channels.mjs', 'WF-MAX references worker-channel probe (M3 anti-regression)');
 
 // Tier-aware acceptance: WF-Light must NOT require global cross-review/reflector
 requireText('Harness/WF.md', 'Cross-review and reflector NOT mandatory', 'WF.md WF-Light no mandatory cross-review');
