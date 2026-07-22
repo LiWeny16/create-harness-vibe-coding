@@ -1,0 +1,15 @@
+{
+  "taskId": "task-spark-protocol-hardening",
+  "created": "2026-07-21",
+  "phase": "requirements",
+  "gate": "PRD-GATE",
+  "tier": "none",
+  "mode": "wf-auto-spark",
+  "activeQuestion": null,
+  "ready": [],
+  "running": [],
+  "blocked": [],
+  "done": [],
+  "nextAction": "新 session：评估 4 改进点优先级（过程文件 task-scribe 化最高价值），决定执行模式（wf-auto-spark 自反 vs direct），细化 AC + write set。注意：若用 spark，本任务过程文件要 task-scribe 写（吃自己狗粮，验证 AC-TOKEN）。",
+  "status": "active"
+}

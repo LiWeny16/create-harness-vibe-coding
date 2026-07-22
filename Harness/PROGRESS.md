@@ -4,7 +4,7 @@ Global task index. Load at session start to see what is active and what was done
 
 ## Active Task
 
-- none
+- [task-spark-protocol-hardening](tasks/task-spark-protocol-hardening/PROGRESS.md) — 加固 wf-auto-spark：稳定 + 省 token + 过程文件 delegate task-scribe（待新窗口继续）
 
 ## Task Index
 
@@ -12,8 +12,9 @@ Non-archived tasks only (max 5). Archived tasks are listed in `Harness/tasks/_ar
 
 | ID | Goal | Phase | Closed |
 |----|------|-------|--------|
-| task-framework-metrics-and-entry-contract | Define slim CLAUDE entry contract and HarnessBench v0.1 methodology | Ready | - |
+| task-framework-metrics-and-entry-contract | Define slim CLAUDE entry contract and HarnessBench v0.1 methodology | Blocked | - |
 | task-wf-ux-compatibility | Improve WF speed, explicit entry, command compatibility, AGENTS routing, memory preflight, WF-KERNEL, task-scribe, codebase-explorer, STATE/archive, WF-AUTO thinning | Verified | 2026-07-17 |
+| task-spark-protocol-hardening | Harden wf-auto-spark: stability + token-saving + task-scribe delegation of process files | Requirements | - |
 
 ## Cross-Task Decisions
 

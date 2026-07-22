@@ -9,6 +9,9 @@
 | hooks-only-wf-auto | hook, runtime hook, .claude/settings.json, .codex/hooks.json, WF-AUTO.md | agent-lessons-patterns.md#only-wf-auto-may-use-runtime-hooks | non-runtime docs, broad hook designs |
 | tool-repeat-failure | same command fails 3x, error signature repeats | tool-usage-reflections.md | one-off command failures |
 | review-debug-lesson | reusable review/debug/validation pattern | agent-lessons-patterns.md | task-specific logs |
+| mcp-impersonation-worker | mcp__*.implement as Worker, preserve no-source-edit, fake compliance, CEO wrote source via mcp | agent-lessons-patterns.md | legitimate mcp tool use for docs/research (not source-as-Worker) |
+| harness-version-drift | root harness-version drift, checksum lag, build-version root sync, pre-push drift check | agent-lessons-patterns.md | one-off checksum typo |
+| subagent-settings-json-filter | researcher/reviewer subagent output neutralized, settings-json, empty return | tool-usage-reflections.md | normal subagent return with content |
 | startup-digest | new session, startup | startup-hints.md | full MEMORY.md index |
 | wf-closeout | /wf-learn, workflow closeout | all memory files via context-master -> memory-master | premature writes before extraction |
 
