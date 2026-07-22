@@ -9,6 +9,7 @@ import { generate, getOptionalCatalog } from './generator.js';
 
 const UPDATE_SUCCESS_STATUSES = new Set(['up-to-date', 'update-available', 'partial-update']);
 const UPDATE_FAILURE_STATUSES = new Set(['error', 'offline', 'template-remote', 'downgrade-refused']);
+const CANONICAL_UPDATE_SOURCE_BASE = 'https://raw.githubusercontent.com/LiWeny16/create-harness-vibe-coding/main/templates/common/';
 
 // ── CLI flags ──────────────────────────────────────────────
 const raw = process.argv.slice(2);
@@ -515,6 +516,7 @@ function runUpdateSwitch(scan, { json }) {
   console.log(pc.yellow('Existing Harness detected. Switching to wf-update check.'));
   console.log(pc.dim(`Directory   ${scan.resolvedDir}`));
   console.log(pc.dim('Command     node Harness/scripts/wf-update-check.mjs'));
+  console.log(pc.dim(`Source      ${CANONICAL_UPDATE_SOURCE_BASE}`));
   console.log('');
 
   if (!updateResult.success && updateResult.error) {
@@ -555,12 +557,14 @@ function createUpdateSwitchResult(scan, { json }) {
       updateCommand: json
         ? 'node Harness/scripts/wf-update-check.mjs --json'
         : 'node Harness/scripts/wf-update-check.mjs',
+      updateSourceBase: CANONICAL_UPDATE_SOURCE_BASE,
       next: [
         {
           action: 'update',
           command: json
             ? 'node Harness/scripts/wf-update-check.mjs --json'
             : 'node Harness/scripts/wf-update-check.mjs',
+          env: { WF_SOURCE_BASE: CANONICAL_UPDATE_SOURCE_BASE },
           reason: 'Harness already exists, so updates must use the installed Harness update flow.',
         },
       ],
@@ -589,6 +593,10 @@ function createUpdateSwitchResult(scan, { json }) {
   const result = spawnSync(process.execPath, args, {
     cwd: scan.resolvedDir,
     encoding: 'utf8',
+    env: {
+      ...process.env,
+      WF_SOURCE_BASE: CANONICAL_UPDATE_SOURCE_BASE,
+    },
   });
   const stdout = result.stdout || '';
   const stderr = result.stderr || '';

@@ -49,6 +49,9 @@ test('package README stays English and links to Chinese README', () => {
   assert.match(readme, /Harness\/SETUP\.md/i);
   assert.match(readme, /Optional workflows/);
   assert.match(readme, /validate-harness\.mjs/);
+  assert.match(readme, /Release gate/);
+  assert.match(readme, /zingspark\/create-harness-vibe-coding/);
+  assert.match(readme, /npm run check:mirrors/);
 });
 
 test('template source stores harness docs under templates/common/Harness instead of docs', () => {
@@ -205,6 +208,8 @@ test('generated scaffold stores harness-owned payload under root Harness directo
   const result = generate({ projectName: 'harness-root', targetDir });
 
   assert.equal(result.success, true);
+  const generatedVersion = JSON.parse(readRel(targetDir, 'Harness/.harness-version'));
+  assert.equal(generatedVersion.source, 'https://raw.githubusercontent.com/LiWeny16/create-harness-vibe-coding/main/templates/common/');
 
   for (const rel of [
     'README.md',
@@ -666,6 +671,8 @@ test('package README-CN gives a concise Chinese quickstart and Harness-only docs
   assert.match(readmeCn, /外部推荐/);
   assert.match(readmeCn, /验证/);
   assert.match(readmeCn, /https:\/\/github\.com\/LiWeny16\/create-harness-vibe-coding/);
+  assert.match(readmeCn, /zingspark\/create-harness-vibe-coding/);
+  assert.match(readmeCn, /npm run check:mirrors/);
   assert.match(readmeCn, /\.agents\/skills/);
   assert.match(readmeCn, /Agent instruction/);
   assert.doesNotMatch(readmeCn, /commands\/wf\.toml/);
@@ -692,7 +699,10 @@ test('package README-CN contains required Chinese workflow and verification clau
   assert.match(readmeCn, /https:\/\/github\.com\/mattpocock\/skills\/tree\/main\/skills\/productivity\/grill-me/);
   assert.match(readmeCn, /\u5916\u90e8\u63a8\u8350/u);
   assert.match(readmeCn, /\u9a8c\u8bc1/u);
+  assert.match(readmeCn, /\u53d1\u5e03\u95e8\u7981/u);
   assert.match(readmeCn, /https:\/\/github\.com\/LiWeny16\/create-harness-vibe-coding/);
+  assert.match(readmeCn, /zingspark\/create-harness-vibe-coding/);
+  assert.match(readmeCn, /npm run check:mirrors/);
   assert.match(readmeCn, /\.agents\/skills/);
   assert.match(readmeCn, /Agent instruction/);
 });

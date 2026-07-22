@@ -19,11 +19,16 @@ import { readFileSync, writeFileSync, existsSync, lstatSync, readdirSync, unlink
 import { resolve, dirname, sep, join } from 'path';
 import { fileURLToPath } from 'url';
 import { createInterface } from 'readline';
+import { gunzipSync } from 'zlib';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = process.env.WF_ROOT ? resolve(process.env.WF_ROOT) : resolve(__dirname, '..', '..');
 const VERSION_FILE = resolve(ROOT, 'Harness', '.harness-version');
+const NPM_PACKAGE = 'create-harness-vibe-coding';
+const NPM_REGISTRY = (process.env.NPM_CONFIG_REGISTRY || 'https://registry.npmjs.org').replace(/\/+$/, '');
+const TEMPLATE_SUBPATH = 'templates/common/';
 const DEFAULT_SOURCE_BASE = 'https://raw.githubusercontent.com/LiWeny16/create-harness-vibe-coding/main/templates/common/';
+const LEGACY_SOURCE_BASE = 'https://raw.githubusercontent.com/zingspark/create-harness-vibe-coding/main/templates/common/';
 
 // ── Classification constants ────────────────────────────────────────
 
@@ -148,6 +153,73 @@ async function fetchRemote(url, timeoutMs = 30000) {
     return res.text();
   } finally {
     clearTimeout(timer);
+  }
+}
+
+async function fetchBytes(url, timeoutMs = 30000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { signal: controller.signal, headers: { 'User-Agent': 'harness-scan-clean' } });
+    if (!res.ok) throw new Error(`HTTP ${res.status}: ${url}`);
+    return Buffer.from(await res.arrayBuffer());
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function tarString(header, start, length) {
+  const slice = header.subarray(start, start + length);
+  const zero = slice.indexOf(0);
+  return Buffer.from(zero === -1 ? slice : slice.subarray(0, zero)).toString('utf8').trim();
+}
+
+function parseTarFiles(buffer) {
+  const files = new Map();
+  for (let offset = 0; offset + 512 <= buffer.length;) {
+    const header = buffer.subarray(offset, offset + 512);
+    if (header.every(byte => byte === 0)) break;
+
+    const name = tarString(header, 0, 100);
+    const prefix = tarString(header, 345, 155);
+    const size = Number.parseInt(tarString(header, 124, 12) || '0', 8) || 0;
+    const type = String.fromCharCode(header[156] || 0);
+    const fullName = prefix ? `${prefix}/${name}` : name;
+    const dataStart = offset + 512;
+
+    if ((type === '\0' || type === '0' || type === '') && fullName) {
+      files.set(fullName, buffer.subarray(dataStart, dataStart + size));
+    }
+
+    offset = dataStart + Math.ceil(size / 512) * 512;
+  }
+  return files;
+}
+
+async function fetchNpmLatestManifest() {
+  const meta = JSON.parse(await fetchRemote(`${NPM_REGISTRY}/${NPM_PACKAGE}/latest`, 15000));
+  const tarball = meta?.dist?.tarball;
+  if (!tarball) throw new Error(`npm metadata missing dist.tarball for ${NPM_PACKAGE}@latest`);
+  const files = parseTarFiles(gunzipSync(await fetchBytes(tarball, 30000)));
+  const manifest = files.get(`package/${TEMPLATE_SUBPATH}.harness-version`);
+  if (!manifest) throw new Error('npm package missing templates/common/.harness-version');
+  return Buffer.from(manifest).toString('utf8');
+}
+
+async function fetchRemoteManifest(explicitSource) {
+  if (explicitSource) return fetchRemote(normalizeSourceBase(explicitSource) + '.harness-version');
+  try {
+    return await fetchNpmLatestManifest();
+  } catch (npmError) {
+    try {
+      return await fetchRemote(DEFAULT_SOURCE_BASE + '.harness-version');
+    } catch (canonicalError) {
+      try {
+        return await fetchRemote(LEGACY_SOURCE_BASE + '.harness-version');
+      } catch (legacyError) {
+        throw new Error(`npm latest: ${npmError.message}; canonical GitHub: ${canonicalError.message}; legacy mirror: ${legacyError.message}`);
+      }
+    }
   }
 }
 
@@ -285,7 +357,7 @@ async function main() {
   const clean = args.includes('--clean');
   const yes = args.includes('--yes');
   const jsonOut = args.includes('--json');
-  const sourceBase = normalizeSourceBase(readFlagValue(args, '--source-base') || process.env.WF_SOURCE_BASE || DEFAULT_SOURCE_BASE);
+  const explicitSource = readFlagValue(args, '--source-base') || process.env.WF_SOURCE_BASE;
 
   // 1. Read local state
   if (!existsSync(VERSION_FILE)) {
@@ -314,7 +386,7 @@ async function main() {
   // 2. Fetch remote version file
   let remoteVersion;
   try {
-    const raw = await fetchRemote(sourceBase + '.harness-version');
+    const raw = await fetchRemoteManifest(explicitSource);
     if (isTemplate(raw)) {
       if (jsonOut) {
         console.log(JSON.stringify({ status: 'error', message: 'Remote .harness-version is a template (contains {{placeholders}}). Cannot determine dead files.' }));
@@ -328,9 +400,9 @@ async function main() {
     remoteVersion = JSON.parse(raw);
   } catch (e) {
     if (jsonOut) {
-      console.log(JSON.stringify({ status: 'error', message: 'Cannot reach GitHub or invalid remote JSON: ' + e.message }));
+      console.log(JSON.stringify({ status: 'error', message: 'Cannot reach npm, canonical GitHub, or legacy mirror update sources: ' + e.message }));
     } else {
-      console.error('ERROR: Cannot reach GitHub or invalid remote JSON. Offline?');
+      console.error('ERROR: Cannot reach npm, canonical GitHub, or legacy mirror update sources. Offline?');
       console.error(e.message);
     }
     process.exit(1);

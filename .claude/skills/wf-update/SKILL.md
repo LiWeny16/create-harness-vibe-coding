@@ -23,7 +23,10 @@ This skill is a Codex compatibility shim plus script-flow reference. Claude Code
 ## Flow
 
 1. Run `node Harness/scripts/wf-update-check.mjs --json` first and use the
-   `agent` block as the action plan.
+   `agent` block as the action plan. Current updaters try npm
+   `create-harness-vibe-coding@latest` first, then the canonical GitHub source
+   `LiWeny16/create-harness-vibe-coding`, then the legacy compatibility mirror
+   `zingspark/create-harness-vibe-coding`.
 2. Preserve all PRESERVE files. Never overwrite user task, memory, research,
    README, package, or architecture files.
 3. If `agent.safeApplyCommand` is present, run it to apply SAFE, NEW, and
@@ -49,6 +52,13 @@ npx create-harness-vibe-coding@latest <project-name> . -y --on-conflict skip
 ```
 
 The `--on-conflict skip` policy preserves all existing user files (CLAUDE.md, README.md, tasks, memory, research, architecture) and only creates missing Harness infrastructure files. After recovery, re-run the update check.
+
+If an old updater reports only `0.8.10`, run the latest installer command above
+or re-run the checker with:
+
+```
+node Harness/scripts/wf-update-check.mjs --json --source-base https://raw.githubusercontent.com/LiWeny16/create-harness-vibe-coding/main/templates/common/
+```
 
 ## Return
 

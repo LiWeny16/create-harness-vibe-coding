@@ -15,6 +15,7 @@ const ROOT = join(__dirname, '..');
 const CHECKS = [
   { label: 'harness-version up to date', cmd: 'node scripts/build-version.mjs --check' },
   { label: 'root harness-version drift', cmd: 'node scripts/check-root-harness-version.mjs' },
+  { label: 'update mirror gate syntax', cmd: 'node --check scripts/check-update-mirrors.mjs' },
   { label: 'harness validator', cmd: 'node Harness/scripts/validate-harness.mjs --strict' },
   { label: 'template harness validator', cmd: 'node templates/common/Harness/scripts/validate-harness.mjs --strict' },
   { label: 'tests pass', cmd: 'npm test' },

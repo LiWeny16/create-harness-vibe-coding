@@ -3,9 +3,11 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
+import { createServer } from 'node:http';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { gzipSync } from 'node:zlib';
 import { generate } from '../src/generator.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -36,6 +38,53 @@ function runNode(scriptAbs, args, opts = {}) {
 function runShell(command, opts = {}) {
   // Run a hook command string the way a shell would (cross-platform).
   return spawnSync(command, { cwd: opts.cwd || ROOT, encoding: 'utf8', shell: true, env: { ...process.env, ...(opts.env || {}) } });
+}
+
+function runNodeAsync(scriptAbs, args, opts = {}) {
+  const cwd = opts.cwd || ROOT;
+  return new Promise(resolve => {
+    const child = spawn(process.execPath, [scriptAbs, ...(args || [])], {
+      cwd,
+      env: { ...process.env, WF_ROOT: cwd, ...(opts.env || {}) },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    let stdout = '';
+    let stderr = '';
+    child.stdout.setEncoding('utf8');
+    child.stderr.setEncoding('utf8');
+    child.stdout.on('data', chunk => { stdout += chunk; });
+    child.stderr.on('data', chunk => { stderr += chunk; });
+    child.on('close', status => resolve({ status, stdout, stderr }));
+  });
+}
+
+function tarOctal(value, length) {
+  return value.toString(8).padStart(length - 1, '0') + '\0';
+}
+
+function makeTgz(files) {
+  const blocks = [];
+  for (const [name, content] of Object.entries(files)) {
+    const body = Buffer.from(content, 'utf8');
+    const header = Buffer.alloc(512);
+    header.write(name, 0, 100, 'utf8');
+    header.write(tarOctal(0o644, 8), 100, 8, 'ascii');
+    header.write(tarOctal(0, 8), 108, 8, 'ascii');
+    header.write(tarOctal(0, 8), 116, 8, 'ascii');
+    header.write(tarOctal(body.length, 12), 124, 12, 'ascii');
+    header.write(tarOctal(0, 12), 136, 12, 'ascii');
+    header.fill(' ', 148, 156);
+    header.write('0', 156, 1, 'ascii');
+    header.write('ustar\0', 257, 6, 'ascii');
+    header.write('00', 263, 2, 'ascii');
+    const sum = [...header].reduce((acc, byte) => acc + byte, 0);
+    header.write(sum.toString(8).padStart(6, '0') + '\0 ', 148, 8, 'ascii');
+    blocks.push(header, body);
+    const padding = (512 - (body.length % 512)) % 512;
+    if (padding) blocks.push(Buffer.alloc(padding));
+  }
+  blocks.push(Buffer.alloc(1024));
+  return gzipSync(Buffer.concat(blocks));
 }
 
 function createOldHarnessWithoutUpdater(root, name = 'old') {
@@ -194,6 +243,162 @@ test('update-check: default --json hides plan/conflict details; --full-plan reve
   assert.equal('plan' in fullJson, true, '--full-plan must include top-level plan');
   assert.ok((fullJson.plan.conflict || []).length >= 1, '--full-plan plan.conflict has entries');
   assert.ok((fullJson.agent.aiMergeRequired || []).length >= 1, '--full-plan agent.aiMergeRequired has entries');
+  fs.rmSync(root, { recursive: true, force: true });
+});
+
+test('update-check: default source can use npm latest tarball without GitHub', async () => {
+  const root = tmpdir();
+  const proj = path.join(root, 'proj');
+  fs.mkdirSync(path.join(proj, 'Harness', 'scripts'), { recursive: true });
+  fs.copyFileSync(path.join(SCRIPTS, 'wf-update-check.mjs'), path.join(proj, 'Harness', 'scripts', 'wf-update-check.mjs'));
+  fs.writeFileSync(path.join(proj, 'Harness', 'WF.md'), 'old wf\n');
+  fs.writeFileSync(path.join(proj, 'Harness', '.harness-version'), JSON.stringify({
+    generator: '1.0.0',
+    generated: '2026-01-01T00:00:00Z',
+    checksums: { 'Harness/WF.md': sha('old wf\n') },
+  }, null, 2) + '\n');
+
+  const remoteFiles = { 'Harness/WF.md': 'new wf\n' };
+  const remoteVersion = {
+    generator: '9.9.9',
+    generated: '2026-07-22T00:00:00Z',
+    checksums: { 'Harness/WF.md': sha(remoteFiles['Harness/WF.md']) },
+    sources: { 'Harness/WF.md': 'Harness/WF.md' },
+  };
+  const tgz = makeTgz({
+    'package/templates/common/.harness-version': JSON.stringify(remoteVersion, null, 2) + '\n',
+    'package/templates/common/Harness/WF.md': remoteFiles['Harness/WF.md'],
+  });
+
+  const server = createServer((req, res) => {
+    if (req.url === '/create-harness-vibe-coding/latest') {
+      const base = `http://127.0.0.1:${server.address().port}`;
+      res.setHeader('content-type', 'application/json');
+      res.end(JSON.stringify({
+        name: 'create-harness-vibe-coding',
+        version: '9.9.9',
+        dist: { tarball: `${base}/create-harness-vibe-coding-9.9.9.tgz` },
+      }));
+      return;
+    }
+    if (req.url === '/create-harness-vibe-coding-9.9.9.tgz') {
+      res.setHeader('content-type', 'application/octet-stream');
+      res.end(tgz);
+      return;
+    }
+    res.statusCode = 404;
+    res.end('not found');
+  });
+
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  try {
+    const registry = `http://127.0.0.1:${server.address().port}`;
+    const result = await runNodeAsync(path.join(proj, 'Harness', 'scripts', 'wf-update-check.mjs'), ['--json', '--full-plan'], {
+      cwd: proj,
+      env: { NPM_CONFIG_REGISTRY: registry },
+    });
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    const json = JSON.parse(result.stdout.trim());
+    assert.equal(json.status, 'update-available');
+    assert.equal(json.to, '9.9.9');
+    assert.match(json.sourceBase, /^npm:create-harness-vibe-coding@9\.9\.9\/templates\/common\//);
+    assert.ok(json.plan.updated.some(entry => entry.file === 'Harness/WF.md'));
+  } finally {
+    await new Promise(resolve => server.close(resolve));
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('update-check: default source falls back to zingspark legacy mirror', async () => {
+  const root = tmpdir();
+  const proj = path.join(root, 'proj');
+  fs.mkdirSync(path.join(proj, 'Harness', 'scripts'), { recursive: true });
+  fs.copyFileSync(path.join(SCRIPTS, 'wf-update-check.mjs'), path.join(proj, 'Harness', 'scripts', 'wf-update-check.mjs'));
+  fs.writeFileSync(path.join(proj, 'Harness', '.harness-version'), JSON.stringify({
+    generator: '1.0.0',
+    generated: '2026-01-01T00:00:00Z',
+    checksums: {},
+  }, null, 2) + '\n');
+
+  const remoteVersion = {
+    generator: '2.0.0',
+    generated: '2026-07-22T00:00:00Z',
+    checksums: {},
+    sources: {},
+  };
+  const preload = path.join(root, 'fake-fetch.mjs');
+  fs.writeFileSync(preload, `
+const legacyManifestUrl = 'https://raw.githubusercontent.com/zingspark/create-harness-vibe-coding/main/templates/common/.harness-version';
+globalThis.fetch = async function fakeFetch(input) {
+  const url = String(input);
+  if (url === legacyManifestUrl) {
+    return new Response(process.env.HARNESS_FAKE_LEGACY_MANIFEST, { status: 200, headers: { 'content-type': 'application/json' } });
+  }
+  return new Response('blocked by fallback test: ' + url, { status: 503 });
+};
+`, 'utf8');
+
+  const result = await runNodeAsync(path.join(proj, 'Harness', 'scripts', 'wf-update-check.mjs'), ['--json'], {
+    cwd: proj,
+    env: {
+      NODE_OPTIONS: `--import=${pathToFileURL(preload).href}`,
+      HARNESS_FAKE_LEGACY_MANIFEST: JSON.stringify(remoteVersion),
+    },
+  });
+
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  const json = JSON.parse(result.stdout.trim());
+  assert.equal(json.status, 'update-available');
+  assert.equal(json.to, '2.0.0');
+  assert.equal(json.sourceBase, 'https://raw.githubusercontent.com/zingspark/create-harness-vibe-coding/main/templates/common/');
+  fs.rmSync(root, { recursive: true, force: true });
+});
+
+test('update-check: apply-safe validates all remote hashes before writing any file', () => {
+  const root = tmpdir();
+  const proj = path.join(root, 'proj');
+  const remote = path.join(root, 'remote');
+  fs.mkdirSync(path.join(proj, 'Harness', 'scripts'), { recursive: true });
+  fs.copyFileSync(path.join(SCRIPTS, 'wf-update-check.mjs'), path.join(proj, 'Harness', 'scripts', 'wf-update-check.mjs'));
+  fs.mkdirSync(path.join(proj, 'Harness'), { recursive: true });
+  fs.writeFileSync(path.join(proj, 'Harness', 'A.md'), 'old a\n');
+  fs.writeFileSync(path.join(proj, 'Harness', 'B.md'), 'old b\n');
+  fs.writeFileSync(path.join(proj, 'Harness', '.harness-version'), JSON.stringify({
+    generator: '1.0.0',
+    generated: '2026-01-01T00:00:00Z',
+    checksums: {
+      'Harness/A.md': sha('old a\n'),
+      'Harness/B.md': sha('old b\n'),
+    },
+  }, null, 2) + '\n');
+
+  fs.mkdirSync(path.join(remote, 'Harness'), { recursive: true });
+  fs.writeFileSync(path.join(remote, 'Harness', 'A.md'), 'new a\n');
+  fs.writeFileSync(path.join(remote, 'Harness', 'B.md'), 'new b but manifest lies\n');
+  fs.writeFileSync(path.join(remote, '.harness-version'), JSON.stringify({
+    generator: '2.0.0',
+    generated: '2026-07-22T00:00:00Z',
+    checksums: {
+      'Harness/A.md': sha('new a\n'),
+      'Harness/B.md': sha('different b\n'),
+    },
+    sources: {
+      'Harness/A.md': 'Harness/A.md',
+      'Harness/B.md': 'Harness/B.md',
+    },
+  }, null, 2) + '\n');
+
+  const result = runNode(path.join(proj, 'Harness', 'scripts', 'wf-update-check.mjs'), ['--apply-safe'], {
+    cwd: proj,
+    env: { WF_SOURCE_BASE: fileSourceBase(remote) },
+  });
+
+  assert.equal(result.status, 1, result.stdout + result.stderr);
+  assert.match(result.stdout + result.stderr, /Hash mismatch: Harness\/B\.md/);
+  assert.equal(fs.readFileSync(path.join(proj, 'Harness', 'A.md'), 'utf8'), 'old a\n');
+  assert.equal(fs.readFileSync(path.join(proj, 'Harness', 'B.md'), 'utf8'), 'old b\n');
+  const version = JSON.parse(fs.readFileSync(path.join(proj, 'Harness', '.harness-version'), 'utf8'));
+  assert.equal(version.generator, '1.0.0');
   fs.rmSync(root, { recursive: true, force: true });
 });
 

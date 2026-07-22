@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.13] - 2026-07-22
+
+- Make Harness updates resolve from npm `create-harness-vibe-coding@latest` first, with `LiWeny16/create-harness-vibe-coding` as the canonical GitHub fallback and `zingspark/create-harness-vibe-coding` as the legacy mirror fallback.
+- Keep generated installs on the canonical `LiWeny16` source while requiring `zingspark` legacy mirror sync for old updaters.
+- Make `--apply-safe` validate all remote hashes before writing any SAFE/NEW files.
+- Force the latest install CLI's existing-Harness update switch to pass the canonical `LiWeny16` source to older updater scripts.
+
 ## [0.8.12] - 2026-07-22
 
 - Harden `/wf-auto-spark` with documented search fallbacks, reflector escalation, and drift/delegation anti-pattern guards.

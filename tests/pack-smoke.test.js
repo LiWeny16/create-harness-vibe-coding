@@ -33,6 +33,7 @@ test('test script runs unit and smoke tests', () => {
   const pkg = JSON.parse(fs.readFileSync(path.resolve('package.json'), 'utf8'));
 
   assert.equal(pkg.scripts.test, 'node --test tests/*.test.js');
+  assert.equal(pkg.scripts['check:mirrors'], 'node scripts/check-update-mirrors.mjs');
   assert.equal(pkg.scripts['test:smoke'], 'node --test tests/cli-smoke.test.js');
   assert.equal(pkg.scripts['pack:smoke'], 'node --test tests/pack-smoke.test.js');
 });

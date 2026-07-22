@@ -189,7 +189,19 @@ node Harness/scripts/validate-harness.mjs
 
 # Generated project after bootstrap or before release
 node Harness/scripts/validate-harness.mjs --strict
+
+# After publishing an update release
+npm run check:mirrors
 ```
+
+## Release gate
+
+Iron rule: every update release must keep both update channels live:
+
+- Canonical: npm `create-harness-vibe-coding@latest` and `https://github.com/LiWeny16/create-harness-vibe-coding`
+- Legacy compatibility mirror: `https://github.com/zingspark/create-harness-vibe-coding`
+
+Low-version installs can have updater scripts hardcoded to the legacy mirror. Do not mark a release complete until the legacy mirror exposes the same commit, tag, and generated template manifest as canonical. Generated installs still record the canonical `LiWeny16` source; the `zingspark` repo is kept for backward compatibility.
 
 ## Footprint
 

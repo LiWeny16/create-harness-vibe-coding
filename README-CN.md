@@ -191,7 +191,19 @@ node Harness/scripts/validate-harness.mjs
 
 # bootstrap 完成后或发布前
 node Harness/scripts/validate-harness.mjs --strict
+
+# 发布更新版本后
+npm run check:mirrors
 ```
+
+## 发布门禁
+
+铁律：每次 Harness 更新发版都必须同时保持两个更新通道可用：
+
+- Canonical：npm `create-harness-vibe-coding@latest` 和 `https://github.com/LiWeny16/create-harness-vibe-coding`
+- 低版本兼容镜像：`https://github.com/zingspark/create-harness-vibe-coding`
+
+低版本用户的 updater 可能已经硬编码到旧的 `zingspark` 仓库。发布不能只更新新仓库；必须等 legacy mirror 拥有同一份 commit、tag 和生成后的 template manifest，才算发版完成。新安装生成的 `Harness/.harness-version` 仍然记录 canonical `LiWeny16` source；`zingspark` 只作为旧用户兼容镜像保留。
 
 ## 适配范围与体积
 

@@ -11,7 +11,7 @@ function tmpdir() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'harness-cli-'));
 }
 
-function writeUpdateStub(target, script = "console.log(JSON.stringify({ status: 'up-to-date', cwd: process.cwd(), args: process.argv.slice(2) }));\n") {
+function writeUpdateStub(target, script = "console.log(JSON.stringify({ status: 'up-to-date', cwd: process.cwd(), args: process.argv.slice(2), sourceBase: process.env.WF_SOURCE_BASE }));\n") {
   fs.mkdirSync(path.join(target, 'Harness', 'scripts'), { recursive: true });
   fs.writeFileSync(
     path.join(target, 'Harness', 'scripts', 'wf-update-check.mjs'),
@@ -169,6 +169,8 @@ test('AC-002 existing Harness JSON dry-run returns update mode instead of instal
   assert.equal(data.scan.markers.hasHarness, true);
   assert.equal(data.update.status, 'up-to-date');
   assert.deepEqual(data.update.args, ['--json']);
+  assert.equal(data.update.sourceBase, 'https://raw.githubusercontent.com/LiWeny16/create-harness-vibe-coding/main/templates/common/');
+  assert.equal(data.agent.updateSourceBase, 'https://raw.githubusercontent.com/LiWeny16/create-harness-vibe-coding/main/templates/common/');
   assert.equal(data.plan, undefined);
   assert.ok(data.agent.next.some(item => item.action === 'update'));
   assert.equal(fs.existsSync(path.join(target, 'CLAUDE.md')), false);

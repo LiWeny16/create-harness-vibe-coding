@@ -19,15 +19,22 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync, lstatSync } from 'f
 import { createHash } from 'crypto';
 import { resolve, dirname, sep } from 'path';
 import { fileURLToPath } from 'url';
+import { gunzipSync } from 'zlib';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = process.env.WF_ROOT ? resolve(process.env.WF_ROOT) : resolve(__dirname, '..', '..');
 const VERSION_FILE = resolve(ROOT, 'Harness', '.harness-version');
+const NPM_PACKAGE = 'create-harness-vibe-coding';
+const NPM_REGISTRY = (process.env.NPM_CONFIG_REGISTRY || 'https://registry.npmjs.org').replace(/\/+$/, '');
 const GITHUB_REPO = 'LiWeny16/create-harness-vibe-coding';
+const LEGACY_GITHUB_REPO = 'zingspark/create-harness-vibe-coding';
 const GITHUB_LATEST_STABLE = `https://api.github.com/repos/${GITHUB_REPO}/releases/latest`;
 const RAW_GITHUB = `https://raw.githubusercontent.com/${GITHUB_REPO}`;
+const LEGACY_RAW_GITHUB = `https://raw.githubusercontent.com/${LEGACY_GITHUB_REPO}`;
 const TEMPLATE_SUBPATH = 'templates/common/';
 const DEFAULT_SOURCE_BASE = `${RAW_GITHUB}/main/${TEMPLATE_SUBPATH}`;
+const LEGACY_SOURCE_BASE = `${LEGACY_RAW_GITHUB}/main/${TEMPLATE_SUBPATH}`;
+const npmPackageCache = new Map();
 
 // Tier classification
 
@@ -185,6 +192,47 @@ async function fetchRemote(url, timeoutMs = 30000) {
   }
 }
 
+async function fetchBytes(url, timeoutMs = 30000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { signal: controller.signal, headers: { 'User-Agent': 'harness-wf-update-check' } });
+    if (!res.ok) throw new Error(`HTTP ${res.status}: ${url}`);
+    return Buffer.from(await res.arrayBuffer());
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function tarString(header, start, length) {
+  const slice = header.subarray(start, start + length);
+  const zero = slice.indexOf(0);
+  return Buffer.from(zero === -1 ? slice : slice.subarray(0, zero)).toString('utf8').trim();
+}
+
+function parseTarFiles(buffer) {
+  const files = new Map();
+  for (let offset = 0; offset + 512 <= buffer.length;) {
+    const header = buffer.subarray(offset, offset + 512);
+    if (header.every(byte => byte === 0)) break;
+
+    const name = tarString(header, 0, 100);
+    const prefix = tarString(header, 345, 155);
+    const sizeText = tarString(header, 124, 12);
+    const size = Number.parseInt(sizeText || '0', 8) || 0;
+    const type = String.fromCharCode(header[156] || 0);
+    const fullName = prefix ? `${prefix}/${name}` : name;
+    const dataStart = offset + 512;
+
+    if ((type === '\0' || type === '0' || type === '') && fullName) {
+      files.set(fullName, buffer.subarray(dataStart, dataStart + size));
+    }
+
+    offset = dataStart + Math.ceil(size / 512) * 512;
+  }
+  return files;
+}
+
 // Main
 
 function isPrerelease(v) {
@@ -192,7 +240,74 @@ function isPrerelease(v) {
   return /-[0-9A-Za-z.-]+/.test(v.replace(/^[^0-9]*/, ''));
 }
 
-async function resolveStableSourceBase() {
+function parseSemver(v) {
+  if (!v || typeof v !== 'string') return [0, 0, 0];
+  return v.replace(/^[^0-9]*/, '').split('.').slice(0, 3).map(n => Number(n) || 0);
+}
+
+function cmpSemver(a, b) {
+  const va = parseSemver(a), vb = parseSemver(b);
+  for (let i = 0; i < 3; i++) {
+    if ((va[i] || 0) > (vb[i] || 0)) return 1;
+    if ((va[i] || 0) < (vb[i] || 0)) return -1;
+  }
+  return 0;
+}
+
+async function loadNpmPackage(version = 'latest') {
+  const cacheKey = `${NPM_REGISTRY}:${version}`;
+  if (npmPackageCache.has(cacheKey)) return npmPackageCache.get(cacheKey);
+
+  const metaUrl = `${NPM_REGISTRY}/${NPM_PACKAGE}/${version}`;
+  const meta = JSON.parse(await fetchRemote(metaUrl, 15000));
+  const packageVersion = meta.version;
+  const tarball = meta?.dist?.tarball;
+  if (!packageVersion || !tarball) throw new Error(`npm metadata missing dist.tarball for ${NPM_PACKAGE}@${version}`);
+
+  const archive = gunzipSync(await fetchBytes(tarball, 30000));
+  const files = parseTarFiles(archive);
+  const loaded = { version: packageVersion, tarball, files };
+  npmPackageCache.set(cacheKey, loaded);
+  npmPackageCache.set(`${NPM_REGISTRY}:${packageVersion}`, loaded);
+  return loaded;
+}
+
+function readNpmFile(pkg, templateRelPath) {
+  const key = `package/${TEMPLATE_SUBPATH}${templateRelPath}`;
+  const content = pkg.files.get(key);
+  if (!content) throw new Error(`npm package missing ${key}`);
+  return Buffer.from(content).toString('utf8');
+}
+
+async function createNpmSource(version = 'latest') {
+  const pkg = await loadNpmPackage(version);
+  const raw = readNpmFile(pkg, '.harness-version');
+  if (isTemplate(raw)) throw new Error('npm .harness-version has not been generated yet');
+  const manifest = JSON.parse(raw);
+  return {
+    kind: 'npm',
+    stable: true,
+    label: `npm:${NPM_PACKAGE}@${pkg.version}/${TEMPLATE_SUBPATH}`,
+    version: pkg.version,
+    manifest,
+    package: pkg,
+  };
+}
+
+async function createUrlSource(sourceBase, { stable = false } = {}) {
+  const base = normalizeSourceBase(sourceBase);
+  const raw = await fetchRemote(base + '.harness-version');
+  if (isTemplate(raw)) throw new Error('remote .harness-version has not been generated yet');
+  return {
+    kind: 'url',
+    stable,
+    label: base,
+    base,
+    manifest: JSON.parse(raw),
+  };
+}
+
+async function resolveGithubReleaseSource() {
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 15000);
@@ -209,24 +324,43 @@ async function resolveStableSourceBase() {
     const data = JSON.parse(await res.text());
     const tag = data && data.tag_name;
     if (!tag || data.prerelease) return null;
-    const source = `${RAW_GITHUB}/${tag}/${TEMPLATE_SUBPATH}`;
-    const versionController = new AbortController();
-    const versionTimer = setTimeout(() => versionController.abort(), 15000);
-    try {
-      const versionRes = await fetch(source + '.harness-version', {
-        signal: versionController.signal,
-        headers: { 'User-Agent': 'harness-wf-update-check' },
-      });
-      if (!versionRes.ok) return null;
-      const raw = await versionRes.text();
-      if (isTemplate(raw)) return null;
-    } finally {
-      clearTimeout(versionTimer);
-    }
-    return source;
+    return await createUrlSource(`${RAW_GITHUB}/${tag}/${TEMPLATE_SUBPATH}`, { stable: true });
   } catch {
     return null;
   }
+}
+
+async function resolveUpdateSource(explicitSource) {
+  if (explicitSource) {
+    return createUrlSource(explicitSource, { stable: false });
+  }
+
+  const errors = [];
+  try {
+    return await createNpmSource('latest');
+  } catch (e) {
+    errors.push(`npm latest: ${e.message}`);
+  }
+
+  const releaseSource = await resolveGithubReleaseSource();
+  if (releaseSource) return releaseSource;
+  errors.push('GitHub latest release: unavailable');
+
+  try {
+    return await createUrlSource(DEFAULT_SOURCE_BASE, { stable: false });
+  } catch (e) {
+    errors.push(`GitHub canonical main: ${e.message}`);
+  }
+
+  try {
+    return await createUrlSource(LEGACY_SOURCE_BASE, { stable: false });
+  } catch (e) {
+    errors.push(`GitHub legacy mirror: ${e.message}`);
+  }
+
+  const err = new Error('Cannot reach npm, canonical GitHub, or legacy mirror update sources.');
+  err.sourceErrors = errors;
+  throw err;
 }
 
 async function main() {
@@ -240,14 +374,16 @@ async function main() {
   const acceptTemplate = readRepeatedFlagValues(args, '--accept-template');
   const ignoreVersion = args.includes('--ignore-version') || args.includes('--force-check');
   const explicitSource = readFlagValue(args, '--source-base') || process.env.WF_SOURCE_BASE;
-  let sourceBase = normalizeSourceBase(explicitSource || DEFAULT_SOURCE_BASE);
-  let stableTagResolved = false;
-  if (!explicitSource) {
-    const resolved = await resolveStableSourceBase();
-    if (resolved) {
-      sourceBase = normalizeSourceBase(resolved);
-      stableTagResolved = true;
-    }
+  let source;
+  let sourceBase;
+  let sourceStable = false;
+  let sourceErrors = [];
+  try {
+    source = await resolveUpdateSource(explicitSource);
+    sourceBase = source.label;
+    sourceStable = Boolean(source.stable);
+  } catch (e) {
+    sourceErrors = e.sourceErrors || [e.message];
   }
 
   // 1. Read local state
@@ -302,42 +438,21 @@ async function main() {
 
   const localChecksums = localVersion.checksums || {};
 
-  // 2. Fetch remote version file
-  let remoteVersion;
-  try {
-    const raw = await fetchRemote(sourceBase + '.harness-version');
-    if (isTemplate(raw)) {
-      if (jsonOut) {
-        console.log(JSON.stringify({ status: 'template-remote', message: 'Remote .harness-version has not been generated yet.' }));
-      } else {
-        console.log('WARN: Remote .harness-version is a template (contains {{placeholders}}).');
-        console.log('  The generate step has not been run on the remote repo. No update possible.');
-        console.log('  This is expected during development; the update mechanism works once the remote is live.');
-      }
-      process.exitCode = 1;
-      return;
-    }
-    remoteVersion = JSON.parse(raw);
-  } catch (e) {
+  // 2. Read remote version metadata from the selected update source.
+  let remoteVersion = source?.manifest;
+  if (!remoteVersion) {
     if (jsonOut) {
-      console.log(JSON.stringify({ status: 'offline', message: 'Cannot reach GitHub.' }));
+      console.log(JSON.stringify({
+        status: 'offline',
+        message: 'Cannot reach npm, canonical GitHub, or legacy mirror update sources.',
+        sourceErrors,
+      }));
     } else {
-      console.error('ERROR: Cannot reach GitHub or invalid JSON. Offline?');
-      console.error(e.message);
+      console.error('ERROR: Cannot reach npm, canonical GitHub, or legacy mirror update sources. Offline?');
+      for (const err of sourceErrors) console.error(`  ${err}`);
     }
     process.exitCode = 1;
     return;
-  }
-
-  // Compare versions and prevent downgrades from explicit custom sources.
-  function parseSemver(v) {
-    if (!v || typeof v !== 'string') return [0, 0, 0];
-    return v.replace(/^[^0-9]*/, '').split('.').slice(0, 3).map(n => Number(n) || 0);
-  }
-  function cmpSemver(a, b) {
-    const va = parseSemver(a), vb = parseSemver(b);
-    for (let i = 0; i < 3; i++) { if ((va[i]||0) > (vb[i]||0)) return 1; if ((va[i]||0) < (vb[i]||0)) return -1; }
-    return 0;
   }
 
   const localGen = localVersion.generator || '0.0.0';
@@ -355,7 +470,7 @@ async function main() {
   const versionCmp = cmpSemver(remoteGen, localGen);
 
   if (!ignoreVersion && versionCmp <= 0) {
-    const reportDowngrade = !stableTagResolved;
+    const reportDowngrade = !sourceStable;
     if (jsonOut) {
       console.log(JSON.stringify({
         status: (versionCmp < 0 && reportDowngrade) ? 'downgrade-refused' : 'up-to-date',
@@ -385,13 +500,23 @@ async function main() {
     return remoteSources[file] || file;
   }
 
+  async function fetchSourceFile(templateRelPath) {
+    if (source.kind === 'npm') return readNpmFile(source.package, templateRelPath);
+    return fetchRemote(source.base + templateRelPath);
+  }
+
+  function sourceUrl(templateRelPath) {
+    if (source.kind === 'npm') return `${source.label}${templateRelPath}`;
+    return source.base + templateRelPath;
+  }
+
   function withRemoteMeta(entry) {
     if (!entry || !entry.file || !remoteChecksums[entry.file]) return entry;
     const templateHint = remotePath(entry.file);
     return {
       ...entry,
       templateHint,
-      remoteUrl: sourceBase + templateHint,
+      remoteUrl: sourceUrl(templateHint),
     };
   }
 
@@ -459,7 +584,7 @@ async function main() {
     const dest = safePath(file);
     if (!dest) throw new Error(`Traversal rejected: ${file}`);
     if (existsSync(dest) && lstatSync(dest).isSymbolicLink()) throw new Error(`Symlink rejected: ${file}`);
-    const content = await fetchRemote(sourceBase + remotePath(file));
+    const content = await fetchSourceFile(remotePath(file));
     const normalized = content.replace(/\r\n/g, '\n');
     const fetchedHash = sha256(normalized);
     if (fetchedHash !== remoteHash) throw new Error(`Hash mismatch: ${file}`);
@@ -678,56 +803,62 @@ async function main() {
       console.log(`Applying SAFE/NEW files only; ${plan.conflict.length} conflicts will remain for AI/user merge.`);
     }
 
-    const lexists = existsSync;
-    let applied = 0;
+    const preparedWrites = [];
     let failed = 0;
 
-    for (const u of plan.updated) {
+    async function prepareWrite(entry, { mustNotExist = false } = {}) {
       try {
-        const dest = safePath(u.file);
-        if (!dest) { console.error(`   x Traversal rejected: ${u.file}`); failed++; continue; }
+        const dest = safePath(entry.file);
+        if (!dest) { console.error(`   x Traversal rejected: ${entry.file}`); failed++; return; }
         // Symlink rejection: do not follow symlinks.
-        if (lexists(dest)) {
-          try { if (lstatSync(dest).isSymbolicLink()) { console.error(`   x Symlink rejected: ${u.file}`); failed++; continue; } } catch (_) {}
+        if (existsSync(dest)) {
+          try { if (lstatSync(dest).isSymbolicLink()) { console.error(`   x Symlink rejected: ${entry.file}`); failed++; return; } } catch (_) {}
+          if (mustNotExist) {
+            console.error(`   x File created since plan: ${entry.file} - treating as CONFLICT`);
+            failed++; return;
+          }
         }
-        const content = await fetchRemote(sourceBase + remotePath(u.file));
+        const content = await fetchSourceFile(remotePath(entry.file));
         const normalized = content.replace(/\r\n/g, '\n');
         const fetchedHash = sha256(normalized);
-        if (fetchedHash !== u.remoteHash) {
-          console.error(`   x Hash mismatch: ${u.file}`);
-          failed++; continue;
+        if (fetchedHash !== entry.remoteHash) {
+          console.error(`   x Hash mismatch: ${entry.file}`);
+          failed++; return;
         }
-        mkdirSync(dirname(dest), { recursive: true });
-        writeFileSync(dest, normalized, 'utf-8');
-        applied++;
+        preparedWrites.push({ file: entry.file, dest, content: normalized, mustNotExist });
       } catch (e) {
-        console.error(`   x Failed: ${u.file} - ${e.message}`);
+        console.error(`   x Failed: ${entry.file} - ${e.message}`);
         failed++;
       }
     }
 
+    for (const u of plan.updated) {
+      await prepareWrite(u);
+    }
+
     for (const c of plan.created) {
+      await prepareWrite(c, { mustNotExist: true });
+    }
+
+    if (failed === 0) {
+      for (const prepared of preparedWrites) {
+        if (prepared.mustNotExist && existsSync(prepared.dest)) {
+          console.error(`   x File created since plan: ${prepared.file} - treating as CONFLICT`);
+          failed++;
+        }
+      }
+    }
+
+    let applied = 0;
+    if (failed === 0) {
       try {
-        const dest = safePath(c.file);
-        if (!dest) { console.error(`   x Traversal rejected: ${c.file}`); failed++; continue; }
-        // TOCTOU: recheck file didn't appear since planning
-        if (lexists(dest)) {
-          try { if (lstatSync(dest).isSymbolicLink()) { console.error(`   x Symlink rejected: ${c.file}`); failed++; continue; } } catch (_) {}
-          console.error(`   x File created since plan: ${c.file} - treating as CONFLICT`);
-          failed++; continue;
+        for (const prepared of preparedWrites) {
+          mkdirSync(dirname(prepared.dest), { recursive: true });
+          writeFileSync(prepared.dest, prepared.content, 'utf-8');
+          applied++;
         }
-        const content = await fetchRemote(sourceBase + remotePath(c.file));
-        const normalized = content.replace(/\r\n/g, '\n');
-        const fetchedHash = sha256(normalized);
-        if (fetchedHash !== c.remoteHash) {
-          console.error(`   x Hash mismatch: ${c.file}`);
-          failed++; continue;
-        }
-        mkdirSync(dirname(dest), { recursive: true });
-        writeFileSync(dest, normalized, 'utf-8');
-        applied++;
       } catch (e) {
-        console.error(`   x Failed: ${c.file} - ${e.message}`);
+        console.error(`   x Failed while writing prepared files - ${e.message}`);
         failed++;
       }
     }

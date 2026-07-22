@@ -51,10 +51,10 @@ const generatorVersion = pkg.version;
 
 const TEMPLATES_DIR = path.join(ROOT, 'templates', 'common');
 const HARNESS_VERSION_PATH = path.join(TEMPLATES_DIR, '.harness-version');
+const CANONICAL_SOURCE_URL = 'https://raw.githubusercontent.com/LiWeny16/create-harness-vibe-coding/main/templates/common/';
 
-// Read existing file to preserve the source URL
-const existing = JSON.parse(fs.readFileSync(HARNESS_VERSION_PATH, 'utf8'));
-const sourceUrl = existing.source || 'https://raw.githubusercontent.com/LiWeny16/create-harness-vibe-coding/main/templates/common/';
+// Keep generated installs on the canonical personal repository.
+const sourceUrl = CANONICAL_SOURCE_URL;
 
 // Walk templates/common/ and build file list
 const accumulatedFiles = [];  // { dest, content }
@@ -161,6 +161,7 @@ if (fs.existsSync(ROOT_HARNESS_VERSION)) {
         rootUpdatedKeys++;
       }
     }
+    root.source = sourceUrl;
     fs.writeFileSync(ROOT_HARNESS_VERSION, JSON.stringify(root, null, 2) + '\n', 'utf8');
     console.log(`[build-version] synced root Harness/.harness-version checksums (${rootUpdatedKeys} keys updated)`);
   }

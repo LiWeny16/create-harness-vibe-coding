@@ -21,3 +21,7 @@ Only use date/timestamp headings when:
 
 Do not record ordinary chat, task logs, process summaries, one-time emotions, or transient preferences. If the preference is ambiguous, ask before writing it. Never store secrets.
 - Entry supersedes prior conflicting guidance: add date stamp.
+
+## 2026-07-22
+
+- When preparing Harness updates or releases: keep `LiWeny16/create-harness-vibe-coding` plus npm as the canonical install/update source, but always sync `zingspark/create-harness-vibe-coding` as the legacy compatibility mirror before considering the release done. Low-version installs may have updater scripts hardcoded to the legacy mirror, so dropping or ignoring it strands those users. Avoid pointing new generated installs at the legacy mirror; it is a compatibility mirror, not the canonical source. Signals: release, publish, update-source, `/wf-update`, mirror, old installs.
