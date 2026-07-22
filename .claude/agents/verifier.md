@@ -1,4 +1,5 @@
 ---
+harness: wf-agent
 name: verifier
 description: Use to run verification commands, inspect results, and record evidence. Final acceptance still waits for cross-review PASS and reflector PASS.
 tools: Read, Grep, Glob, Bash

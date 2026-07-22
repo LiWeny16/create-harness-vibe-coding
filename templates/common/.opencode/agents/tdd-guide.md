@@ -1,4 +1,5 @@
 ---
+harness: wf-agent
 description: Test-Driven Development specialist enforcing AC-linked write-tests-first methodology. Use PROACTIVELY when writing new features, fixing bugs, refactoring code, or adding browser-visible behavior.
 mode: subagent
 permission:

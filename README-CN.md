@@ -196,6 +196,10 @@ node Harness/scripts/validate-harness.mjs --strict
 npm run check:mirrors
 ```
 
+## 所有权清单
+
+`Harness/ownership.manifest.json` 是安装/更新时文件分类的机器可读唯一事实来源，由 `node scripts/build-version.mjs` 从 `templates/common/` + `templates/optional/catalog.json` 自动生成。框架拥有的文件覆盖升级；用户数据（tasks、memory、research、README、package、PROGRESS）一律保留；CLAUDE/AGENTS/Harness README 走合并；同名用户 agent/command/skill（无 marker）绝不覆盖。
+
 ## 发布门禁
 
 铁律：每次 Harness 更新发版都必须同时保持两个更新通道可用：
@@ -203,7 +207,9 @@ npm run check:mirrors
 - Canonical：npm `create-harness-vibe-coding@latest` 和 `https://github.com/LiWeny16/create-harness-vibe-coding`
 - 低版本兼容镜像：`https://github.com/zingspark/create-harness-vibe-coding`
 
-低版本用户的 updater 可能已经硬编码到旧的 `zingspark` 仓库。发布不能只更新新仓库；必须等 legacy mirror 拥有同一份 commit、tag 和生成后的 template manifest，才算发版完成。新安装生成的 `Harness/.harness-version` 仍然记录 canonical `LiWeny16` source；`zingspark` 只作为旧用户兼容镜像保留。
+低版本用户的 updater 可能已经硬编码到旧的 `zingspark` 仓库。发布不能只更新新仓库；必须等 legacy mirror 拥有同一份 `main` 分支 commit、版本 tag、生成后的 template manifest（`templates/common/.harness-version` 与 `templates/common/Harness/ownership.manifest.json`），且该 tag 对应的 GitHub Release artifact 已在 legacy mirror 上发布，且全部与 canonical 一致，才算发版完成。新安装生成的 `Harness/.harness-version` 仍然记录 canonical `LiWeny16` source；`zingspark` 只作为旧用户兼容镜像保留。
+
+“代码就绪”不等于“用户可更新”。已发布 npm 的用户只有在 `npm publish` 完成、GitHub release/tag 已创建、且两个镜像都已同步之后，才能拿到新版本。在三者全部完成之前，不要向现有用户宣布更新可用。
 
 ## 适配范围与体积
 

@@ -20,6 +20,26 @@ This skill is a Codex compatibility shim plus script-flow reference. Claude Code
 - `Harness/scripts/scan-clean.mjs`
 - `Harness/scripts/validate-harness.mjs`
 
+## Classification
+
+MANIFEST-FIRST. The installer and updater read
+`Harness/ownership.manifest.json`:
+
+- `preserve[]` — never touched (tasks, memory, research, root README,
+  package, architecture). `Harness/tasks/**` is always preserved.
+- `merge[]` — CLAUDE.md, AGENTS.md, MEMORY.md, Harness/MEMORY.md,
+  Harness/README.md → merge or accept-local; prior accepted decisions
+  carry forward.
+- `frameworkOwned[]` — safe overwrite-upgrade fast path (concurrent
+  fetch + hash + all-or-nothing write after checksum validation).
+- `optionalOwned[]` — upgraded only when that option is installed.
+
+Content markers (`harness: wf-agent`, `project harness`, `Harness/...`)
+are the FALLBACK when no manifest exists (old installs) and the
+instance-ownership signal that protects a user's same-name file at a
+Harness path. A same-name user file with no marker and no manifest
+declaration → conflict/skip + warning, never overwritten.
+
 ## Flow
 
 1. Run `node Harness/scripts/wf-update-check.mjs --json` first and use the
@@ -28,20 +48,30 @@ This skill is a Codex compatibility shim plus script-flow reference. Claude Code
    `LiWeny16/create-harness-vibe-coding`, then the legacy compatibility mirror
    `zingspark/create-harness-vibe-coding`.
 2. Preserve all PRESERVE files. Never overwrite user task, memory, research,
-   README, package, or architecture files.
+   root README.md, package, or architecture files. Harness/README.md is
+   merge-tier, not PRESERVE.
 3. If `agent.safeApplyCommand` is present, run it to apply SAFE, NEW, and
    adopted metadata-only files before spending AI time on conflicts. Default command:
    `node Harness/scripts/wf-update-check.mjs --apply-safe`.
-4. For every `agent.aiMergeRequired` entry, compare the local file with
+   Framework-owned templates, commands, skills, agents, and scripts are
+   script-owned and should be overwritten by the updater after checksum validation.
+4. Previously accepted decisions for any merge-tier file (CLAUDE.md, AGENTS.md,
+   MEMORY.md, Harness/MEMORY.md, Harness/README.md) are carried forward
+   automatically when both the local hash and remote template hash are unchanged.
+5. If a new agent/command/skill path collides with an existing file, do not
+   decide by filename alone. Treat it as Harness-owned only when the file
+   content has Harness/WF markers such as `harness: wf-agent`, `project harness`,
+   or `Harness/...`; otherwise leave it as a real conflict.
+6. For every remaining `agent.aiMergeRequired` entry, compare the local file with
    `templateHint` or `remoteUrl`, then choose merge, keep-local, or
    overwrite-from-template. Record the decision through the script with
    `--accept-local <file>`, `--accept-merged <file>`, or
    `--accept-template <file>`; do not hand-edit `Harness/.harness-version`.
    Ask the user only when the intent is ambiguous.
-5. Run `node Harness/scripts/wf-update-check.mjs --finalize` after all
+7. Run `node Harness/scripts/wf-update-check.mjs --finalize` after all
    conflicts have script-recorded decisions. Use strict `--apply` only when the
    JSON plan has zero conflicts.
-6. After update, run the validator and then scan-clean.
+8. After update, run the validator and then scan-clean.
 
 ## Recovery
 

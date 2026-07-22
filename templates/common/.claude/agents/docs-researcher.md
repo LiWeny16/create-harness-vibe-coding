@@ -1,4 +1,5 @@
 ---
+harness: wf-agent
 name: docs-researcher
 description: Use to verify official documentation, APIs, SDK behavior, config options, version changes, limits, error semantics, and examples before implementation.
 tools: Read, Grep, Glob, WebSearch, WebFetch, Bash

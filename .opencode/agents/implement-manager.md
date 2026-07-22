@@ -1,4 +1,5 @@
 ---
+harness: wf-agent
 description: WF-MAX Manager for W2 implementation wave. Spawns 5-7 implementers (one file_claim each), merges results, reports to CEO. Agent spawn + synthesis only; does NOT write code directly.
 mode: subagent
 permission:

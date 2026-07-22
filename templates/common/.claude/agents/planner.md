@@ -1,4 +1,5 @@
 ---
+harness: wf-agent
 name: planner
 description: Use to split a goal into tasks, dependencies, write sets, verification steps, and a Parallel Dispatch table before multi-step work.
 tools: Read, Grep, Glob

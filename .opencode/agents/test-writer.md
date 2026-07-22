@@ -1,4 +1,5 @@
 ---
+harness: wf-agent
 description: Use to define or write AC-linked failing tests and manual verification steps before implementation.
 mode: subagent
 permission:

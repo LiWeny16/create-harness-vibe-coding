@@ -1,13 +1,19 @@
-import test from 'node:test';
+import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { generate, getOptionalCatalog, harnessDest } from '../src/generator.js';
 
+const tempRoots = [];
 function tmpdir() {
-  return fs.mkdtempSync(path.join(os.tmpdir(), 'harness-generator-'));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'harness-generator-'));
+  tempRoots.push(root);
+  return root;
 }
+after(() => {
+  for (const root of tempRoots) fs.rmSync(root, { recursive: true, force: true });
+});
 
 function readRel(root, rel) {
   return fs.readFileSync(path.join(root, ...rel.split('/')), 'utf8');
@@ -390,6 +396,9 @@ test('generated scaffold stores harness-owned payload under root Harness directo
   assert.doesNotMatch(opencodePlugin, /'chat\.message'/);
 
   const opencodePlanner = readRel(targetDir, '.opencode/agents/planner.md');
+  const claudePlanner = readRel(targetDir, '.claude/agents/planner.md');
+  assert.match(claudePlanner, /harness: wf-agent/);
+  assert.match(opencodePlanner, /harness: wf-agent/);
   assert.match(opencodePlanner, /mode: subagent/);
   assert.match(opencodePlanner, /description:/);
   assert.match(opencodePlanner, /edit: deny/);
@@ -957,6 +966,13 @@ test('build-version produces valid semver and populated checksums/sources', asyn
   // Assert generator version matches package.json version (real semver, not placeholder)
   assert.equal(harnessVersion.generator, pkg.version, 'generator version should match package.json version');
   assert.match(harnessVersion.generator, /^\d+\.\d+\.\d+/, 'generator should be a real semver');
+
+  const rootHarnessVersionPath = path.join(process.cwd(), 'Harness', '.harness-version');
+  if (fs.existsSync(rootHarnessVersionPath)) {
+    const rootHarnessVersion = JSON.parse(fs.readFileSync(rootHarnessVersionPath, 'utf8'));
+    assert.equal(rootHarnessVersion.generator, pkg.version, 'dogfood root generator should match package.json version');
+    assert.equal(rootHarnessVersion.source, harnessVersion.source, 'dogfood root source should match template source');
+  }
 
   // Assert checksums is populated with >0 keys (all non-PRESERVE files)
   const checksumKeys = Object.keys(harnessVersion.checksums);

@@ -194,6 +194,10 @@ node Harness/scripts/validate-harness.mjs --strict
 npm run check:mirrors
 ```
 
+## Ownership manifest
+
+`Harness/ownership.manifest.json` is the machine-readable source of truth for file classification during install/update. It is auto-generated from `templates/common/` + `templates/optional/catalog.json` by `node scripts/build-version.mjs`. Framework-owned files overwrite-upgrade; user data (tasks, memory, research, README, package, PROGRESS) is preserved; CLAUDE/AGENTS/Harness README merge; same-name user agents/commands/skills (no marker) are never overwritten.
+
 ## Release gate
 
 Iron rule: every update release must keep both update channels live:
@@ -201,7 +205,9 @@ Iron rule: every update release must keep both update channels live:
 - Canonical: npm `create-harness-vibe-coding@latest` and `https://github.com/LiWeny16/create-harness-vibe-coding`
 - Legacy compatibility mirror: `https://github.com/zingspark/create-harness-vibe-coding`
 
-Low-version installs can have updater scripts hardcoded to the legacy mirror. Do not mark a release complete until the legacy mirror exposes the same commit, tag, and generated template manifest as canonical. Generated installs still record the canonical `LiWeny16` source; the `zingspark` repo is kept for backward compatibility.
+Low-version installs can have updater scripts hardcoded to the legacy mirror. Do not mark a release complete until the legacy mirror exposes the same commit on `main`, the version tag, the generated template manifest (`templates/common/.harness-version` AND `templates/common/Harness/ownership.manifest.json`), and the tag's GitHub Release artifact, all matching canonical. Generated installs still record the canonical `LiWeny16` source; the `zingspark` repo is kept for backward compatibility.
+
+"Code ready" is not "users can update". Users on published npm receive the new version only AFTER `npm publish` completes AND the GitHub release/tag is cut AND both mirrors are synced. Do not announce the update as available to existing users until all three are done.
 
 ## Footprint
 

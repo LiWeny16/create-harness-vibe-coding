@@ -5,18 +5,35 @@
  * and a sources map so the published file isn't a placeholder.
  *
  * Usage:
- *   node scripts/build-version.mjs          # writes the file
- *   node scripts/build-version.mjs --check  # dry-run, prints diff, exits 0
+ *   node scripts/build-version.mjs                       # writes the file
+ *   node scripts/build-version.mjs --check               # dry-run, prints diff, exits 0
+ *   node scripts/build-version.mjs --root <dir>          # point at a fixture tree
+ *   node scripts/build-version.mjs --root <dir> --check  # dry-run against a fixture
  */
 
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { computeChecksums, harnessDest, isChecksumExcluded } from '../src/generator.js';
+import {
+  buildOwnershipManifest,
+  validateOwnershipManifest,
+  skillDestMirrors,
+  MANIFEST_DEST,
+  MANIFEST_REL,
+} from './lib/ownership-manifest.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const ROOT = path.resolve(__dirname, '..');
+
+// Default ROOT is the real repo root. `--root <dir>` is a testability hook so
+// build-version can be pointed at a fixture tree: package.json, templates/common/,
+// and both .harness-version paths all resolve from it. Default behavior is
+// unchanged when the flag is absent. Mirrors check-root-harness-version.mjs.
+const ROOT_ARG_IDX = process.argv.indexOf('--root');
+const ROOT = ROOT_ARG_IDX !== -1 && process.argv[ROOT_ARG_IDX + 1]
+  ? path.resolve(process.argv[ROOT_ARG_IDX + 1])
+  : path.resolve(__dirname, '..');
 
 const CHECK_MODE = process.argv.includes('--check');
 
@@ -43,6 +60,36 @@ function sortedByKey(obj) {
   return Object.fromEntries(Object.keys(obj).sort().map(k => [k, obj[k]]));
 }
 
+/**
+ * Walk templates/optional/skills/<id>/ for every catalog skill and return
+ * { id, paths } pairs (dests via harnessDest + codex mirror). Pure-ish: reads
+ * the filesystem but produces deterministic data for buildOwnershipManifest().
+ */
+function collectOptionalSkills(rootDir) {
+  const optionalDir = path.join(rootDir, 'templates', 'optional');
+  const catalogPath = path.join(optionalDir, 'catalog.json');
+  if (!fs.existsSync(catalogPath)) return [];
+  let catalog;
+  try {
+    catalog = JSON.parse(fs.readFileSync(catalogPath, 'utf8'));
+  } catch {
+    return [];
+  }
+  const skills = Array.isArray(catalog.skills) ? catalog.skills : [];
+  return skills.map(skill => {
+    const skillDir = path.join(optionalDir, 'skills', skill.id);
+    const destSet = new Set();
+    if (fs.existsSync(skillDir)) {
+      for (const rawRel of walkFiles(skillDir)) {
+        const rel = normalizePath(rawRel);
+        const dest = harnessDest(rel);
+        for (const d of skillDestMirrors(dest)) destSet.add(d);
+      }
+    }
+    return { id: skill.id, paths: [...destSet].sort() };
+  });
+}
+
 // --- main ---
 
 const pkgPath = path.join(ROOT, 'package.json');
@@ -59,6 +106,7 @@ const sourceUrl = CANONICAL_SOURCE_URL;
 // Walk templates/common/ and build file list
 const accumulatedFiles = [];  // { dest, content }
 const sources = {};           // dest -> templateRelPath (POSIX)
+const commonDestList = [];    // all dests (incl. codex mirrors) for manifest build
 
 for (const rawRel of walkFiles(TEMPLATES_DIR)) {
   const rel = normalizePath(rawRel);         // POSIX template-relative path
@@ -66,6 +114,7 @@ for (const rawRel of walkFiles(TEMPLATES_DIR)) {
 
   // Always record the source mapping (including .harness-version itself)
   sources[dest] = rel;
+  commonDestList.push(dest);
 
   // Skip checksum-excluded files (PRESERVE + .harness-version)
   if (isChecksumExcluded(dest)) continue;
@@ -78,17 +127,73 @@ for (const rawRel of walkFiles(TEMPLATES_DIR)) {
   if (rel.startsWith('.claude/skills/')) {
     const mirrorDest = rel.replace(/^\.claude\/skills\//, '.agents/skills/');
     sources[mirrorDest] = rel;
+    commonDestList.push(mirrorDest);
     if (!isChecksumExcluded(mirrorDest)) {
       accumulatedFiles.push({ dest: mirrorDest, content });
     }
   }
 }
 
+// --- ownership manifest: derive, validate, write (template + dogfood root) ---
+const generatedTimestamp = new Date().toISOString();
+
+const optionalSkillsData = collectOptionalSkills(ROOT);
+const ownershipManifest = buildOwnershipManifest({
+  commonDests: commonDestList,
+  optionalSkills: optionalSkillsData,
+  generator: generatorVersion,
+  source: sourceUrl,
+  generated: generatedTimestamp,
+});
+const manifestErrors = validateOwnershipManifest(ownershipManifest, {
+  pkgVersion: generatorVersion,
+  source: sourceUrl,
+  catalogSkillIds: optionalSkillsData.map(s => s.id),
+});
+if (manifestErrors.length > 0) {
+  console.error('[build-version] ownership manifest self-validation failed:');
+  for (const e of manifestErrors) console.error('  - ' + e);
+  process.exit(1);
+}
+
+const ownershipManifestJson = JSON.stringify(ownershipManifest, null, 2) + '\n';
+const MANIFEST_TEMPLATE_PATH = path.join(TEMPLATES_DIR, ...MANIFEST_REL.split('/'));
+const MANIFEST_ROOT_PATH = path.join(ROOT, ...MANIFEST_DEST.split('/'));
+
+if (!CHECK_MODE) {
+  fs.mkdirSync(path.dirname(MANIFEST_TEMPLATE_PATH), { recursive: true });
+  fs.writeFileSync(MANIFEST_TEMPLATE_PATH, ownershipManifestJson, 'utf8');
+  // Dogfood root copy is byte-identical to the template copy.
+  fs.mkdirSync(path.dirname(MANIFEST_ROOT_PATH), { recursive: true });
+  fs.writeFileSync(MANIFEST_ROOT_PATH, ownershipManifestJson, 'utf8');
+  console.log(
+    `[build-version] wrote ownership.manifest.json ` +
+    `(${ownershipManifest.frameworkOwned.length} frameworkOwned, ` +
+    `${ownershipManifest.optionalOwned.length} optionalOwned)`
+  );
+}
+
+// Track the manifest in .harness-version checksums/sources like any other
+// templates/common/ file. In write mode the freshly-written content is used.
+// In --check mode the on-disk content (already read during the walk) is kept,
+// so the manifest's volatile `generated` timestamp does not perturb the
+// idempotent comparison (the stored checksum was computed from the same bytes).
+sources[MANIFEST_DEST] = MANIFEST_REL;
+const manifestExistingIdx = accumulatedFiles.findIndex(f => f.dest === MANIFEST_DEST);
+if (!CHECK_MODE) {
+  const manifestEntry = { dest: MANIFEST_DEST, content: ownershipManifestJson };
+  if (manifestExistingIdx >= 0) accumulatedFiles[manifestExistingIdx] = manifestEntry;
+  else accumulatedFiles.push(manifestEntry);
+} else if (manifestExistingIdx === -1) {
+  // First-run --check with no manifest on disk yet: fall back to built content.
+  accumulatedFiles.push({ dest: MANIFEST_DEST, content: ownershipManifestJson });
+}
+
 const checksums = computeChecksums(accumulatedFiles);
 
 const versionObj = {
   generator: generatorVersion,
-  generated: new Date().toISOString(),
+  generated: generatedTimestamp,
   options: [],
   autoCheck: true,
   source: sourceUrl,
@@ -139,12 +244,38 @@ if (CHECK_MODE) {
 
 fs.writeFileSync(HARNESS_VERSION_PATH, output, 'utf8');
 
-// --- root sync: keep root Harness/.harness-version checksums in lockstep with templates ---
-// The root install artifact carries extra fields (acceptedConflicts, options,
-// externalRecommendations, source) that the templates file does not. Only its
-// checksums object is re-derived from templates here; every other field is preserved.
+// --- root sync: keep dogfood Harness/.harness-version in lockstep with templates ---
+// The root install artifact carries local install state (acceptedConflicts,
+// selected optional workflows, externalRecommendations). Preserve that local
+// state, but refresh the template-owned identity and tracking maps so the
+// dogfood repository reports the same generator version as the templates it
+// publishes.
 const ROOT_HARNESS_VERSION = path.join(ROOT, 'Harness', '.harness-version');
 const ROOT_CHECKSUMS = versionObj.checksums;
+const ROOT_SOURCES = versionObj.sources;
+
+function rootFileExists(dest) {
+  return fs.existsSync(path.join(ROOT, ...dest.split('/')));
+}
+
+function syncExistingRootTemplateMap(existing, templateMap) {
+  const next = { ...(existing || {}) };
+  let added = 0;
+  let updated = 0;
+
+  for (const [key, value] of Object.entries(templateMap)) {
+    if (!rootFileExists(key)) continue;
+    if (!Object.prototype.hasOwnProperty.call(next, key)) {
+      added++;
+    } else if (next[key] !== value) {
+      updated++;
+    }
+    next[key] = value;
+  }
+
+  return { next: sortedByKey(next), added, updated };
+}
+
 if (fs.existsSync(ROOT_HARNESS_VERSION)) {
   let root;
   try {
@@ -153,17 +284,29 @@ if (fs.existsSync(ROOT_HARNESS_VERSION)) {
     console.warn(`[build-version] WARNING: could not parse root Harness/.harness-version, skipping sync: ${err.message}`);
     root = null;
   }
-  if (root && typeof root === 'object' && root.checksums && typeof root.checksums === 'object') {
-    let rootUpdatedKeys = 0;
-    for (const key of Object.keys(ROOT_CHECKSUMS)) {
-      if (Object.prototype.hasOwnProperty.call(root.checksums, key)) {
-        root.checksums[key] = ROOT_CHECKSUMS[key];
-        rootUpdatedKeys++;
-      }
-    }
+  if (root && typeof root === 'object') {
+    const checksumSync = syncExistingRootTemplateMap(
+      root.checksums && typeof root.checksums === 'object' ? root.checksums : {},
+      ROOT_CHECKSUMS
+    );
+    const sourceSync = syncExistingRootTemplateMap(
+      root.sources && typeof root.sources === 'object' ? root.sources : {},
+      ROOT_SOURCES
+    );
+
+    root.generator = generatorVersion;
+    root.generated = versionObj.generated;
+    root.autoCheck = true;
     root.source = sourceUrl;
+    root.checksums = checksumSync.next;
+    root.sources = sourceSync.next;
+
     fs.writeFileSync(ROOT_HARNESS_VERSION, JSON.stringify(root, null, 2) + '\n', 'utf8');
-    console.log(`[build-version] synced root Harness/.harness-version checksums (${rootUpdatedKeys} keys updated)`);
+    console.log(
+      `[build-version] synced root Harness/.harness-version ` +
+      `(generator ${generatorVersion}, checksums ${checksumSync.updated} updated/${checksumSync.added} added, ` +
+      `sources ${sourceSync.updated} updated/${sourceSync.added} added)`
+    );
   }
 }
 

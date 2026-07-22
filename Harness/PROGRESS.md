@@ -4,7 +4,7 @@ Global task index. Load at session start to see what is active and what was done
 
 ## Active Task
 
-- [task-homepage-act1-flat-layout](tasks/task-homepage-act1-flat-layout/PROGRESS.md) — 首页 Act 1 开篇：5 个平面错落盒子、零倾斜、无悬浮、无 singled-out 可打开盒子（Act 2 行为保留）
+- [task-homepage-act1-flat-layout](tasks/task-homepage-act1-flat-layout/PROGRESS.md) — 首页 Act 1 开篇：5 个平面错落盒子、零倾斜、无悬浮、无 singled-out 可打开盒子（Act 2 行为保留） — resumed (task-tempdir-cleanup closed, PASS)
 
 
 ## Task Index
@@ -17,6 +17,7 @@ Non-archived tasks only (max 5). Archived tasks are listed in `Harness/tasks/_ar
 | task-wf-ux-compatibility | Improve WF speed, explicit entry, command compatibility, AGENTS routing, memory preflight, WF-KERNEL, task-scribe, codebase-explorer, STATE/archive, WF-AUTO thinning | Verified | 2026-07-17 |
 | task-spark-protocol-hardening | Harden wf-auto-spark: stability + token-saving + task-scribe delegation of process files | Verified | 2026-07-22 |
 | task-homepage-act1-flat-layout | Redesign Act 1 opening: 5 flat staggered boxes, zero tilt, no float, no singled-out openable box | Implementation | - |
+| task-tempdir-cleanup | Stop littering user machine: audit+fix no-cleanup temp writes, purge %Temp% garbage, add guard | Verified | 2026-07-22 |
 
 ## Cross-Task Decisions
 

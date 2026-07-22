@@ -284,6 +284,7 @@ function createPlan(resolvedDir, fileSpecs) {
     backup: [],
     conflict: [],
     mkdir: [],
+    userOwnedSkip: [],
   };
 
   const fileSet = new Set(fileSpecs.map(spec => spec.dest));
@@ -316,7 +317,106 @@ function createPlan(resolvedDir, fileSpecs) {
   return plan;
 }
 
-function addFileActions(plan, fileSpecs, resolvedDir, onConflict) {
+/**
+ * The package-side ownership manifest (the machine-readable source of truth for
+ * which dest paths are Harness-interest). The generator runs from src/, so this
+ * resolves to templates/common/Harness/ownership.manifest.json. Read defensively;
+ * if missing/unparseable the candidate set falls back to fileSpec dests.
+ */
+const MANIFEST_PATH = path.resolve(__dirname, '..', 'templates', 'common', 'Harness', 'ownership.manifest.json');
+
+/**
+ * Read and parse the ownership manifest defensively. Returns null when the file
+ * is missing, unreadable, unparseable, or lacks a frameworkOwned array so the
+ * caller falls back to the fileSpecs-derived candidate set.
+ */
+function readOwnershipManifest() {
+  try {
+    if (!fs.existsSync(MANIFEST_PATH)) return null;
+    const parsed = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf-8'));
+    if (!parsed || !Array.isArray(parsed.frameworkOwned)) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Build the Harness-interest candidate dest set (manifest-first, fileSpecs
+ * fallback). Pure (no filesystem) so the manifest/fallback branches are unit
+ * testable directly.
+ *
+ * Manifest-present: candidate set = manifest.frameworkOwned paths UNION the
+ * selected optional skills' manifest.optionalOwned paths. This includes optional
+ * skill paths like browser-e2e (fixing the bug where same-name user files at
+ * optional-skill paths were clobbered).
+ *
+ * Manifest-absent (null): candidate set = all fileSpec dests (the exact set of
+ * paths being written), so optional skill paths remain protected.
+ *
+ * Instance ownership is still decided by MARKER in existingCandidateIsUserOwned:
+ * a candidate path with no Harness marker is user-owned and protected.
+ *
+ * @param {object|null} manifest - parsed ownership manifest, or null for fallback
+ * @param {Array<{dest: string}>} fileSpecs - installer write specs
+ * @param {Array<{id: string}>} selectedSkills - selected optional skills
+ * @returns {Set<string>} candidate dest paths
+ */
+export function buildHarnessInterestCandidateSet(manifest, fileSpecs, selectedSkills) {
+  if (!manifest || !Array.isArray(manifest.frameworkOwned)) {
+    return new Set(fileSpecs.map(spec => spec.dest));
+  }
+  const selectedIds = new Set((selectedSkills || []).map(skill => skill && skill.id));
+  const candidates = new Set();
+  for (const entry of manifest.frameworkOwned) {
+    if (entry && typeof entry.path === 'string') candidates.add(entry.path);
+  }
+  for (const entry of manifest.optionalOwned || []) {
+    if (!entry || !selectedIds.has(entry.option)) continue;
+    for (const p of entry.paths || []) {
+      if (typeof p === 'string') candidates.add(p);
+    }
+  }
+  return candidates;
+}
+
+/**
+ * Content markers proving a file was authored by this scaffold. Mirror of
+ * wf-update-check.mjs HARNESS_OWNED_CONTENT_MARKERS.
+ */
+const HARNESS_OWNED_CONTENT_MARKERS = [
+  /^harness:\s*(?:wf-agent|wf-framework|create-harness-vibe-coding)\b/im,
+  /\bcreate-harness-vibe-coding\b/i,
+  /\bproject harness\b/i,
+  /\bHarness\/(?:WF|MEMORY|tasks|scripts|subagents|dispatch|context-loading|lifecycle|SETUP)\b/,
+  /\bWF-(?:MAX|AUTO|KERNEL|STATE)\b/,
+];
+
+/**
+ * Returns true if the given file content carries a Harness ownership marker.
+ * Pure (no filesystem access) so it can be unit-tested directly.
+ */
+export function isHarnessOwnedContent(content) {
+  return HARNESS_OWNED_CONTENT_MARKERS.some(pattern => pattern.test(content));
+}
+
+/**
+ * Returns true if an existing on-disk file is a Harness-interest candidate path
+ * (per the manifest-first candidate set) that was NOT authored by this scaffold
+ * (candidate path + no ownership marker). Such user-authored files are preserved
+ * (skip) regardless of the conflict policy, mirroring the updater safety rule.
+ */
+function existingCandidateIsUserOwned(dest, destPath, candidateSet) {
+  if (!candidateSet.has(dest)) return false;
+  try {
+    const content = fs.readFileSync(destPath, 'utf-8');
+    return !isHarnessOwnedContent(content);
+  } catch {
+    return false;
+  }
+}
+
+function addFileActions(plan, fileSpecs, resolvedDir, onConflict, candidateSet) {
   for (const { dest: file } of fileSpecs) {
     const destPath = path.join(resolvedDir, ...file.split('/'));
 
@@ -330,6 +430,24 @@ function addFileActions(plan, fileSpecs, resolvedDir, onConflict) {
         plan.skip.push(file);
       } else {
         plan.conflict.push(file);
+      }
+      continue;
+    }
+
+    // G4 guard: a non-Harness same-name candidate (any Harness-interest path
+    // — agent/command/skill/optional-skill/script per the manifest-first
+    // candidate set — without an ownership marker) must NEVER be overwritten.
+    // Under overwrite/backup/skip it is preserved via plan.skip; under fail it
+    // is blocked via plan.conflict so the collision surfaces (matching the fail
+    // branch below). Only Harness-owned files (marker present) reach the normal
+    // policy switch. Mirrors the wf-update-check.mjs safety rule; see
+    // existingCandidateIsUserOwned / isHarnessOwnedContent above.
+    if (existingCandidateIsUserOwned(file, destPath, candidateSet)) {
+      if (onConflict === 'fail') {
+        plan.conflict.push(file);
+      } else {
+        plan.skip.push(file);
+        plan.userOwnedSkip.push(file);
       }
       continue;
     }
@@ -445,6 +563,10 @@ function registrationWarnings(plan, selectedSkills) {
     warnings.push('AGENTS.md was skipped; ask for user consent before merging or replacing the project agent entry contract.');
   }
 
+  for (const file of plan.userOwnedSkip) {
+    warnings.push(`Skipped user-authored Harness-candidate '${file}' (no Harness marker); not overwritten. Remove the file or add a harness: wf-agent marker to upgrade.`);
+  }
+
   return warnings;
 }
 
@@ -478,6 +600,11 @@ export function generate({
   const specsByDest = new Map(fileSpecs.map(spec => [spec.dest, spec]));
   const plan = createPlan(resolvedDir, fileSpecs);
   const duplicateDestinations = duplicateDests(fileSpecs);
+  const candidateSet = buildHarnessInterestCandidateSet(
+    readOwnershipManifest(),
+    fileSpecs,
+    optional.selectedSkills,
+  );
 
   if (!VALID_CONFLICT_POLICIES.has(onConflict)) {
     errors.push(`Unknown conflict policy "${onConflict}". Use fail, skip, backup, or overwrite.`);
@@ -515,7 +642,7 @@ export function generate({
     };
   }
 
-  addFileActions(plan, fileSpecs, resolvedDir, onConflict);
+  addFileActions(plan, fileSpecs, resolvedDir, onConflict, candidateSet);
   warnings.push(...registrationWarnings(plan, optional.selectedSkills));
 
   if (dryRun) {

@@ -1,4 +1,5 @@
 ---
+harness: wf-agent
 description: WF-MAX Manager for W2R review wave. Spawns 3-4 parallel reviewers (spec/code/security/perf), deduplicates findings, assigns severity, reports to CEO. Read-only + Agent spawn; no Edit/Write.
 mode: subagent
 permission:

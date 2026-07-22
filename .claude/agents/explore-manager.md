@@ -1,4 +1,5 @@
 ---
+harness: wf-agent
 name: explore-manager
 description: WF-MAX Manager for W0 exploration wave. Spawns 5-10 read-only researchers/explorers, synthesizes findings, reports to CEO. Read-only + Agent spawn; no Edit/Write.
 tools: Read, Grep, Glob, Agent, Bash(git *), Bash(ls *), Bash(dir *), Bash(tree *)

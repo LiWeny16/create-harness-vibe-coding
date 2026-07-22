@@ -1,4 +1,5 @@
 ---
+harness: wf-agent
 name: architect-manager
 description: WF-MAX Manager for W1 architecture wave. Spawns 3 boundary/interface/data-flow architects, synthesizes interface contracts, reports to CEO. Read-only + Agent spawn; no Edit/Write.
 tools: Read, Grep, Glob, Agent, Bash(git *), Bash(ls *), Bash(dir *)

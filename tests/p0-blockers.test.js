@@ -1,4 +1,4 @@
-import test from 'node:test';
+import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -14,9 +14,18 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SCRIPTS = path.join(ROOT, 'Harness', 'scripts');
 const sha = (s) => 'sha256-' + createHash('sha256').update(s.replace(/\r\n/g, '\n')).digest('hex');
 
+const tempRoots = [];
 function tmpdir() {
-  return fs.mkdtempSync(path.join(os.tmpdir(), 'harness-p0-'));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'harness-p0-'));
+  tempRoots.push(root);
+  return root;
 }
+// Safety net: each test also does an inline rmSync at the end of its body, but if an
+// assert above it throws, that inline cleanup is skipped. after() runs regardless of
+// test failure, so the temp root is always reclaimed.
+after(() => {
+  for (const root of tempRoots) fs.rmSync(root, { recursive: true, force: true });
+});
 
 function fileSourceBase(dir) {
   // file:// URL with trailing separator, the form wf-update-check/scan-clean expect.
@@ -243,6 +252,150 @@ test('update-check: default --json hides plan/conflict details; --full-plan reve
   assert.equal('plan' in fullJson, true, '--full-plan must include top-level plan');
   assert.ok((fullJson.plan.conflict || []).length >= 1, '--full-plan plan.conflict has entries');
   assert.ok((fullJson.agent.aiMergeRequired || []).length >= 1, '--full-plan agent.aiMergeRequired has entries');
+  fs.rmSync(root, { recursive: true, force: true });
+});
+
+test('update-check: unchanged accepted conflicts carry forward across versions', () => {
+  const root = tmpdir();
+  const proj = path.join(root, 'proj');
+  const remote = path.join(root, 'remote');
+  fs.mkdirSync(path.join(proj, 'Harness', 'scripts'), { recursive: true });
+  fs.copyFileSync(path.join(SCRIPTS, 'wf-update-check.mjs'), path.join(proj, 'Harness', 'scripts', 'wf-update-check.mjs'));
+  fs.writeFileSync(path.join(proj, 'CLAUDE.md'), 'user claude rules\n');
+
+  const remoteClaude = 'template claude\n';
+  fs.writeFileSync(path.join(proj, 'Harness', '.harness-version'), JSON.stringify({
+    generator: '1.0.0',
+    generated: '2026-01-01T00:00:00Z',
+    checksums: { 'CLAUDE.md': sha('old template claude\n') },
+    acceptedConflicts: {
+      'CLAUDE.md': {
+        decision: 'accept-local',
+        targetGenerator: '1.0.0',
+        localHash: sha('user claude rules\n'),
+        remoteHash: sha(remoteClaude),
+        templateHint: 'CLAUDE.md',
+        updatedAt: '2026-01-01T00:00:00.000Z',
+      },
+    },
+  }, null, 2) + '\n');
+
+  fs.mkdirSync(remote, { recursive: true });
+  fs.writeFileSync(path.join(remote, 'CLAUDE.md'), remoteClaude);
+  fs.writeFileSync(path.join(remote, '.harness-version'), JSON.stringify({
+    generator: '2.0.0',
+    generated: '2026-07-22T00:00:00Z',
+    checksums: { 'CLAUDE.md': sha(remoteClaude) },
+    sources: { 'CLAUDE.md': 'CLAUDE.md' },
+  }, null, 2) + '\n');
+
+  const result = runNode(path.join(proj, 'Harness', 'scripts', 'wf-update-check.mjs'), ['--json', '--full-plan'], {
+    cwd: proj,
+    env: { WF_SOURCE_BASE: fileSourceBase(remote) },
+  });
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  const json = JSON.parse(result.stdout.trim());
+  assert.equal(json.conflict, 0);
+  assert.ok(
+    json.plan.skipped.some(entry => entry.file === 'CLAUDE.md' && /carried forward/.test(entry.reason)),
+    JSON.stringify(json.plan.skipped),
+  );
+  fs.rmSync(root, { recursive: true, force: true });
+});
+
+test('update-check: colliding agent files use content ownership, not filename only', () => {
+  const root = tmpdir();
+  const remote = path.join(root, 'remote');
+  fs.mkdirSync(path.join(remote, '.claude', 'agents'), { recursive: true });
+  const remoteAgent = '---\nharness: wf-agent\nname: planner\ndescription: Remote harness planner\ntools: Read\nmodel: sonnet\n---\n\n# Planner\n\nHarness/tasks/PLAN.md\n';
+  fs.writeFileSync(path.join(remote, '.claude', 'agents', 'planner.md'), remoteAgent);
+  fs.writeFileSync(path.join(remote, '.harness-version'), JSON.stringify({
+    generator: '2.0.0',
+    generated: '2026-07-22T00:00:00Z',
+    checksums: { '.claude/agents/planner.md': sha(remoteAgent) },
+    sources: { '.claude/agents/planner.md': '.claude/agents/planner.md' },
+  }, null, 2) + '\n');
+
+  const harnessProj = path.join(root, 'harness-owned');
+  fs.mkdirSync(path.join(harnessProj, 'Harness', 'scripts'), { recursive: true });
+  fs.mkdirSync(path.join(harnessProj, '.claude', 'agents'), { recursive: true });
+  fs.copyFileSync(path.join(SCRIPTS, 'wf-update-check.mjs'), path.join(harnessProj, 'Harness', 'scripts', 'wf-update-check.mjs'));
+  fs.writeFileSync(path.join(harnessProj, '.claude', 'agents', 'planner.md'), '---\nharness: wf-agent\nname: planner\n---\n\nold project harness planner\n');
+  fs.writeFileSync(path.join(harnessProj, 'Harness', '.harness-version'), JSON.stringify({
+    generator: '1.0.0',
+    generated: '2026-01-01T00:00:00Z',
+    checksums: {},
+  }, null, 2) + '\n');
+
+  const applied = runNode(path.join(harnessProj, 'Harness', 'scripts', 'wf-update-check.mjs'), ['--apply-safe'], {
+    cwd: harnessProj,
+    env: { WF_SOURCE_BASE: fileSourceBase(remote) },
+  });
+  assert.equal(applied.status, 0, applied.stderr || applied.stdout);
+  assert.equal(fs.readFileSync(path.join(harnessProj, '.claude', 'agents', 'planner.md'), 'utf8'), remoteAgent);
+
+  const userProj = path.join(root, 'user-owned');
+  fs.mkdirSync(path.join(userProj, 'Harness', 'scripts'), { recursive: true });
+  fs.mkdirSync(path.join(userProj, '.claude', 'agents'), { recursive: true });
+  fs.copyFileSync(path.join(SCRIPTS, 'wf-update-check.mjs'), path.join(userProj, 'Harness', 'scripts', 'wf-update-check.mjs'));
+  fs.writeFileSync(path.join(userProj, '.claude', 'agents', 'planner.md'), '---\nname: planner\n---\n\nmy personal planning agent\n');
+  fs.writeFileSync(path.join(userProj, 'Harness', '.harness-version'), JSON.stringify({
+    generator: '1.0.0',
+    generated: '2026-01-01T00:00:00Z',
+    checksums: {},
+  }, null, 2) + '\n');
+
+  const dryRun = runNode(path.join(userProj, 'Harness', 'scripts', 'wf-update-check.mjs'), ['--json', '--full-plan'], {
+    cwd: userProj,
+    env: { WF_SOURCE_BASE: fileSourceBase(remote) },
+  });
+  assert.equal(dryRun.status, 0, dryRun.stderr || dryRun.stdout);
+  const json = JSON.parse(dryRun.stdout.trim());
+  assert.equal(json.conflict, 1);
+  assert.ok(json.plan.conflict.some(entry => entry.file === '.claude/agents/planner.md'));
+  assert.equal(fs.readFileSync(path.join(userProj, '.claude', 'agents', 'planner.md'), 'utf8'), '---\nname: planner\n---\n\nmy personal planning agent\n');
+  fs.rmSync(root, { recursive: true, force: true });
+});
+
+test('update-check: user agent body mentioning /wf without a marker stays a conflict, not a Harness-owned update', () => {
+  // RISK-1 regression on the update side: the bare /wf substring marker used
+  // to false-match user files that merely mention /wf, silently reclassifying
+  // them as Harness-owned updates. With the marker dropped, such a file must
+  // remain a real CONFLICT.
+  const root = tmpdir();
+  const remote = path.join(root, 'remote');
+  fs.mkdirSync(path.join(remote, '.claude', 'agents'), { recursive: true });
+  const remoteAgent = '---\nharness: wf-agent\nname: planner\ndescription: Remote harness planner\ntools: Read\nmodel: sonnet\n---\n\n# Planner\n\nHarness/tasks/PLAN.md\n';
+  fs.writeFileSync(path.join(remote, '.claude', 'agents', 'planner.md'), remoteAgent);
+  fs.writeFileSync(path.join(remote, '.harness-version'), JSON.stringify({
+    generator: '2.0.0',
+    generated: '2026-07-22T00:00:00Z',
+    checksums: { '.claude/agents/planner.md': sha(remoteAgent) },
+    sources: { '.claude/agents/planner.md': '.claude/agents/planner.md' },
+  }, null, 2) + '\n');
+
+  const userProj = path.join(root, 'user-wf-text');
+  fs.mkdirSync(path.join(userProj, 'Harness', 'scripts'), { recursive: true });
+  fs.mkdirSync(path.join(userProj, '.claude', 'agents'), { recursive: true });
+  fs.copyFileSync(path.join(SCRIPTS, 'wf-update-check.mjs'), path.join(userProj, 'Harness', 'scripts', 'wf-update-check.mjs'));
+  const userBody = '---\nname: planner\n---\n\nmy notes mention the /wf and /wf-max commands\n';
+  fs.writeFileSync(path.join(userProj, '.claude', 'agents', 'planner.md'), userBody);
+  fs.writeFileSync(path.join(userProj, 'Harness', '.harness-version'), JSON.stringify({
+    generator: '1.0.0',
+    generated: '2026-01-01T00:00:00Z',
+    checksums: {},
+  }, null, 2) + '\n');
+
+  const dryRun = runNode(path.join(userProj, 'Harness', 'scripts', 'wf-update-check.mjs'), ['--json', '--full-plan'], {
+    cwd: userProj,
+    env: { WF_SOURCE_BASE: fileSourceBase(remote) },
+  });
+  assert.equal(dryRun.status, 0, dryRun.stderr || dryRun.stdout);
+  const json = JSON.parse(dryRun.stdout.trim());
+  assert.equal(json.conflict, 1);
+  assert.ok(json.plan.conflict.some(entry => entry.file === '.claude/agents/planner.md'));
+  assert.ok(!json.plan.updated.some(entry => entry.file === '.claude/agents/planner.md'));
+  assert.equal(fs.readFileSync(path.join(userProj, '.claude', 'agents', 'planner.md'), 'utf8'), userBody);
   fs.rmSync(root, { recursive: true, force: true });
 });
 
@@ -501,5 +654,409 @@ test('generator: rejects writes through a symlinked parent directory (.claude ->
   assert.ok(result.errors.some((e) => /symlink/i.test(e)), 'error mentions symlink: ' + result.errors.join('; '));
   // Nothing should have been written through the symlink into the outside workspace.
   assert.equal(fs.readdirSync(outside).length, 0, 'no files escaped through the symlinked parent');
+  fs.rmSync(root, { recursive: true, force: true });
+});
+
+// ── all-or-nothing apply: a tampered served body writes ZERO files ─────────
+test('apply-safe: hash mismatch on a served SAFE file writes zero files and leaves version tracking unchanged', () => {
+  const root = tmpdir();
+  const proj = path.join(root, 'proj');
+  const remote = path.join(root, 'remote');
+  fs.mkdirSync(path.join(proj, 'Harness', 'scripts'), { recursive: true });
+  fs.copyFileSync(path.join(SCRIPTS, 'wf-update-check.mjs'), path.join(proj, 'Harness', 'scripts', 'wf-update-check.mjs'));
+  fs.mkdirSync(path.join(proj, 'Harness'), { recursive: true });
+  fs.writeFileSync(path.join(proj, 'Harness', 'WF.md'), 'old wf\n');
+  fs.writeFileSync(path.join(proj, 'Harness', '.harness-version'), JSON.stringify({
+    generator: '1.0.0',
+    generated: '2026-01-01T00:00:00Z',
+    checksums: { 'Harness/WF.md': sha('old wf\n') },
+  }, null, 2) + '\n');
+
+  // Serve ONE SAFE file whose body is tampered so its sha256 differs from the manifest.
+  fs.mkdirSync(path.join(remote, 'Harness'), { recursive: true });
+  fs.writeFileSync(path.join(remote, 'Harness', 'WF.md'), 'tampered wf body\n');
+  fs.writeFileSync(path.join(remote, '.harness-version'), JSON.stringify({
+    generator: '2.0.0',
+    generated: '2026-07-22T00:00:00Z',
+    checksums: { 'Harness/WF.md': sha('the real canonical wf body\n') },
+    sources: { 'Harness/WF.md': 'Harness/WF.md' },
+  }, null, 2) + '\n');
+
+  const result = runNode(path.join(proj, 'Harness', 'scripts', 'wf-update-check.mjs'), ['--apply-safe'], {
+    cwd: proj,
+    env: { WF_SOURCE_BASE: fileSourceBase(remote) },
+  });
+
+  // Non-zero exit and a hash-mismatch failure is reported.
+  assert.equal(result.status, 1, result.stdout + result.stderr);
+  assert.match(result.stdout + result.stderr, /Hash mismatch: Harness\/WF\.md/);
+  // ZERO files written: destination keeps its original content (no partial application).
+  assert.equal(fs.readFileSync(path.join(proj, 'Harness', 'WF.md'), 'utf8'), 'old wf\n');
+  // Version tracking unchanged -> safe to re-run with --apply-safe.
+  const version = JSON.parse(fs.readFileSync(path.join(proj, 'Harness', '.harness-version'), 'utf8'));
+  assert.equal(version.generator, '1.0.0');
+  assert.equal(version.partialUpdate, undefined);
+  fs.rmSync(root, { recursive: true, force: true });
+});
+
+// ── GitHub releases 403 is swallowed; updater falls through to canonical raw ─
+test('update-check: GitHub releases 403 is swallowed and updater resolves canonical raw source', async () => {
+  const root = tmpdir();
+  const proj = path.join(root, 'proj');
+  fs.mkdirSync(path.join(proj, 'Harness', 'scripts'), { recursive: true });
+  fs.copyFileSync(path.join(SCRIPTS, 'wf-update-check.mjs'), path.join(proj, 'Harness', 'scripts', 'wf-update-check.mjs'));
+  fs.writeFileSync(path.join(proj, 'Harness', '.harness-version'), JSON.stringify({
+    generator: '1.0.0',
+    generated: '2026-01-01T00:00:00Z',
+    checksums: {},
+  }, null, 2) + '\n');
+
+  const remoteVersion = {
+    generator: '2.0.0',
+    generated: '2026-07-22T00:00:00Z',
+    checksums: {},
+    sources: {},
+  };
+  const githubReleasesUrl = 'https://api.github.com/repos/LiWeny16/create-harness-vibe-coding/releases/latest';
+  const canonicalManifestUrl = 'https://raw.githubusercontent.com/LiWeny16/create-harness-vibe-coding/main/templates/common/.harness-version';
+  const preload = path.join(root, 'fake-fetch-403.mjs');
+  fs.writeFileSync(preload, `
+const githubReleasesUrl = ${JSON.stringify(githubReleasesUrl)};
+const canonicalManifestUrl = ${JSON.stringify(canonicalManifestUrl)};
+globalThis.fetch = async function fakeFetch(input) {
+  const url = String(input);
+  if (url === githubReleasesUrl) {
+    return new Response('rate limited', { status: 403 });
+  }
+  if (url === canonicalManifestUrl) {
+    return new Response(process.env.HARNESS_FAKE_CANONICAL_MANIFEST, { status: 200, headers: { 'content-type': 'application/json' } });
+  }
+  return new Response('blocked by 403-fallback test: ' + url, { status: 503 });
+};
+`, 'utf8');
+
+  const result = await runNodeAsync(path.join(proj, 'Harness', 'scripts', 'wf-update-check.mjs'), ['--json'], {
+    cwd: proj,
+    env: {
+      NODE_OPTIONS: `--import=${pathToFileURL(preload).href}`,
+      HARNESS_FAKE_CANONICAL_MANIFEST: JSON.stringify(remoteVersion),
+    },
+  });
+
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  const json = JSON.parse(result.stdout.trim());
+  assert.equal(json.status, 'update-available');
+  assert.equal(json.to, '2.0.0');
+  assert.equal(json.sourceBase, 'https://raw.githubusercontent.com/LiWeny16/create-harness-vibe-coding/main/templates/common/');
+  fs.rmSync(root, { recursive: true, force: true });
+});
+
+// ── manifest-first classification (ownership.manifest.json) ────────────────
+// The ownership manifest is the new source of truth for file classification.
+// These tests assert manifest-first decisions (preserve/merge/frameworkOwned/
+// optionalOwned) plus the regex/marker FALLBACK for old installs with no
+// manifest, and the manifest-first untracked-existing-file ownership decision.
+
+function fixtureManifest({ preserve = [], merge = [], frameworkOwned = [], optionalOwned = [], bootstrapOnly = [] } = {}) {
+  return {
+    schemaVersion: 1,
+    generator: '0.8.14',
+    source: 'fixture',
+    generated: '2026-07-22T00:00:00.000Z',
+    preserve,
+    merge,
+    bootstrapOnly,
+    frameworkOwned: frameworkOwned.map(p => ({ path: p, kind: 'config', overwrite: 'safe' })),
+    optionalOwned,
+  };
+}
+
+function copyUpdater(proj) {
+  fs.mkdirSync(path.join(proj, 'Harness', 'scripts'), { recursive: true });
+  fs.copyFileSync(path.join(SCRIPTS, 'wf-update-check.mjs'), path.join(proj, 'Harness', 'scripts', 'wf-update-check.mjs'));
+}
+
+function writeProjFile(proj, file, content) {
+  const full = path.join(proj, ...file.split('/'));
+  fs.mkdirSync(path.dirname(full), { recursive: true });
+  fs.writeFileSync(full, content, 'utf-8');
+}
+
+function writeProjVersion(proj, version) {
+  fs.mkdirSync(path.join(proj, 'Harness'), { recursive: true });
+  fs.writeFileSync(path.join(proj, 'Harness', '.harness-version'), JSON.stringify(version, null, 2) + '\n', 'utf-8');
+}
+
+function writeRemoteVersion(remote, version) {
+  fs.writeFileSync(path.join(remote, '.harness-version'), JSON.stringify(version, null, 2) + '\n', 'utf-8');
+}
+
+function runUpdateCheck(proj, remote, extraArgs = ['--json', '--full-plan']) {
+  return runNode(path.join(proj, 'Harness', 'scripts', 'wf-update-check.mjs'), extraArgs, {
+    cwd: proj,
+    env: { WF_SOURCE_BASE: fileSourceBase(remote) },
+  });
+}
+
+function writeManifest(proj, manifest) {
+  writeProjFile(proj, 'Harness/ownership.manifest.json', JSON.stringify(manifest, null, 2) + '\n');
+}
+
+test('manifest-first: PRESERVE (glob + exact) skips user files even when remote differs', () => {
+  const root = tmpdir();
+  const proj = path.join(root, 'proj');
+  const remote = path.join(root, 'remote');
+  copyUpdater(proj);
+  writeManifest(proj, fixtureManifest({
+    preserve: ['Harness/tasks/**', 'Harness/PROGRESS.md'],
+    frameworkOwned: ['Harness/ownership.manifest.json'],
+  }));
+  writeProjFile(proj, 'Harness/PROGRESS.md', 'local progress\n');
+  writeProjFile(proj, 'Harness/tasks/my-task/PROGRESS.md', 'task progress\n');
+  writeProjVersion(proj, {
+    generator: '1.0.0', generated: '2026-01-01T00:00:00Z',
+    checksums: {
+      'Harness/PROGRESS.md': sha('local progress\n'),
+      'Harness/tasks/my-task/PROGRESS.md': sha('task progress\n'),
+    },
+  });
+  fs.mkdirSync(remote, { recursive: true });
+  writeProjFile(remote, 'Harness/PROGRESS.md', 'remote progress\n');
+  writeProjFile(remote, 'Harness/tasks/my-task/PROGRESS.md', 'remote task progress\n');
+  writeRemoteVersion(remote, {
+    generator: '2.0.0', generated: '2026-07-22T00:00:00Z',
+    checksums: {
+      'Harness/PROGRESS.md': sha('remote progress\n'),
+      'Harness/tasks/my-task/PROGRESS.md': sha('remote task progress\n'),
+    },
+    sources: {
+      'Harness/PROGRESS.md': 'Harness/PROGRESS.md',
+      'Harness/tasks/my-task/PROGRESS.md': 'Harness/tasks/my-task/PROGRESS.md',
+    },
+  });
+
+  const res = runUpdateCheck(proj, remote);
+  assert.equal(res.status, 0, res.stderr || res.stdout);
+  const json = JSON.parse(res.stdout.trim());
+  assert.ok(json.plan.skipped.some(e => e.file === 'Harness/PROGRESS.md' && /PRESERVE/.test(e.reason)), 'exact preserve: ' + JSON.stringify(json.plan.skipped));
+  assert.ok(json.plan.skipped.some(e => e.file === 'Harness/tasks/my-task/PROGRESS.md' && /PRESERVE/.test(e.reason)), 'glob preserve: ' + JSON.stringify(json.plan.skipped));
+  assert.ok(!json.plan.updated.some(e => e.file === 'Harness/PROGRESS.md' || e.file === 'Harness/tasks/my-task/PROGRESS.md'));
+  assert.ok(!json.plan.conflict.some(e => e.file === 'Harness/PROGRESS.md' || e.file === 'Harness/tasks/my-task/PROGRESS.md'));
+  fs.rmSync(root, { recursive: true, force: true });
+});
+
+test('manifest-first: MERGE file modified -> CONFLICT, unmodified -> SAFE update', () => {
+  const root = tmpdir();
+  const remote = path.join(root, 'remote');
+  const manifest = fixtureManifest({
+    merge: ['Harness/README.md'],
+    frameworkOwned: ['Harness/ownership.manifest.json'],
+  });
+
+  fs.mkdirSync(remote, { recursive: true });
+  writeProjFile(remote, 'Harness/README.md', 'remote readme\n');
+  writeRemoteVersion(remote, {
+    generator: '2.0.0', generated: '2026-07-22T00:00:00Z',
+    checksums: { 'Harness/README.md': sha('remote readme\n') },
+    sources: { 'Harness/README.md': 'Harness/README.md' },
+  });
+
+  // Modified locally (storedHash != localHash).
+  const projM = path.join(root, 'modified');
+  copyUpdater(projM);
+  writeManifest(projM, manifest);
+  writeProjFile(projM, 'Harness/README.md', 'local readme edit\n');
+  writeProjVersion(projM, {
+    generator: '1.0.0', generated: '2026-01-01T00:00:00Z',
+    checksums: { 'Harness/README.md': sha('original readme\n') },
+  });
+  let res = runUpdateCheck(projM, remote);
+  assert.equal(res.status, 0, res.stderr || res.stdout);
+  let json = JSON.parse(res.stdout.trim());
+  assert.ok(json.plan.conflict.some(e => e.file === 'Harness/README.md'), 'modified MERGE -> conflict: ' + JSON.stringify(json.plan));
+  assert.ok(!json.plan.updated.some(e => e.file === 'Harness/README.md'), 'modified MERGE not auto-updated');
+
+  // Unmodified (localHash === storedHash), remote differs -> SAFE update.
+  const projU = path.join(root, 'unmodified');
+  copyUpdater(projU);
+  writeManifest(projU, manifest);
+  writeProjFile(projU, 'Harness/README.md', 'original readme\n');
+  writeProjVersion(projU, {
+    generator: '1.0.0', generated: '2026-01-01T00:00:00Z',
+    checksums: { 'Harness/README.md': sha('original readme\n') },
+  });
+  res = runUpdateCheck(projU, remote);
+  assert.equal(res.status, 0, res.stderr || res.stdout);
+  json = JSON.parse(res.stdout.trim());
+  assert.ok(json.plan.updated.some(e => e.file === 'Harness/README.md'), 'unmodified MERGE -> SAFE update: ' + JSON.stringify(json.plan));
+  assert.ok(!json.plan.conflict.some(e => e.file === 'Harness/README.md'), 'unmodified MERGE not a conflict');
+  fs.rmSync(root, { recursive: true, force: true });
+});
+
+test('manifest-first: frameworkOwned file classifies as SAFE update tier', () => {
+  const root = tmpdir();
+  const proj = path.join(root, 'proj');
+  const remote = path.join(root, 'remote');
+  copyUpdater(proj);
+  writeManifest(proj, fixtureManifest({
+    frameworkOwned: ['.claude/agents/planner.md', 'Harness/ownership.manifest.json'],
+  }));
+  writeProjFile(proj, '.claude/agents/planner.md', 'planner v1\n');
+  writeProjVersion(proj, {
+    generator: '1.0.0', generated: '2026-01-01T00:00:00Z',
+    checksums: { '.claude/agents/planner.md': sha('planner v1\n') },
+  });
+  fs.mkdirSync(remote, { recursive: true });
+  writeProjFile(remote, '.claude/agents/planner.md', 'planner v2\n');
+  writeRemoteVersion(remote, {
+    generator: '2.0.0', generated: '2026-07-22T00:00:00Z',
+    checksums: { '.claude/agents/planner.md': sha('planner v2\n') },
+    sources: { '.claude/agents/planner.md': '.claude/agents/planner.md' },
+  });
+
+  const res = runUpdateCheck(proj, remote);
+  assert.equal(res.status, 0, res.stderr || res.stdout);
+  const json = JSON.parse(res.stdout.trim());
+  assert.ok(json.plan.updated.some(e => e.file === '.claude/agents/planner.md'), 'frameworkOwned -> SAFE update: ' + JSON.stringify(json.plan));
+  assert.ok(!json.plan.conflict.some(e => e.file === '.claude/agents/planner.md'), 'frameworkOwned not a conflict');
+  fs.rmSync(root, { recursive: true, force: true });
+});
+
+test('manifest-first: optionalOwned file SAFE when option selected, skipped when not selected', () => {
+  const root = tmpdir();
+  const remote = path.join(root, 'remote');
+  const browserPath = '.claude/skills/wf-browser/SKILL.md';
+  const manifest = fixtureManifest({
+    frameworkOwned: ['Harness/ownership.manifest.json'],
+    optionalOwned: [{ option: 'browser-e2e', paths: [browserPath], overwrite: 'safe-if-installed' }],
+  });
+
+  fs.mkdirSync(remote, { recursive: true });
+  writeProjFile(remote, browserPath, 'browser v2\n');
+  writeRemoteVersion(remote, {
+    generator: '2.0.0', generated: '2026-07-22T00:00:00Z',
+    checksums: { [browserPath]: sha('browser v2\n') },
+    sources: { [browserPath]: browserPath },
+  });
+
+  // Option IS selected + file tracked locally -> SAFE update (not skipped as unselected).
+  const projSel = path.join(root, 'selected');
+  copyUpdater(projSel);
+  writeManifest(projSel, manifest);
+  writeProjFile(projSel, browserPath, 'browser v1\n');
+  writeProjVersion(projSel, {
+    generator: '1.0.0', generated: '2026-01-01T00:00:00Z',
+    options: ['browser-e2e'],
+    checksums: { [browserPath]: sha('browser v1\n') },
+  });
+  let res = runUpdateCheck(projSel, remote);
+  assert.equal(res.status, 0, res.stderr || res.stdout);
+  let json = JSON.parse(res.stdout.trim());
+  assert.ok(json.plan.updated.some(e => e.file === browserPath), 'optional installed -> SAFE update: ' + JSON.stringify(json.plan));
+  assert.ok(!json.plan.skipped.some(e => e.file === browserPath && /not selected/.test(e.reason)), 'optional installed not skipped as unselected');
+
+  // Option NOT selected, file not tracked locally -> skipped, never force-applied.
+  const projNo = path.join(root, 'not-selected');
+  copyUpdater(projNo);
+  writeManifest(projNo, manifest);
+  writeProjVersion(projNo, {
+    generator: '1.0.0', generated: '2026-01-01T00:00:00Z',
+    options: [],
+    checksums: {},
+  });
+  res = runUpdateCheck(projNo, remote);
+  assert.equal(res.status, 0, res.stderr || res.stdout);
+  json = JSON.parse(res.stdout.trim());
+  assert.ok(json.plan.skipped.some(e => e.file === browserPath && /not selected/.test(e.reason)), 'optional unselected -> skipped: ' + JSON.stringify(json.plan.skipped));
+  assert.ok(!json.plan.created.some(e => e.file === browserPath), 'optional unselected not force-created');
+  assert.ok(!json.plan.updated.some(e => e.file === browserPath), 'optional unselected not force-updated');
+  fs.rmSync(root, { recursive: true, force: true });
+});
+
+test('manifest-first: undeclared user file at Harness path with no marker -> conflict (protected)', () => {
+  const root = tmpdir();
+  const proj = path.join(root, 'proj');
+  const remote = path.join(root, 'remote');
+  copyUpdater(proj);
+  // Minimal manifest that does NOT declare .claude/agents/planner.md.
+  writeManifest(proj, fixtureManifest({
+    frameworkOwned: ['Harness/ownership.manifest.json'],
+  }));
+  // User-authored file at a candidate path, NO harness marker, not in local checksums.
+  const userBody = '---\nname: planner\n---\n\nmy personal planner\n';
+  writeProjFile(proj, '.claude/agents/planner.md', userBody);
+  writeProjVersion(proj, {
+    generator: '1.0.0', generated: '2026-01-01T00:00:00Z',
+    checksums: {},
+  });
+  fs.mkdirSync(remote, { recursive: true });
+  writeProjFile(remote, '.claude/agents/planner.md', 'remote planner\n');
+  writeRemoteVersion(remote, {
+    generator: '2.0.0', generated: '2026-07-22T00:00:00Z',
+    checksums: { '.claude/agents/planner.md': sha('remote planner\n') },
+    sources: { '.claude/agents/planner.md': '.claude/agents/planner.md' },
+  });
+
+  const res = runUpdateCheck(proj, remote);
+  assert.equal(res.status, 0, res.stderr || res.stdout);
+  const json = JSON.parse(res.stdout.trim());
+  assert.ok(json.plan.conflict.some(e => e.file === '.claude/agents/planner.md'), 'undeclared user file -> conflict: ' + JSON.stringify(json.plan));
+  assert.ok(!json.plan.updated.some(e => e.file === '.claude/agents/planner.md'), 'undeclared user file NOT auto-overwritten');
+  assert.equal(fs.readFileSync(path.join(proj, '.claude', 'agents', 'planner.md'), 'utf-8'), userBody, 'user file content preserved');
+  fs.rmSync(root, { recursive: true, force: true });
+});
+
+test('manifest-first: declared frameworkOwned untracked file is marker-decided (no marker -> conflict, marker -> adopted)', () => {
+  // AC #5: a user's same-name file at a manifest-declared frameworkOwned path
+  // must NEVER be silently overwritten. The manifest declaration only puts the
+  // path in the Harness-interest candidate set; the MARKER decides whether an
+  // untracked existing file is a prior Harness install (adopt) or user-authored
+  // (protected conflict). This holds in manifest mode and matches the installer.
+  const root = tmpdir();
+  const remote = path.join(root, 'remote');
+  const manifest = fixtureManifest({
+    frameworkOwned: ['.claude/agents/planner.md', 'Harness/ownership.manifest.json'],
+  });
+  fs.mkdirSync(remote, { recursive: true });
+  writeProjFile(remote, '.claude/agents/planner.md', 'remote planner\n');
+  writeRemoteVersion(remote, {
+    generator: '2.0.0', generated: '2026-07-22T00:00:00Z',
+    checksums: { '.claude/agents/planner.md': sha('remote planner\n') },
+    sources: { '.claude/agents/planner.md': '.claude/agents/planner.md' },
+  });
+
+  // No marker: user-authored file at a declared frameworkOwned path -> CONFLICT.
+  const projUser = path.join(root, 'user-no-marker');
+  copyUpdater(projUser);
+  writeManifest(projUser, manifest);
+  const userBody = 'no marker here at all\n';
+  writeProjFile(projUser, '.claude/agents/planner.md', userBody);
+  writeProjVersion(projUser, {
+    generator: '1.0.0', generated: '2026-01-01T00:00:00Z',
+    checksums: {},
+  });
+  let res = runUpdateCheck(projUser, remote);
+  assert.equal(res.status, 0, res.stderr || res.stdout);
+  let json = JSON.parse(res.stdout.trim());
+  assert.ok(json.plan.conflict.some(e => e.file === '.claude/agents/planner.md'), 'declared untracked file with no marker -> conflict: ' + JSON.stringify(json.plan));
+  assert.ok(!json.plan.updated.some(e => e.file === '.claude/agents/planner.md'), 'declared untracked file with no marker NOT auto-adopted');
+  assert.equal(fs.readFileSync(path.join(projUser, '.claude', 'agents', 'planner.md'), 'utf8'), userBody, 'user file content preserved');
+
+  // Has marker: prior Harness install at a declared frameworkOwned path -> adopted (plan.updated).
+  const projHarness = path.join(root, 'harness-marker');
+  copyUpdater(projHarness);
+  writeManifest(projHarness, manifest);
+  const harnessBody = '---\nharness: wf-agent\nname: planner\n---\n\nold harness planner\n';
+  writeProjFile(projHarness, '.claude/agents/planner.md', harnessBody);
+  writeProjVersion(projHarness, {
+    generator: '1.0.0', generated: '2026-01-01T00:00:00Z',
+    checksums: {},
+  });
+  res = runUpdateCheck(projHarness, remote);
+  assert.equal(res.status, 0, res.stderr || res.stdout);
+  json = JSON.parse(res.stdout.trim());
+  assert.ok(json.plan.updated.some(e => e.file === '.claude/agents/planner.md' && /untracked Harness-owned/.test(e.reason)), 'declared untracked file WITH marker -> adopted: ' + JSON.stringify(json.plan.updated));
+  assert.ok(!json.plan.conflict.some(e => e.file === '.claude/agents/planner.md'), 'declared untracked file WITH marker not a conflict');
+
   fs.rmSync(root, { recursive: true, force: true });
 });

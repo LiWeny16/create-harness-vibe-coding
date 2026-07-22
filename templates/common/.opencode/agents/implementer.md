@@ -1,4 +1,5 @@
 ---
+harness: wf-agent
 description: Use to implement the smallest change inside a declared write set after tests or manual checks are defined.
 mode: subagent
 permission:

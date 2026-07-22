@@ -1,4 +1,5 @@
 ---
+harness: wf-agent
 description: Use for product, market, competitor, open-source, dependency, pricing, policy, or ecosystem research before PRD and architecture decisions.
 mode: subagent
 permission:

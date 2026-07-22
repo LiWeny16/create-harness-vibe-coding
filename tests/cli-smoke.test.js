@@ -1,4 +1,4 @@
-import test from 'node:test';
+import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -7,9 +7,15 @@ import { execFileSync, spawnSync } from 'node:child_process';
 
 const bin = path.resolve('bin/create-harness-vibe-coding.js');
 
+const tempRoots = [];
 function tmpdir() {
-  return fs.mkdtempSync(path.join(os.tmpdir(), 'harness-cli-'));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'harness-cli-'));
+  tempRoots.push(root);
+  return root;
 }
+after(() => {
+  for (const root of tempRoots) fs.rmSync(root, { recursive: true, force: true });
+});
 
 function writeUpdateStub(target, script = "console.log(JSON.stringify({ status: 'up-to-date', cwd: process.cwd(), args: process.argv.slice(2), sourceBase: process.env.WF_SOURCE_BASE }));\n") {
   fs.mkdirSync(path.join(target, 'Harness', 'scripts'), { recursive: true });

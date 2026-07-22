@@ -1,4 +1,5 @@
 ---
+harness: wf-agent
 description: Use for read-only review of diffs, tests, architecture boundaries, regressions, and missing verification before closeout.
 mode: subagent
 permission:

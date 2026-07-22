@@ -1,4 +1,5 @@
 ---
+harness: wf-agent
 name: review-manager
 description: WF-MAX Manager for W2R review wave. Spawns 3-4 parallel reviewers (spec/code/security/perf), deduplicates findings, assigns severity, reports to CEO. Read-only + Agent spawn; no Edit/Write.
 tools: Read, Grep, Glob, Agent, Bash(git *), Bash(git diff *), Bash(node *)

@@ -1,4 +1,4 @@
-import test from 'node:test';
+import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -14,9 +14,15 @@ const projectFacts = [
   'Harness/architecture.md',
 ];
 
+const tempRoots = [];
 function tmpdir() {
-  return fs.mkdtempSync(path.join(os.tmpdir(), 'harness-validator-'));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'harness-validator-'));
+  tempRoots.push(root);
+  return root;
 }
+after(() => {
+  for (const root of tempRoots) fs.rmSync(root, { recursive: true, force: true });
+});
 
 function writeRel(root, rel, content) {
   fs.writeFileSync(path.join(root, ...rel.split('/')), content, 'utf8');

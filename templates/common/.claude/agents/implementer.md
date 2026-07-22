@@ -1,4 +1,5 @@
 ---
+harness: wf-agent
 name: implementer
 description: Use to implement the smallest change inside a declared write set after tests or manual checks are defined.
 tools: Read, Grep, Glob, Write, Edit, MultiEdit, Bash

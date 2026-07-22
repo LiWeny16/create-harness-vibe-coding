@@ -1,4 +1,5 @@
 ---
+harness: wf-agent
 name: codebase-explorer
 description: Use for scoped read-only source exploration, file discovery, symbol tracing, and simple codebase summaries before planning or implementation.
 tools: Read, Grep, Glob, Bash(rg *), Bash(git grep *), Bash(git ls-files *)

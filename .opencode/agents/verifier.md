@@ -1,4 +1,5 @@
 ---
+harness: wf-agent
 description: Use to run verification commands, inspect results, and record evidence. Final acceptance still waits for cross-review PASS and reflector PASS.
 mode: subagent
 permission:

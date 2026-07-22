@@ -1,4 +1,5 @@
 ---
+harness: wf-agent
 description: WF-MAX Manager for W0 exploration wave. Spawns 5-10 read-only researchers/explorers, synthesizes findings, reports to CEO. Read-only + Agent spawn; no Edit/Write.
 mode: subagent
 permission:

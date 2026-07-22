@@ -71,6 +71,26 @@ const BOOTSTRAP_ONLY_FILES = new Set([
   'Harness/SETUP.md',
 ]);
 
+const HARNESS_OWNED_CANDIDATE_PATTERNS = [
+  /^\.claude\/agents\/[^/]+\.md$/,
+  /^\.opencode\/agents\/[^/]+\.md$/,
+  /^\.claude\/commands\/wf(?:-[^/]+)?\.md$/,
+  /^\.opencode\/commands\/wf(?:-[^/]+)?\.md$/,
+  /^\.claude\/skills\/(?:wf|wf-[^/]+|subagent-orchestrator|tdd)\/SKILL\.md$/,
+  /^\.agents\/skills\/(?:wf|wf-[^/]+|subagent-orchestrator|tdd)\/SKILL\.md$/,
+  /^\.codex\//,
+  /^\.opencode\/plugins\/harness-/,
+  /^Harness\/scripts\//,
+];
+
+const HARNESS_OWNED_CONTENT_MARKERS = [
+  /^harness:\s*(?:wf-agent|wf-framework|create-harness-vibe-coding)\b/im,
+  /\bcreate-harness-vibe-coding\b/i,
+  /\bproject harness\b/i,
+  /\bHarness\/(?:WF|MEMORY|tasks|scripts|subagents|dispatch|context-loading|lifecycle|SETUP)\b/,
+  /\bWF-(?:MAX|AUTO|KERNEL|STATE)\b/,
+];
+
 // Helpers
 
 /** Reject paths that escape ROOT (traversal, absolute, .., etc.). */
@@ -157,23 +177,170 @@ function sha256File(path) {
   return sha256(content);
 }
 
-function classify(file, localHash, storedHash) {
-  // PRESERVE
-  for (const p of PRESERVE_PATTERNS) {
-    if (p.test(file)) return 'PRESERVE';
-  }
-  // MERGE: dual-purpose, check if user modified.
-  for (const p of MERGE_PATTERNS) {
-    if (p.test(file)) {
-      if (localHash === storedHash) return 'SAFE'; // unmodified, safe
-      return 'CONFLICT'; // user modified, needs decision
+// ── Ownership manifest (manifest-first classification) ─────────────────────
+//
+// Harness/ownership.manifest.json is the machine-readable source of truth for
+// file classification. When present it drives PRESERVE/MERGE/frameworkOwned/
+// optionalOwned decisions; the path-regex + content-marker logic below remains
+// as a FALLBACK for old installs that ship no manifest. The updater cannot
+// import from scripts/lib (different package layer), so a small local glob
+// matcher mirrors the one in scripts/lib/ownership-manifest.mjs.
+
+function globToRegex(pattern) {
+  let re = '';
+  let i = 0;
+  while (i < pattern.length) {
+    const c = pattern[i];
+    if (c === '*' && pattern[i + 1] === '*') {
+      re += '.*';
+      i += 2;
+      if (pattern[i] === '/') i += 1; // swallow a trailing slash after **
+    } else if (c === '*') {
+      re += '[^/]*';
+      i += 1;
+    } else if ('.+?^${}()|[]\\'.includes(c)) {
+      re += '\\' + c;
+      i += 1;
+    } else {
+      re += c;
+      i += 1;
     }
+  }
+  return new RegExp('^' + re + '$');
+}
+
+function matchesGlob(dest, pattern) {
+  if (!pattern.includes('*')) return dest === pattern;
+  return globToRegex(pattern).test(dest);
+}
+
+function matchesAnyGlob(dest, patterns) {
+  return (patterns || []).some(p => matchesGlob(dest, p));
+}
+
+function buildOptionalOwnedMap(optionalOwned) {
+  const map = new Map();
+  for (const entry of optionalOwned || []) {
+    if (!entry || typeof entry.option !== 'string') continue;
+    map.set(entry.option, new Set(entry.paths || []));
+  }
+  return map;
+}
+
+/** Load + validate the ownership manifest. Missing/unreadable/invalid -> null (fallback mode). */
+function loadOwnershipManifest(root) {
+  const manifestPath = resolve(root, 'Harness', 'ownership.manifest.json');
+  try {
+    if (!existsSync(manifestPath)) return null;
+    const parsed = JSON.parse(readFileSync(manifestPath, 'utf-8'));
+    if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.preserve)) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function buildManifestCtx(manifest) {
+  if (!manifest) {
+    return { present: false, preserveGlobs: [], mergeSet: new Set(), frameworkOwnedSet: new Set(), optionalOwned: new Map() };
+  }
+  return {
+    present: true,
+    preserveGlobs: manifest.preserve || [],
+    mergeSet: new Set(manifest.merge || []),
+    frameworkOwnedSet: new Set((manifest.frameworkOwned || []).map(e => e && e.path).filter(Boolean)),
+    optionalOwned: buildOptionalOwnedMap(manifest.optionalOwned),
+  };
+}
+
+function isPreserveFile(file, ctx) {
+  if (ctx.present) return matchesAnyGlob(file, ctx.preserveGlobs);
+  return PRESERVE_PATTERNS.some(p => p.test(file));
+}
+
+function isMergeFile(file, ctx) {
+  if (ctx.present) return ctx.mergeSet.has(file);
+  return MERGE_PATTERNS.some(p => p.test(file));
+}
+
+/** Manifest-first declared ownership: frameworkOwned, or optionalOwned whose option is selected. */
+function isDeclaredHarnessOwned(file, ctx, selectedOptions) {
+  if (!ctx.present) return false;
+  if (ctx.frameworkOwnedSet.has(file)) return true;
+  for (const [option, paths] of ctx.optionalOwned) {
+    if (paths.has(file) && selectedOptions.has(option)) return true;
+  }
+  return false;
+}
+
+/** An optional-owned file whose owning option is NOT selected for this install. */
+function isOptionalOwnedUnselected(file, ctx, selectedOptions) {
+  if (!ctx.present) return false;
+  let owned = false;
+  for (const [option, paths] of ctx.optionalOwned) {
+    if (paths.has(file)) {
+      owned = true;
+      if (selectedOptions.has(option)) return false;
+    }
+  }
+  return owned;
+}
+
+/**
+ * Manifest-first untracked-existing-file ownership. When a remote file is NEW
+ * (not in local checksums) but exists on disk, decide Harness-owned vs
+ * user-owned. The MARKER decides instance ownership: a prior Harness install
+ * leaves a marker, a user-authored file at a Harness-looking path does not.
+ * Manifest declaration (frameworkOwned / installed-optional) and the candidate
+ * regex only build the Harness-interest candidate set; they never by themselves
+ * authorize overwriting an untracked file. A user file at a Harness-interest
+ * path with NO marker stays a conflict (protected) in BOTH manifest and
+ * fallback modes. This matches the installer and AC #5: a user's same-name
+ * agent/command/skill must never be overwritten.
+ */
+function isHarnessOwnedExistingFileManifestFirst(file, diskPath, ctx, selectedOptions) {
+  // A manifest-declared path joins the candidate set, but — like a regex
+  // candidate — still requires a Harness content marker to be adopted. The
+  // marker (not the declaration) decides adopt-vs-conflict for an untracked
+  // existing file, in both manifest and fallback modes.
+  if (isDeclaredHarnessOwned(file, ctx, selectedOptions)) {
+    return fileHasHarnessOwnedMarker(diskPath);
+  }
+  return isHarnessOwnedExistingFile(file, diskPath);
+}
+
+function classify(file, localHash, storedHash, ctx) {
+  // PRESERVE
+  if (isPreserveFile(file, ctx)) return 'PRESERVE';
+  // MERGE: dual-purpose, check if user modified.
+  if (isMergeFile(file, ctx)) {
+    if (localHash === storedHash) return 'SAFE'; // unmodified, safe
+    return 'CONFLICT'; // user modified, needs decision
   }
   // Everything else is SAFE runtime file: always overwrite.
   // Harness system files (scripts, skills, agents, commands, WF docs) are
   // not user data; the template is authoritative. Only PRESERVE and MERGE
   // files should ever require conflict resolution.
   return 'SAFE';
+}
+
+function isHarnessOwnedCandidate(file) {
+  return HARNESS_OWNED_CANDIDATE_PATTERNS.some(pattern => pattern.test(file));
+}
+
+/** Read on-disk content and test for a Harness ownership marker. */
+function fileHasHarnessOwnedMarker(diskPath) {
+  try {
+    const content = readFileSync(diskPath, 'utf-8');
+    return HARNESS_OWNED_CONTENT_MARKERS.some(pattern => pattern.test(content));
+  } catch {
+    return false;
+  }
+}
+
+function isHarnessOwnedExistingFile(file, diskPath) {
+  if (!isHarnessOwnedCandidate(file)) return false;
+  return fileHasHarnessOwnedMarker(diskPath);
 }
 
 async function fetchRemote(url, timeoutMs = 30000) {
@@ -438,6 +605,12 @@ async function main() {
 
   const localChecksums = localVersion.checksums || {};
 
+  // Ownership manifest: manifest-first classification with regex/marker fallback
+  // for old installs that ship no manifest. manifest=null -> fallback mode.
+  const manifest = loadOwnershipManifest(ROOT);
+  const manifestCtx = buildManifestCtx(manifest);
+  const selectedOptions = selectedOptionIds(localVersion);
+
   // 2. Read remote version metadata from the selected update source.
   let remoteVersion = source?.manifest;
   if (!remoteVersion) {
@@ -615,10 +788,16 @@ async function main() {
     const decision = localVersion.acceptedConflicts?.[file];
     return Boolean(
       decision
-      && decision.targetGenerator === remoteGen
       && decision.localHash === localHash
       && decision.remoteHash === remoteHash
     );
+  }
+
+  function acceptedDecisionReason(file) {
+    const decision = localVersion.acceptedConflicts?.[file];
+    if (!decision) return 'accepted conflict decision';
+    if (decision.targetGenerator === remoteGen) return `accepted conflict decision: ${decision.decision}`;
+    return `accepted conflict decision carried forward from ${decision.targetGenerator}: ${decision.decision}`;
   }
 
   let decisionMetadataDirty = false;
@@ -667,6 +846,14 @@ async function main() {
       continue;
     }
 
+    // Manifest-first: an optional-owned file whose option is NOT selected for
+    // this install is not in this install's plan; skip it rather than
+    // force-applying an optional workflow the user never opted into.
+    if (isOptionalOwnedUnselected(canonical, manifestCtx, selectedOptions)) {
+      plan.skipped.push({ file, reason: 'optional workflow not selected for this install' });
+      continue;
+    }
+
     if (BOOTSTRAP_ONLY_FILES.has(canonical) && localHash === null) {
       plan.skipped.push({ file, reason: 'bootstrap-only file already removed locally' });
       continue;
@@ -680,14 +867,18 @@ async function main() {
           continue;
         }
         if (acceptedDecisionMatches(file, localHash, remoteHash)) {
-          plan.skipped.push({ file, reason: `accepted conflict decision: ${localVersion.acceptedConflicts[file].decision}` });
+          plan.skipped.push({ file, reason: acceptedDecisionReason(file) });
+          continue;
+        }
+        if (isHarnessOwnedExistingFileManifestFirst(canonical, diskPath, manifestCtx, selectedOptions)) {
+          plan.updated.push({ file, localHash, remoteHash, reason: 'existing untracked Harness-owned file' });
           continue;
         }
         plan.conflict.push({ file, localHash, storedHash: 'none', remoteHash, reason: 'new remote file conflicts with existing local file' });
         continue;
       }
       // New file: still respect PRESERVE classification.
-      const tier = classify(canonical, null, null);
+      const tier = classify(canonical, null, null, manifestCtx);
       if (tier === 'PRESERVE') {
         plan.skipped.push({ file, reason: 'PRESERVE: new file would overwrite user data' });
       } else {
@@ -704,7 +895,7 @@ async function main() {
       && localHash !== remoteHash
     ) {
       if (acceptedDecisionMatches(file, localHash, remoteHash)) {
-        plan.skipped.push({ file, reason: `accepted conflict decision: ${localVersion.acceptedConflicts[file].decision}` });
+        plan.skipped.push({ file, reason: acceptedDecisionReason(file) });
         continue;
       }
       plan.conflict.push({
@@ -717,7 +908,7 @@ async function main() {
       continue;
     }
 
-    const tier = classify(canonical, localHash, storedHash);
+    const tier = classify(canonical, localHash, storedHash, manifestCtx);
 
     if (tier === 'PRESERVE') {
       plan.skipped.push({ file, reason: 'PRESERVE: user data' });
@@ -729,7 +920,7 @@ async function main() {
       }
     } else if (tier === 'CONFLICT') {
       if (acceptedDecisionMatches(file, localHash, remoteHash)) {
-        plan.skipped.push({ file, reason: `accepted conflict decision: ${localVersion.acceptedConflicts[file].decision}` });
+        plan.skipped.push({ file, reason: acceptedDecisionReason(file) });
         continue;
       }
       plan.conflict.push({
@@ -737,7 +928,7 @@ async function main() {
         localHash,
         storedHash,
         remoteHash,
-        reason: MERGE_PATTERNS.some(p => p.test(canonical))
+        reason: isMergeFile(canonical, manifestCtx)
           ? 'user modified MERGE file'
           : 'user modified runtime file',
       });
@@ -809,35 +1000,40 @@ async function main() {
     async function prepareWrite(entry, { mustNotExist = false } = {}) {
       try {
         const dest = safePath(entry.file);
-        if (!dest) { console.error(`   x Traversal rejected: ${entry.file}`); failed++; return; }
+        if (!dest) return { ok: false, message: `   x Traversal rejected: ${entry.file}` };
         // Symlink rejection: do not follow symlinks.
         if (existsSync(dest)) {
-          try { if (lstatSync(dest).isSymbolicLink()) { console.error(`   x Symlink rejected: ${entry.file}`); failed++; return; } } catch (_) {}
+          try { if (lstatSync(dest).isSymbolicLink()) return { ok: false, message: `   x Symlink rejected: ${entry.file}` }; } catch (_) {}
           if (mustNotExist) {
-            console.error(`   x File created since plan: ${entry.file} - treating as CONFLICT`);
-            failed++; return;
+            return { ok: false, message: `   x File created since plan: ${entry.file} - treating as CONFLICT` };
           }
         }
         const content = await fetchSourceFile(remotePath(entry.file));
         const normalized = content.replace(/\r\n/g, '\n');
         const fetchedHash = sha256(normalized);
         if (fetchedHash !== entry.remoteHash) {
-          console.error(`   x Hash mismatch: ${entry.file}`);
-          failed++; return;
+          return { ok: false, message: `   x Hash mismatch: ${entry.file}` };
         }
-        preparedWrites.push({ file: entry.file, dest, content: normalized, mustNotExist });
+        return { ok: true, prepared: { file: entry.file, dest, content: normalized, mustNotExist } };
       } catch (e) {
-        console.error(`   x Failed: ${entry.file} - ${e.message}`);
-        failed++;
+        return { ok: false, message: `   x Failed: ${entry.file} - ${e.message}` };
       }
     }
 
-    for (const u of plan.updated) {
-      await prepareWrite(u);
-    }
-
-    for (const c of plan.created) {
-      await prepareWrite(c, { mustNotExist: true });
+    const prepareJobs = [
+      ...plan.updated.map(entry => ({ entry, options: {} })),
+      ...plan.created.map(entry => ({ entry, options: { mustNotExist: true } })),
+    ];
+    const prepareResults = await Promise.all(
+      prepareJobs.map(job => prepareWrite(job.entry, job.options)),
+    );
+    for (const result of prepareResults) {
+      if (result.ok) {
+        preparedWrites.push(result.prepared);
+      } else {
+        console.error(result.message);
+        failed++;
+      }
     }
 
     if (failed === 0) {
@@ -849,6 +1045,12 @@ async function main() {
       }
     }
 
+    // All-or-nothing apply invariant: every prepared file above was hash-validated
+    // against its manifest checksum before ANY writeFileSync below. The version
+    // file is advanced only when failed === 0, so a failed apply leaves version
+    // tracking unchanged and is safe to re-run with --apply-safe. A mid-loop
+    // writeFileSync throw (disk failure) is the only partial-disk edge case;
+    // re-running --apply-safe reconciles it.
     let applied = 0;
     if (failed === 0) {
       try {

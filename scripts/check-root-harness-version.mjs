@@ -37,6 +37,8 @@ const ROOT = ROOT_ARG_IDX !== -1 && process.argv[ROOT_ARG_IDX + 1]
 const QUIET = process.argv.includes('--quiet');
 
 const ROOT_VERSION_PATH = path.join(ROOT, 'Harness', '.harness-version');
+const ROOT_PACKAGE_PATH = path.join(ROOT, 'package.json');
+const CANONICAL_SOURCE_URL = 'https://raw.githubusercontent.com/LiWeny16/create-harness-vibe-coding/main/templates/common/';
 
 function abbr(checksum) {
   // checksum looks like 'sha256-<hex>'; show first 8 hex chars.
@@ -109,6 +111,22 @@ const skip = buildSkipSet(parsed);
 const findings = [];
 let accepted = 0;
 
+if (fs.existsSync(ROOT_PACKAGE_PATH)) {
+  try {
+    const pkg = JSON.parse(fs.readFileSync(ROOT_PACKAGE_PATH, 'utf8'));
+    if (pkg && pkg.name === 'create-harness-vibe-coding') {
+      if (parsed.generator !== pkg.version) {
+        findings.push(`generator drift: recorded ${parsed.generator || '(missing)'}, package.json ${pkg.version}`);
+      }
+      if (parsed.source !== CANONICAL_SOURCE_URL) {
+        findings.push(`source drift: recorded ${parsed.source || '(missing)'}, expected ${CANONICAL_SOURCE_URL}`);
+      }
+    }
+  } catch (err) {
+    findings.push(`package metadata unreadable: ${err.message}`);
+  }
+}
+
 for (const key of keys) {
   if (skip.has(key)) {
     accepted++;
@@ -124,7 +142,7 @@ for (const key of keys) {
   const actual = sha256Hex(content);
   const recorded = checksums[key];
   if (actual !== recorded) {
-    findings.push(`drift: ${key} (recorded ${abbr(recorded)}…, actual ${abbr(actual)}…)`);
+    findings.push(`drift: ${key} (recorded ${abbr(recorded)}, actual ${abbr(actual)})`);
     continue;
   }
   if (!QUIET) {

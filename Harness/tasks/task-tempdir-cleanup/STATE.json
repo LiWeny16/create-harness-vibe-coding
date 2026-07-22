@@ -1,0 +1,23 @@
+{
+  "taskId": "task-tempdir-cleanup",
+  "phase": "verified",
+  "tier": "WF-Standard",
+  "gate": "CLOSEOUT",
+  "ready": [],
+  "running": [],
+  "blocked": [],
+  "done": [
+    "audit-tempdir-offenders",
+    "fix-6-test-files",
+    "add-temp-leak-guard",
+    "wire-pre-push",
+    "verify-npm-test-green",
+    "independent-review-approve",
+    "memory-lesson-recorded"
+  ],
+  "delegatedToUser": ["purge-temp-garbage (AC-3): user deletes 8383 historical harness-* dirs in %Temp%"],
+  "reflectorVerdict": "PASS",
+  "activeQuestion": null,
+  "nextAction": "Closed. AC-3 purge is the only remaining step and is user-handled. Task ready to archive once user confirms purge done.",
+  "updatedAt": "2026-07-22"
+}

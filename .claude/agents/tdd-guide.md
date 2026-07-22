@@ -1,4 +1,5 @@
 ---
+harness: wf-agent
 name: tdd-guide
 description: Test-Driven Development specialist enforcing AC-linked write-tests-first methodology. Use PROACTIVELY when writing new features, fixing bugs, refactoring code, or adding browser-visible behavior.
 tools: Read, Write, Edit, Bash, Grep, Glob

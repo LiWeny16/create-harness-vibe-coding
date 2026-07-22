@@ -1,4 +1,5 @@
 ---
+harness: wf-agent
 name: architect
 description: Use to review layer boundaries, ports, data flow, state machines, dependency direction, and architecture impact before implementation.
 tools: Read, Grep, Glob

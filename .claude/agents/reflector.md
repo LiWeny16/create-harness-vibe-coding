@@ -1,4 +1,5 @@
 ---
+harness: wf-agent
 name: reflector
 description: Use after verification and cross-review to synthesize findings, detect unresolved risk, and decide whether work may enter final acceptance.
 tools: Read, Grep, Glob

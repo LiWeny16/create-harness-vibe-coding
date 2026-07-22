@@ -1,4 +1,5 @@
 ---
+harness: wf-agent
 name: debugger
 description: Use to isolate a failing command, reproduce the smallest failing path, and propose the narrowest fix.
 tools: Read, Grep, Glob, Bash, Write, Edit, MultiEdit

@@ -1,4 +1,5 @@
 ---
+harness: wf-agent
 name: test-writer
 description: Use to define or write AC-linked failing tests and manual verification steps before implementation.
 tools: Read, Grep, Glob, Write, Edit, MultiEdit, Bash

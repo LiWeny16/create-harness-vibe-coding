@@ -1,4 +1,5 @@
 ---
+harness: wf-agent
 description: Use to isolate a failing command, reproduce the smallest failing path, and propose the narrowest fix.
 mode: subagent
 permission:
