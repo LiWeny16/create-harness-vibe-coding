@@ -23,6 +23,13 @@ only routes and summarizes hard constraints.
 6. `Harness/subagents.md`
 7. `Harness/dispatch.md`
 
+## Cache Discipline
+
+Follow `Harness/context-loading.md#Cache-First Context Contract`: keep roadmap
+and workflow docs stable, put fresh spark search results in the dynamic suffix,
+defer unused tools/skills, and let task-scribe write compact state instead of
+replaying search transcripts.
+
 ## Rules
 
 1. Roadmap first: declare North Star and staged milestones before spark cycles.

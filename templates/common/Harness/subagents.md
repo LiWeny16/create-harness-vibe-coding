@@ -4,6 +4,11 @@ Purpose: coordinate subagents for speed without losing control of scope, evidenc
 
 Use this file when work needs multiple roles, parallel reading, independent review, broad context, repeated failures, or explicit `/wf` / `/wf-max` invocation.
 
+Cache-first discipline: subagent context packs follow
+`Harness/context-loading.md#Cache-First Context Contract`. Inject only routed
+docs and selected files, keep dispatch fields in deterministic order, defer
+unused skill/tool schemas, and return bounded summaries instead of transcripts.
+
 project files are the only durable communication channel; chat/subagent transcript state is non-authoritative. Important assumptions, decisions, blockers, evidence, and handoffs must be written to `Harness/tasks/<task-id>/PROGRESS.md` and `Harness/tasks/<task-id>/PLAN.md`, the current feature doc, `Harness/MEMORY.md`, or `Harness/memory/*` as appropriate.
 
 Subagent work is acceptance-driven. Use [AGENT_ISOLATION.md](AGENT_ISOLATION.md)

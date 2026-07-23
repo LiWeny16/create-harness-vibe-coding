@@ -45,6 +45,7 @@ const commonSkills = [
   'wf-learn',
   'subagent-orchestrator',
   'wf-readme',
+  'wf-agents-docs',
   'wf-remove',
   'wf-auto',
   'wf-auto-spark',
@@ -60,6 +61,10 @@ const opencodeWorkflowCommands = [
   'wf-readme',
   'wf-remove',
 ];
+
+const cacheDisciplinedSkills = commonSkills.filter(skill => (
+  skill === 'subagent-orchestrator' || skill.startsWith('wf')
+));
 
 const memoryFiles = [
   'Harness/memory/startup-hints.md',
@@ -104,18 +109,22 @@ const required = [
   ...commonSkills.map(skill => `.claude/skills/${skill}/SKILL.md`),
   ...commonSkills.map(skill => `.agents/skills/${skill}/SKILL.md`),
   'Harness/README.md',
+  'Harness/SETUP.md',
   'Harness/PROGRESS.md',
   'Harness/lifecycle.md',
   'Harness/subagents.md',
   'Harness/dispatch.md',
   'Harness/extension.md',
   'Harness/context-loading.md',
+  'Harness/ownership.manifest.json',
   'Harness/WF-KERNEL.md',
   'Harness/agent-workflow.md',
   'Harness/architecture.md',
   'Harness/research/README.md',
   'Harness/research/research-results.md',
   'Harness/research/PRD.md',
+  'Harness/scripts/context-budget.mjs',
+  'Harness/scripts/l2-cache-telemetry.mjs',
   'Harness/scripts/wf-update-check.mjs',
   'Harness/scripts/wf-remove.mjs',
   'Harness/scripts/scan-clean.mjs',
@@ -276,6 +285,21 @@ for (const rel of required) {
   }
 }
 
+const manifestText = read('Harness/ownership.manifest.json');
+if (manifestText) {
+  try {
+    const manifest = JSON.parse(manifestText);
+    for (const entry of manifest.frameworkOwned || []) {
+      if (!entry || typeof entry.path !== 'string') continue;
+      if (!fs.existsSync(path.join(root, ...entry.path.split('/')))) {
+        errors.push(`ownership manifest frameworkOwned file missing: ${entry.path}`);
+      }
+    }
+  } catch (err) {
+    errors.push(`Harness/ownership.manifest.json is not valid JSON: ${err.message}`);
+  }
+}
+
 const removedHookArtifacts = [
   'Harness/HOOK_PROTOCOL.md',
   'Harness/scripts/wf-mode-hook.mjs',
@@ -401,13 +425,49 @@ requireText('Harness/MEMORY.md', 'Memory routes', 'MEMORY.md routes.md registrat
 requireText('CLAUDE.md', 'If `Harness/` exists, this repository is governed by the Harness contract', 'Harness binding contract');
 requireText('CLAUDE.md', 'memory and resource router', 'memory/resource router');
 requireText('CLAUDE.md', '## 5a. Low-Noise Progress', 'low-noise progress section');
+requireText('CLAUDE.md', "Match the user's language for all user-facing prose", 'user-facing language match rule');
 requireText('CLAUDE.md', 'Keep intermediate user updates to 1-2 short sentences', 'low-noise intermediate update rule');
 requireText('.claude/rules/ecc/common.md', '## Low-Noise Progress', 'ECC low-noise progress section');
+requireText('.claude/rules/ecc/common.md', "Match the user's language for user-facing prose", 'ECC user-facing language match rule');
 requireText('.claude/rules/ecc/common.md', 'Do not recap plans, paste logs, or narrate obvious file reads', 'ECC low-noise no-recap rule');
+requireText('.claude/rules/ecc/common.md', 'excluding `/wf-help` and `/wf-update`', 'ECC direct command exemption');
 requireText('Harness/README.md', 'Load By Task', 'Harness task router');
-requireText('CLAUDE.md', 'Harness/SETUP.md` is a bootstrap-only document', 'setup bootstrap-only contract');
+requireText('Harness/README.md', 'Need context/cache/token efficiency', 'cache/token router row');
+requireText('Harness/context-loading.md', 'Context Tiers', 'context tier load budget section');
+requireText('Harness/context-loading.md', 'automatic route profiles, not user-selected modes', 'context tiers are automatic route profiles');
+requireText('Harness/context-loading.md', 'Budgets are regression guards, not exclusion rules', 'context budgets do not block required files');
+requireText('Harness/context-loading.md', 'Do not skip required rules', 'context budget correctness priority');
+requireText('Harness/context-loading.md', 'Escalation rule', 'context-loading targeted escalation rule');
+requireText('Harness/context-loading.md', 'Thin startup', 'thin startup context tier');
+requireText('Harness/context-loading.md', 'Routed skill/doc', 'routed skill/doc lazy tier');
+requireText('Harness/context-loading.md', 'Cache-First Context Contract', 'cache-first context contract');
+requireText('Harness/context-loading.md', 'Cache Validation Levels', 'cache validation levels');
+requireText('Harness/context-loading.md', 'Do not claim real cache hits', 'real cache telemetry boundary');
+requireText('Harness/context-loading.md', 'cached_tokens', 'OpenAI cache telemetry field');
+requireText('Harness/context-loading.md', 'cache_read_input_tokens', 'Anthropic cache telemetry field');
+requireText('Harness/WF.md', 'Cache Discipline', 'WF cache discipline');
+requireText('Harness/WF-KERNEL.md', 'Cache-First Context Contract', 'WF-KERNEL cache-first contract');
+requireText('Harness/dispatch.md', 'Cache-first dispatch', 'dispatch cache-first discipline');
+requireText('Harness/subagents.md', 'Cache-first discipline', 'subagents cache-first discipline');
+forbidText('CLAUDE.md', 'Harness/SETUP.md', 'CLAUDE.md SETUP reference');
 forbidText('CLAUDE.md', 'follow it before normal project work', 'installed-project SETUP hot-path routing');
 requireText('Harness/SETUP.md', 'Harness/MEMORY_PROTOCOL.md', 'setup memory protocol reference');
+requireText('Harness/SETUP.md', 'no startup dependency on this setup reference', 'SETUP startup boundary');
+forbidText('Harness/SETUP.md', 'bootstrap contract line', 'stale SETUP-to-CLAUDE bootstrap contract');
+forbidText('Harness/context-loading.md', 'Always keep:', 'ambiguous always-load context rule');
+requireText('Harness/scripts/context-budget.mjs', 'thin-startup', 'context-budget thin startup route');
+requireText('Harness/scripts/context-budget.mjs', 'cache-diagnostics-route', 'context-budget cache diagnostics route');
+requireText('Harness/scripts/context-budget.mjs', 'not runtime exclusion rules', 'context-budget non-exclusion guard');
+requireText('Harness/scripts/context-budget.mjs', 'approxTokens', 'context-budget approximate token output');
+requireText('Harness/context-loading.md', 'Harness/scripts/l2-cache-telemetry.mjs', 'L2 telemetry script reference');
+requireText('Harness/README.md', 'scripts/l2-cache-telemetry.mjs', 'Harness README L2 telemetry script route');
+requireText('Harness/scripts/l2-cache-telemetry.mjs', 'cache_read_input_tokens', 'L2 telemetry cache-read field');
+requireText('Harness/scripts/l2-cache-telemetry.mjs', 'cache_creation_input_tokens', 'L2 telemetry cache-creation field');
+requireText('Harness/scripts/l2-cache-telemetry.mjs', 'claimGate', 'L2 telemetry claim gate');
+requireText('Harness/scripts/l2-cache-telemetry.mjs', '--strict-mcp-config', 'L2 telemetry strict MCP isolation');
+requireText('Harness/scripts/l2-cache-telemetry.mjs', '--max-budget-usd', 'L2 telemetry per-turn budget');
+requireText('Harness/scripts/l2-cache-telemetry.mjs', '--resume', 'L2 telemetry session resume');
+forbidText('Harness/scripts/l2-cache-telemetry.mjs', '--bare', 'L2 telemetry bare mode');
 requireText('Harness/README.md', 'subagent', 'subagent orchestrator entry trigger');
 requireText('Harness/README.md', 'PROGRESS.md', 'PROGRESS global task index');
 requireText('CLAUDE.md', 'Harness/tasks/', 'task capsule directory reference');
@@ -749,9 +809,18 @@ requireText('.claude/skills/tdd/SKILL.md', 'No syntax-only acceptance', 'tdd ski
 requireText('.claude/skills/wf-remove/SKILL.md', 'User-facing removal is the slash/skill command', 'wf-remove slash command is user-facing');
 requireText('.claude/skills/wf-remove/SKILL.md', 'agent-internal execution steps', 'wf-remove script commands are agent-internal');
 requireText('.claude/skills/wf-remove/SKILL.md', 'verify residual discovery folders', 'wf-remove residual discovery verification');
+for (const marker of ['codebase-explorer', 'task-scribe', 'wf-agents-docs', 'wf-auto-spark']) {
+  requireText('Harness/scripts/wf-remove.mjs', marker, `wf-remove built-in registry includes ${marker}`);
+}
 requireText('.claude/skills/wf-review/SKILL.md', 'opencode run --agent reviewer', 'wf-review OpenCode peer CLI path');
 requireText('.claude/skills/wf-review/SKILL.md', 'Role: reviewer', 'wf-review installed reviewer role fallback');
 requireText('.claude/skills/wf-review/SKILL.md', 'The main agent is the controller', 'wf-review controller final authority');
+requireText('.claude/skills/wf-agents-docs/SKILL.md', 'claude -p --output-format json', 'wf-agents-docs Claude JSON CLI path');
+requireText('.claude/skills/wf-agents-docs/SKILL.md', 'codex exec --json', 'wf-agents-docs Codex JSONL CLI path');
+requireText('.claude/skills/wf-agents-docs/SKILL.md', 'opencode run --format json', 'wf-agents-docs OpenCode JSON CLI path');
+requireText('.claude/skills/wf-agents-docs/SKILL.md', 'cache_read_input_tokens', 'wf-agents-docs Claude cache telemetry field');
+requireText('.claude/skills/wf-agents-docs/SKILL.md', 'Do not trust exit code alone', 'wf-agents-docs PowerShell wrapper guard');
+requireText('Harness/README.md', 'Need peer CLI automation docs', 'Harness router peer CLI automation docs row');
 requireText('.opencode/commands/wf-review.md', 'peer-review contract', 'OpenCode wf-review wrapper peer-review contract');
 requireText('Harness/subagents.md', 'For `/wf-review`, use the installed `reviewer` role', 'subagents wf-review role fallback');
 requireText('.claude/agents/tdd-guide.md', 'Browser Acceptance Rules', 'tdd-guide browser acceptance rules');
@@ -834,11 +903,31 @@ requireText('Harness/SETUP.md', 'WF-Max-Useful', 'SETUP WF-Max-Useful tier refer
 for (const skill of ['wf', 'wf-max', 'subagent-orchestrator']) {
   requireText(`.claude/skills/${skill}/SKILL.md`, 'Memory Preflight', `${skill} skill Memory Preflight section`);
 }
+for (const skill of cacheDisciplinedSkills) {
+  requireText(`.claude/skills/${skill}/SKILL.md`, 'Cache Discipline', `${skill} skill cache discipline`);
+}
+if (fs.existsSync(path.join(root, '.claude/skills/wf-browser/SKILL.md'))) {
+  requireText('.claude/skills/wf-browser/SKILL.md', 'Cache Discipline', 'wf-browser skill cache discipline');
+}
 
 // Direct command checks
 requireText('Harness/README.md', '/wf-update', 'wf-update direct command reference');
 requireText('.claude/commands/wf-update.md', 'Do not invoke a skill', 'wf-update direct command boundary');
+for (const rel of ['.claude/commands/wf-update.md', '.opencode/commands/wf-update.md']) {
+  requireText(rel, '## Cache Discipline', `${rel} cache discipline`);
+  requireText(rel, 'agent.safeApplyCommand', `${rel} safe apply step`);
+  requireText(rel, '--apply-safe', `${rel} apply-safe command`);
+  requireText(rel, 'agent.aiMergeRequired', `${rel} AI merge step`);
+  requireText(rel, '--accept-local', `${rel} accept-local decision`);
+  requireText(rel, '--accept-merged', `${rel} accept-merged decision`);
+  requireText(rel, '--accept-template', `${rel} accept-template decision`);
+  requireText(rel, '--finalize', `${rel} finalize command`);
+  requireText(rel, 'strict `--apply` only when', `${rel} strict apply boundary`);
+  requireText(rel, '## Return', `${rel} return contract`);
+}
 requireText('.claude/commands/wf-help.md', 'direct command', 'wf-help wf-update direct command classification');
+requireText('.claude/commands/wf-help.md', '/wf-browser', 'wf-help optional browser workflow row');
+requireText('.opencode/commands/wf-help.md', '/wf-browser', 'OpenCode wf-help optional browser workflow row');
 
 // wf-update skill must NOT claim Claude Code /wf-update as a skill invocation
 // (allow mentions in the description/body that say "direct command" — those are correct)
@@ -853,6 +942,10 @@ for (const command of opencodeWorkflowCommands) {
   requireText(`.opencode/commands/${command}.md`, 'workflow command', `OpenCode ${command} workflow command classification`);
   requireText(`.opencode/commands/${command}.md`, `.claude/skills/${command}/SKILL.md`, `OpenCode ${command} wrapper skill routing`);
   requireText(`.opencode/commands/${command}.md`, 'Harness/MEMORY.md', `OpenCode ${command} wrapper router load`);
+  requireText(`.opencode/commands/${command}.md`, 'Cache-First Context Contract', `OpenCode ${command} cache-first routing`);
+}
+if (fs.existsSync(path.join(root, '.opencode/commands/wf-browser.md'))) {
+  requireText('.opencode/commands/wf-browser.md', 'Cache-First Context Contract', 'OpenCode wf-browser cache-first routing');
 }
 
 // wf-max adapter must stay tier-aware, not the old unconditional contract

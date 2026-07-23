@@ -24,6 +24,12 @@ subagent surfaces; follow the same Harness role contract either way.
 - Active `Harness/tasks/<task-id>/PROGRESS.md` and `PLAN.md`, when present
 - `Harness/WF.md` when in explicit `/wf`, `$wf`, or `/skills wf`
 
+## Cache Discipline
+
+Follow `Harness/context-loading.md#Cache-First Context Contract`: inject only
+routed docs and selected files, keep dispatch packet fields deterministic, defer
+unused skill/tool schemas, and require bounded summaries instead of transcripts.
+
 ## Runtime Mapping
 
 - Claude Code: use the `.claude/agents/` role roster and the available

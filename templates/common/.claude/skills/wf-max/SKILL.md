@@ -29,6 +29,13 @@ routes and summarizes hard constraints.
 6. `Harness/dispatch.md`
 7. `Harness/agent-workflow.md`
 
+## Cache Discipline
+
+Follow `Harness/context-loading.md#Cache-First Context Contract`: keep the
+listed loads in order, defer unused skill/tool schemas, append volatile task
+state and runtime facts last, and bound Worker returns through dispatch
+`MaxReturnTokens`/`ReturnSchema`.
+
 ## Rules
 
 WF-MAX inherits the selected WF tier and the shared WF-KERNEL gates

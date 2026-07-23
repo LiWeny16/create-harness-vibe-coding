@@ -507,9 +507,7 @@ assert(localUpdatePlan.agent?.aiMergeRequired?.some(c => c.file === 'Harness/REA
 assert(localJsonPlan.updated.some(x => x.file === '.claude/agents/planner.md'), 'local-source update marks missing safe file as updated');
 assert(localJsonPlan.updated.some(x => x.file === 'Harness/dispatch.md'), 'local-source update marks modified runtime file as updated');
 assert(!localJsonPlan.conflict.some(x => x.file === 'Harness/dispatch.md'), 'local-source update does not route modified runtime file through AI conflict');
-assert(localJsonPlan.skipped.some(x => x.file === 'Harness/SETUP.md' && x.reason.includes('bootstrap-only')), 'local-source update does not recreate removed bootstrap-only SETUP.md');
-assert(!localJsonPlan.created.some(x => x.file === 'Harness/SETUP.md'), 'local-source update does not mark removed SETUP.md as created');
-assert(!localJsonPlan.updated.some(x => x.file === 'Harness/SETUP.md'), 'local-source update does not mark removed SETUP.md as updated');
+assert(localJsonPlan.updated.some(x => x.file === 'Harness/SETUP.md'), 'local-source update recreates retained SETUP.md when missing');
 assert(localJsonPlan.adopted?.some(x => x.file === '.claude/settings.json'), 'AC-001 byte-matching new remote file is adopted without AI conflict');
 assert(!localJsonPlan.conflict.some(x => x.file === '.claude/settings.json'), 'AC-001 byte-matching new remote file is not a conflict');
 assert(localJsonPlan.created.some(x => x.file === 'Harness/NEW.md'), 'local-source update marks new runtime file as created');
@@ -525,7 +523,8 @@ if (existsSync(plannerAfterApply)) {
 }
 assert(readFileSync(localModifiedRuntimePath, 'utf-8') === remoteUpdateFiles['Harness/dispatch.md'], '--apply-safe overwrote modified runtime file from template');
 assert(existsSync(join(TMP, 'Harness', 'NEW.md')), '--apply-safe created new runtime file');
-assert(!existsSync(join(TMP, 'Harness', 'SETUP.md')), '--apply-safe does not recreate removed bootstrap-only SETUP.md');
+assert(existsSync(join(TMP, 'Harness', 'SETUP.md')), '--apply-safe recreates retained SETUP.md');
+assert(readFileSync(join(TMP, 'Harness', 'SETUP.md'), 'utf-8') === remoteUpdateFiles['Harness/SETUP.md'], '--apply-safe writes retained SETUP.md remote content');
 assert(readFileSync(localMergePath, 'utf-8') === 'local router conflict\n', '--apply-safe preserved conflict file');
 const versionAfterApplySafe = JSON.parse(readFileSync(join(TMP, 'Harness', '.harness-version'), 'utf-8'));
 assert(versionAfterApplySafe.generator === '0.6.1', '--apply-safe does not bump generator while conflicts remain');

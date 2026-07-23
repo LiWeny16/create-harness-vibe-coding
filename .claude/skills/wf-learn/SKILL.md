@@ -22,6 +22,12 @@ fallback.
 - `Harness/memory/agent-lessons-patterns.md`
 - Current `Harness/PROGRESS.md` and active task capsule, if any
 
+## Cache Discipline
+
+Follow `Harness/context-loading.md#Cache-First Context Contract`: load memory
+indexes first, then only the routed detailed memory files; summarize durable
+patterns by file path and signal instead of pasting session transcripts.
+
 ## Flow
 
 1. Analyze the session for repeated failures, durable user corrections, and

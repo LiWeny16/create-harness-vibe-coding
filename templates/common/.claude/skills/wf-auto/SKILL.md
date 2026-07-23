@@ -14,6 +14,13 @@ description: Perpetual adaptive auto-optimization mode. Selects probes from proj
 - `Harness/agent-workflow.md`
 - `.claude/skills/wf-review/SKILL.md`
 
+## Cache Discipline
+
+Follow `Harness/context-loading.md#Cache-First Context Contract`: keep the
+auto-mode docs in listed order, run selected probes only, append fresh probe
+outputs last, and record compact evidence instead of carrying full logs between
+cycles.
+
 ## Trigger
 
 - Claude `/wf-auto`

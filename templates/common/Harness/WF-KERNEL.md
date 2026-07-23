@@ -2,6 +2,16 @@
 
 The WF Kernel is the shared engine for `/wf`, `/wf-max`, `/wf-auto`, `/wf-auto-spark`, `/wf-review`, and `/wf-browser`. Variants extend the kernel; they do not duplicate the orchestration logic.
 
+## Cache-First Context Contract
+
+All WF variants preserve prompt-cache shape: stable workflow instructions and
+deterministic dispatch schema first; task-specific state, current runtime facts,
+and latest tool outputs last. Use
+`Harness/context-loading.md#Cache-First Context Contract` for load ordering.
+Dispatch packets keep canonical field order, load only selected skills/tools,
+and return bounded summaries through `MaxReturnTokens` and `ReturnSchema`
+instead of transcripts.
+
 ## Role / Model Matrix
 
 The orchestrator dispatches agents by role, model tier, and task type. No single agent type handles all work.

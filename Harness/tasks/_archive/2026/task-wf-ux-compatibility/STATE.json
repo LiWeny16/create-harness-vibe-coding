@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
   "taskId": "task-wf-ux-compatibility",
-  "status": "complete",
+  "status": "archived",
   "mode": "direct",
   "tier": "none",
-  "phase": "verified",
+  "phase": "archived",
   "gate": null,
-  "updatedAt": "2026-07-17T02:25:07.000Z",
+  "updatedAt": "2026-07-23T01:18:37.835Z",
   "activeQuestion": null,
   "nextAction": "All acceptance checks passed; ready to commit.",
   "acceptance": [

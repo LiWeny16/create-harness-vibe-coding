@@ -30,6 +30,13 @@ This skill is a thin tool adapter. The authoritative workflow lives in
 5. `Harness/WF.md`
 6. `Harness/subagents.md` before any role split
 
+## Cache Discipline
+
+Follow `Harness/context-loading.md#Cache-First Context Contract`: keep the
+listed loads in order, load only routed skills/tools, append task state and
+latest tool output after stable docs, and return compact evidence instead of
+logs or transcripts.
+
 ## Rules
 
 - Create or update a task capsule under `Harness/tasks/<task-id>/`.

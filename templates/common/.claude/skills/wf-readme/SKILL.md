@@ -16,6 +16,12 @@ Improve `README.md` without breaking project-owned public docs.
 - `Harness/tasks/<task-id>/PLAN.md` when available
 - `Harness/architecture.md` only when an architecture summary or diagram is requested
 
+## Cache Discipline
+
+Follow `Harness/context-loading.md#Cache-First Context Contract`: load project
+facts in the listed order, inspect only relevant README/package/CI sections, and
+keep unknowns or command output in the dynamic suffix.
+
 ## Mode
 
 Ask the user which mode they approve when the existing README is meaningful:

@@ -58,7 +58,7 @@ After reading this README, the agent selects the path that matches the project:
 | Existing `Harness/` but missing `Harness/scripts/wf-update-check.mjs` | `npx create-harness-vibe-coding@latest my-project . -y --on-conflict skip --json`. Then run `node Harness/scripts/wf-update-check.mjs --json` |
 | After install or update | `node Harness/scripts/validate-harness.mjs --strict` |
 
-After installation, read `CLAUDE.md`, `AGENTS.md`, `Harness/SETUP.md`, and `Harness/README.md`; preserve project boundaries; research and plan before editing; run tests, validation, and review before claiming completion.
+After installation, hand off by phase: use `CLAUDE.md` as the normal session entry, use `Harness/SETUP.md` only for install/bootstrap, migration, or upgrade decisions, and use `Harness/README.md` as the Harness workflow router when a routed task needs it. Preserve project boundaries; research and plan before editing; run tests, validation, and review before claiming completion.
 
 The user does not need to run commands manually. The agent handles installation, conflict handling, validation, and the handoff.
 
@@ -101,6 +101,20 @@ Better prompts can improve one turn. A harness improves the conditions around ev
 
 The honest status: this repository defines the comparison protocol, but it does not publish fabricated “50% fewer bugs” numbers. Run the same model, repo, prompt, budget, and verification in three modes—`bare-agent`, `harness-wf`, and `harness-wf-max`—before making a quantitative claim. See the [HarnessBench v0.1 scoring design](Harness/tasks/task-framework-metrics-and-entry-contract/PLAN.md#5-metrics-and-scoring).
 
+### Prompt-cache L2 sample
+
+On 2026-07-23, this dogfood repository ran a bounded Claude Code L2 prompt-cache probe with `node Harness/scripts/l2-cache-telemetry.mjs --groups provider-control,harness-thin,wf-light --turns 11 --turn-budget-usd 0.32 --total-budget-usd 1.20 --timeout-ms 240000`.
+
+Source: Claude Code JSON usage fields, especially `usage.cache_read_input_tokens` and `usage.cache_creation_input_tokens`. Read ratio is `cache_read_input_tokens / (input_tokens + cache_creation_input_tokens + cache_read_input_tokens)`. The raw local report is outside the repo at `~/.claude/cache-telemetry/harness-l2-claim-20260723-130331.json`.
+
+| Route | Turns | Success | Warm median cache read | Warm range | Warm median latency | Uplift vs provider-control |
+|---|---:|---:|---:|---:|---:|---:|
+| provider-control | 11 | 11/11 | 93.3% | 91.1%-95.4% | 2123.5 ms | baseline |
+| harness-thin | 11 | 11/11 | 98.7% | 98.1%-99.2% | 1786.5 ms | +5.4 percentage points |
+| `/wf` wf-light | 11 | 11/11 | 99.1% | 98.7%-99.7% | 2900 ms | +5.8 percentage points |
+
+Claim boundary: this proves real cache reads and a measured improvement in this bounded Claude Code sample. It is not a universal claim for every model, repository, task, or provider.
+
 ## Three human motivations, used ethically
 
 README structure should meet people where decisions actually happen. Harness uses the three motivations below to make the trade-off explicit—not to manufacture urgency or hide uncertainty.
@@ -133,8 +147,8 @@ The architecture has three pillars:
 
 | Layer | Purpose |
 |---|---|
-| `CLAUDE.md`, `AGENTS.md` | Agent entry contract and registry |
-| `Harness/README.md`, `Harness/MEMORY.md` | Task-based routing and resource index |
+| `CLAUDE.md`, `AGENTS.md` | Agent session entry contract and compatibility pointer |
+| `Harness/README.md`, `Harness/MEMORY.md` | Harness workflow router and resource index |
 | `Harness/tasks/`, `Harness/PROGRESS.md` | Resumable task state across sessions |
 | `.claude/`, `.agents/`, `.codex/`, `.opencode/` | Tool-specific discovery and configuration |
 | `templates/common/`, `templates/optional/` | Declarative scaffold source and optional workflows |
@@ -150,7 +164,7 @@ Paste this to your agent:
 Read and follow https://github.com/LiWeny16/create-harness-vibe-coding exactly to configure this project with create-harness-vibe-coding.
 ```
 
-The agent-first path previews the target before writing and preserves project-owned files. If you need the detailed CLI contract, the agent can read `Harness/SETUP.md` after setup.
+The agent-first path previews the target before writing and preserves project-owned files. `Harness/SETUP.md` is the retained bootstrap/migration reference created by the scaffold; it is not the normal session entry.
 
 If `Harness/` already exists, first check whether `Harness/scripts/wf-update-check.mjs` exists. If it does, use `/wf-update`, `$wf-update`, or `node Harness/scripts/wf-update-check.mjs --json` instead of reinstalling blindly. If it is missing, run the safe CLI recovery command from the installation table first, then run the updater.
 

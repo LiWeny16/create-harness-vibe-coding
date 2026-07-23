@@ -8,7 +8,7 @@ alwaysApply: true
 ## Context
 
 - Start with `CLAUDE.md`. When `Harness/` exists, also read `Harness/memory/startup-hints.md` (L2 lightweight digest, not full router).
-- When the user explicitly invokes a `/wf-*` command, load `Harness/MEMORY.md` and `Harness/README.md`.
+- When the user explicitly invokes a `/wf-*` workflow command, excluding `/wf-help` and `/wf-update`, load `Harness/MEMORY.md` and `Harness/README.md`.
 - For simple single-step tasks without `/wf-*`, operate in direct mode: skip the Harness router and execute directly.
 - Do not bulk-read `Harness/`. Load by router trigger.
 - Keep `Harness/tasks/<task-id>/PROGRESS.md` and `Harness/tasks/<task-id>/PLAN.md` current when work has multiple steps, files, or agents.
@@ -24,6 +24,7 @@ alwaysApply: true
 
 ## Low-Noise Progress
 
+- Match the user's language for user-facing prose. Use the latest user message's dominant language unless the user asks otherwise; preserve code, commands, file paths, logs, and quoted source text exactly.
 - Keep intermediate user updates to 1-2 short sentences.
 - Do not recap plans, paste logs, or narrate obvious file reads while working.
 - Put the detailed summary in the final response: files changed, verification, risks, and commit hash when relevant.

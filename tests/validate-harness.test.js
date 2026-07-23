@@ -204,6 +204,151 @@ test('validation fails when compact task record guidance is removed', () => {
   assert.match(output, /Harness\/tasks\/_template\/PLAN\.md missing compact task PLAN template/);
 });
 
+test('validation fails when cache-first context contract is removed', () => {
+  const targetDir = generateProject();
+  writeRel(
+    targetDir,
+    'Harness/context-loading.md',
+    readRel(targetDir, 'Harness/context-loading.md').replace('Cache-First Context Contract', 'Context Loading Contract'),
+  );
+
+  const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
+    cwd: targetDir,
+    encoding: 'utf8',
+  });
+  const output = `${result.stdout}\n${result.stderr}`;
+
+  assert.notEqual(result.status, 0);
+  assert.match(output, /Harness\/context-loading\.md missing cache-first context contract/);
+});
+
+test('validation fails when real cache telemetry boundary is removed', () => {
+  const targetDir = generateProject();
+  writeRel(
+    targetDir,
+    'Harness/context-loading.md',
+    readRel(targetDir, 'Harness/context-loading.md').replace('Do not claim real cache hits', 'Claim cache hits'),
+  );
+
+  const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
+    cwd: targetDir,
+    encoding: 'utf8',
+  });
+  const output = `${result.stdout}\n${result.stderr}`;
+
+  assert.notEqual(result.status, 0);
+  assert.match(output, /Harness\/context-loading\.md missing real cache telemetry boundary/);
+});
+
+test('validation fails when L2 telemetry claim gate is removed', () => {
+  const targetDir = generateProject();
+  writeRel(
+    targetDir,
+    'Harness/scripts/l2-cache-telemetry.mjs',
+    readRel(targetDir, 'Harness/scripts/l2-cache-telemetry.mjs').replaceAll('claimGate', 'claimDoor'),
+  );
+
+  const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
+    cwd: targetDir,
+    encoding: 'utf8',
+  });
+  const output = `${result.stdout}\n${result.stderr}`;
+
+  assert.notEqual(result.status, 0);
+  assert.match(output, /Harness\/scripts\/l2-cache-telemetry\.mjs missing L2 telemetry claim gate/);
+});
+
+test('validation fails when workflow skill cache discipline is removed', () => {
+  const targetDir = generateProject();
+  for (const rel of ['.claude/skills/wf/SKILL.md', '.agents/skills/wf/SKILL.md']) {
+    writeRel(
+      targetDir,
+      rel,
+      readRel(targetDir, rel).replace('## Cache Discipline', '## Context Discipline'),
+    );
+  }
+
+  const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
+    cwd: targetDir,
+    encoding: 'utf8',
+  });
+  const output = `${result.stdout}\n${result.stderr}`;
+
+  assert.notEqual(result.status, 0);
+  assert.match(output, /\.claude\/skills\/wf\/SKILL\.md missing wf skill cache discipline/);
+});
+
+test('validation fails when OpenCode workflow wrapper cache-first routing is removed', () => {
+  const targetDir = generateProject();
+  writeRel(
+    targetDir,
+    '.opencode/commands/wf.md',
+    readRel(targetDir, '.opencode/commands/wf.md').replace(
+      'Cache-First Context Contract',
+      'Context Loading Contract',
+    ),
+  );
+
+  const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
+    cwd: targetDir,
+    encoding: 'utf8',
+  });
+  const output = `${result.stdout}\n${result.stderr}`;
+
+  assert.notEqual(result.status, 0);
+  assert.match(output, /\.opencode\/commands\/wf\.md missing OpenCode wf cache-first routing/);
+});
+
+test('validation fails when wf-update direct command loses safe-apply flow', () => {
+  const targetDir = generateProject();
+  writeRel(
+    targetDir,
+    '.claude/commands/wf-update.md',
+    readRel(targetDir, '.claude/commands/wf-update.md').replace('--apply-safe', '--legacy-apply'),
+  );
+
+  const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
+    cwd: targetDir,
+    encoding: 'utf8',
+  });
+  const output = `${result.stdout}\n${result.stderr}`;
+
+  assert.notEqual(result.status, 0);
+  assert.match(output, /\.claude\/commands\/wf-update\.md missing .*apply-safe command/);
+});
+
+test('validation fails when ECC direct command exemption is removed', () => {
+  const targetDir = generateProject();
+  writeRel(
+    targetDir,
+    '.claude/rules/ecc/common.md',
+    readRel(targetDir, '.claude/rules/ecc/common.md').replace(', excluding `/wf-help` and `/wf-update`', ''),
+  );
+
+  const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
+    cwd: targetDir,
+    encoding: 'utf8',
+  });
+  const output = `${result.stdout}\n${result.stderr}`;
+
+  assert.notEqual(result.status, 0);
+  assert.match(output, /\.claude\/rules\/ecc\/common\.md missing ECC direct command exemption/);
+});
+
+test('validation fails when a frameworkOwned manifest file is missing', () => {
+  const targetDir = generateProject();
+  fs.rmSync(path.join(targetDir, 'Harness', 'scripts', 'context-budget.mjs'));
+
+  const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
+    cwd: targetDir,
+    encoding: 'utf8',
+  });
+  const output = `${result.stdout}\n${result.stderr}`;
+
+  assert.notEqual(result.status, 0);
+  assert.match(output, /ownership manifest frameworkOwned file missing: Harness\/scripts\/context-budget\.mjs/);
+});
+
 test('validation fails when low-noise progress guidance is removed', () => {
   const targetDir = generateProject();
   writeRel(
@@ -220,6 +365,27 @@ test('validation fails when low-noise progress guidance is removed', () => {
 
   assert.notEqual(result.status, 0);
   assert.match(output, /CLAUDE\.md missing low-noise progress section/);
+});
+
+test('validation fails when user-facing language match rule is removed', () => {
+  const targetDir = generateProject();
+  writeRel(
+    targetDir,
+    'CLAUDE.md',
+    readRel(targetDir, 'CLAUDE.md').replace(
+      "Match the user's language for all user-facing prose",
+      'Choose response language freely',
+    ),
+  );
+
+  const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
+    cwd: targetDir,
+    encoding: 'utf8',
+  });
+  const output = `${result.stdout}\n${result.stderr}`;
+
+  assert.notEqual(result.status, 0);
+  assert.match(output, /CLAUDE\.md missing user-facing language match rule/);
 });
 
 test('validation fails when optional web workflows lose stable selector requirements', () => {
@@ -466,14 +632,32 @@ test('validation fails when old unconditional wf-max fan-out contract returns to
   assert.match(output, /old \/wf-max unconditional fan-out contract/);
 });
 
-test('validation fails when CLAUDE.md routes installed projects back to Harness/SETUP.md', () => {
+test('validation fails when CLAUDE.md references Harness/SETUP.md', () => {
   const targetDir = generateProject();
   writeRel(
     targetDir,
     'CLAUDE.md',
-    readRel(targetDir, 'CLAUDE.md').replace(
-      '`Harness/SETUP.md` is a bootstrap-only document',
-      'If `Harness/SETUP.md` exists, follow it before normal project work; it is `Harness/SETUP.md` is a bootstrap-only document',
+    `${readRel(targetDir, 'CLAUDE.md')}\nIf setup is needed, route normal work through Harness/SETUP.md.\n`,
+  );
+
+  const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
+    cwd: targetDir,
+    encoding: 'utf8',
+  });
+  const output = `${result.stdout}\n${result.stderr}`;
+
+  assert.notEqual(result.status, 0);
+  assert.match(output, /CLAUDE\.md contains forbidden CLAUDE\.md SETUP reference/);
+});
+
+test('validation fails when SETUP.md requires CLAUDE.md to reference SETUP.md', () => {
+  const targetDir = generateProject();
+  writeRel(
+    targetDir,
+    'Harness/SETUP.md',
+    readRel(targetDir, 'Harness/SETUP.md').replace(
+      'no startup dependency on this setup reference',
+      'with the `Harness/SETUP.md` bootstrap contract line',
     ),
   );
 
@@ -484,7 +668,8 @@ test('validation fails when CLAUDE.md routes installed projects back to Harness/
   const output = `${result.stdout}\n${result.stderr}`;
 
   assert.notEqual(result.status, 0);
-  assert.match(output, /installed-project SETUP hot-path routing/);
+  assert.match(output, /SETUP startup boundary/);
+  assert.match(output, /stale SETUP-to-CLAUDE bootstrap contract/);
 });
 
 test('validation fails when an OpenCode workflow command wrapper is missing', () => {

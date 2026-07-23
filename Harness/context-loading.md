@@ -10,19 +10,83 @@ If this file and `Harness/README.md` disagree, follow `Harness/README.md`, recor
 
 project files are the only durable communication channel; chat/subagent transcript state is non-authoritative. Important assumptions, decisions, blockers, evidence, and handoffs must be written to `Harness/tasks/<task-id>/PROGRESS.md` and `Harness/tasks/<task-id>/PLAN.md`, the current feature doc, `Harness/MEMORY.md`, or `Harness/memory/*` as appropriate.
 
-## Main Context
+## Context Tiers
 
-Always keep:
+These tiers are automatic route profiles, not user-selected modes. The agent
+selects a profile from the explicit command, user request, active task state,
+router row, skill trigger, and concrete file references.
 
-- `CLAUDE.md`
-- `Harness/MEMORY.md`
-- `Harness/README.md`
-- `Harness/PROGRESS.md` when active
-- `Harness/tasks/<task-id>/PROGRESS.md` when active
-- `Harness/tasks/<task-id>/PLAN.md` when active
-- current feature doc when active
+Budgets are regression guards, not exclusion rules. If correctness requires a
+file outside the current profile, load that file and record the reason in the
+task notes/progress when the work is in WF. Do not skip required rules, source
+files, contracts, tests, or evidence to stay under budget.
 
-Load other docs only by trigger.
+| Tier | When | Keep | Do Not Load |
+| --- | --- | --- | --- |
+| Thin startup | New installed-project session before task routing | `CLAUDE.md`, `Harness/memory/startup-hints.md` | `Harness/MEMORY.md`, `Harness/README.md`, `Harness/PROGRESS.md`, workflow docs, skill bodies |
+| Direct task | Simple, single-step, low-risk request | `CLAUDE.md` plus only files needed for the task | full router, task capsules, unrelated Harness docs |
+| Router prefix | Explicit `/wf-*`, `$wf-*`, or `/skills wf-*` command | `CLAUDE.md`, `Harness/MEMORY.md` index, `Harness/README.md`, `Harness/PROGRESS.md` only when active | unrelated workflow docs, all skills, all agents, unused tool schemas |
+| Active task scope | Router found an active task | `STATE.json` first, then task `PROGRESS.md`, task `PLAN.md` only when decisions/scope need review, current feature doc when active | archived tasks, unrelated task directories, broad task history |
+| Routed skill/doc | Router, command, or `tool_search` selects a specific capability | selected skill body and adjacent docs named by that skill/doc | all skill bodies, all tool schemas, whole `Harness/` tree |
+
+After the tier is selected, load other docs only by trigger.
+
+Escalation rule: when unsure whether a file is required, prefer targeted
+keyword search or a one-file read over guessing from memory. Escalate from a
+smaller profile to the next targeted profile only when the new file directly
+proves or disproves the current decision.
+
+## Cache-First Context Contract
+
+Prompt-cache hit rate is a context-layout constraint. Preserve this order for
+WF commands, skill adapters, and subagent packets:
+
+1. Stable prefix: `CLAUDE.md`, `Harness/MEMORY.md` index, `Harness/README.md`,
+   selected workflow docs, and stable skill/agent indexes in deterministic
+   order.
+2. Scoped references: task `STATE.json`, `PLAN.md`, contracts, selected source
+   files, and selected docs only.
+3. Dynamic suffix: newest user message, active question, current heartbeat,
+   current date/time, cwd/runtime/model/channel, fresh search results, tool
+   output, command logs, screenshots, and validation evidence.
+
+Rules:
+
+- Do not reorder stable loads during a task.
+- Put volatile values after the stable prefix; do not place timestamps, request
+  IDs, latest tool output, or fresh search results in startup/router text.
+- Load skill bodies and tool schemas only when routed by the explicit command,
+  `Harness/README.md`, or `tool_search`; do not preload all skills or tools.
+- Keep dispatch packets deterministic: canonical field order, stable tool/skill
+  list order, bounded `MaxReturnTokens`, and short `ReturnSchema`.
+- Prefer file paths and compact task-state summaries over pasted logs or
+  transcripts. Append-only `PROGRESS.md`/`STATE.json` beats rewritten summaries
+  until compaction is required.
+- Treat a model switch, reasoning/context-size change, enabled-tool/MCP change,
+  or compaction as a cache boundary and record it in task progress.
+
+## Cache Validation Levels
+
+- **L0 structure**: `validate-harness.mjs` proves the Harness still preserves
+  stable-prefix/dynamic-suffix routing, deferred skills/tools, and bounded
+  summaries. This is regression protection only.
+- **L1 prefix simulation**: compare two serialized dispatch/context packets and
+  prove the stable prefix bytes are identical while only the dynamic suffix
+  changes. Use this when a runtime exposes prompt assembly locally.
+  Covered by `tests/l1-prefix-simulation.test.js` (positive match + negative
+  controls + anti-pollution detection).
+- **L2 provider telemetry**: prove real cache behavior from model response
+  usage fields, such as OpenAI `cached_tokens` / `cache_write_tokens` or
+  Anthropic `cache_read_input_tokens` / `cache_creation_input_tokens`, across a
+  warm-up request and repeated same-prefix requests.
+  For Claude Code scripted probes, use
+  `node Harness/scripts/l2-cache-telemetry.mjs`; it records the exact CLI
+  flags, session IDs, usage fields, cost, duration, and claim-gate result in
+  `$HOME/.claude/cache-telemetry/`.
+
+Do not claim real cache hits or hit-rate improvement from structure checks
+alone. A real cache-hit claim requires L2 telemetry, or an explicit statement
+that the current runtime does not expose provider cache metrics.
 
 ## Trigger Matrix
 

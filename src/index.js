@@ -296,7 +296,7 @@ function printResult(result, targetDir) {
     console.log(`  ${pc.cyan('opencode')}                        # Or start OpenCode`);
     console.log(`  Tell your agent: "${pc.yellow('Read Harness/SETUP.md. Bootstrap this project from idea to first vertical slice.')}"`);
     console.log('');
-    console.log(pc.dim('  Harness/SETUP.md is temporary. Delete it after initialization.'));
+    console.log(pc.dim('  Keep Harness/SETUP.md as a setup reference; normal sessions start at CLAUDE.md, with Harness/README.md as the routed workflow router.'));
     console.log('');
 
   } else {
@@ -820,7 +820,7 @@ function createFileGuidance(file) {
 }
 
 function templateHintFor(file) {
-  if (file === 'Harness/SETUP.md') return 'templates/common/SETUP.md';
+  if (file === 'Harness/SETUP.md') return 'templates/common/Harness/SETUP.md';
   return `templates/common/${file}`;
 }
 

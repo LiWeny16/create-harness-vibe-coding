@@ -34,6 +34,13 @@ These are NOT WF triggers:
 2. Load `Harness/memory/*` only when `MEMORY_PROTOCOL.md` scenario hints match.
 3. Record `Memory preflight: done` and `Memory hints: none | <file/path + reason>`.
 
+## Cache Discipline
+
+Follow `Harness/context-loading.md#Cache-First Context Contract`: keep the
+listed router/workflow loads in stable order, load only routed skills/tools, and
+append task state, current runtime facts, and latest tool output after the
+stable docs. Do not bulk-load skill bodies, tool schemas, or `Harness/`.
+
 ## Standard Orchestration Loop
 
 The `/wf` kernel follows a dependency-driven ready-queue, NOT a fixed serial phase list.

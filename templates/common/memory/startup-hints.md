@@ -1,32 +1,34 @@
 # Startup Hints (L2 Memory Digest)
 
-> L2 = 启动极简 memory digest。每次 Harness 会话启动可读此文件，但不要加载完整 Harness/MEMORY.md 或 Harness/README.md。
+> L2 = lightweight startup memory digest. New Harness sessions may read this
+> file after `CLAUDE.md`, but must not load full `Harness/MEMORY.md`,
+> `Harness/README.md`, or `Harness/PROGRESS.md` during thin startup.
 
 ## Core Principles
 
-- Memory 是短场景规则，不是 task log。
-- 时间戳默认不要写；只有 superseded / conflict / time-sensitive 才写。
-- Broad runtime hooks 禁止；只有 `/wf-auto` bounded tick hook 例外。
-- Direct mode 不加载完整 Harness router，但 startup-hints 是允许的轻量启动提示。
-- 详细 memory 仍按 `MEMORY_PROTOCOL.md` 场景命中后再读。
+- Memory is short scenario guidance, not a task log.
+- Do not write timestamps by default; write only durable, reusable guidance.
+- Broad runtime hooks are forbidden. The only Harness exception is the bounded `/wf-auto` tick hook.
+- Direct mode must not load the full Harness router. `startup-hints.md` is the lightweight startup allowance.
+- Detailed memory still loads only when routed through `MEMORY_PROTOCOL.md`.
 
 ## Memory Candidate Detection
 
-用户说以下触发词时，识别为 memory candidate：
+Treat these as memory candidates:
 
-**英文**: remember, next time, don't, do not, never, always, I prefer, I want you to
-**中文**: 记住, 下次, 以后, 不要再, 总是, 永远不要, 我偏好, 我希望你以后
+- English: remember, next time, don't, do not, never, always, I prefer, I want you to
+- Chinese: 记住, 下次, 以后, 不要再, 总是, 永远不要, 我偏好, 我希望你以后
 
 ## When to Write Memory
 
-- **Explicit user preference**: 清晰、安全、场景明确时，可立即写入 L3，不必等 `/wf-learn`。
-- **Repeated implicit correction**: 同一假设/模式被纠正 2+ 次。
-- **Tool/command failure**: 同类工具/命令失败 3+ 次。
-- **Review/debug lesson**: 只有可复用、能防回归时才写。
+- Explicit user preference: write immediately only when clear, safe, and reusable.
+- Repeated implicit correction: same assumption or pattern corrected 2+ times.
+- Tool/command failure: same tool or command pattern fails 3+ times.
+- Review/debug lesson: write only when it is reusable and can prevent regressions.
 
 ## What NOT to Write
 
-- Task log、过程总结、一次性情绪
-- Raw logs、transcripts
-- Secrets, tokens, credentials, private data
-- 临时偏好、无复用价值的笔记
+- Task logs, process summaries, or one-off emotions.
+- Raw logs or transcripts.
+- Secrets, tokens, credentials, or private data.
+- Temporary preferences or notes with no reusable value.

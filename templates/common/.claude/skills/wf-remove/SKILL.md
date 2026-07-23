@@ -18,6 +18,12 @@ description: Use for /wf-remove in Claude Code, $wf-remove or /skills wf-remove 
 - `Harness/.harness-version`
 - `Harness/scripts/wf-remove.mjs`
 
+## Cache Discipline
+
+Follow `Harness/context-loading.md#Cache-First Context Contract`: use the
+script's compact JSON plan as the dynamic suffix, avoid manual directory dumps,
+and keep user decisions in task progress rather than chat transcript.
+
 ## Flow
 
 1. On plain `/wf-remove`, run `node Harness/scripts/wf-remove.mjs --json` for

@@ -33,9 +33,10 @@ Replace the examples with the real commands discovered from this project. If a c
 
 The agentic engineering harness lives in `Harness/`.
 
-- Follow `Harness/SETUP.md` before normal work while it exists.
-- Start at `Harness/README.md`.
-- Load memory and resource registrations from `Harness/MEMORY.md`.
+- Normal agent sessions start from `CLAUDE.md`.
+- Use `Harness/SETUP.md` only for install/bootstrap guidance, migration, upgrade decisions, or explicit setup requests.
+- Use `Harness/README.md` as the Harness workflow router when a routed task needs it.
+- Load memory and resource registrations from `Harness/MEMORY.md` only when routed.
 - Track active work in `Harness/PROGRESS.md` and `Harness/tasks/<task-id>/PROGRESS.md`.
 - Use `Harness/WF.md` only when the user explicitly invokes a WF command such as `/wf` or `/wf-max`; complex work may still use direct planning, tests, and subagents without entering WF.
   - Claude Code: invoke the `wf` skill with `/wf`.

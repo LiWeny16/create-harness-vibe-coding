@@ -19,6 +19,7 @@ Use when work needs parallel reading, independent review, cross-layer analysis, 
 - Use a worktree when two agents may touch overlapping files or long-running branches.
 - Only summaries enter main context. Load named files directly when details are needed.
 - Only the controller or task-scribe writes task state (PROGRESS.md, PLAN.md). Production source agents (implementer, debugger, test-writer) never write task state unless explicitly dispatched as task-scribe.
+- Cache-first dispatch follows `Harness/context-loading.md#Cache-First Context Contract`: canonical field order, stable tool/skill list order, dynamic evidence/logs last, and bounded `MaxReturnTokens`/`ReturnSchema`.
 
 ## Scope
 

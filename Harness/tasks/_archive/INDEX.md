@@ -21,3 +21,4 @@
 | task-wf-update-mechanism | 2026 | 2026-07-16 |
 | task-opencode-compatibility | 2026 | 2026-07-16 (index-only entry; task had no capsule directory) |
 | docs-3d-refactor | 2026 | 2026-07-21 |
+| task-wf-ux-compatibility | 2026 | 2026-07-23 |

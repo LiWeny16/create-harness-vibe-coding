@@ -36,10 +36,8 @@ export const MERGE_PATHS = [
   'Harness/README.md',
 ];
 
-/** Fixed bootstrap-only dest paths. */
-export const BOOTSTRAP_ONLY_PATHS = [
-  'Harness/SETUP.md',
-];
+/** Fixed bootstrap-only dest paths. Kept for schema compatibility; currently empty. */
+export const BOOTSTRAP_ONLY_PATHS = [];
 
 /** The manifest file's own dest (listed in frameworkOwned so the updater refreshes it). */
 export const MANIFEST_DEST = 'Harness/ownership.manifest.json';

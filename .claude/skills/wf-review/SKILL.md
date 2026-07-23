@@ -22,6 +22,13 @@ The main agent is the controller. It owns final decisions, accepted/rejected
 findings, fixes, release claims, and user-facing recommendations. Review
 agents only provide evidence-backed suggestions.
 
+## Cache Discipline
+
+Follow `Harness/context-loading.md#Cache-First Context Contract`: build review
+context from changed-file lists, ACs, validation evidence, and targeted diffs;
+avoid pasting unrelated history, full transcripts, or unused tool schemas into
+the review prompt.
+
 ## Runtime Selection
 
 1. Build one review prompt containing the relevant diff, task acceptance

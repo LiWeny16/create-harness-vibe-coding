@@ -67,10 +67,6 @@ const OPTIONAL_REGISTRATION_FILES = new Set([
   'Harness/README.md',
 ]);
 
-const BOOTSTRAP_ONLY_FILES = new Set([
-  'Harness/SETUP.md',
-]);
-
 const HARNESS_OWNED_CANDIDATE_PATTERNS = [
   /^\.claude\/agents\/[^/]+\.md$/,
   /^\.opencode\/agents\/[^/]+\.md$/,
@@ -851,11 +847,6 @@ async function main() {
     // force-applying an optional workflow the user never opted into.
     if (isOptionalOwnedUnselected(canonical, manifestCtx, selectedOptions)) {
       plan.skipped.push({ file, reason: 'optional workflow not selected for this install' });
-      continue;
-    }
-
-    if (BOOTSTRAP_ONLY_FILES.has(canonical) && localHash === null) {
-      plan.skipped.push({ file, reason: 'bootstrap-only file already removed locally' });
       continue;
     }
 

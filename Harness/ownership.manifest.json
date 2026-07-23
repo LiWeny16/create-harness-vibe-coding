@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "generator": "0.8.14",
+  "generator": "0.8.15",
   "source": "https://raw.githubusercontent.com/LiWeny16/create-harness-vibe-coding/main/templates/common/",
-  "generated": "2026-07-22T16:40:38.722Z",
+  "generated": "2026-07-23T05:23:55.958Z",
   "preserve": [
     "Harness/PROGRESS.md",
     "Harness/tasks/**",
@@ -22,9 +22,7 @@
     "Harness/MEMORY.md",
     "Harness/README.md"
   ],
-  "bootstrapOnly": [
-    "Harness/SETUP.md"
-  ],
+  "bootstrapOnly": [],
   "frameworkOwned": [
     {
       "path": ".agents/skills/subagent-orchestrator/SKILL.md",
@@ -33,6 +31,11 @@
     },
     {
       "path": ".agents/skills/tdd/SKILL.md",
+      "kind": "skill",
+      "overwrite": "safe"
+    },
+    {
+      "path": ".agents/skills/wf-agents-docs/SKILL.md",
       "kind": "skill",
       "overwrite": "safe"
     },
@@ -203,6 +206,11 @@
     },
     {
       "path": ".claude/skills/tdd/SKILL.md",
+      "kind": "skill",
+      "overwrite": "safe"
+    },
+    {
+      "path": ".claude/skills/wf-agents-docs/SKILL.md",
       "kind": "skill",
       "overwrite": "safe"
     },
@@ -442,6 +450,11 @@
       "overwrite": "safe"
     },
     {
+      "path": "Harness/SETUP.md",
+      "kind": "doc",
+      "overwrite": "safe"
+    },
+    {
       "path": "Harness/TASK_ARCHIVE.md",
       "kind": "doc",
       "overwrite": "safe"
@@ -523,6 +536,16 @@
     },
     {
       "path": "Harness/scripts/archive-tasks.mjs",
+      "kind": "script",
+      "overwrite": "safe"
+    },
+    {
+      "path": "Harness/scripts/context-budget.mjs",
+      "kind": "script",
+      "overwrite": "safe"
+    },
+    {
+      "path": "Harness/scripts/l2-cache-telemetry.mjs",
       "kind": "script",
       "overwrite": "safe"
     },

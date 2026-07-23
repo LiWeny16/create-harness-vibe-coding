@@ -102,6 +102,15 @@ test('Harness/PROGRESS.md is PRESERVE (active task index), never frameworkOwned'
   );
 });
 
+test('Harness/SETUP.md is a retained framework-owned doc, not bootstrap-only', () => {
+  const m = buildRealManifest();
+  assert.deepEqual(m.bootstrapOnly, []);
+  assert.ok(
+    m.frameworkOwned.some((e) => e.path === 'Harness/SETUP.md' && e.kind === 'doc'),
+    'Harness/SETUP.md must be frameworkOwned so updates can keep or recreate it',
+  );
+});
+
 test('schemaVersion, generator, source are set correctly', () => {
   const m = buildRealManifest();
   assert.equal(m.schemaVersion, SCHEMA_VERSION);

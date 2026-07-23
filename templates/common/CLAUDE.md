@@ -6,17 +6,17 @@ This repository dogfoods the generated Harness scaffold. Scaffold source files l
 
 If `Harness/` exists, this repository is governed by the Harness contract.
 
-At session start, after loading `CLAUDE.md`, read `Harness/memory/startup-hints.md` (L2 lightweight digest, 5-10 hints). This is NOT loading `Harness/MEMORY.md`, `Harness/README.md`, or PROGRESS — it is a minimal startup hint file only.
+Default installed-project startup is thin: after loading `CLAUDE.md`, read `Harness/memory/startup-hints.md` (L2 lightweight digest, 5-10 hints). This is NOT loading `Harness/MEMORY.md`, `Harness/README.md`, or PROGRESS — it is a minimal startup hint file only.
 
 Use **direct mode** for simple, single-step, low-risk requests: commit, push, one-line fix, file read, code question, git log, git status, or similar small operations.
 
 In direct mode, do not load the full Harness router. Inspect only the files needed for the task and execute directly.
 
-Complex work may use direct planning, task capsules, tests, and subagents without entering WF. WF mode is explicit only: the user must type `/wf`, `$wf`, `/skills wf`, `/wf-max`, `$wf-max`, `/skills wf-max`, `/wf-auto`, `$wf-auto`, `/skills wf-auto`, `/wf-auto-spark`, `$wf-auto-spark`, or `/skills wf-auto-spark` to enter WF. No other phrasing, complexity heuristic, or inferred intent triggers WF.
+Complex work may use direct planning, task capsules, tests, and subagents without entering WF. WF execution modes are explicit only: the user must type `/wf`, `$wf`, `/skills wf`, `/wf-max`, `$wf-max`, `/skills wf-max`, `/wf-auto`, `$wf-auto`, `/skills wf-auto`, `/wf-auto-spark`, `$wf-auto-spark`, or `/skills wf-auto-spark` to enter the WF kernel. No other phrasing, complexity heuristic, or inferred intent triggers WF.
 
 `/wf-help` and `/wf-update` are **direct commands** — do NOT load `Harness/MEMORY.md`, do NOT enter WF, do NOT invoke a skill. Execute them immediately as static help / script commands respectively.
 
-For actual workflow commands (`/wf`, `/wf-max`, `/wf-auto`, `/wf-review`, `/wf-learn`, `/wf-readme`, `/wf-remove`, `/wf-browser`, `/wf-auto-spark`), load `Harness/MEMORY.md` first, then `Harness/README.md`.
+For non-direct workflow commands (`/wf`, `/wf-max`, `/wf-auto`, `/wf-review`, `/wf-learn`, `/wf-readme`, `/wf-remove`, `/wf-browser`, `/wf-auto-spark`, and matching `$wf-*` or `/skills wf-*` forms), load `Harness/MEMORY.md` first, then `Harness/README.md`.
 
 ### Active Task Resume
 
@@ -34,8 +34,6 @@ See `Harness/WF-STATE.md` for the full state machine contract. Completed/abandon
 
 Use **/wf** for multi-step work that needs structured coordination. Use **/wf-max** for maximum-parallelism with CEO/Manager/Worker decomposition. See `Harness/WF.md` for tier selection (WF-Light, WF-Standard, WF-Full) and `Harness/WF-MAX.md` for fan-out rules (WF-Max-Useful, WF-Max-Strict).
 
-`Harness/SETUP.md` is a bootstrap-only document: it exists only while the harness install is not yet finalized. If it exists, finish the bootstrap it describes once, then delete or archive it. Installed projects must not keep `Harness/SETUP.md` in the startup path, and normal sessions must not route through it.
-
 ### 1a. WF-MAX Role Contract
 
 This section is active only when `/wf-max` is invoked.
@@ -49,6 +47,10 @@ Each Worker dispatch must define: role, objective, allowed writeSet, forbidden f
 Workers may edit only inside their assigned writeSet. Reviewers and verifiers must be independent from the Worker whose output they evaluate.
 
 Detailed WF-MAX role rules live in `Harness/WF-KERNEL.md`, `Harness/WF-MAX.md`, and `Harness/subagents.md`.
+
+### 1b. User-Facing Language
+
+Match the user's language for all user-facing prose. Use the dominant language of the latest user message unless the user explicitly asks for another language; preserve code, identifiers, file paths, commands, logs, and quoted source text exactly.
 
 ## 2. Think Before Coding
 

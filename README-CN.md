@@ -47,7 +47,7 @@ Agent 读取本 README 后，按项目状态选择安装路径：
 | 已有 `Harness/` 但缺少 `Harness/scripts/wf-update-check.mjs` | `npx create-harness-vibe-coding@latest my-project . -y --on-conflict skip --json`。然后执行 `node Harness/scripts/wf-update-check.mjs --json` |
 | 安装或更新完成 | `node Harness/scripts/validate-harness.mjs --strict` |
 
-安装后的 instruction：先读取 `CLAUDE.md`、`AGENTS.md`、`Harness/SETUP.md` 和 `Harness/README.md`；遵守项目已有边界；先研究和计划，再修改代码；完成后运行测试、校验和审查，未验证不要声称完成。
+安装后的 handoff 按阶段区分：正常会话入口是 `CLAUDE.md`；`Harness/SETUP.md` 只用于安装/bootstrap、迁移或升级决策；需要 Harness 工作流路由时再读 `Harness/README.md`。遵守项目已有边界；先研究和计划，再修改代码；完成后运行测试、校验和审查，未验证不要声称完成。
 
 用户不需要手动执行命令。把上面一句话交给 Agent，Agent 负责安装、冲突处理、校验和汇报。
 
@@ -121,8 +121,8 @@ Harness 把一次模糊请求变成一条可以追踪的路径：
 
 | 目录或文件 | 作用 |
 |---|---|
-| `CLAUDE.md`、`AGENTS.md` | agent 启动入口和角色注册 |
-| `Harness/README.md`、`Harness/MEMORY.md` | 按任务路由文档和资源 |
+| `CLAUDE.md`、`AGENTS.md` | agent 会话入口契约和兼容指针 |
+| `Harness/README.md`、`Harness/MEMORY.md` | Harness 工作流路由和资源索引 |
 | `Harness/tasks/`、`Harness/PROGRESS.md` | 跨会话保存任务状态和接力信息 |
 | `.claude/`、`.agents/`、`.codex/`、`.opencode/` | 不同 coding agent 的发现入口和配置 |
 | `templates/common/`、`templates/optional/` | 可生成脚手架的声明式源文件 |
@@ -135,6 +135,20 @@ Harness 把一次模糊请求变成一条可以追踪的路径：
 先把话说满：Harness 不是更花哨的 prompt，而是给 Agent 装上刹车、仪表盘和黑匣子。没有工作契约，任务能不能收尾往往靠运气；有了 Harness，目标、边界、验证和返修都会留下证据。
 
 数字也必须说清楚：当前仓库还没有发布受控 A/B 实验，因此不能把“稳定性提升 50%”冒充成真实结果。真正能对外说的数字，只有用同一个模型、同一个仓库、同一个任务、同一个预算跑出来的结果。基准对比使用 `bare-agent`、`harness-wf`、`harness-wf-max` 三种模式。
+
+### Prompt-cache L2 实测样本
+
+2026-07-23，本 dogfood 仓库运行了一次有预算上限的 Claude Code L2 prompt-cache 探针：`node Harness/scripts/l2-cache-telemetry.mjs --groups provider-control,harness-thin,wf-light --turns 11 --turn-budget-usd 0.32 --total-budget-usd 1.20 --timeout-ms 240000`。
+
+数据来源是 Claude Code JSON usage 字段，尤其是 `usage.cache_read_input_tokens` 和 `usage.cache_creation_input_tokens`。读缓存比例按 `cache_read_input_tokens / (input_tokens + cache_creation_input_tokens + cache_read_input_tokens)` 计算。原始本地报告不提交进仓库，位置是 `~/.claude/cache-telemetry/harness-l2-claim-20260723-130331.json`。
+
+| 路由 | Turns | 成功率 | Warm median cache read | Warm 区间 | Warm median latency | 相对 provider-control |
+|---|---:|---:|---:|---:|---:|---:|
+| provider-control | 11 | 11/11 | 93.3% | 91.1%-95.4% | 2123.5 ms | baseline |
+| harness-thin | 11 | 11/11 | 98.7% | 98.1%-99.2% | 1786.5 ms | +5.4 个百分点 |
+| `/wf` wf-light | 11 | 11/11 | 99.1% | 98.7%-99.7% | 2900 ms | +5.8 个百分点 |
+
+边界：这能证明本次 Claude Code 有真实缓存读取，并且在这个受控样本里测到了提升；它不是对所有模型、仓库、任务或 provider 的泛化承诺。
 
 | 你真正关心的结果 | 没有 Harness | 使用 Harness | 可复现实测口径 |
 |---|---|---|---|
@@ -225,7 +239,7 @@ my-project/
 ├── CLAUDE.md / AGENTS.md       ← agent 入口
 ├── Harness/
 │   ├── README.md               ← 文档路由器
-│   ├── SETUP.md                ← bootstrap 指南
+│   ├── SETUP.md                ← 安装/bootstrap 参考
 │   ├── MEMORY.md               ← 资源索引
 │   ├── PROGRESS.md             ← 任务追踪器
 │   ├── tasks/                  ← 任务胶囊

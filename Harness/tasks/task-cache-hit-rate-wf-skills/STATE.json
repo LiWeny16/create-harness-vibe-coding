@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-cache-hit-rate-wf-skills",
+  "status": "verified",
+  "mode": "wf",
+  "tier": "WF-Standard",
+  "phase": "verified",
+  "gate": "AC-GATE passed; closeout ready",
+  "updatedAt": "2026-07-23T09:24:28.837+08:00",
+  "activeQuestion": null,
+  "nextAction": "Report result to user; future real hit-rate claims require provider cache telemetry.",
+  "acceptance": [
+    "AC-001",
+    "AC-002",
+    "AC-003"
+  ],
+  "queues": {
+    "ready": [],
+    "running": [],
+    "blocked": [],
+    "done": [
+      "memory-preflight",
+      "wf-router-load",
+      "task-capsule-created",
+      "researcher: external GitHub/web search",
+      "codebase-explorer: map wf docs, skills, commands, validators",
+      "planner/test-writer: define write set and checks",
+      "implementer: cache-first contract, wrappers, skills, validator, tests",
+      "verifier: harness validation, mirror check, checksum check, targeted tests",
+      "reviewer: bounded same-runtime pass; no high/critical findings"
+    ]
+  },
+  "dispatchLedger": [
+    {
+      "role": "researcher",
+      "mode": "bounded pass",
+      "status": "complete",
+      "readSet": "web search, GitHub search results, official provider docs",
+      "writeSet": "none"
+    },
+    {
+      "role": "codebase-explorer",
+      "mode": "bounded pass",
+      "status": "complete",
+      "readSet": "Harness WF docs, generated skill adapters, templates, validators, tests",
+      "writeSet": "none"
+    },
+    {
+      "role": "reviewer",
+      "mode": "bounded same-runtime pass",
+      "status": "complete with external-review degradation noted",
+      "readSet": "diff, ACs, validation results, research evidence",
+      "writeSet": "none"
+    }
+  ],
+  "decisions": [
+    "Use WF-Standard because the task changes multi-file Harness behavior/docs and needs external research plus independent review.",
+    "Create a new task capsule because the previous active homepage task is unrelated.",
+    "Do not claim real cache-hit-rate improvement from structural checks; real hit claims require provider usage telemetry such as OpenAI cached_tokens/cache_write_tokens or Anthropic cache_read_input_tokens/cache_creation_input_tokens."
+  ],
+  "risks": [
+    "Real provider cache behavior is not measurable in this local validation run without exposed API usage metrics.",
+    "Runtime and template mirrors must stay consistent."
+  ],
+  "artifacts": [
+    "Harness/context-loading.md",
+    "templates/common/Harness/context-loading.md",
+    "Harness/scripts/validate-harness.mjs",
+    "templates/common/Harness/scripts/validate-harness.mjs",
+    "tests/validate-harness.test.js",
+    "tests/generator.test.js"
+  ]
+}

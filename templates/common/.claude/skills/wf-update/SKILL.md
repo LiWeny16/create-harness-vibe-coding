@@ -20,6 +20,13 @@ This skill is a Codex compatibility shim plus script-flow reference. Claude Code
 - `Harness/scripts/scan-clean.mjs`
 - `Harness/scripts/validate-harness.mjs`
 
+## Cache Discipline
+
+Follow `Harness/context-loading.md#Cache-First Context Contract`: keep updater
+scripts and ownership docs stable, consume compact `--json` agent plans first,
+and avoid pasting verbose diffs or full remote files unless a conflict requires
+targeted inspection.
+
 ## Classification
 
 MANIFEST-FIRST. The installer and updater read
