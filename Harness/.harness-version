@@ -1,6 +1,6 @@
 {
-  "generator": "0.8.15",
-  "generated": "2026-07-23T09:08:24.289Z",
+  "generator": "0.8.16",
+  "generated": "2026-07-23T11:33:41.125Z",
   "options": [
     "browser-e2e"
   ],
@@ -93,18 +93,18 @@
     ".opencode/plugins/harness-wf-status.mjs": "sha256-ee0987cec5530c34784c619a803562d7085ae26fe5d199fde7ce42c2bed4724e",
     "AGENTS.md": "sha256-fad176931742a5080e073d1ddba99a3eabb67e8c42bebb132df99a51ca6a184d",
     "CLAUDE.md": "sha256-a9aa5bb63dfc19ad22a7d6bdc0c81d06a15bba15f8d44b6f97a98b3267702266",
-    "Harness/MEMORY.md": "sha256-29141c85261fbc6ef78fbea7a906596f1b0b9de6d6fc62aef50a2cde60e51652",
+    "Harness/MEMORY.md": "sha256-70c90ded7c9bf7ed6432b639121271aa3cd109fa6177a263e28d93a082192856",
     "Harness/README.md": "sha256-06507439c0170531a25ba9a191cbfff84498f3b59bf4e343ef0c7c3cd2b81575",
-    "Harness/ownership.manifest.json": "sha256-fdd718e7f4ec6568623006f039d474db48519385189ea347ecc60f69c5d8fdcd",
+    "Harness/ownership.manifest.json": "sha256-8b7cb309bb370df2a44428ed79c9b274a6a98611c8ef27cb3d0010749c564f1c",
     "Harness/project/architecture.md": "sha256-27462306667539d71aecc4a90a778222f61585ef99e8131fb38f866913cac1c4",
     "Harness/research/README.md": "sha256-b7a542c0d919cabc185b6e7a1e6ef265dc5160978d0c1dd804f2c6547d0202a4",
     "Harness/scripts/archive-tasks.mjs": "sha256-07bba20c2f4b3baae737b8b9a951125a48e37dd482a1f1ca122b9cf88e90e956",
     "Harness/scripts/context-budget.mjs": "sha256-079228fa11046c5e4ca7323ac09091b05a78efae03ce655fee0c608c6833c33f",
     "Harness/scripts/l2-cache-telemetry.mjs": "sha256-139b5317eb3917f2ca0acd3cb1164170cc8c1dd60e0dee35f8d1596aed28c22c",
-    "Harness/scripts/scan-clean.mjs": "sha256-2b414738317cfe41432926b72691edb55ce313ff2427fd1312c1947bf687da61",
-    "Harness/scripts/validate-harness.mjs": "sha256-a1a2c8f21ce1b92e13cb0ca020b538c61b48071a2e5cd64be33e8108d9b3cc17",
+    "Harness/scripts/scan-clean.mjs": "sha256-f93518802d94fec14fa0047eeb9525b1b18d7e07c7f99b126b02357c62adcfcb",
+    "Harness/scripts/validate-harness.mjs": "sha256-4c6953f1cda8d03cee3f833a7d062a3bd4b30f0cc349c4206e7ae0f122a5877c",
     "Harness/scripts/wf-auto-update-prompt.mjs": "sha256-14210304dbd8e648b8939fc4c5d3664f943052153e689264c16b05b7b81bd39e",
-    "Harness/scripts/wf-remove.mjs": "sha256-6387c9a3689c905ee1b68ccbd087baba33b5b43a93fc94488a930432fd1841a5",
+    "Harness/scripts/wf-remove.mjs": "sha256-a5375d7d5fcea51f01545f9b61f0e80f9bbe89258367fe1788e967f45e67afe9",
     "Harness/scripts/wf-update-check.mjs": "sha256-3c8452b191446b8ed3d32bb73481ed21ed616186531d25bc689d70d9784b426f",
     "Harness/settings.json": "sha256-db6a14fcaaba3d2ac9c0c11bd11273bd016bcc16c154895d4c0b2a03ef51786e",
     "Harness/specs/guides/ECC-GUIDE.md": "sha256-eba123cad02dde928317b9347efac45daf33698221d2d91768559a1f0456cc97",
@@ -301,16 +301,12 @@
     }
   },
   "releaseNotes": {
-    "version": "0.8.15",
+    "version": "0.8.16",
     "date": "2026-07-23",
     "highlights": [
-      "Add real Claude Code L2 prompt-cache telemetry via `Harness/scripts/l2-cache-telemetry.mjs`, including bounded provider-control, thin-startup, and `/wf` light-route probes.",
-      "Record the measured cache result in README: harness-thin warm median cache read `98.7%` (`+5.4` percentage points vs provider-control) and `/wf` wf-light `99.1%` (`+5.8` percentage points), with the raw local report path and the exact usage-field formula.",
-      "Add cache regression gates: L0 structure checks, L1 SHA-256 stable-prefix simulation, L2 claim-gated provider telemetry, and context-budget guards for route profiles.",
-      "Tighten startup routing: normal sessions stay thin (`CLAUDE.md` + `Harness/memory/startup-hints.md`), `Harness/specs/guides/SETUP.md` is retained only as install/bootstrap/migration/upgrade reference, and `Harness/README.md` remains the routed workflow router.",
-      "Add `wf-agents-docs` CLI invocation guidance for Claude Code, Codex, and OpenCode automation, including JSON telemetry parsing and cache-attribution boundaries.",
-      "Align `/wf-update` direct commands with the 8-step safe update flow: safe apply first, script-recorded conflict decisions, finalize only after conflicts are resolved, then validate and scan.",
-      "Harden update/remove consistency: remove script recognizes new built-in agents/skills, updater keeps `Harness/specs/guides/SETUP.md` instead of treating it as disposable bootstrap debt, and validators catch route/cache/update drift."
+      "Fix `scan-clean` default source selection so it honors the installed `Harness/.harness-version.source` before falling back to npm/GitHub, preventing false dead-file reports before npm publish catches up.",
+      "Register `/wf-update` in `Harness/MEMORY.md` as a direct command and add validator coverage for the route.",
+      "Clean `wf-remove.mjs` human-readable output to remove replacement characters and add a validator guard against future encoding pollution."
     ]
   },
   "moves": [

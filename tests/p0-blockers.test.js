@@ -769,6 +769,34 @@ test('scan-clean: managed .opencode/commands and installed optional wf-browser a
 });
 
 // ── #8: generator rejects a symlinked parent directory (chain safety) ──────
+test('scan-clean: default source honors local .harness-version source before npm fallback', () => {
+  const root = tmpdir();
+  const targetDir = path.join(root, 'proj');
+  const remote = path.join(root, 'remote');
+  const gen = generate({ projectName: 'proj', targetDir });
+  assert.equal(gen.success, true, gen.errors.join('\n'));
+  fs.mkdirSync(remote, { recursive: true });
+
+  const localOnlyRel = 'Harness/scripts/local-only.mjs';
+  const localOnlyBody = 'console.log("local source only");\n';
+  fs.writeFileSync(path.join(targetDir, localOnlyRel), localOnlyBody);
+
+  const versionPath = path.join(targetDir, 'Harness', '.harness-version');
+  const version = JSON.parse(fs.readFileSync(versionPath, 'utf8'));
+  version.source = fileSourceBase(remote);
+  version.checksums[localOnlyRel] = sha(localOnlyBody);
+  fs.writeFileSync(versionPath, JSON.stringify(version, null, 2) + '\n');
+  fs.writeFileSync(path.join(remote, '.harness-version'), JSON.stringify(version, null, 2) + '\n');
+
+  const sc = runNode(path.join(SCRIPTS, 'scan-clean.mjs'), ['--json'], { cwd: targetDir });
+  assert.equal(sc.status, 0, sc.stderr || sc.stdout);
+  const scJson = JSON.parse(sc.stdout.trim());
+  const dead = (scJson.dead || []).map((o) => o.file);
+  assert.ok(!dead.includes(localOnlyRel), 'scan-clean must not mark local-source files dead; got: ' + dead.join(','));
+  assert.equal(scJson.status, 'clean', JSON.stringify(scJson));
+  fs.rmSync(root, { recursive: true, force: true });
+});
+
 test('generator: rejects writes through a symlinked parent directory (.claude -> outside)', { skip: false }, async () => {
   const root = tmpdir();
   const proj = path.join(root, 'proj');

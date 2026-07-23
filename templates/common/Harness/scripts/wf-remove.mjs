@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 /**
- * wf-remove.mjs �?Safely remove Harness framework files.
+ * wf-remove.mjs - Safely remove Harness framework files.
  *
  * Classifies all Harness-owned files into:
- *   SAFE     �?framework files matching stored checksums �?auto-remove
- *   MODIFIED �?framework files edited by user �?MUST confirm
- *   USER     �?user data files �?NEVER remove
+ *   SAFE     - framework files matching stored checksums, auto-remove
+ *   MODIFIED - framework files edited by user, MUST confirm
+ *   USER     - user data files, NEVER remove
  *
  * Usage:
  *   node Harness/scripts/wf-remove.mjs                    # dry-run: show plan
@@ -47,7 +47,7 @@ const HARNESS_PREFIXES = [
   'tests/.gitkeep',
 ];
 
-/** Files the user owns �?NEVER remove. Consistent with wf-update-check PRESERVE_PATTERNS. */
+/** Files the user owns - NEVER remove. Consistent with wf-update-check PRESERVE_PATTERNS. */
 const USER_DATA_PATTERNS = [
   /^Harness\/PROGRESS\.md$/,
   /^Harness\/tasks\//,
@@ -343,7 +343,7 @@ function removeEmptyDirs(startDir) {
 
 async function askUser(question) {
   if (!process.stdin.isTTY) {
-    console.log('   (non-interactive �?defaulting to KEEP)');
+    console.log('   (non-interactive - defaulting to KEEP)');
     return 'k';
   }
   const rl = createInterface({ input: process.stdin, output: process.stdout });
@@ -416,9 +416,9 @@ async function main() {
   }
 
   // 2. Classify every file
-  const safe = [];     // SAFE �?matches checksum, auto-remove
-  const modified = []; // MODIFIED �?user edited, must confirm
-  const user = [];     // USER �?never remove
+  const safe = [];     // SAFE - matches checksum, auto-remove
+  const modified = []; // MODIFIED - user edited, must confirm
+  const user = [];     // USER - never remove
   const skipped = [];  // File not on disk, traversal rejected, or framework-keep
   const purge = [];    // Explicitly requested Harness user-data removal
   skipped.push(...scanIssues);
@@ -440,13 +440,13 @@ async function main() {
         });
         continue;
       }
-      user.push({ file, reason: 'user data �?NEVER removed' });
+      user.push({ file, reason: 'user data - NEVER removed' });
       continue;
     }
 
     // Only allow deletion of files under harness-owned prefixes
     if (!isHarnessOwned(canonical)) {
-      user.push({ file, reason: 'outside harness prefix �?NEVER removed' });
+      user.push({ file, reason: 'outside harness prefix - NEVER removed' });
       continue;
     }
 
@@ -493,7 +493,7 @@ async function main() {
     const settingsHash = sha256File(settingsFile);
     const storedSettingsHash = storedChecksums['.claude/settings.json'];
     if (storedSettingsHash && settingsHash !== storedSettingsHash) {
-      // User modified settings �?move to modified
+      // User modified settings - move to modified
       // Remove from safe if it was there
       const idx = safe.findIndex(s => s.file === '.claude/settings.json');
       if (idx >= 0) {
@@ -537,16 +537,16 @@ async function main() {
     return;
   }
 
-  console.log('\n🧹 WF-REMOVE �?Harness framework removal plan\n');
+  console.log('\nWF-REMOVE - Harness framework removal plan\n');
 
   if (safe.length > 0) {
-    console.log(`�?SAFE (${safe.length} files �?auto-remove, unmodified framework):`);
-    for (const s of safe) console.log(`   �?${s.file}`);
+    console.log(`SAFE (${safe.length} files - auto-remove, unmodified framework):`);
+    for (const s of safe) console.log(`   - ${s.file}`);
     console.log('');
   }
 
   if (modified.length > 0) {
-    console.log(`�?MODIFIED (${modified.length} files �?REQUIRE CONFIRMATION):`);
+    console.log(`MODIFIED (${modified.length} files - REQUIRE CONFIRMATION):`);
     for (const m of modified) {
       console.log(`   ? ${m.file}  [${m.reason}]`);
     }
@@ -554,8 +554,8 @@ async function main() {
   }
 
   if (user.length > 0) {
-    console.log(`🔒 USER DATA (${user.length} files �?NEVER removed):`);
-    for (const u of user) console.log(`   �?${u.file}  [${u.reason}]`);
+    console.log(`USER DATA (${user.length} files - NEVER removed):`);
+    for (const u of user) console.log(`   - ${u.file}  [${u.reason}]`);
     console.log('');
   }
 
@@ -572,17 +572,17 @@ async function main() {
     return;
   }
 
-  // 4. Apply �?remove SAFE files automatically (rehash before unlink)
+  // 4. Apply - remove SAFE files automatically (rehash before unlink)
   let safeRemoved = 0;
   let safeFailed = 0;
   for (const s of safe) {
     const diskPath = safePath(s.file);
-    if (!diskPath) { console.error(`   �?Traversal rejected: ${s.file}`); safeFailed++; continue; }
+    if (!diskPath) { console.error(`   ! Traversal rejected: ${s.file}`); safeFailed++; continue; }
     if (!existsSync(diskPath)) continue;
     // Re-verify hash hasn't changed since classification
     const currentHash = sha256File(diskPath);
     if (currentHash !== s.storedHash) {
-      console.log(`   �?Skipped (modified since classification): ${s.file}`);
+      console.log(`   ! Skipped (modified since classification): ${s.file}`);
       safeFailed++;
       continue;
     }
@@ -590,13 +590,13 @@ async function main() {
       unlinkSync(diskPath);
       safeRemoved++;
     } catch (e) {
-      console.error(`   �?Failed to remove: ${s.file} �?${e.message}`);
+      console.error(`   ! Failed to remove: ${s.file} - ${e.message}`);
       safeFailed++;
     }
   }
-  console.log(`�?Removed ${safeRemoved} safe files.`);
+  console.log(`Removed ${safeRemoved} safe files.`);
 
-  // 5. Handle MODIFIED files �?prompt user
+  // 5. Handle MODIFIED files - prompt user
   let modifiedRemoved = 0;
   let modifiedKept = 0;
   let modifiedFailed = 0;
@@ -616,7 +616,7 @@ async function main() {
     }
     if (yes) {
       // Non-interactive mode: skip all modified
-      console.log(`   �?Skipped (modified): ${m.file}`);
+      console.log(`   ! Skipped (modified): ${m.file}`);
       modifiedKept++;
       continue;
     }
@@ -628,17 +628,17 @@ async function main() {
     const answer = await askUser('   Choose [d/k]: ');
     if (answer === 'd' || answer === 'delete') {
       const diskPath = safePath(m.file);
-      if (!diskPath) { console.error(`   �?Traversal rejected: ${m.file}`); modifiedFailed++; continue; }
+      if (!diskPath) { console.error(`   ! Traversal rejected: ${m.file}`); modifiedFailed++; continue; }
       try {
         unlinkSync(diskPath);
-        console.log(`   �?Deleted: ${m.file}`);
+        console.log(`   Deleted: ${m.file}`);
         modifiedRemoved++;
       } catch (e) {
-        console.error(`   �?Failed: ${m.file} �?${e.message}`);
+        console.error(`   ! Failed: ${m.file} - ${e.message}`);
         modifiedFailed++;
       }
     } else {
-      console.log(`   �?Kept: ${m.file}`);
+      console.log(`   Kept: ${m.file}`);
       modifiedKept++;
     }
   }
@@ -699,7 +699,7 @@ async function main() {
       }
     } else if (!existsSync(harPath) || (existsSync(harPath) && readdirSync(harPath).filter(f => f !== '.harness-version').length === 0)) {
       unlinkSync(VERSION_FILE);
-      console.log('�?Removed .harness-version (Harness directory empty).');
+      console.log('Removed .harness-version (Harness directory empty).');
     }
   }
 
@@ -718,7 +718,7 @@ async function main() {
     if (pruned > 0) {
       versionData.checksums = checksums;
       writeFileSync(VERSION_FILE, JSON.stringify(versionData, null, 2) + '\n', 'utf-8');
-      console.log(`�?Pruned ${pruned} stale checksum(s) from .harness-version.`);
+      console.log(`Pruned ${pruned} stale checksum(s) from .harness-version.`);
     }
   }
 
@@ -732,7 +732,7 @@ async function main() {
         // Strip the harness section: everything from "## 1. Harness Binding" to the next "## "
         const cleaned = content.replace(/## 1\. Harness Binding[\s\S]*?(?=## 2\.)/, '');
         writeFileSync(claudePath, cleaned, 'utf-8');
-        console.log('�?Stripped Harness binding section from CLAUDE.md.');
+        console.log('Stripped Harness binding section from CLAUDE.md.');
       }
     }
   }

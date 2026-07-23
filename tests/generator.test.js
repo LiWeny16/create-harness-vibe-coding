@@ -1087,8 +1087,8 @@ test('build-version produces valid semver and populated checksums/sources', asyn
 
   assert.equal(harnessVersion.releaseNotes.version, pkg.version, 'release notes should match package version');
   assert.ok(
-    harnessVersion.releaseNotes.highlights.some(line => /L2 prompt-cache telemetry/i.test(line)),
-    'release notes should include cache telemetry highlight',
+    harnessVersion.releaseNotes.highlights.some(line => /scan-clean.*source/i.test(line)),
+    'release notes should include scan-clean source-selection highlight',
   );
 
   // Assert sources is populated with >0 keys and includes remapped paths

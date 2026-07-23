@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.8.16] - 2026-07-23
+
+- Fix `scan-clean` default source selection so it honors the installed `Harness/.harness-version.source` before falling back to npm/GitHub, preventing false dead-file reports before npm publish catches up.
+- Register `/wf-update` in `Harness/MEMORY.md` as a direct command and add validator coverage for the route.
+- Clean `wf-remove.mjs` human-readable output to remove replacement characters and add a validator guard against future encoding pollution.
+
 ## [0.8.15] - 2026-07-23
 
 - Add real Claude Code L2 prompt-cache telemetry via `Harness/scripts/l2-cache-telemetry.mjs`, including bounded provider-control, thin-startup, and `/wf` light-route probes.

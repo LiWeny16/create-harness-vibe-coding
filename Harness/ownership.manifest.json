@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "generator": "0.8.15",
+  "generator": "0.8.16",
   "source": "https://raw.githubusercontent.com/LiWeny16/create-harness-vibe-coding/main/templates/common/",
-  "generated": "2026-07-23T09:08:24.289Z",
+  "generated": "2026-07-23T11:33:41.125Z",
   "preserve": [
     "Harness/PROGRESS.md",
     "Harness/tasks/**",

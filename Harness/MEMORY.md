@@ -48,6 +48,7 @@ Codex repo-skill mirrors live under `../.agents/skills/` with the same skill nam
 ## Direct Commands
 
 - [wf-help](../.claude/commands/wf-help.md) - direct `/wf-help` command that returns a WF command table without invoking a skill.
+- [wf-update](../.claude/commands/wf-update.md) - direct `/wf-update` command for script-driven update checks, safe apply, conflict handling, and release highlights.
 
 Stack-specific skills can be added after the product shape is known.
 

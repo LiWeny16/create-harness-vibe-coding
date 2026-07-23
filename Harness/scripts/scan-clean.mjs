@@ -206,8 +206,17 @@ async function fetchNpmLatestManifest() {
   return Buffer.from(manifest).toString('utf8');
 }
 
-async function fetchRemoteManifest(explicitSource) {
+async function fetchRemoteManifest(explicitSource, localVersion = {}) {
   if (explicitSource) return fetchRemote(normalizeSourceBase(explicitSource) + '.harness-version');
+  const localSource = typeof localVersion.source === 'string' ? localVersion.source.trim() : '';
+  let localSourceError = null;
+  if (localSource) {
+    try {
+      return await fetchRemote(normalizeSourceBase(localSource) + '.harness-version');
+    } catch (e) {
+      localSourceError = e;
+    }
+  }
   try {
     return await fetchNpmLatestManifest();
   } catch (npmError) {
@@ -217,7 +226,8 @@ async function fetchRemoteManifest(explicitSource) {
       try {
         return await fetchRemote(LEGACY_SOURCE_BASE + '.harness-version');
       } catch (legacyError) {
-        throw new Error(`npm latest: ${npmError.message}; canonical GitHub: ${canonicalError.message}; legacy mirror: ${legacyError.message}`);
+        const localSourceMessage = localSourceError ? `local source: ${localSourceError.message}; ` : '';
+        throw new Error(`${localSourceMessage}npm latest: ${npmError.message}; canonical GitHub: ${canonicalError.message}; legacy mirror: ${legacyError.message}`);
       }
     }
   }
@@ -386,7 +396,7 @@ async function main() {
   // 2. Fetch remote version file
   let remoteVersion;
   try {
-    const raw = await fetchRemoteManifest(explicitSource);
+    const raw = await fetchRemoteManifest(explicitSource, localVersion);
     if (isTemplate(raw)) {
       if (jsonOut) {
         console.log(JSON.stringify({ status: 'error', message: 'Remote .harness-version is a template (contains {{placeholders}}). Cannot determine dead files.' }));

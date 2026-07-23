@@ -454,6 +454,7 @@ requireText('Harness/memory/tool-usage-reflections.md', 'supersedes', 'tool refl
 requireText('Harness/memory/agent-lessons-patterns.md', 'supersedes', 'agent lessons template date rule');
 requireText('Harness/MEMORY.md', 'startup-hints.md', 'MEMORY.md startup-hints registration');
 requireText('Harness/MEMORY.md', 'Memory routes', 'MEMORY.md routes.md registration');
+requireText('Harness/MEMORY.md', '../.claude/commands/wf-update.md', 'MEMORY.md wf-update direct command registration');
 requireText('CLAUDE.md', 'If `Harness/` exists, this repository is governed by the Harness contract', 'Harness binding contract');
 requireText('CLAUDE.md', 'memory and resource router', 'memory/resource router');
 requireText('CLAUDE.md', '## 5a. Low-Noise Progress', 'low-noise progress section');
@@ -856,6 +857,7 @@ requireText('.claude/skills/tdd/SKILL.md', 'No syntax-only acceptance', 'tdd ski
 requireText('.claude/skills/wf-remove/SKILL.md', 'User-facing removal is the slash/skill command', 'wf-remove slash command is user-facing');
 requireText('.claude/skills/wf-remove/SKILL.md', 'agent-internal execution steps', 'wf-remove script commands are agent-internal');
 requireText('.claude/skills/wf-remove/SKILL.md', 'verify residual discovery folders', 'wf-remove residual discovery verification');
+forbidText('Harness/scripts/wf-remove.mjs', '\uFFFD', 'replacement character in wf-remove output');
 for (const marker of ['codebase-explorer', 'task-scribe', 'wf-agents-docs', 'wf-auto-spark']) {
   requireText('Harness/scripts/wf-remove.mjs', marker, `wf-remove built-in registry includes ${marker}`);
 }
