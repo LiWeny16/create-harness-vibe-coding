@@ -108,7 +108,7 @@ Residual risk:
 | `node Harness/scripts/validate-harness.mjs --strict` | Passed | Strict placeholder scope passed after PRD AC-006 completion update. |
 | `npm run build:version` | Passed | `templates/common/.harness-version` rebuilt with 78 checksums and 93 source entries. |
 | `npm test` | Passed | 65 passed, 1 skipped. |
-| Generated scaffold validator | Passed | Temporary scaffold validator passed at `%TEMP%/harness-acceptance-2b12fbe6421f497d87ad423d36fe2972`. |
+| Generated scaffold validator | Passed | Temporary scaffold validator passed; historical scratch path omitted because current CLI probes must not write to temp locations. |
 | `npm run build:version` | Passed | Rebuilt after TDD and memory protocol changes; later no-hook cleanup superseded hook-specific output. |
 | `node Harness/scripts/validate-harness.mjs` | Passed | Validator checks TDD real UI rules and memory protocol routing. |
 | `node Harness/scripts/validate-harness.mjs --strict` | Passed | Strict placeholder scope passed. |

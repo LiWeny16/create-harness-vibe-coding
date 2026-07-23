@@ -5,7 +5,7 @@ description: Test-driven development. Use when the user wants to build features 
 
 # TDD Adapter
 
-Thin tool adapter. Authoritative guide: `Harness/TDD-GUIDE.md`.
+Thin tool adapter. Authoritative guide: `Harness/specs/protocols/TDD-GUIDE.md`.
 
 ## Invocation
 
@@ -14,10 +14,10 @@ Thin tool adapter. Authoritative guide: `Harness/TDD-GUIDE.md`.
 
 ## Load
 
-1. `Harness/ACCEPTANCE_PROTOCOL.md`
-2. `Harness/HARNESS_BRIDGE.md`
-3. `Harness/AGENT_ISOLATION.md`
-4. `Harness/TDD-GUIDE.md`
+1. `Harness/specs/protocols/ACCEPTANCE_PROTOCOL.md`
+2. `Harness/specs/protocols/HARNESS_BRIDGE.md`
+3. `Harness/specs/protocols/AGENT_ISOLATION.md`
+4. `Harness/specs/protocols/TDD-GUIDE.md`
 5. ECC stack-specific testing rules (for example `typescript/testing.md`, `python/testing.md`)
 6. Current task `PLAN.md`
 

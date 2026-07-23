@@ -9,7 +9,7 @@ Global task index. Load at session start to see what is active and what was done
 
 ## Task Index
 
-Non-archived tasks only (max 5). Archived tasks are listed in `Harness/tasks/_archive/INDEX.md` (see `Harness/TASK_ARCHIVE.md`).
+Non-archived tasks only (max 5). Archived tasks are listed in `Harness/tasks/_archive/INDEX.md` (see `Harness/specs/protocols/TASK_ARCHIVE.md`).
 
 | ID | Goal | Phase | Closed |
 |----|------|-------|--------|

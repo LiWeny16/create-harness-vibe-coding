@@ -39,4 +39,4 @@ Update `Harness/tasks/<task-id>/PLAN.md` only when executing a tracked plan item
 
 ## dispatch.md Usage
 
-Use `Harness/dispatch.md` only when splitting independent browser checks across workers is explicitly useful.
+Use `Harness/specs/runtime/dispatch.md` only when splitting independent browser checks across workers is explicitly useful.

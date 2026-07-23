@@ -40,6 +40,16 @@ Idea → Research → PRD → Architecture → Acceptance Criteria
      → Build → Test → Review → Verify → Learn → Update
 ```
 
+## What's new in 0.8.15
+
+This release turns cache-friendliness from documentation into measured evidence:
+
+- Real Claude Code L2 telemetry: `Harness/scripts/l2-cache-telemetry.mjs` runs bounded provider-control, thin-startup, and `/wf` light-route probes with usage/cost/duration/session evidence.
+- Measured prompt-cache result in this dogfood repo: `harness-thin` reached `98.7%` warm median cache read (`+5.4` percentage points vs provider-control), and `/wf` wf-light reached `99.1%` (`+5.8` percentage points).
+- Cache regression guardrails: L0 validator checks, L1 SHA-256 stable-prefix simulation, L2 provider telemetry claim gates, and route-profile context budgets.
+- Cleaner startup and upgrade chain: normal sessions stay thin, `Harness/specs/guides/SETUP.md` is retained as a setup/migration reference, and `/wf-update` now reports the release highlights as well as file-level update results.
+- Cross-runtime CLI docs: `wf-agents-docs` records source-backed Claude Code, Codex, and OpenCode invocation patterns for peer review, batch probes, and cache telemetry.
+
 ## One-line install (recommended for existing repos)
 
 Paste this into your agent:
@@ -54,11 +64,11 @@ After reading this README, the agent selects the path that matches the project:
 |---|---|
 | New project | `npx create-harness-vibe-coding@latest my-project -y` |
 | Existing project | `npx create-harness-vibe-coding@latest my-project . -y --on-conflict skip --json` |
-| Existing `Harness/` with `Harness/scripts/wf-update-check.mjs` | `node Harness/scripts/wf-update-check.mjs --json`; update, do not reinstall |
+| Existing `Harness/` with `Harness/scripts/wf-update-check.mjs` | `node Harness/scripts/wf-update-check.mjs --json`; update, do not reinstall; after apply/finalize, report `agent.releaseHighlights` plus validation results |
 | Existing `Harness/` but missing `Harness/scripts/wf-update-check.mjs` | `npx create-harness-vibe-coding@latest my-project . -y --on-conflict skip --json`. Then run `node Harness/scripts/wf-update-check.mjs --json` |
 | After install or update | `node Harness/scripts/validate-harness.mjs --strict` |
 
-After installation, hand off by phase: use `CLAUDE.md` as the normal session entry, use `Harness/SETUP.md` only for install/bootstrap, migration, or upgrade decisions, and use `Harness/README.md` as the Harness workflow router when a routed task needs it. Preserve project boundaries; research and plan before editing; run tests, validation, and review before claiming completion.
+After installation, hand off by phase: use `CLAUDE.md` as the normal session entry, use `Harness/specs/guides/SETUP.md` only for install/bootstrap, migration, or upgrade decisions, and use `Harness/README.md` as the Harness workflow router when a routed task needs it. Preserve project boundaries; research and plan before editing; run tests, validation, and review before claiming completion.
 
 The user does not need to run commands manually. The agent handles installation, conflict handling, validation, and the handoff.
 
@@ -76,13 +86,13 @@ When in doubt, use `/wf-help`. It returns the full command table. Use `/wf` for 
 | `/wf-learn` | The same mistakes keep recurring or a completed task needs to become reusable knowledge | Consolidates context, memory, and project lessons | `/wf-learn summarize why this task needed rework` |
 | `/wf-browser <task>` | Browser smoke tests, E2E, screenshots, forms, or UI verification | Uses a real browser and returns screenshots, traces, and evidence | `/wf-browser verify login and checkout` |
 | `/wf-readme <task>` | README, install docs, architecture diagrams, or project docs need work | Preserves facts while improving structure, setup, and usage guidance | `/wf-readme improve the Chinese README` |
-| `/wf-update` | Harness is already installed and needs an update | Compares versions, applies safe changes, and leaves semantic conflicts to the agent | `/wf-update` |
+| `/wf-update` | Harness is already installed and needs an update | Compares versions, applies safe changes, leaves semantic conflicts to the agent, and reports release highlights from the changelog metadata | `/wf-update` |
 | `/wf-remove` | You need to uninstall Harness | Removes safe files, preserves user data, and asks before touching conflicts | `/wf-remove` |
 | `/wf-help` | You do not know which command to use | Returns command usage without starting a workflow | `/wf-help` |
 
 Claude Code uses `/wf-*`; Codex uses the matching `$wf-*`; OpenCode uses the registered command or Agent instruction. `/wf-auto` and `/wf-auto-spark` are continuous modes, so give the agent a clear goal, scope, and acceptance criteria before starting.
 
-Common starting points: Web/API work starts with correctness, security, reliability, and verification; CLI/SDK work starts with contracts, compatibility, error UX, and docs; AI-agent work starts with context quality, tool safety, evaluation, and recovery; data jobs start with idempotency, failure recovery, and observability. See the full [WF-AUTO-ANGLES.md](Harness/WF-AUTO-ANGLES.md) selection protocol.
+Common starting points: Web/API work starts with correctness, security, reliability, and verification; CLI/SDK work starts with contracts, compatibility, error UX, and docs; AI-agent work starts with context quality, tool safety, evaluation, and recovery; data jobs start with idempotency, failure recovery, and observability. See the full [WF-AUTO-ANGLES.md](Harness/specs/workflows/WF-AUTO-ANGLES.md) selection protocol.
 
 Chinese README: [README-CN.md](README-CN.md)
 
@@ -164,7 +174,7 @@ Paste this to your agent:
 Read and follow https://github.com/LiWeny16/create-harness-vibe-coding exactly to configure this project with create-harness-vibe-coding.
 ```
 
-The agent-first path previews the target before writing and preserves project-owned files. `Harness/SETUP.md` is the retained bootstrap/migration reference created by the scaffold; it is not the normal session entry.
+The agent-first path previews the target before writing and preserves project-owned files. `Harness/specs/guides/SETUP.md` is the retained bootstrap/migration reference created by the scaffold; it is not the normal session entry.
 
 If `Harness/` already exists, first check whether `Harness/scripts/wf-update-check.mjs` exists. If it does, use `/wf-update`, `$wf-update`, or `node Harness/scripts/wf-update-check.mjs --json` instead of reinstalling blindly. If it is missing, run the safe CLI recovery command from the installation table first, then run the updater.
 
@@ -182,7 +192,7 @@ Ask your agent to add the capability you need:
 | `python-backend` | FastAPI and pytest projects |
 | `github-pr-review` | PR diff review and CI evidence |
 
-External recommendations are recorded in `Harness/SETUP.md`; they are not auto-installed.
+External recommendations are recorded in `Harness/specs/guides/SETUP.md`; they are not auto-installed.
 
 | Recommendation | Use it for | Source |
 |---|---|---|

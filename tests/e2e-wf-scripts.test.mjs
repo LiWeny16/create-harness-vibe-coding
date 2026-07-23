@@ -103,9 +103,9 @@ const mockFiles = {
   '.claude/skills/wf-update/SKILL.md': 'wf-update skill.',
   '.agents/skills/wf-update/SKILL.md': 'wf-update skill.',
   '.claude/rules/ecc/common.md': 'Universal rules.',
-  'Harness/WF.md': 'WF mode spec.',
-  'Harness/dispatch.md': 'Dispatch protocol.',
-  'Harness/subagents.md': 'Subagent orchestration.',
+  'Harness/specs/workflows/WF.md': 'WF mode spec.',
+  'Harness/specs/runtime/dispatch.md': 'Dispatch protocol.',
+  'Harness/specs/runtime/subagents.md': 'Subagent orchestration.',
   'tests/.gitkeep': '',
 
   // USER DATA files (must NEVER be in SAFE or MODIFIED)
@@ -114,7 +114,7 @@ const mockFiles = {
   'Harness/memory/my-notes.md': 'user memory notes',
   'Harness/memory/tool-usage-reflections.md': 'reflections',
   'Harness/research/PRD.md': 'my PRD',
-  'Harness/architecture.md': 'my architecture',
+  'Harness/project/architecture.md': 'my architecture',
   'Harness/workflows/custom.md': 'custom workflow',
   'README.md': 'my readme',
   '.gitignore': 'node_modules',
@@ -214,7 +214,7 @@ const expectedUser = [
   'Harness/memory/tool-usage-reflections.md',
   'Harness/research/PRD.md',
   'Harness/research/research-results.md',
-  'Harness/architecture.md',
+  'Harness/project/architecture.md',
   'Harness/workflows/custom.md',
   'README.md',
   '.gitignore',
@@ -260,7 +260,7 @@ assert(purgeFiles.includes('Harness/PROGRESS.md'), 'purge includes Harness/PROGR
 assert(purgeFiles.includes('Harness/memory/my-notes.md'), 'purge includes memory notes');
 assert(purgeFiles.includes('Harness/research/PRD.md'), 'purge includes PRD');
 assert(purgeFiles.includes('Harness/research/research-results.md'), 'purge includes untracked research results');
-assert(purgeFiles.includes('Harness/architecture.md'), 'purge includes architecture');
+assert(purgeFiles.includes('Harness/project/architecture.md'), 'purge includes architecture');
 assert(purgeFiles.includes('Harness/tasks/_template/PLAN.md'), 'purge includes framework task template');
 assert(purgeFiles.includes('Harness/tasks/auto/PLAN.md'), 'purge includes auto task framework file');
 assert(purgePreserved.includes('Harness/tasks/my-task/PROGRESS.md'), 'purge keeps real task record with --keep-tasks');
@@ -414,7 +414,7 @@ const classTestFiles = [
   { file: 'README.md', expect: 'PRESERVE' },
   { file: '.gitignore', expect: 'PRESERVE' },
   { file: 'package.json', expect: 'PRESERVE' },
-  { file: 'Harness/WF.md', expect: 'SAFE' },  // runtime, unmodified
+  { file: 'Harness/specs/workflows/WF.md', expect: 'SAFE' },  // runtime, unmodified
   { file: 'CLAUDE.md', expect: 'SAFE|CONFLICT' },  // MERGE file
   { file: 'Harness/README.md', expect: 'SAFE|CONFLICT' },  // MERGE file
 ];
@@ -445,11 +445,11 @@ const localCommandOrphanPath = join(TMP, '.claude', 'commands', 'legacy.md');
 mkdirSync(dirname(localCommandOrphanPath), { recursive: true });
 writeFileSync(localCommandOrphanPath, 'legacy untracked command\n', 'utf-8');
 
-const localAlreadyCurrentPath = join(TMP, 'Harness', 'WF.md');
+const localAlreadyCurrentPath = join(TMP, 'Harness', 'specs', 'workflows', 'WF.md');
 mkdirSync(dirname(localAlreadyCurrentPath), { recursive: true });
-writeFileSync(localAlreadyCurrentPath, mockFiles['Harness/WF.md'] + '\n', 'utf-8');
+writeFileSync(localAlreadyCurrentPath, mockFiles['Harness/specs/workflows/WF.md'] + '\n', 'utf-8');
 
-const localModifiedRuntimePath = join(TMP, 'Harness', 'dispatch.md');
+const localModifiedRuntimePath = join(TMP, 'Harness', 'specs', 'runtime', 'dispatch.md');
 mkdirSync(dirname(localModifiedRuntimePath), { recursive: true });
 writeFileSync(localModifiedRuntimePath, 'local runtime edit should be replaced\n', 'utf-8');
 
@@ -459,9 +459,9 @@ updateLocalVersion.generator = '0.6.1';
 updateLocalVersion.checksums = {
   ...(updateLocalVersion.checksums || {}),
   '.claude/agents/planner.md': checksums['.claude/agents/planner.md'],
-  'Harness/dispatch.md': checksums['Harness/dispatch.md'],
-  'Harness/SETUP.md': sha256('old bootstrap setup\n'),
-  'Harness/WF.md': checksums['Harness/WF.md'],
+  'Harness/specs/runtime/dispatch.md': checksums['Harness/specs/runtime/dispatch.md'],
+  'Harness/specs/guides/SETUP.md': sha256('old bootstrap setup\n'),
+  'Harness/specs/workflows/WF.md': checksums['Harness/specs/workflows/WF.md'],
   'Harness/README.md': checksums['Harness/README.md'],
 };
 delete updateLocalVersion.partialUpdate;
@@ -470,11 +470,11 @@ writeFileSync(updateLocalVersionPath, JSON.stringify(updateLocalVersion, null, 2
 const remoteUpdateFiles = {
   '.claude/agents/planner.md': 'planner agent definition v2.\n',
   '.claude/settings.json': 'settings template\n',
-  'Harness/NEW.md': 'new runtime file\n',
-  'Harness/dispatch.md': 'remote dispatch template v2\n',
-  'Harness/SETUP.md': 'remote bootstrap setup v2\n',
+  'Harness/specs/runtime/NEW.md': 'new runtime file\n',
+  'Harness/specs/runtime/dispatch.md': 'remote dispatch template v2\n',
+  'Harness/specs/guides/SETUP.md': 'remote bootstrap setup v2\n',
   'Harness/README.md': 'remote router template v2\n',
-  'Harness/WF.md': mockFiles['Harness/WF.md'] + '\n',
+  'Harness/specs/workflows/WF.md': mockFiles['Harness/specs/workflows/WF.md'] + '\n',
 };
 const remoteUpdateChecksums = {};
 for (const [file, content] of Object.entries(remoteUpdateFiles)) {
@@ -484,9 +484,18 @@ for (const [file, content] of Object.entries(remoteUpdateFiles)) {
   writeFileSync(fullPath, normalized, 'utf-8');
   remoteUpdateChecksums[file] = sha256(normalized);
 }
+const remoteReleaseNotes = {
+  version: '0.7.0',
+  date: '2099-01-01',
+  highlights: [
+    'Cache telemetry added',
+    'Update flow now reports release highlights',
+  ],
+};
 writeFileSync(join(updateRemoteDir, '.harness-version'), JSON.stringify({
   generator: '0.7.0',
   generated: '2026-07-01T00:00:00.000Z',
+  releaseNotes: remoteReleaseNotes,
   checksums: remoteUpdateChecksums,
   sources: Object.fromEntries(Object.keys(remoteUpdateChecksums).map(file => [file, file])),
 }, null, 2) + '\n', 'utf-8');
@@ -504,15 +513,18 @@ assert(localUpdateResult.ok, 'local-source update JSON runs without error');
 assert(localUpdatePlan.status === 'update-available', 'local-source update reports update available');
 assert(localUpdatePlan.agent?.safeApplyCommand?.includes('--apply-safe'), 'JSON agent hints include --apply-safe command');
 assert(localUpdatePlan.agent?.aiMergeRequired?.some(c => c.file === 'Harness/README.md' && c.templateHint === 'Harness/README.md' && c.remoteUrl?.startsWith('file://')), 'JSON agent hints include remote conflict source');
+assert(localUpdatePlan.releaseNotes?.highlights?.includes('Cache telemetry added'), 'JSON output includes remote release notes');
+assert(localUpdatePlan.agent?.releaseHighlights?.includes('Cache telemetry added'), 'JSON agent hints include release highlights');
+assert(localUpdatePlan.agent?.updateReportRequired?.includes('releaseHighlights'), 'JSON agent hints require user-facing release highlight report');
 assert(localJsonPlan.updated.some(x => x.file === '.claude/agents/planner.md'), 'local-source update marks missing safe file as updated');
-assert(localJsonPlan.updated.some(x => x.file === 'Harness/dispatch.md'), 'local-source update marks modified runtime file as updated');
-assert(!localJsonPlan.conflict.some(x => x.file === 'Harness/dispatch.md'), 'local-source update does not route modified runtime file through AI conflict');
-assert(localJsonPlan.updated.some(x => x.file === 'Harness/SETUP.md'), 'local-source update recreates retained SETUP.md when missing');
+assert(localJsonPlan.updated.some(x => x.file === 'Harness/specs/runtime/dispatch.md'), 'local-source update marks modified runtime file as updated');
+assert(!localJsonPlan.conflict.some(x => x.file === 'Harness/specs/runtime/dispatch.md'), 'local-source update does not route modified runtime file through AI conflict');
+assert(localJsonPlan.updated.some(x => x.file === 'Harness/specs/guides/SETUP.md'), 'local-source update recreates retained SETUP.md when missing');
 assert(localJsonPlan.adopted?.some(x => x.file === '.claude/settings.json'), 'AC-001 byte-matching new remote file is adopted without AI conflict');
 assert(!localJsonPlan.conflict.some(x => x.file === '.claude/settings.json'), 'AC-001 byte-matching new remote file is not a conflict');
-assert(localJsonPlan.created.some(x => x.file === 'Harness/NEW.md'), 'local-source update marks new runtime file as created');
+assert(localJsonPlan.created.some(x => x.file === 'Harness/specs/runtime/NEW.md'), 'local-source update marks new runtime file as created');
 assert(localJsonPlan.conflict.some(x => x.file === 'Harness/README.md'), 'local-source update marks modified merge file as conflict');
-assert(localJsonPlan.skipped.some(x => x.file === 'Harness/WF.md' && x.reason.includes('already current')), 'local-source update skips already-current files');
+assert(localJsonPlan.skipped.some(x => x.file === 'Harness/specs/workflows/WF.md' && x.reason.includes('already current')), 'local-source update skips already-current files');
 
 const applySafeUpdateResult = runNode(UPDATE, '--apply-safe', TMP, { WF_SOURCE_BASE: updateRemoteBase });
 assert(applySafeUpdateResult.ok, '--apply-safe runs without error');
@@ -521,14 +533,15 @@ assert(existsSync(plannerAfterApply), '--apply-safe restored safe planner file')
 if (existsSync(plannerAfterApply)) {
   assert(readFileSync(plannerAfterApply, 'utf-8') === remoteUpdateFiles['.claude/agents/planner.md'], '--apply-safe wrote planner remote content');
 }
-assert(readFileSync(localModifiedRuntimePath, 'utf-8') === remoteUpdateFiles['Harness/dispatch.md'], '--apply-safe overwrote modified runtime file from template');
-assert(existsSync(join(TMP, 'Harness', 'NEW.md')), '--apply-safe created new runtime file');
-assert(existsSync(join(TMP, 'Harness', 'SETUP.md')), '--apply-safe recreates retained SETUP.md');
-assert(readFileSync(join(TMP, 'Harness', 'SETUP.md'), 'utf-8') === remoteUpdateFiles['Harness/SETUP.md'], '--apply-safe writes retained SETUP.md remote content');
+assert(readFileSync(localModifiedRuntimePath, 'utf-8') === remoteUpdateFiles['Harness/specs/runtime/dispatch.md'], '--apply-safe overwrote modified runtime file from template');
+assert(existsSync(join(TMP, 'Harness', 'specs', 'runtime', 'NEW.md')), '--apply-safe created new runtime file');
+assert(existsSync(join(TMP, 'Harness', 'specs', 'guides', 'SETUP.md')), '--apply-safe recreates retained SETUP.md');
+assert(readFileSync(join(TMP, 'Harness', 'specs', 'guides', 'SETUP.md'), 'utf-8') === remoteUpdateFiles['Harness/specs/guides/SETUP.md'], '--apply-safe writes retained SETUP.md remote content');
 assert(readFileSync(localMergePath, 'utf-8') === 'local router conflict\n', '--apply-safe preserved conflict file');
 const versionAfterApplySafe = JSON.parse(readFileSync(join(TMP, 'Harness', '.harness-version'), 'utf-8'));
 assert(versionAfterApplySafe.generator === '0.6.1', '--apply-safe does not bump generator while conflicts remain');
 assert(versionAfterApplySafe.partialUpdate?.targetGenerator === '0.7.0', '--apply-safe records partial update target');
+assert(versionAfterApplySafe.partialUpdate?.releaseNotes?.highlights?.includes('Cache telemetry added'), '--apply-safe records release notes while conflicts remain');
 assert(versionAfterApplySafe.checksums['.claude/agents/planner.md'] === remoteUpdateChecksums['.claude/agents/planner.md'], '--apply-safe tracks applied file checksum');
 assert(versionAfterApplySafe.checksums['.claude/settings.json'] === remoteUpdateChecksums['.claude/settings.json'], 'AC-001 --apply-safe adopts byte-matching new file checksum');
 
@@ -537,11 +550,13 @@ const partialJsonPlan = JSON.parse(partialJsonResult.stdout.trim());
 assert(partialJsonPlan.status === 'partial-update', 'partial update JSON reports partial-update status');
 assert(partialJsonPlan.partialUpdate?.targetGenerator === '0.7.0', 'partial update JSON includes target generator');
 assert(partialJsonPlan.agent?.partialUpdate?.targetGenerator === '0.7.0', 'partial update agent hints include partialUpdate');
+assert(partialJsonPlan.agent?.releaseHighlights?.includes('Cache telemetry added'), 'partial update agent hints retain release highlights');
 
 const finalizeLocalResult = runNode(UPDATE, '--accept-local Harness/README.md --finalize', TMP, { WF_SOURCE_BASE: updateRemoteBase });
 assert(finalizeLocalResult.ok, 'AC-002 accept-local finalize runs without error');
 const versionAfterFinalize = JSON.parse(readFileSync(join(TMP, 'Harness', '.harness-version'), 'utf-8'));
 assert(versionAfterFinalize.generator === '0.7.0', 'AC-002 finalize bumps generator after all conflicts are decided');
+assert(versionAfterFinalize.releaseNotes?.highlights?.includes('Cache telemetry added'), 'AC-002 finalize persists release notes for the installed version');
 assert(!versionAfterFinalize.partialUpdate, 'AC-002 finalize clears partialUpdate residue');
 assert(readFileSync(localMergePath, 'utf-8') === 'local router conflict\n', 'AC-002 accept-local preserves project-specific merge file');
 assert(versionAfterFinalize.acceptedConflicts?.['Harness/README.md']?.decision === 'accept-local', 'AC-002 finalize records local conflict decision');
@@ -627,9 +642,9 @@ const traversalTests = [
   ['Harness/../../secret.txt', false],
   ['Harness/../CLAUDE.md', false],
   ['CLAUDE.md', true],
-  ['Harness/WF.md', true],
+  ['Harness/specs/workflows/WF.md', true],
   ['.claude/agents/planner.md', true],
-  ['Harness/subagents.md', true],
+  ['Harness/specs/runtime/subagents.md', true],
   ['Harness//tasks/foo.md', false], // double slash → safePath rejects via includes('//')
   ['normal/path/file.md', true],
   ['.', false],

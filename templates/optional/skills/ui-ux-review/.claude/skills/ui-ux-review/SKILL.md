@@ -37,4 +37,4 @@ Update current task `tasks/<id>/PLAN.md` only for tracked review tasks or when r
 
 ## dispatch.md Usage
 
-Use `Harness/dispatch.md` only for independent review streams such as separate routes or breakpoints.
+Use `Harness/specs/runtime/dispatch.md` only for independent review streams such as separate routes or breakpoints.

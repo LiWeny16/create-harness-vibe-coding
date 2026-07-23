@@ -29,7 +29,7 @@ Stack-specific agents can be added after the product shape is known.
 
 ## Skills (Workflows)
 
-- [WF Mode](WF.md) - WF-KERNEL tiered orchestration: WF-Light (minimal roles), WF-Standard (adds review), WF-Full (complete role chain incl. reflector and cross-review).
+- [WF Mode](specs/workflows/WF.md) - WF-KERNEL tiered orchestration: WF-Light (minimal roles), WF-Standard (adds review), WF-Full (complete role chain incl. reflector and cross-review).
 - [wf](../.claude/skills/wf/SKILL.md) - Claude Code WF skill command; mirrored for Codex at `../.agents/skills/wf/SKILL.md`.
 - [subagent-orchestrator](../.claude/skills/subagent-orchestrator/SKILL.md) - controller-led subagent orchestration, parallel read-only passes, review gates, and recovery handoffs.
 - [wf-readme](../.claude/skills/wf-readme/SKILL.md) - README preservation, append-only development sections, structured tables, and approved architecture diagrams.
@@ -63,26 +63,27 @@ Located under `.claude/rules/ecc/`, auto-loaded by the CC engine:
 ## Harness (Runtime)
 
 - [Docs router](README.md)
-- [Acceptance protocol](ACCEPTANCE_PROTOCOL.md)
-- [Agent isolation protocol](AGENT_ISOLATION.md)
-- [Harness Bridge](HARNESS_BRIDGE.md)
-- [Debug protocol](DEBUG_PROTOCOL.md)
-- [Memory protocol](MEMORY_PROTOCOL.md)
-- [WF mode](WF.md)
-- [WF Max mode](WF-MAX.md)
-- [WF kernel contract](WF-KERNEL.md)
-- [WF state machine / resume](WF-STATE.md)
-- [Task archive mechanism](TASK_ARCHIVE.md)
-- [0-1 lifecycle](lifecycle.md)
+- [Acceptance protocol](specs/protocols/ACCEPTANCE_PROTOCOL.md)
+- [Agent isolation protocol](specs/protocols/AGENT_ISOLATION.md)
+- [Harness Bridge](specs/protocols/HARNESS_BRIDGE.md)
+- [Debug protocol](specs/protocols/DEBUG_PROTOCOL.md)
+- [Memory protocol](specs/protocols/MEMORY_PROTOCOL.md)
+- [WF mode](specs/workflows/WF.md)
+- [WF Max mode](specs/workflows/WF-MAX.md)
+- [WF kernel contract](specs/workflows/WF-KERNEL.md)
+- [WF state machine / resume](specs/workflows/WF-STATE.md)
+- [Task archive mechanism](specs/protocols/TASK_ARCHIVE.md)
+- [0-1 lifecycle](specs/guides/lifecycle.md)
 - [Research protocol](research/README.md)
-- [Context loading protocol](context-loading.md)
-- [Dispatch protocol](dispatch.md)
-- [Subagent orchestration](subagents.md)
-- [Extension contract](extension.md)
-- [Architecture docs](architecture.md)
-- [Agent workflow](agent-workflow.md)
+- [Context loading protocol](specs/runtime/context-loading.md)
+- [Dispatch protocol](specs/runtime/dispatch.md)
+- [Subagent orchestration](specs/runtime/subagents.md)
+- [Extension contract](specs/guides/extension.md)
+- [Architecture docs](project/architecture.md)
+- [Agent workflow](specs/runtime/agent-workflow.md)
 - [Acceptance templates](templates/)
 - [Harness validator](scripts/validate-harness.mjs)
+- [Settings](settings.json)
 - [Version file](.harness-version)
 
 ## Memory Folder

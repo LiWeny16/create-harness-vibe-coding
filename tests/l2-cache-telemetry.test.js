@@ -4,6 +4,13 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
+import { after } from 'node:test';
+
+const tempRoots = [];
+
+after(() => {
+  for (const root of tempRoots) fs.rmSync(root, { recursive: true, force: true });
+});
 
 function runScript(args) {
   const output = execFileSync(
@@ -16,6 +23,7 @@ function runScript(args) {
 
 function writeFixture(data) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'harness-l2-'));
+  tempRoots.push(dir);
   const file = path.join(dir, 'fixture.json');
   fs.writeFileSync(file, JSON.stringify(data, null, 2), 'utf8');
   return file;

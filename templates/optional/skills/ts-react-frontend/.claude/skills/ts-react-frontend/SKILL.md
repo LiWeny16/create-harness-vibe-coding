@@ -40,4 +40,4 @@ Update `Harness/tasks/<task-id>/PLAN.md` only when executing a tracked task or r
 
 ## dispatch.md Usage
 
-Use `Harness/dispatch.md` when independent frontend tasks can run in parallel, such as components, tests, and browser checks.
+Use `Harness/specs/runtime/dispatch.md` when independent frontend tasks can run in parallel, such as components, tests, and browser checks.

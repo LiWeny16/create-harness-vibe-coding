@@ -21,6 +21,7 @@ export const PRESERVE_PATTERNS = [
   'Harness/research/PRD.md',
   'Harness/research/research-results.md',
   'Harness/architecture.md',
+  'Harness/project/architecture.md',
   'README.md',
   'package.json',
   'package-lock.json',
@@ -34,6 +35,7 @@ export const MERGE_PATHS = [
   'MEMORY.md',
   'Harness/MEMORY.md',
   'Harness/README.md',
+  'Harness/settings.json',
 ];
 
 /** Fixed bootstrap-only dest paths. Kept for schema compatibility; currently empty. */
@@ -47,6 +49,33 @@ export const MANIFEST_REL = 'Harness/ownership.manifest.json';
 
 /** Excluded from frameworkOwned classification (tracked separately in .harness-version). */
 export const HARNESS_VERSION_DEST = 'Harness/.harness-version';
+
+/** Safe framework-owned path moves used by wf-update-check.mjs during upgrades. */
+export const PATH_MOVES = [
+  ['Harness/architecture.md', 'Harness/project/architecture.md'],
+  ['Harness/ACCEPTANCE_PROTOCOL.md', 'Harness/specs/protocols/ACCEPTANCE_PROTOCOL.md'],
+  ['Harness/AGENT_ISOLATION.md', 'Harness/specs/protocols/AGENT_ISOLATION.md'],
+  ['Harness/DEBUG_PROTOCOL.md', 'Harness/specs/protocols/DEBUG_PROTOCOL.md'],
+  ['Harness/HARNESS_BRIDGE.md', 'Harness/specs/protocols/HARNESS_BRIDGE.md'],
+  ['Harness/MEMORY_PROTOCOL.md', 'Harness/specs/protocols/MEMORY_PROTOCOL.md'],
+  ['Harness/TASK_ARCHIVE.md', 'Harness/specs/protocols/TASK_ARCHIVE.md'],
+  ['Harness/TDD-GUIDE.md', 'Harness/specs/protocols/TDD-GUIDE.md'],
+  ['Harness/agent-workflow.md', 'Harness/specs/runtime/agent-workflow.md'],
+  ['Harness/context-loading.md', 'Harness/specs/runtime/context-loading.md'],
+  ['Harness/dispatch.md', 'Harness/specs/runtime/dispatch.md'],
+  ['Harness/subagents.md', 'Harness/specs/runtime/subagents.md'],
+  ['Harness/ECC-GUIDE.md', 'Harness/specs/guides/ECC-GUIDE.md'],
+  ['Harness/SETUP.md', 'Harness/specs/guides/SETUP.md'],
+  ['Harness/extension.md', 'Harness/specs/guides/extension.md'],
+  ['Harness/lifecycle.md', 'Harness/specs/guides/lifecycle.md'],
+  ['Harness/WF-AUTO-ANGLES.md', 'Harness/specs/workflows/WF-AUTO-ANGLES.md'],
+  ['Harness/WF-AUTO-SPARK.md', 'Harness/specs/workflows/WF-AUTO-SPARK.md'],
+  ['Harness/WF-AUTO.md', 'Harness/specs/workflows/WF-AUTO.md'],
+  ['Harness/WF-KERNEL.md', 'Harness/specs/workflows/WF-KERNEL.md'],
+  ['Harness/WF-MAX.md', 'Harness/specs/workflows/WF-MAX.md'],
+  ['Harness/WF-STATE.md', 'Harness/specs/workflows/WF-STATE.md'],
+  ['Harness/WF.md', 'Harness/specs/workflows/WF.md'],
+].map(([from, to]) => ({ from, to, deleteOldIfChecksumMatches: true, preserveOldIfModified: true }));
 
 /**
  * Convert a glob pattern (supports * and **) into a RegExp anchored full-match.
@@ -94,7 +123,7 @@ export function matchesAnyGlob(dest, patterns) {
  *   anything under .codex                              -> config
  *   anything under .opencode/plugins                   -> config
  *   anything under Harness/scripts                     -> script
- *   top-level Harness markdown (Harness/<name>.md)     -> doc
+ *   Harness/specs markdown                            -> doc
  *   anything else                                       -> config
  */
 export function deriveKind(dest) {
@@ -107,6 +136,8 @@ export function deriveKind(dest) {
   if (/^\.codex\//.test(dest)) return 'config';
   if (/^\.opencode\/plugins\//.test(dest)) return 'config';
   if (/^Harness\/scripts\//.test(dest)) return 'script';
+  if (/^Harness\/specs\/.+\.md$/.test(dest)) return 'doc';
+  if (/^Harness\/project\/.+\.md$/.test(dest)) return 'doc';
   if (/^Harness\/[^/]+\.md$/.test(dest)) return 'doc';
   return 'config';
 }
@@ -179,6 +210,7 @@ export function buildOwnershipManifest({ commonDests, optionalSkills, generator,
     preserve: [...PRESERVE_PATTERNS],
     merge: [...MERGE_PATHS],
     bootstrapOnly: [...BOOTSTRAP_ONLY_PATHS],
+    moves: PATH_MOVES.map(move => ({ ...move })),
     frameworkOwned,
     optionalOwned,
   };
@@ -216,6 +248,9 @@ export function validateOwnershipManifest(manifest, { pkgVersion, source, catalo
   }
   if (JSON.stringify(manifest.bootstrapOnly) !== JSON.stringify(BOOTSTRAP_ONLY_PATHS)) {
     errors.push('bootstrapOnly does not match the fixed constant');
+  }
+  if (JSON.stringify(manifest.moves) !== JSON.stringify(PATH_MOVES)) {
+    errors.push('moves does not match the fixed constant');
   }
 
   for (const entry of manifest.frameworkOwned || []) {

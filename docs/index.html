@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>create-harness-vibe-coding</title>
-  <meta name="description" content="A repo-local operating contract for reliable AI coding agents.">
+  <meta name="description" content="A repo-local operating contract for reliable AI coding agents, with measured prompt-cache telemetry in Harness 0.8.15.">
   <meta property="og:title" content="create-harness-vibe-coding">
-  <meta property="og:description" content="A three-stage operating loop for reliable AI coding agents.">
+  <meta property="og:description" content="A three-stage operating loop for reliable AI coding agents, now with measured Claude Code prompt-cache telemetry.">
   <meta property="og:type" content="website">
   <meta name="theme-color" content="#050505">
   <style>
@@ -283,7 +283,8 @@
     .hero-inner {
       width: min(var(--max), calc(100% - 40px));
       margin: 0 auto;
-      padding: 116px 0 82px;
+      min-height: 100svh;
+      padding: 112px 0 72px;
       display: grid;
       grid-template-columns: minmax(0, 0.92fr) minmax(360px, 0.72fr);
       gap: 64px;
@@ -369,9 +370,10 @@
     }
 
     .hero-visual-area {
-      min-height: 430px;
+      min-height: 0;
       position: relative;
       display: flex;
+      align-self: stretch;
       align-items: flex-end;
       justify-content: flex-end;
       pointer-events: none;
@@ -379,21 +381,26 @@
 
     .hero-proof {
       display: grid;
-      gap: 12px;
-      width: min(340px, 100%);
+      gap: 10px;
+      width: min(380px, 100%);
       max-width: 360px;
-      padding-top: 330px;
+      margin-bottom: clamp(0px, 3svh, 26px);
     }
 
     .proof-line {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 18px;
+      gap: 16px;
       border-bottom: 1px solid var(--line);
-      padding: 14px 0;
+      padding: 12px 0;
       color: var(--muted);
       font-size: 13px;
+    }
+
+    .proof-line span {
+      min-width: 0;
+      line-height: 1.35;
     }
 
     .proof-line strong {
@@ -1006,7 +1013,8 @@
 
       .hero-inner {
         gap: 32px;
-        padding: 104px 0 58px;
+        min-height: auto;
+        padding: 104px 0 36px;
       }
 
       h1 {
@@ -1023,7 +1031,7 @@
 
       .hero-proof {
         max-width: 100%;
-        padding-top: 150px;
+        margin-bottom: 0;
       }
 
       .theater { height: 330svh; }
@@ -1125,7 +1133,7 @@
           <div class="hero-copy-column" data-testid="hero-copy">
             <p class="eyebrow">AI agent operating contract</p>
             <h1>Reliability is a system.</h1>
-            <p class="hero-copy">Harness gives Claude Code, Codex, and OpenCode a repo-local workflow for goals, context, task boundaries, verification, recovery, and memory.</p>
+            <p class="hero-copy">Harness gives Claude Code, Codex, and OpenCode a repo-local workflow for goals, context, task boundaries, verification, recovery, memory, and cache-aware routing.</p>
             <div class="hero-actions">
               <a class="button" href="#install" data-testid="hero-copy-cta">Copy install prompt</a>
               <a class="button secondary" href="https://www.npmjs.com/package/create-harness-vibe-coding">npm package</a>
@@ -1133,9 +1141,9 @@
           </div>
           <div class="hero-visual-area">
             <div class="hero-proof" aria-label="Proof points" data-testid="hero-proof">
-              <div class="proof-line"><span>Runtime app code generated</span><strong>0</strong></div>
-              <div class="proof-line"><span>Default agent targets</span><strong>3</strong></div>
-              <div class="proof-line"><span>Release license</span><strong>MIT</strong></div>
+              <div class="proof-line"><span>Thin startup cache read</span><strong>98.7%</strong></div>
+              <div class="proof-line"><span>Warm /wf cache read</span><strong>99.1%</strong></div>
+              <div class="proof-line"><span>/wf cache-read uplift</span><strong>+5.8 pts</strong></div>
             </div>
           </div>
         </div>

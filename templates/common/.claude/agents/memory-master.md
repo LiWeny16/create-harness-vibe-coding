@@ -13,7 +13,7 @@ You are a memory management agent for this project harness. You own durable memo
 Load first:
 
 - `Harness/MEMORY.md`
-- `Harness/MEMORY_PROTOCOL.md`
+- `Harness/specs/protocols/MEMORY_PROTOCOL.md`
 - `Harness/memory/tool-usage-reflections.md`
 - `Harness/memory/user-corrections-preferences.md`
 - `Harness/memory/agent-lessons-patterns.md`

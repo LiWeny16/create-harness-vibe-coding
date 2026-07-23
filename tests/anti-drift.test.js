@@ -138,7 +138,7 @@ test('route-critical template and dogfood files stay byte-identical', () => {
     ['.opencode/commands/wf-help.md', 'templates/common/.opencode/commands/wf-help.md'],
     ['.claude/commands/wf-update.md', 'templates/common/.claude/commands/wf-update.md'],
     ['.opencode/commands/wf-update.md', 'templates/common/.opencode/commands/wf-update.md'],
-    ['Harness/context-loading.md', 'templates/common/Harness/context-loading.md'],
+    ['Harness/specs/runtime/context-loading.md', 'templates/common/Harness/specs/runtime/context-loading.md'],
     ['Harness/scripts/context-budget.mjs', 'templates/common/Harness/scripts/context-budget.mjs'],
     ['Harness/scripts/l2-cache-telemetry.mjs', 'templates/common/Harness/scripts/l2-cache-telemetry.mjs'],
     ['Harness/scripts/wf-remove.mjs', 'templates/common/Harness/scripts/wf-remove.mjs'],
@@ -154,5 +154,42 @@ test('ownership manifest frameworkOwned paths exist on disk', () => {
   const manifest = JSON.parse(read('Harness/ownership.manifest.json'));
   for (const entry of manifest.frameworkOwned) {
     assert.ok(exists(entry.path), `frameworkOwned path missing: ${entry.path}`);
+  }
+});
+
+test('Harness spec docs live under categorized specs directories, not root', () => {
+  const legacyRootDocs = [
+    'ACCEPTANCE_PROTOCOL.md',
+    'AGENT_ISOLATION.md',
+    'DEBUG_PROTOCOL.md',
+    'ECC-GUIDE.md',
+    'HARNESS_BRIDGE.md',
+    'MEMORY_PROTOCOL.md',
+    'SETUP.md',
+    'TASK_ARCHIVE.md',
+    'TDD-GUIDE.md',
+    'WF-AUTO-ANGLES.md',
+    'WF-AUTO-SPARK.md',
+    'WF-AUTO.md',
+    'WF-KERNEL.md',
+    'WF-MAX.md',
+    'WF-STATE.md',
+    'WF.md',
+    'agent-workflow.md',
+    'context-loading.md',
+    'dispatch.md',
+    'extension.md',
+    'lifecycle.md',
+    'subagents.md',
+  ];
+
+  for (const name of legacyRootDocs) {
+    assert.equal(exists(`Harness/${name}`), false, `dogfood legacy root spec doc exists: Harness/${name}`);
+    assert.equal(exists(`templates/common/Harness/${name}`), false, `template legacy root spec doc exists: templates/common/Harness/${name}`);
+  }
+
+  const manifest = JSON.parse(read('Harness/ownership.manifest.json'));
+  for (const entry of manifest.frameworkOwned) {
+    assert.doesNotMatch(entry.path, /^Harness\/[^/]+\.md$/, `frameworkOwned root markdown should not be a spec doc: ${entry.path}`);
   }
 });

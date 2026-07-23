@@ -18,13 +18,13 @@ Compact heartbeat for hardening `/wf-auto-spark` after the previous spark self-e
 
 ## Changes
 
-- Updated `Harness/WF-AUTO-SPARK.md` and `templates/common/Harness/WF-AUTO-SPARK.md`:
+- Updated `Harness/specs/workflows/WF-AUTO-SPARK.md` and `templates/common/Harness/specs/workflows/WF-AUTO-SPARK.md`:
   - task-scribe formats task-state writes from CEO bullets.
   - added `Spark Search Fallbacks`.
   - added `Reflector Escalation`.
   - added SP7-SP10 edge guards.
   - changed per-cycle value reflection and cycle PLAN wording away from CEO direct drafting.
-- Updated `Harness/WF-MAX.md` and `templates/common/Harness/WF-MAX.md`:
+- Updated `Harness/specs/workflows/WF-MAX.md` and `templates/common/Harness/specs/workflows/WF-MAX.md`:
   - task-scribe now runs by default for dispatch ledger, heartbeat, and evidence pointers when available.
   - fallback is explicit when task-scribe is unavailable.
 - Updated root and template `validate-harness.mjs`:

@@ -39,14 +39,18 @@ test('package README stays English and links to Chinese README', () => {
   assert.match(readme, /npx create-harness-vibe-coding/);
   assert.match(readme, /Read and follow https:\/\/github\.com\/LiWeny16\/create-harness-vibe-coding exactly/);
   assert.match(readme, /measurable difference/i);
+  assert.match(readme, /What's new in 0\.8\.15/);
+  assert.match(readme, /Real Claude Code L2 telemetry/);
+  assert.match(readme, /\+5\.4/);
   assert.match(readme, /Prompt-cache L2 sample/);
   assert.match(readme, /cache_read_input_tokens/);
   assert.match(readme, /\+5\.8 percentage points/);
+  assert.match(readme, /agent\.releaseHighlights/);
   assert.match(readme, /Which WF command should you use\?/);
   assert.match(readme, /\/wf-auto-spark/);
   assert.match(readme, /\/wf-browser/);
   assert.match(readme, /\/wf-update/);
-  assert.match(readme, /Harness\/WF-AUTO-ANGLES\.md/);
+  assert.match(readme, /Harness\/specs\/workflows\/WF-AUTO-ANGLES\.md/);
   assert.match(readme, /Rework rate/);
   assert.match(readme, /humanInterventions/);
   assert.match(readme, /bare-agent/);
@@ -55,7 +59,7 @@ test('package README stays English and links to Chinese README', () => {
   assert.match(readme, /Leverage/);
   assert.match(readme, /Blind spot/);
   assert.match(readme, /harness-architecture-light\.png/);
-  assert.match(readme, /Harness\/SETUP\.md/i);
+  assert.match(readme, /Harness\/specs\/guides\/SETUP\.md/i);
   assert.match(readme, /Optional workflows/);
   assert.match(readme, /validate-harness\.mjs/);
   assert.match(readme, /Release gate/);
@@ -63,11 +67,14 @@ test('package README stays English and links to Chinese README', () => {
   assert.match(readme, /npm run check:mirrors/);
 });
 
-test('template source stores harness docs under templates/common/Harness instead of docs', () => {
+test('template source stores harness docs under categorized templates/common/Harness directories', () => {
   assert.equal(fs.existsSync(path.join(process.cwd(), 'templates', 'common', 'docs')), false);
   assert.ok(fs.existsSync(path.join(process.cwd(), 'templates', 'common', 'Harness', 'README.md')));
-  assert.ok(fs.existsSync(path.join(process.cwd(), 'templates', 'common', 'Harness', 'WF.md')));
+  assert.ok(fs.existsSync(path.join(process.cwd(), 'templates', 'common', 'Harness', 'specs', 'workflows', 'WF.md')));
+  assert.ok(fs.existsSync(path.join(process.cwd(), 'templates', 'common', 'Harness', 'specs', 'guides', 'SETUP.md')));
   assert.ok(fs.existsSync(path.join(process.cwd(), 'templates', 'common', 'Harness', 'tasks', '_template', 'PLAN.md')));
+  assert.equal(fs.existsSync(path.join(process.cwd(), 'templates', 'common', 'Harness', 'WF.md')), false);
+  assert.equal(fs.existsSync(path.join(process.cwd(), 'templates', 'common', 'Harness', 'SETUP.md')), false);
 
   assert.equal(fs.existsSync(path.join(process.cwd(), 'templates', 'optional', 'skills', 'browser-e2e', 'docs')), false);
   assert.ok(fs.existsSync(path.join(process.cwd(), 'templates', 'optional', 'skills', 'browser-e2e', 'Harness', 'workflows', 'browser-e2e.md')));
@@ -103,7 +110,7 @@ test('dry run reports existing project conflicts in the plan without writing fil
 
   assert.equal(result.success, true);
   assert.ok(result.plan.conflict.includes('CLAUDE.md'));
-  assert.ok(result.plan.create.includes('Harness/SETUP.md'));
+  assert.ok(result.plan.create.includes('Harness/specs/guides/SETUP.md'));
   assert.equal(result.summary.created, result.plan.create.length);
   assert.equal(result.summary.conflicts, result.plan.conflict.length);
   assert.equal(fs.readFileSync(path.join(targetDir, 'CLAUDE.md'), 'utf8'), 'legacy rules\n');
@@ -225,15 +232,16 @@ test('generated scaffold stores harness-owned payload under root Harness directo
     'CLAUDE.md',
     'AGENTS.md',
     'Harness/README.md',
-    'Harness/SETUP.md',
+    'Harness/settings.json',
+    'Harness/specs/guides/SETUP.md',
     'Harness/MEMORY.md',
     'Harness/PROGRESS.md',
-    'Harness/WF.md',
-    'Harness/subagents.md',
-    'Harness/architecture.md',
-    'Harness/dispatch.md',
-    'Harness/context-loading.md',
-    'Harness/agent-workflow.md',
+    'Harness/specs/workflows/WF.md',
+    'Harness/specs/runtime/subagents.md',
+    'Harness/project/architecture.md',
+    'Harness/specs/runtime/dispatch.md',
+    'Harness/specs/runtime/context-loading.md',
+    'Harness/specs/runtime/agent-workflow.md',
     'Harness/scripts/context-budget.mjs',
     'Harness/scripts/validate-harness.mjs',
     'Harness/scripts/wf-update-check.mjs',
@@ -277,7 +285,7 @@ test('generated scaffold stores harness-owned payload under root Harness directo
     '.claude/skills/subagent-orchestrator/SKILL.md',
     '.agents/skills/subagent-orchestrator/SKILL.md',
     '.claude/agents/reflector.md',
-    'Harness/WF-KERNEL.md',
+    'Harness/specs/workflows/WF-KERNEL.md',
   ]) {
     assert.ok(fs.existsSync(path.join(targetDir, ...rel.split('/'))), `Expected ${rel} to be generated`);
   }
@@ -289,6 +297,16 @@ test('generated scaffold stores harness-owned payload under root Harness directo
   assert.equal(fs.existsSync(path.join(targetDir, 'MEMORY.md')), false);
   assert.equal(fs.existsSync(path.join(targetDir, 'docs', 'README.md')), false);
   assert.equal(fs.existsSync(path.join(targetDir, 'docs', 'harness', 'PLAN.md')), false);
+  for (const legacy of [
+    'Harness/WF.md',
+    'Harness/WF-MAX.md',
+    'Harness/context-loading.md',
+    'Harness/dispatch.md',
+    'Harness/subagents.md',
+    'Harness/SETUP.md',
+  ]) {
+    assert.equal(fs.existsSync(path.join(targetDir, ...legacy.split('/'))), false, `Expected legacy root spec doc to be absent: ${legacy}`);
+  }
 
   const claude = readRel(targetDir, 'CLAUDE.md');
   assert.match(claude, /Harness\/README\.md/);
@@ -297,7 +315,7 @@ test('generated scaffold stores harness-owned payload under root Harness directo
   assert.match(claude, /memory and resource router/);
   assert.match(claude, /Harness\/README\.md/);
   assert.doesNotMatch(claude, /Harness\/SETUP\.md/);
-  assert.match(claude, /Harness\/subagents\.md/);
+  assert.match(claude, /Harness\/specs\/runtime\/subagents\.md/);
   assert.match(claude, /## 2\. Think Before Coding/);
   assert.match(claude, /## 3\. Simplicity First/);
   assert.match(claude, /## 4\. Surgical Changes/);
@@ -322,8 +340,9 @@ test('generated scaffold stores harness-owned payload under root Harness directo
   assert.match(rootReadme, /Development Commands/);
   assert.match(rootReadme, /Harness\/README\.md/);
   assert.match(rootReadme, /Normal agent sessions start from `CLAUDE\.md`/);
-  assert.match(rootReadme, /Use `Harness\/SETUP\.md` only for install\/bootstrap guidance/);
+  assert.match(rootReadme, /Use `Harness\/specs\/guides\/SETUP\.md` only for install\/bootstrap guidance/);
   assert.match(rootReadme, /Harness workflow router/);
+  assert.match(rootReadme, /release highlights from update metadata/);
   assert.doesNotMatch(rootReadme, /normal work starts at `Harness\/README\.md`/);
   assert.match(rootReadme, /Harness\/MEMORY\.md/);
   assert.match(rootReadme, /wf-readme/);
@@ -350,7 +369,7 @@ test('generated scaffold stores harness-owned payload under root Harness directo
   assert.match(docsReadme, /Need peer CLI automation docs/);
   assert.match(docsReadme, /wf-agents-docs/);
 
-  const contextLoading = readRel(targetDir, 'Harness/context-loading.md');
+  const contextLoading = readRel(targetDir, 'Harness/specs/runtime/context-loading.md');
   assert.match(contextLoading, /Context Tiers/);
   assert.match(contextLoading, /automatic route profiles, not user-selected modes/);
   assert.match(contextLoading, /Budgets are regression guards, not exclusion rules/);
@@ -378,7 +397,7 @@ test('generated scaffold stores harness-owned payload under root Harness directo
   assert.match(memoryIndex, /browser-e2e/);
   assert.match(memoryIndex, /wf-agents-docs/);
 
-  const wf = readRel(targetDir, 'Harness/WF.md');
+  const wf = readRel(targetDir, 'Harness/specs/workflows/WF.md');
   assert.match(wf, /Cache Discipline/);
   assert.match(wf, /Orchestration Loop/);
   assert.match(wf, /Task Type Routing/);
@@ -387,15 +406,17 @@ test('generated scaffold stores harness-owned payload under root Harness directo
   assert.match(wf, /controller \+ task-scribe/);
   assert.match(wf, /delegated to appropriate subagents/);
   assert.match(wf, /Cross-review and reflector NOT mandatory/);
+  assert.match(wf, /task-<verb>-<noun>\[-detail\]/);
   assert.doesNotMatch(wf, /MUST use at least 3 distinct role passes/);
   assert.match(wf, /\.claude\/agents\//);
   assert.match(wf, /WF Tiers/);
 
-  const wfKernel = readRel(targetDir, 'Harness/WF-KERNEL.md');
+  const wfKernel = readRel(targetDir, 'Harness/specs/workflows/WF-KERNEL.md');
   assert.match(wfKernel, /Cache-First Context Contract/);
   assert.match(wfKernel, /MaxReturnTokens/);
 
-  const wfMax = readRel(targetDir, 'Harness/WF-MAX.md');
+  const wfMax = readRel(targetDir, 'Harness/specs/workflows/WF-MAX.md');
+  assert.match(wfMax, /task-<verb>-<noun>\[-detail\]/);
   assert.match(wfMax, /CEO may NOT proceed to W2 implementation dispatch with a failing gate/);
   assert.match(wfMax, /parallelism superset/);
   assert.doesNotMatch(wfMax, /strict superset/);
@@ -409,8 +430,19 @@ test('generated scaffold stores harness-owned payload under root Harness directo
   assert.match(wfMax, /ask the user before raising/i);
   assert.match(wfMax, /Close completed agents/);
   assert.match(wfMax, /Codex\+\+/);
+  assert.match(wfMax, /does not authorize CEO source edits/);
+  assert.match(wfMax, /## Cross-Task Decisions/);
   assert.doesNotMatch(wfMax, /proceed to W1 with a failing gate/);
   assert.doesNotMatch(wfMax, /no hard agent cap; recursion governed/);
+
+  const wfState = readRel(targetDir, 'Harness/specs/workflows/WF-STATE.md');
+  assert.match(wfState, /task-<verb>-<noun>\[-detail\]/);
+
+  const wfAutoSkill = readRel(targetDir, '.claude/skills/wf-auto/SKILL.md');
+  assert.match(wfAutoSkill, /Memory Preflight/);
+  assert.match(wfAutoSkill, /bounded test tick/);
+  assert.match(wfAutoSkill, /Harness\/tasks\/auto\/PLAN\.md/);
+  assert.match(wfAutoSkill, /evidence ledger path\/summary/);
 
   const codexConfig = readRel(targetDir, '.codex/config.toml');
   assert.match(codexConfig, /\[agents\]/);
@@ -490,18 +522,18 @@ test('generated scaffold stores harness-owned payload under root Harness directo
   assert.doesNotMatch(wfMaxSkill, /Final acceptance requires verifier evidence, cross-review, and reflector PASS/);
   assert.equal(readRel(targetDir, '.agents/skills/wf-max/SKILL.md'), wfMaxSkill);
 
-  const wfAuto = readRel(targetDir, 'Harness/WF-AUTO.md');
+  const wfAuto = readRel(targetDir, 'Harness/specs/workflows/WF-AUTO.md');
   assert.match(wfAuto, /Inherited WF\/WF-MAX Constraints/);
   assert.match(wfAuto, /Mini PRD -> AC IDs -> test\/validation plan -> implementer -> verifier/);
   assert.match(wfAuto, /reflector PASS/);
 
-  const wfAutoAngles = readRel(targetDir, 'Harness/WF-AUTO-ANGLES.md');
+  const wfAutoAngles = readRel(targetDir, 'Harness/specs/workflows/WF-AUTO-ANGLES.md');
   assert.match(wfAutoAngles, /Selection algorithm/);
   assert.match(wfAutoAngles, /Dynamic obligations/);
   assert.match(wfAutoAngles, /Common probe recipes/);
   assert.match(wfAutoAngles, /Context \/ memory quality/);
 
-  const wfAutoSpark = readRel(targetDir, 'Harness/WF-AUTO-SPARK.md');
+  const wfAutoSpark = readRel(targetDir, 'Harness/specs/workflows/WF-AUTO-SPARK.md');
   assert.match(wfAutoSpark, /Inherited Execution Chain/);
   assert.match(wfAutoSpark, /External spark search replaces discovery only/);
   assert.match(wfAutoSpark, /reflector PASS/);
@@ -513,7 +545,7 @@ test('generated scaffold stores harness-owned payload under root Harness directo
 
   assert.match(wfMax, /process-file delegation is the default/);
 
-  const subagents = readRel(targetDir, 'Harness/subagents.md');
+  const subagents = readRel(targetDir, 'Harness/specs/runtime/subagents.md');
   assert.match(subagents, /## Source Attribution/);
   assert.match(subagents, /npx skills find/);
   assert.match(subagents, /superpowers:dispatching-parallel-agents/);
@@ -530,7 +562,7 @@ test('generated scaffold stores harness-owned payload under root Harness directo
   assert.match(subagents, /## Review Gates/);
 
   const orchestratorSkill = readRel(targetDir, '.claude/skills/subagent-orchestrator/SKILL.md');
-  assert.match(orchestratorSkill, /Harness\/subagents\.md/);
+  assert.match(orchestratorSkill, /Harness\/specs\/runtime\/subagents\.md/);
   assert.match(orchestratorSkill, /Cache Discipline/);
   assert.match(orchestratorSkill, /runtime-neutral/);
   assert.match(orchestratorSkill, /bounded passes/);
@@ -549,6 +581,10 @@ test('generated scaffold stores harness-owned payload under root Harness directo
   assert.match(agentsDocsSkill, /opencode run --format json/);
   assert.match(agentsDocsSkill, /cache_read_input_tokens/);
   assert.match(agentsDocsSkill, /Do not trust exit code alone/);
+  assert.match(agentsDocsSkill, /Evidence-Packet Review Pattern/);
+  assert.match(agentsDocsSkill, /No Scratch-File Rule/);
+  assert.match(agentsDocsSkill, /Subagent Output Contract/);
+  assert.match(agentsDocsSkill, /Do not write CLI probe output under `%TEMP%`/);
   assert.match(agentsDocsSkill, /Cache Discipline/);
   assert.equal(readRel(targetDir, '.agents/skills/wf-agents-docs/SKILL.md'), agentsDocsSkill);
 
@@ -556,7 +592,7 @@ test('generated scaffold stores harness-owned payload under root Harness directo
   assert.match(reflector, /RETURN_TO_DEBUG/);
   assert.match(reflector, /final acceptance may proceed/);
 
-  const architecture = readRel(targetDir, 'Harness/architecture.md');
+  const architecture = readRel(targetDir, 'Harness/project/architecture.md');
   assert.match(architecture, /## 2\. Interface Decoupling/);
   assert.match(architecture, /## 3\. State Design/);
   assert.match(architecture, /Avoid speculative abstraction/);
@@ -667,7 +703,7 @@ test('skip conflict policy leaves directory at target file path untouched', () =
   assert.equal(result.success, true);
   assert.ok(result.plan.skip.includes('CLAUDE.md'));
   assert.equal(fs.statSync(path.join(targetDir, 'CLAUDE.md')).isDirectory(), true);
-  assert.ok(fs.existsSync(path.join(targetDir, 'Harness', 'SETUP.md')));
+  assert.ok(fs.existsSync(path.join(targetDir, 'Harness', 'specs', 'guides', 'SETUP.md')));
 });
 
 test('without options subtract from preset and explicit optional skills', () => {
@@ -724,8 +760,12 @@ test('package README-CN gives a concise Chinese quickstart and Harness-only docs
   assert.match(readmeCn, /\/wf-update/);
   assert.match(readmeCn, /Prompt-cache L2/);
   assert.match(readmeCn, /cache_read_input_tokens/);
+  assert.match(readmeCn, /0\.8\.15/);
+  assert.match(readmeCn, /98\.7%/);
+  assert.match(readmeCn, /\+5\.4/);
   assert.match(readmeCn, /\+5\.8/);
-  assert.match(readmeCn, /Harness\/WF-AUTO-ANGLES\.md/);
+  assert.match(readmeCn, /agent\.releaseHighlights/);
+  assert.match(readmeCn, /Harness\/specs\/workflows\/WF-AUTO-ANGLES\.md/);
   assert.match(readmeCn, /让 AI agent 在真实仓库里先理解/);
   assert.match(readmeCn, /三个核心支柱/);
   assert.match(readmeCn, /嗔/);
@@ -788,7 +828,7 @@ test('external recommendations are recorded without installing third-party skill
 
   assert.equal(result.success, true);
 
-  const setup = readRel(targetDir, 'Harness/SETUP.md');
+  const setup = readRel(targetDir, 'Harness/specs/guides/SETUP.md');
   assert.match(setup, /Selected External Recommendations/);
   assert.match(setup, /superpowers/);
   assert.match(setup, /codegraph/);
@@ -850,7 +890,7 @@ test('generated scaffold includes memory folder registrations and reflection tri
 
   const memoryIndex = readRel(targetDir, 'Harness/MEMORY.md');
   const docsReadme = readRel(targetDir, 'Harness/README.md');
-  const setup = readRel(targetDir, 'Harness/SETUP.md');
+  const setup = readRel(targetDir, 'Harness/specs/guides/SETUP.md');
   const claude = readRel(targetDir, 'CLAUDE.md');
   const wfUpdateSkill = readRel(targetDir, '.claude/skills/wf-update/SKILL.md');
 
@@ -863,7 +903,7 @@ test('generated scaffold includes memory folder registrations and reflection tri
   assert.match(docsReadme, /wf-readme/);
   assert.match(docsReadme, /Routing priority/);
   assert.match(docsReadme, /explicit WF token/);
-  assert.match(docsReadme, /\| Need WF mode \(explicit only\)[^\n]*\[WF\.md\]\(WF\.md\), \[WF-KERNEL\.md\]\(WF-KERNEL\.md\), \[PROGRESS\.md\]\(PROGRESS\.md\)[^\n]*tier-gated acceptance/);
+  assert.match(docsReadme, /\| Need WF mode \(explicit only\)[^\n]*\[WF\.md\]\(specs\/workflows\/WF\.md\), \[WF-KERNEL\.md\]\(specs\/workflows\/WF-KERNEL\.md\), \[PROGRESS\.md\]\(PROGRESS\.md\)[^\n]*tier-gated acceptance/);
   assert.match(docsReadme, /\| Need WF mode \(explicit only\)/);
   assert.match(wfUpdateSkill, /wf-update-check\.mjs/);
   assert.match(wfUpdateSkill, /scan-clean\.mjs/);
@@ -888,7 +928,7 @@ test('generated scaffold includes memory folder registrations and reflection tri
   assert.match(setup, /add CI\/CD only after user approval/);
   assert.match(setup, /no startup dependency on this setup reference/);
   assert.doesNotMatch(setup, /bootstrap contract line/);
-  const memoryProto = readRel(targetDir, 'Harness/MEMORY_PROTOCOL.md');
+  const memoryProto = readRel(targetDir, 'Harness/specs/protocols/MEMORY_PROTOCOL.md');
   assert.match(memoryProto, /same tool or command pattern fails 3\+ times/);
   assert.match(memoryProto, /user corrects the same assumption or preference 2\+ times/);
 });
@@ -900,7 +940,7 @@ test('core docs declare project files as the durable communication channel', () 
   const result = generate({ projectName: 'durable-docs', targetDir });
 
   assert.equal(result.success, true);
-  for (const rel of ['Harness/README.md', 'Harness/subagents.md', 'Harness/dispatch.md', 'Harness/context-loading.md']) {
+  for (const rel of ['Harness/README.md', 'Harness/specs/runtime/subagents.md', 'Harness/specs/runtime/dispatch.md', 'Harness/specs/runtime/context-loading.md']) {
     const body = readRel(targetDir, rel);
     assert.match(body, /project files are the only durable communication channel/i, `${rel} should declare durable filesystem authority`);
     assert.match(body, /chat\/subagent transcript state is non-authoritative/i, `${rel} should reject transcript state as authoritative`);
@@ -1040,16 +1080,26 @@ test('build-version produces valid semver and populated checksums/sources', asyn
   // Assert checksums is populated with >0 keys (all non-PRESERVE files)
   const checksumKeys = Object.keys(harnessVersion.checksums);
   assert.ok(checksumKeys.length > 0, 'checksums should have at least one entry');
+  assert.ok(
+    checksumKeys.includes('Harness/project/architecture.md'),
+    'project architecture starter should be checksummed so updates can create/move it without overwriting user edits',
+  );
+
+  assert.equal(harnessVersion.releaseNotes.version, pkg.version, 'release notes should match package version');
+  assert.ok(
+    harnessVersion.releaseNotes.highlights.some(line => /L2 prompt-cache telemetry/i.test(line)),
+    'release notes should include cache telemetry highlight',
+  );
 
   // Assert sources is populated with >0 keys and includes remapped paths
   const sourceKeys = Object.keys(harnessVersion.sources);
   assert.ok(sourceKeys.length > 0, 'sources should have at least one entry');
 
-  // Specifically assert that Harness/WF.md maps directly from templates/common/Harness/WF.md
+  // Specifically assert that Harness/specs/workflows/WF.md maps directly from templates/common/Harness/specs/workflows/WF.md
   assert.equal(
-    harnessVersion.sources['Harness/WF.md'],
-    'Harness/WF.md',
-    'Harness/WF.md should be mapped from Harness/WF.md'
+    harnessVersion.sources['Harness/specs/workflows/WF.md'],
+    'Harness/specs/workflows/WF.md',
+    'Harness/specs/workflows/WF.md should be mapped from Harness/specs/workflows/WF.md'
   );
 
   // Harness/scripts/* files now live under templates/common/Harness/scripts/
@@ -1088,6 +1138,10 @@ test('generated project has populated .harness-version with matching version and
   // Assert checksums is populated (non-empty, >0 keys)
   const checksumKeys = Object.keys(harnessVersion.checksums);
   assert.ok(checksumKeys.length > 0, 'generated .harness-version checksums should have entries');
+  assert.ok(
+    checksumKeys.includes('Harness/project/architecture.md'),
+    'generated .harness-version should track project architecture starter checksum',
+  );
 
   // Assert generated is a valid ISO timestamp
   assert.match(harnessVersion.generated, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/, 'generated should be a valid ISO timestamp');

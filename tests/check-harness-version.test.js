@@ -76,7 +76,7 @@ test('W2 drift detection: mismatched checksums are flagged and exit non-zero', (
 
 test('dogfood identity drift: generator and source must match the published package', () => {
   const root = tmpdir();
-  const rel = 'Harness/WF.md';
+  const rel = 'Harness/specs/workflows/WF.md';
   const content = 'matching framework file\n';
   writeRel(root, 'package.json', JSON.stringify({
     name: 'create-harness-vibe-coding',
@@ -191,8 +191,18 @@ test('G2b: build-version --root syncs generator/source/checksums/sources and pre
   writeRel(root, 'templates/common/CLAUDE.md', templateClaude);
   writeRel(root, 'templates/common/.claude/commands/wf-help.md', 'template wf-help body\n');
 
+  const optionalSkill = 'optional skill body\n';
+  writeRel(root, 'templates/optional/catalog.json', JSON.stringify({
+    skills: [{ id: 'x', files: ['skills/x'] }],
+    presets: {},
+    externalRecommendations: [],
+  }, null, 2) + '\n');
+  writeRel(root, 'templates/optional/skills/x/.claude/skills/x/SKILL.md', optionalSkill);
+
   // Root-level file so rootFileExists('CLAUDE.md') is true and its checksum/source refresh.
   writeRel(root, 'CLAUDE.md', 'root CLAUDE body\n');
+  writeRel(root, '.claude/skills/x/SKILL.md', 'old optional body\n');
+  writeRel(root, '.agents/skills/x/SKILL.md', 'old optional body\n');
 
   // Local install state with fields that must be preserved across the sync.
   const acceptedConflicts = {
@@ -222,6 +232,10 @@ test('G2b: build-version --root syncs generator/source/checksums/sources and pre
   assert.equal(synced.source, CANONICAL_SOURCE, 'source refreshed to canonical URL');
   assert.equal(synced.checksums['CLAUDE.md'], sha256Hex(templateClaude), 'checksum refreshed to template content hash');
   assert.equal(synced.sources['CLAUDE.md'], 'CLAUDE.md', 'source map refreshed to template rel path');
+  assert.equal(synced.checksums['.claude/skills/x/SKILL.md'], sha256Hex(optionalSkill), 'selected optional checksum refreshed');
+  assert.equal(synced.checksums['.agents/skills/x/SKILL.md'], sha256Hex(optionalSkill), 'selected optional mirror checksum refreshed');
+  assert.equal(synced.sources['.claude/skills/x/SKILL.md'], 'skills/x/.claude/skills/x/SKILL.md', 'selected optional source refreshed');
+  assert.equal(synced.sources['.agents/skills/x/SKILL.md'], 'skills/x/.claude/skills/x/SKILL.md', 'selected optional mirror source refreshed');
 
   // Preserved local install state.
   assert.deepEqual(synced.options, ['x'], 'options preserved unchanged');

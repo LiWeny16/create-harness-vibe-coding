@@ -33,7 +33,7 @@ test('context budget script passes current Harness load sets', () => {
 
 test('context docs enforce tiered lazy loading instead of broad prefetch', () => {
   for (const prefix of ['', 'templates/common/']) {
-    const context = read(`${prefix}Harness/context-loading.md`);
+    const context = read(`${prefix}Harness/specs/runtime/context-loading.md`);
     const startup = read(`${prefix}${prefix ? 'memory/startup-hints.md' : 'Harness/memory/startup-hints.md'}`);
 
     assert.match(context, /## Context Tiers/);

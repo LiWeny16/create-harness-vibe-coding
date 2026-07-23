@@ -20,7 +20,7 @@ Browser evidence in this project follows the contract:
 
 ### Harness Bridge
 
-For frontend-backend flows, use `Harness/HARNESS_BRIDGE.md` to validate UI
+For frontend-backend flows, use `Harness/specs/protocols/HARNESS_BRIDGE.md` to validate UI
 selectors, API payloads, seeded data, runtime state probes, and CDP/network
 traces. Browser validation must produce an AC-by-AC result matrix when the task
 has acceptance criteria.
@@ -97,12 +97,12 @@ If `browser-use` is not installed, fall back to:
 
 1. Playwright/Puppeteer MCP server (if configured)
 2. Chrome DevTools Protocol (CDP) manual inspection
-3. `Harness/WF.md#Browser And API Evidence` manual check contract
+3. `Harness/specs/workflows/WF.md#Browser And API Evidence` manual check contract
 
 ## Integration Points
 
-- **WF mode**: when browser-visible changes are made, follow the evidence contract in `Harness/WF.md#Browser And API Evidence`
-- **Harness Bridge**: use `Harness/HARNESS_BRIDGE.md` for UI contract, API contract, seeded test data, runtime state probes, and network trace collection.
+- **WF mode**: when browser-visible changes are made, follow the evidence contract in `Harness/specs/workflows/WF.md#Browser And API Evidence`
+- **Harness Bridge**: use `Harness/specs/protocols/HARNESS_BRIDGE.md` for UI contract, API contract, seeded test data, runtime state probes, and network trace collection.
 - **wf-browser**: Claude Code uses `.claude/skills/wf-browser/SKILL.md`; Codex uses `.agents/skills/wf-browser/SKILL.md`. Both load this workflow.
 - **MEMORY.md**: registered as optional workflow skill
 - **README.md**: routing table row "Browser E2E testing or automation" -> browser-e2e

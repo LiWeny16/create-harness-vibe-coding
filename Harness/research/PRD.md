@@ -44,7 +44,7 @@
 ## 5. Acceptance Criteria
 
 - [x] AC-001: `npm test` covers root `Harness/` mapping, conflict behavior, optional workflows, validator registration, memory triggers, and README language split.
-- [x] AC-002: Generated projects include `Harness/MEMORY.md`, `Harness/README.md`, `Harness/WF.md`, `Harness/subagents.md`, and registered `.claude/skills/*`.
+- [x] AC-002: Generated projects include `Harness/MEMORY.md`, `Harness/README.md`, `Harness/specs/workflows/WF.md`, `Harness/specs/runtime/subagents.md`, and registered `.claude/skills/*`.
 - [x] AC-003: Existing `CLAUDE.md` and `AGENTS.md` conflicts require user confirmation before merge or replacement.
 - [x] AC-004: README documents both npx install and Agent-link install.
 - [x] AC-005: This repository dogfoods root `Harness/` routing for future agent work.

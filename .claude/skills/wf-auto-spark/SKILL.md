@@ -5,7 +5,7 @@ description: Perpetual inspiration mode for /wf-auto-spark or $wf-auto-spark. In
 
 # WF-AUTO-SPARK Adapter
 
-The authoritative workflow lives in `Harness/WF-AUTO-SPARK.md`; this adapter
+The authoritative workflow lives in `Harness/specs/workflows/WF-AUTO-SPARK.md`; this adapter
 only routes and summarizes hard constraints.
 
 ## Invocation
@@ -18,14 +18,14 @@ only routes and summarizes hard constraints.
 1. `CLAUDE.md`
 2. `Harness/MEMORY.md`
 3. `Harness/README.md`
-4. `Harness/WF-AUTO-SPARK.md`
-5. `Harness/WF-AUTO.md`
-6. `Harness/subagents.md`
-7. `Harness/dispatch.md`
+4. `Harness/specs/workflows/WF-AUTO-SPARK.md`
+5. `Harness/specs/workflows/WF-AUTO.md`
+6. `Harness/specs/runtime/subagents.md`
+7. `Harness/specs/runtime/dispatch.md`
 
 ## Cache Discipline
 
-Follow `Harness/context-loading.md#Cache-First Context Contract`: keep roadmap
+Follow `Harness/specs/runtime/context-loading.md#Cache-First Context Contract`: keep roadmap
 and workflow docs stable, put fresh spark search results in the dynamic suffix,
 defer unused tools/skills, and let task-scribe write compact state instead of
 replaying search transcripts.

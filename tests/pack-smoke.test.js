@@ -12,12 +12,13 @@ test('npm pack includes core and optional templates', () => {
   const output = `${result.stdout}\n${result.stderr}`;
 
   assert.equal(result.status, 0, output);
-  assert.match(output, /templates\/common\/Harness\/SETUP\.md|templates\\common\\Harness\\SETUP\.md/);
+  assert.match(output, /templates\/common\/Harness\/specs\/guides\/SETUP\.md|templates\\common\\Harness\\specs\\guides\\SETUP\.md/);
   assert.match(output, /templates\/optional\/catalog\.json|templates\\optional\\catalog\.json/);
   assert.match(output, /bin\/create-harness-vibe-coding\.js|bin\\create-harness-vibe-coding\.js/);
   assert.match(output, /templates\/optional\/skills\/[^/\\]+\/\.claude\/skills\/[^/\\]+\/SKILL\.md|templates\\optional\\skills\\[^/\\]+\\.claude\\skills\\[^/\\]+\\SKILL\.md/);
   assert.match(output, /templates\/optional\/skills\/[^/\\]+\/Harness\/workflows\/[^/\\]+\.md|templates\\optional\\skills\\[^/\\]+\\Harness\\workflows\\[^/\\]+\.md/);
   assert.match(output, /templates\/common\/Harness\/README\.md|templates\\common\\Harness\\README\.md/);
+  assert.match(output, /CHANGELOG\.md/);
   assert.doesNotMatch(output, /templates\/common\/docs\/README\.md|templates\\common\\docs\\README\.md/);
   assert.match(output, /templates\/common\/\.claude\/commands\/wf-help\.md|templates\\common\\.claude\\commands\\wf-help\.md/);
   assert.doesNotMatch(output, /templates\/common\/commands\/wf|templates\\common\\commands\\wf/);

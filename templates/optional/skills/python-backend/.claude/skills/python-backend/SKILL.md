@@ -37,4 +37,4 @@ Update `Harness/tasks/<task-id>/PLAN.md` only when executing a tracked plan item
 
 ## dispatch.md Usage
 
-Use `Harness/dispatch.md` for separable backend work such as API implementation, database changes, and test coverage.
+Use `Harness/specs/runtime/dispatch.md` for separable backend work such as API implementation, database changes, and test coverage.

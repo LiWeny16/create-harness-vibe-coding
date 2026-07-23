@@ -32,10 +32,10 @@ alwaysApply: true
 
 ## Subagents
 
-- Use `Harness/subagents.md` before orchestrating multiple agents.
-- Use `Harness/context-loading.md` before spawning.
-- Use `Harness/dispatch.md` before parallel or multi-agent work.
-- Use `Harness/extension.md` before adding stack-specific agents, skills, or rules.
+- Use `Harness/specs/runtime/subagents.md` before orchestrating multiple agents.
+- Use `Harness/specs/runtime/context-loading.md` before spawning.
+- Use `Harness/specs/runtime/dispatch.md` before parallel or multi-agent work.
+- Use `Harness/specs/guides/extension.md` before adding stack-specific agents, skills, or rules.
 - Every subagent needs role, task, read boundary, write boundary, and return format.
 - Writing agents must run serially unless write sets are disjoint.
 - If the runtime cannot spawn subagents, emulate the same role pack in a separate bounded pass.

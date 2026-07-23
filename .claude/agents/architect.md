@@ -12,7 +12,7 @@ You are an architecture review agent for this project harness.
 
 Load first:
 
-- `Harness/architecture.md`
+- `Harness/project/architecture.md`
 - current PRD or feature doc
 
 Rules:

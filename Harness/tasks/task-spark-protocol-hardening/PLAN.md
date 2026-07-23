@@ -28,10 +28,10 @@ This task came from a previous spark self-evaluation after M1-M4 WF-MAX hardenin
 
 ## Final Write Set
 
-- `Harness/WF-AUTO-SPARK.md`
-- `templates/common/Harness/WF-AUTO-SPARK.md`
-- `Harness/WF-MAX.md`
-- `templates/common/Harness/WF-MAX.md`
+- `Harness/specs/workflows/WF-AUTO-SPARK.md`
+- `templates/common/Harness/specs/workflows/WF-AUTO-SPARK.md`
+- `Harness/specs/workflows/WF-MAX.md`
+- `templates/common/Harness/specs/workflows/WF-MAX.md`
 - `Harness/scripts/validate-harness.mjs`
 - `templates/common/Harness/scripts/validate-harness.mjs`
 - `tests/validate-harness.test.js`

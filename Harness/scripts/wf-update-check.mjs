@@ -15,7 +15,7 @@
  *   --full-plan and --verbose are aliases.
  */
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync, lstatSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, lstatSync, unlinkSync } from 'fs';
 import { createHash } from 'crypto';
 import { resolve, dirname, sep } from 'path';
 import { fileURLToPath } from 'url';
@@ -46,6 +46,7 @@ const PRESERVE_PATTERNS = [
   /^Harness\/research\/PRD\.md$/,
   /^Harness\/research\/research-results\.md$/,
   /^Harness\/architecture\.md$/,
+  /^Harness\/project\/architecture\.md$/,
   /^README\.md$/,
   /^\.gitignore$/,
   /^package\.json$/,
@@ -59,6 +60,7 @@ const MERGE_PATTERNS = [
   /^MEMORY\.md$/,
   /^Harness\/MEMORY\.md$/,
   /^Harness\/README\.md$/,
+  /^Harness\/settings\.json$/,
 ];
 
 const OPTIONAL_REGISTRATION_FILES = new Set([
@@ -83,7 +85,7 @@ const HARNESS_OWNED_CONTENT_MARKERS = [
   /^harness:\s*(?:wf-agent|wf-framework|create-harness-vibe-coding)\b/im,
   /\bcreate-harness-vibe-coding\b/i,
   /\bproject harness\b/i,
-  /\bHarness\/(?:WF|MEMORY|tasks|scripts|subagents|dispatch|context-loading|lifecycle|SETUP)\b/,
+  /\bHarness\/(?:specs|WF|MEMORY|tasks|scripts|subagents|dispatch|context-loading|lifecycle|SETUP)\b/,
   /\bWF-(?:MAX|AUTO|KERNEL|STATE)\b/,
 ];
 
@@ -662,6 +664,18 @@ async function main() {
 
   const remoteChecksums = remoteVersion.checksums || {};
   const remoteSources = remoteVersion.sources || {};
+  const remoteMoves = Array.isArray(remoteVersion.moves)
+    ? remoteVersion.moves
+        .map(move => ({
+          from: canonicalPath(move?.from || ''),
+          to: canonicalPath(move?.to || ''),
+          deleteOldIfChecksumMatches: move?.deleteOldIfChecksumMatches !== false,
+          preserveOldIfModified: move?.preserveOldIfModified !== false,
+        }))
+        .filter(move => move.from && move.to && remoteChecksums[move.to])
+    : [];
+  const moveByFrom = new Map(remoteMoves.map(move => [move.from, move]));
+  const movedToFiles = new Set();
   localVersion.acceptedConflicts = localVersion.acceptedConflicts || {};
 
   /** Resolve the remote template-relative path for a dest-keyed file. Falls back to the key itself for back-compat. */
@@ -677,6 +691,20 @@ async function main() {
   function sourceUrl(templateRelPath) {
     if (source.kind === 'npm') return `${source.label}${templateRelPath}`;
     return source.base + templateRelPath;
+  }
+
+  function releaseHighlights(versionObj) {
+    const highlights = versionObj?.releaseNotes?.highlights;
+    return Array.isArray(highlights)
+      ? highlights.map(String).map(s => s.trim()).filter(Boolean)
+      : [];
+  }
+
+  function printReleaseHighlights(versionObj) {
+    const highlights = releaseHighlights(versionObj).slice(0, 6);
+    if (highlights.length === 0) return;
+    console.log('\nRelease highlights:');
+    for (const item of highlights) console.log(`   - ${item}`);
   }
 
   function withRemoteMeta(entry) {
@@ -713,6 +741,7 @@ async function main() {
       adopted: plan.adopted.map(withRemoteMeta),
       conflict: verbose ? plan.conflict.map(withConflictActions) : plan.conflict.map(withConflictActions).slice(0, 5),
       conflictTruncated: !verbose && plan.conflict.length > 5 ? plan.conflict.length - 5 : undefined,
+      moved: plan.moved.map(withRemoteMeta),
       skipped: plan.skipped.map(withRemoteMeta),
     };
   }
@@ -732,8 +761,12 @@ async function main() {
       safeApplyCommand: 'node Harness/scripts/wf-update-check.mjs --apply-safe',
       strictApplyCommand: 'node Harness/scripts/wf-update-check.mjs --apply',
       finalizeCommand: 'node Harness/scripts/wf-update-check.mjs --finalize',
+      pathMoves: remoteMoves,
       partialUpdate: localVersion.partialUpdate || null,
       acceptedConflicts: localVersion.acceptedConflicts || {},
+      releaseNotes: remoteVersion.releaseNotes || null,
+      releaseHighlights: releaseHighlights(remoteVersion),
+      updateReportRequired: 'After apply/finalize, tell the user the version, safe/new/conflict counts, validation results, and the core releaseHighlights from this update.',
       // aiMergeRequired array is attached only in verbose mode to keep default output token-safe.
       ...(verbose ? { aiMergeRequired: conflicts } : {}),
       aiMergeRequiredCount: totalConflicts,
@@ -817,10 +850,11 @@ async function main() {
 
   const allFiles = new Set([...Object.keys(localChecksums), ...Object.keys(remoteChecksums)]);
 
-  const plan = { updated: [], created: [], adopted: [], conflict: [], skipped: [] };
+  const plan = { updated: [], created: [], adopted: [], moved: [], conflict: [], skipped: [] };
 
   for (const file of [...allFiles].sort()) {
     const canonical = canonicalPath(file);
+    if (movedToFiles.has(canonical)) continue;
 
     // Reject paths that escape ROOT before any file access
     const diskPath = safePath(file);
@@ -832,6 +866,47 @@ async function main() {
     const localHash = sha256File(diskPath);
     const storedHash = localChecksums[file];
     const remoteHash = remoteChecksums[file];
+
+    const move = moveByFrom.get(canonical);
+    if (move && storedHash && !remoteHash) {
+      const toDiskPath = safePath(move.to);
+      if (!toDiskPath) {
+        plan.skipped.push({ file, movedTo: move.to, reason: 'path move target traversal rejected' });
+        continue;
+      }
+      const toLocalHash = sha256File(toDiskPath);
+      const toRemoteHash = remoteChecksums[move.to];
+      if (localHash && localHash !== storedHash) {
+        plan.skipped.push({
+          file,
+          movedTo: move.to,
+          reason: 'legacy moved file modified; preserved for manual review',
+        });
+        continue;
+      }
+      if (toLocalHash && toLocalHash !== toRemoteHash) {
+        plan.skipped.push({
+          file,
+          movedTo: move.to,
+          reason: 'legacy moved file preserved until canonical path conflict is resolved',
+        });
+        continue;
+      }
+      plan.moved.push({
+        file: move.to,
+        from: file,
+        to: move.to,
+        localHash,
+        storedHash,
+        remoteHash: toRemoteHash,
+        write: toLocalHash !== toRemoteHash,
+        reason: toLocalHash === toRemoteHash
+          ? 'legacy framework path cleanup; canonical file already current'
+          : 'safe framework path move',
+      });
+      movedToFiles.add(move.to);
+      continue;
+    }
 
     if (!remoteHash) {
       if (storedHash && isInstalledOptionalFile(file, localVersion)) {
@@ -868,10 +943,12 @@ async function main() {
         plan.conflict.push({ file, localHash, storedHash: 'none', remoteHash, reason: 'new remote file conflicts with existing local file' });
         continue;
       }
-      // New file: still respect PRESERVE classification.
+      // New file: still respect PRESERVE classification for existing user data,
+      // but create missing scaffold starter files. PRESERVE means "do not
+      // overwrite local user data", not "leave required new docs absent".
       const tier = classify(canonical, null, null, manifestCtx);
       if (tier === 'PRESERVE') {
-        plan.skipped.push({ file, reason: 'PRESERVE: new file would overwrite user data' });
+        plan.created.push({ file, remoteHash, reason: 'PRESERVE: missing scaffold starter; no local user data to overwrite' });
       } else {
         plan.created.push({ file, remoteHash });
       }
@@ -935,11 +1012,13 @@ async function main() {
       from: localGen,
       to: remoteGen,
       sourceBase,
+      releaseNotes: remoteVersion.releaseNotes || null,
       partialUpdate: localVersion.partialUpdate || null,
       acceptedConflicts: localVersion.acceptedConflicts || {},
       updated: plan.updated.length,
       created: plan.created.length,
       adopted: plan.adopted.length,
+      moved: plan.moved.length,
       conflict: plan.conflict.length,
       skipped: plan.skipped.length,
       // Token-safe by default: attach the full plan only when --verbose / --full-plan is passed.
@@ -950,7 +1029,8 @@ async function main() {
   }
 
   console.log(`\nUpdate: v${localGen} -> v${remoteGen}`);
-  console.log(`   ${plan.updated.length} safe update, ${plan.created.length} new, ${plan.conflict.length} conflict, ${plan.skipped.length} skipped\n`);
+  console.log(`   ${plan.updated.length} safe update, ${plan.created.length} new, ${plan.moved.length} moved, ${plan.conflict.length} conflict, ${plan.skipped.length} skipped\n`);
+  printReleaseHighlights(remoteVersion);
 
   // Show conflicts (these need AI/user decision)
   if (plan.conflict.length > 0) {
@@ -965,10 +1045,11 @@ async function main() {
   }
 
   // Show what will be auto-updated
-  if (plan.updated.length + plan.created.length > 0) {
+  if (plan.updated.length + plan.created.length + plan.moved.length > 0) {
     console.log('AUTO (safe to apply):');
     for (const u of plan.updated) console.log(`   ^ ${u.file}`);
     for (const c of plan.created) console.log(`   + ${c.file}`);
+    for (const m of plan.moved) console.log(`   > ${m.from} -> ${m.to}`);
     console.log('');
   }
 
@@ -1014,6 +1095,9 @@ async function main() {
     const prepareJobs = [
       ...plan.updated.map(entry => ({ entry, options: {} })),
       ...plan.created.map(entry => ({ entry, options: { mustNotExist: true } })),
+      ...plan.moved
+        .filter(entry => entry.write !== false)
+        .map(entry => ({ entry, options: { mustNotExist: !existsSync(safePath(entry.file)) } })),
     ];
     const prepareResults = await Promise.all(
       prepareJobs.map(job => prepareWrite(job.entry, job.options)),
@@ -1050,6 +1134,17 @@ async function main() {
           writeFileSync(prepared.dest, prepared.content, 'utf-8');
           applied++;
         }
+        for (const moved of plan.moved) {
+          const from = safePath(moved.from);
+          if (!from) throw new Error(`Traversal rejected: ${moved.from}`);
+          if (!existsSync(from)) continue;
+          if (lstatSync(from).isSymbolicLink()) throw new Error(`Symlink rejected: ${moved.from}`);
+          const currentHash = sha256File(from);
+          if (currentHash && currentHash !== moved.storedHash) {
+            throw new Error(`Legacy moved file changed before cleanup: ${moved.from}`);
+          }
+          unlinkSync(from);
+        }
       } catch (e) {
         console.error(`   x Failed while writing prepared files - ${e.message}`);
         failed++;
@@ -1063,24 +1158,43 @@ async function main() {
       for (const u of plan.updated) localVersion.checksums[u.file] = u.remoteHash;
       for (const c of plan.created) localVersion.checksums[c.file] = c.remoteHash;
       for (const a of plan.adopted) localVersion.checksums[a.file] = a.remoteHash;
+      localVersion.sources = localVersion.sources || {};
+      for (const u of plan.updated) localVersion.sources[u.file] = remoteSources[u.file] || u.file;
+      for (const c of plan.created) localVersion.sources[c.file] = remoteSources[c.file] || c.file;
+      for (const a of plan.adopted) localVersion.sources[a.file] = remoteSources[a.file] || a.file;
+      for (const m of plan.moved) {
+        localVersion.checksums[m.file] = m.remoteHash;
+        localVersion.sources[m.file] = remoteSources[m.file] || m.file;
+        delete localVersion.checksums[m.from];
+        delete localVersion.sources[m.from];
+        delete localVersion.acceptedConflicts[m.from];
+      }
+      if (Array.isArray(remoteVersion.moves)) localVersion.moves = remoteVersion.moves;
+      else delete localVersion.moves;
       if (plan.conflict.length === 0) {
         localVersion.generator = remoteGen;
         localVersion.generated = appliedAt;
+        if (remoteVersion.releaseNotes) localVersion.releaseNotes = remoteVersion.releaseNotes;
+        else delete localVersion.releaseNotes;
         delete localVersion.partialUpdate;
       } else {
         localVersion.partialUpdate = {
           targetGenerator: remoteGen,
           updatedAt: appliedAt,
-          appliedFiles: [...plan.updated, ...plan.created].map(x => x.file),
+          appliedFiles: [...plan.updated, ...plan.created, ...plan.moved].map(x => x.file),
           adoptedFiles: plan.adopted.map(x => x.file),
+          movedFiles: plan.moved.map(x => ({ from: x.from, to: x.to })),
           conflicts: plan.conflict.map(x => x.file),
+          releaseNotes: remoteVersion.releaseNotes || null,
         };
       }
       writeFileSync(VERSION_FILE, JSON.stringify(localVersion, null, 2) + '\n', 'utf-8');
       if (plan.conflict.length === 0) {
         console.log(`Applied ${applied} files. Version updated to ${remoteVersion.generator}.`);
+        printReleaseHighlights(remoteVersion);
       } else {
         console.log(`Applied ${applied} SAFE/NEW files. Version remains ${localGen}; ${plan.conflict.length} conflicts still need merge.`);
+        printReleaseHighlights(remoteVersion);
       }
     } else {
       console.log(`${failed} failures. NO files were version-tracked. Fix and re-run.`);
@@ -1089,8 +1203,8 @@ async function main() {
   }
 
   if (finalize) {
-    if (plan.updated.length > 0 || plan.created.length > 0 || plan.adopted.length > 0) {
-      console.log(`Cannot finalize: ${plan.updated.length} safe updates, ${plan.created.length} new files, and ${plan.adopted.length} adopted metadata entries still need --apply-safe.`);
+    if (plan.updated.length > 0 || plan.created.length > 0 || plan.adopted.length > 0 || plan.moved.length > 0) {
+      console.log(`Cannot finalize: ${plan.updated.length} safe updates, ${plan.created.length} new files, ${plan.moved.length} path moves, and ${plan.adopted.length} adopted metadata entries still need --apply-safe.`);
       if (decisionMetadataDirty) {
         writeFileSync(VERSION_FILE, JSON.stringify(localVersion, null, 2) + '\n', 'utf-8');
       }
@@ -1108,9 +1222,12 @@ async function main() {
     const finalizedAt = new Date().toISOString();
     localVersion.generator = remoteGen;
     localVersion.generated = finalizedAt;
+    if (remoteVersion.releaseNotes) localVersion.releaseNotes = remoteVersion.releaseNotes;
+    else delete localVersion.releaseNotes;
     delete localVersion.partialUpdate;
     writeFileSync(VERSION_FILE, JSON.stringify(localVersion, null, 2) + '\n', 'utf-8');
     console.log(`Finalized Harness update to ${remoteGen}.`);
+    printReleaseHighlights(remoteVersion);
   } else if (decisionMetadataDirty) {
     writeFileSync(VERSION_FILE, JSON.stringify(localVersion, null, 2) + '\n', 'utf-8');
     console.log('Recorded conflict decision metadata.');

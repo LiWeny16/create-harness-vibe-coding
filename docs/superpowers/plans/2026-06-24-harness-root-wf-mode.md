@@ -19,7 +19,7 @@
 
 - [ ] **Step 1: Add tests asserting generated Harness layout**
 
-Assert fresh generation creates `Harness/README.md`, `Harness/PLAN.md`, `Harness/WF.md`, `Harness/MEMORY.md`, `Harness/memory/*`, and `Harness/scripts/validate-harness.mjs`, while not creating `docs/README.md` or `docs/harness/PLAN.md`.
+Assert fresh generation creates `Harness/README.md`, `Harness/PLAN.md`, `Harness/specs/workflows/WF.md`, `Harness/MEMORY.md`, `Harness/memory/*`, and `Harness/scripts/validate-harness.mjs`, while not creating `docs/README.md` or `docs/harness/PLAN.md`.
 
 - [ ] **Step 2: Add tests asserting optional workflows land under Harness**
 
@@ -42,7 +42,7 @@ Expected: failures mentioning missing `Harness/*` files and old validator paths.
 
 - [ ] **Step 1: Add deterministic destination path mapping**
 
-Map `SETUP.md` to `Harness/SETUP.md`, `MEMORY.md` to `Harness/MEMORY.md`, `memory/*` to `Harness/memory/*`, `scripts/validate-harness.mjs` to `Harness/scripts/validate-harness.mjs`, `docs/README.md` to `Harness/README.md`, `docs/harness/*` to `Harness/*`, `docs/research/*` to `Harness/research/*`, `docs/domain/*` to `Harness/domain/*`, `docs/features/*` to `Harness/features/*`, and `docs/workflows/*` to `Harness/workflows/*`.
+Map `SETUP.md` to `Harness/specs/guides/SETUP.md`, `MEMORY.md` to `Harness/MEMORY.md`, `memory/*` to `Harness/memory/*`, `scripts/validate-harness.mjs` to `Harness/scripts/validate-harness.mjs`, `docs/README.md` to `Harness/README.md`, `docs/harness/*` to `Harness/*`, `docs/research/*` to `Harness/research/*`, `docs/domain/*` to `Harness/domain/*`, `docs/features/*` to `Harness/features/*`, and `docs/workflows/*` to `Harness/workflows/*`.
 
 - [ ] **Step 2: Update optional workflow registration**
 
@@ -50,7 +50,7 @@ Register optional workflow links in `Harness/MEMORY.md` and `Harness/README.md` 
 
 - [ ] **Step 3: Update CLI displayed creates and next steps**
 
-Mention `Harness/PLAN.md`, `Harness/SETUP.md`, and `node Harness/scripts/validate-harness.mjs`.
+Mention `Harness/PLAN.md`, `Harness/specs/guides/SETUP.md`, and `node Harness/scripts/validate-harness.mjs`.
 
 ### Task 3: Templates and WF Mode
 
@@ -67,7 +67,7 @@ Mention `Harness/PLAN.md`, `Harness/SETUP.md`, and `node Harness/scripts/validat
 
 - [ ] **Step 1: Make root entry files thin**
 
-`CLAUDE.md` should only point to `Harness/README.md`, `Harness/MEMORY.md`, and `Harness/SETUP.md` and enforce high-level behavior gates.
+`CLAUDE.md` should only point to `Harness/README.md`, `Harness/MEMORY.md`, and `Harness/specs/guides/SETUP.md` and enforce high-level behavior gates.
 
 - [ ] **Step 2: Add `WF.md`**
 
@@ -94,7 +94,7 @@ Validator should require `Harness/*` paths and the `wf-mode` skill.
 
 - [ ] **Step 2: Update text invariants**
 
-Check durable communication invariants in `Harness/README.md`, `Harness/dispatch.md`, and `Harness/context-loading.md`; check heartbeat and WF markers.
+Check durable communication invariants in `Harness/README.md`, `Harness/specs/runtime/dispatch.md`, and `Harness/specs/runtime/context-loading.md`; check heartbeat and WF markers.
 
 - [ ] **Step 3: Update README public contract**
 

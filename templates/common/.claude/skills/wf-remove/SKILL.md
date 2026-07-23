@@ -20,7 +20,7 @@ description: Use for /wf-remove in Claude Code, $wf-remove or /skills wf-remove 
 
 ## Cache Discipline
 
-Follow `Harness/context-loading.md#Cache-First Context Contract`: use the
+Follow `Harness/specs/runtime/context-loading.md#Cache-First Context Contract`: use the
 script's compact JSON plan as the dynamic suffix, avoid manual directory dumps,
 and keep user decisions in task progress rather than chat transcript.
 

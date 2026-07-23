@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "generator": "0.8.15",
   "source": "https://raw.githubusercontent.com/LiWeny16/create-harness-vibe-coding/main/templates/common/",
-  "generated": "2026-07-23T05:23:55.958Z",
+  "generated": "2026-07-23T09:08:24.289Z",
   "preserve": [
     "Harness/PROGRESS.md",
     "Harness/tasks/**",
@@ -10,6 +10,7 @@
     "Harness/research/PRD.md",
     "Harness/research/research-results.md",
     "Harness/architecture.md",
+    "Harness/project/architecture.md",
     "README.md",
     "package.json",
     "package-lock.json",
@@ -20,9 +21,150 @@
     "AGENTS.md",
     "MEMORY.md",
     "Harness/MEMORY.md",
-    "Harness/README.md"
+    "Harness/README.md",
+    "Harness/settings.json"
   ],
   "bootstrapOnly": [],
+  "moves": [
+    {
+      "from": "Harness/architecture.md",
+      "to": "Harness/project/architecture.md",
+      "deleteOldIfChecksumMatches": true,
+      "preserveOldIfModified": true
+    },
+    {
+      "from": "Harness/ACCEPTANCE_PROTOCOL.md",
+      "to": "Harness/specs/protocols/ACCEPTANCE_PROTOCOL.md",
+      "deleteOldIfChecksumMatches": true,
+      "preserveOldIfModified": true
+    },
+    {
+      "from": "Harness/AGENT_ISOLATION.md",
+      "to": "Harness/specs/protocols/AGENT_ISOLATION.md",
+      "deleteOldIfChecksumMatches": true,
+      "preserveOldIfModified": true
+    },
+    {
+      "from": "Harness/DEBUG_PROTOCOL.md",
+      "to": "Harness/specs/protocols/DEBUG_PROTOCOL.md",
+      "deleteOldIfChecksumMatches": true,
+      "preserveOldIfModified": true
+    },
+    {
+      "from": "Harness/HARNESS_BRIDGE.md",
+      "to": "Harness/specs/protocols/HARNESS_BRIDGE.md",
+      "deleteOldIfChecksumMatches": true,
+      "preserveOldIfModified": true
+    },
+    {
+      "from": "Harness/MEMORY_PROTOCOL.md",
+      "to": "Harness/specs/protocols/MEMORY_PROTOCOL.md",
+      "deleteOldIfChecksumMatches": true,
+      "preserveOldIfModified": true
+    },
+    {
+      "from": "Harness/TASK_ARCHIVE.md",
+      "to": "Harness/specs/protocols/TASK_ARCHIVE.md",
+      "deleteOldIfChecksumMatches": true,
+      "preserveOldIfModified": true
+    },
+    {
+      "from": "Harness/TDD-GUIDE.md",
+      "to": "Harness/specs/protocols/TDD-GUIDE.md",
+      "deleteOldIfChecksumMatches": true,
+      "preserveOldIfModified": true
+    },
+    {
+      "from": "Harness/agent-workflow.md",
+      "to": "Harness/specs/runtime/agent-workflow.md",
+      "deleteOldIfChecksumMatches": true,
+      "preserveOldIfModified": true
+    },
+    {
+      "from": "Harness/context-loading.md",
+      "to": "Harness/specs/runtime/context-loading.md",
+      "deleteOldIfChecksumMatches": true,
+      "preserveOldIfModified": true
+    },
+    {
+      "from": "Harness/dispatch.md",
+      "to": "Harness/specs/runtime/dispatch.md",
+      "deleteOldIfChecksumMatches": true,
+      "preserveOldIfModified": true
+    },
+    {
+      "from": "Harness/subagents.md",
+      "to": "Harness/specs/runtime/subagents.md",
+      "deleteOldIfChecksumMatches": true,
+      "preserveOldIfModified": true
+    },
+    {
+      "from": "Harness/ECC-GUIDE.md",
+      "to": "Harness/specs/guides/ECC-GUIDE.md",
+      "deleteOldIfChecksumMatches": true,
+      "preserveOldIfModified": true
+    },
+    {
+      "from": "Harness/SETUP.md",
+      "to": "Harness/specs/guides/SETUP.md",
+      "deleteOldIfChecksumMatches": true,
+      "preserveOldIfModified": true
+    },
+    {
+      "from": "Harness/extension.md",
+      "to": "Harness/specs/guides/extension.md",
+      "deleteOldIfChecksumMatches": true,
+      "preserveOldIfModified": true
+    },
+    {
+      "from": "Harness/lifecycle.md",
+      "to": "Harness/specs/guides/lifecycle.md",
+      "deleteOldIfChecksumMatches": true,
+      "preserveOldIfModified": true
+    },
+    {
+      "from": "Harness/WF-AUTO-ANGLES.md",
+      "to": "Harness/specs/workflows/WF-AUTO-ANGLES.md",
+      "deleteOldIfChecksumMatches": true,
+      "preserveOldIfModified": true
+    },
+    {
+      "from": "Harness/WF-AUTO-SPARK.md",
+      "to": "Harness/specs/workflows/WF-AUTO-SPARK.md",
+      "deleteOldIfChecksumMatches": true,
+      "preserveOldIfModified": true
+    },
+    {
+      "from": "Harness/WF-AUTO.md",
+      "to": "Harness/specs/workflows/WF-AUTO.md",
+      "deleteOldIfChecksumMatches": true,
+      "preserveOldIfModified": true
+    },
+    {
+      "from": "Harness/WF-KERNEL.md",
+      "to": "Harness/specs/workflows/WF-KERNEL.md",
+      "deleteOldIfChecksumMatches": true,
+      "preserveOldIfModified": true
+    },
+    {
+      "from": "Harness/WF-MAX.md",
+      "to": "Harness/specs/workflows/WF-MAX.md",
+      "deleteOldIfChecksumMatches": true,
+      "preserveOldIfModified": true
+    },
+    {
+      "from": "Harness/WF-STATE.md",
+      "to": "Harness/specs/workflows/WF-STATE.md",
+      "deleteOldIfChecksumMatches": true,
+      "preserveOldIfModified": true
+    },
+    {
+      "from": "Harness/WF.md",
+      "to": "Harness/specs/workflows/WF.md",
+      "deleteOldIfChecksumMatches": true,
+      "preserveOldIfModified": true
+    }
+  ],
   "frameworkOwned": [
     {
       "path": ".agents/skills/subagent-orchestrator/SKILL.md",
@@ -420,111 +562,6 @@
       "overwrite": "safe"
     },
     {
-      "path": "Harness/ACCEPTANCE_PROTOCOL.md",
-      "kind": "doc",
-      "overwrite": "safe"
-    },
-    {
-      "path": "Harness/AGENT_ISOLATION.md",
-      "kind": "doc",
-      "overwrite": "safe"
-    },
-    {
-      "path": "Harness/DEBUG_PROTOCOL.md",
-      "kind": "doc",
-      "overwrite": "safe"
-    },
-    {
-      "path": "Harness/ECC-GUIDE.md",
-      "kind": "doc",
-      "overwrite": "safe"
-    },
-    {
-      "path": "Harness/HARNESS_BRIDGE.md",
-      "kind": "doc",
-      "overwrite": "safe"
-    },
-    {
-      "path": "Harness/MEMORY_PROTOCOL.md",
-      "kind": "doc",
-      "overwrite": "safe"
-    },
-    {
-      "path": "Harness/SETUP.md",
-      "kind": "doc",
-      "overwrite": "safe"
-    },
-    {
-      "path": "Harness/TASK_ARCHIVE.md",
-      "kind": "doc",
-      "overwrite": "safe"
-    },
-    {
-      "path": "Harness/TDD-GUIDE.md",
-      "kind": "doc",
-      "overwrite": "safe"
-    },
-    {
-      "path": "Harness/WF-AUTO-ANGLES.md",
-      "kind": "doc",
-      "overwrite": "safe"
-    },
-    {
-      "path": "Harness/WF-AUTO-SPARK.md",
-      "kind": "doc",
-      "overwrite": "safe"
-    },
-    {
-      "path": "Harness/WF-AUTO.md",
-      "kind": "doc",
-      "overwrite": "safe"
-    },
-    {
-      "path": "Harness/WF-KERNEL.md",
-      "kind": "doc",
-      "overwrite": "safe"
-    },
-    {
-      "path": "Harness/WF-MAX.md",
-      "kind": "doc",
-      "overwrite": "safe"
-    },
-    {
-      "path": "Harness/WF-STATE.md",
-      "kind": "doc",
-      "overwrite": "safe"
-    },
-    {
-      "path": "Harness/WF.md",
-      "kind": "doc",
-      "overwrite": "safe"
-    },
-    {
-      "path": "Harness/agent-workflow.md",
-      "kind": "doc",
-      "overwrite": "safe"
-    },
-    {
-      "path": "Harness/context-loading.md",
-      "kind": "doc",
-      "overwrite": "safe"
-    },
-    {
-      "path": "Harness/dispatch.md",
-      "kind": "doc",
-      "overwrite": "safe"
-    },
-    {
-      "path": "Harness/extension.md",
-      "kind": "doc",
-      "overwrite": "safe"
-    },
-    {
-      "path": "Harness/lifecycle.md",
-      "kind": "doc",
-      "overwrite": "safe"
-    },
-    {
       "path": "Harness/ownership.manifest.json",
       "kind": "config",
       "overwrite": "safe"
@@ -575,7 +612,112 @@
       "overwrite": "safe"
     },
     {
-      "path": "Harness/subagents.md",
+      "path": "Harness/specs/guides/ECC-GUIDE.md",
+      "kind": "doc",
+      "overwrite": "safe"
+    },
+    {
+      "path": "Harness/specs/guides/SETUP.md",
+      "kind": "doc",
+      "overwrite": "safe"
+    },
+    {
+      "path": "Harness/specs/guides/extension.md",
+      "kind": "doc",
+      "overwrite": "safe"
+    },
+    {
+      "path": "Harness/specs/guides/lifecycle.md",
+      "kind": "doc",
+      "overwrite": "safe"
+    },
+    {
+      "path": "Harness/specs/protocols/ACCEPTANCE_PROTOCOL.md",
+      "kind": "doc",
+      "overwrite": "safe"
+    },
+    {
+      "path": "Harness/specs/protocols/AGENT_ISOLATION.md",
+      "kind": "doc",
+      "overwrite": "safe"
+    },
+    {
+      "path": "Harness/specs/protocols/DEBUG_PROTOCOL.md",
+      "kind": "doc",
+      "overwrite": "safe"
+    },
+    {
+      "path": "Harness/specs/protocols/HARNESS_BRIDGE.md",
+      "kind": "doc",
+      "overwrite": "safe"
+    },
+    {
+      "path": "Harness/specs/protocols/MEMORY_PROTOCOL.md",
+      "kind": "doc",
+      "overwrite": "safe"
+    },
+    {
+      "path": "Harness/specs/protocols/TASK_ARCHIVE.md",
+      "kind": "doc",
+      "overwrite": "safe"
+    },
+    {
+      "path": "Harness/specs/protocols/TDD-GUIDE.md",
+      "kind": "doc",
+      "overwrite": "safe"
+    },
+    {
+      "path": "Harness/specs/runtime/agent-workflow.md",
+      "kind": "doc",
+      "overwrite": "safe"
+    },
+    {
+      "path": "Harness/specs/runtime/context-loading.md",
+      "kind": "doc",
+      "overwrite": "safe"
+    },
+    {
+      "path": "Harness/specs/runtime/dispatch.md",
+      "kind": "doc",
+      "overwrite": "safe"
+    },
+    {
+      "path": "Harness/specs/runtime/subagents.md",
+      "kind": "doc",
+      "overwrite": "safe"
+    },
+    {
+      "path": "Harness/specs/workflows/WF-AUTO-ANGLES.md",
+      "kind": "doc",
+      "overwrite": "safe"
+    },
+    {
+      "path": "Harness/specs/workflows/WF-AUTO-SPARK.md",
+      "kind": "doc",
+      "overwrite": "safe"
+    },
+    {
+      "path": "Harness/specs/workflows/WF-AUTO.md",
+      "kind": "doc",
+      "overwrite": "safe"
+    },
+    {
+      "path": "Harness/specs/workflows/WF-KERNEL.md",
+      "kind": "doc",
+      "overwrite": "safe"
+    },
+    {
+      "path": "Harness/specs/workflows/WF-MAX.md",
+      "kind": "doc",
+      "overwrite": "safe"
+    },
+    {
+      "path": "Harness/specs/workflows/WF-STATE.md",
+      "kind": "doc",
+      "overwrite": "safe"
+    },
+    {
+      "path": "Harness/specs/workflows/WF.md",
       "kind": "doc",
       "overwrite": "safe"
     },

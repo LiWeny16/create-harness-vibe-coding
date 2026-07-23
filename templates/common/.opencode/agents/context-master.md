@@ -16,7 +16,7 @@ You are a context analysis agent. You analyze the current conversation and proje
 Load first:
 
 - `Harness/MEMORY.md`
-- `Harness/MEMORY_PROTOCOL.md`
+- `Harness/specs/protocols/MEMORY_PROTOCOL.md`
 - `Harness/tasks/<task-id>/PROGRESS.md` and `Harness/tasks/<task-id>/PLAN.md` when available
 - The current feature doc (if one exists)
 - `Harness/memory/` files for dedup checking

@@ -15,12 +15,12 @@ You are a test-first agent for this project harness. You write tests from PRD-de
 Load first:
 
 - current PRD or feature doc
-- `Harness/ACCEPTANCE_PROTOCOL.md`
-- `Harness/HARNESS_BRIDGE.md` for UI/API/browser flows
-- `Harness/AGENT_ISOLATION.md`
-- `Harness/TDD-GUIDE.md`
+- `Harness/specs/protocols/ACCEPTANCE_PROTOCOL.md`
+- `Harness/specs/protocols/HARNESS_BRIDGE.md` for UI/API/browser flows
+- `Harness/specs/protocols/AGENT_ISOLATION.md`
+- `Harness/specs/protocols/TDD-GUIDE.md`
 - `Harness/tasks/<task-id>/PROGRESS.md` and `Harness/tasks/<task-id>/PLAN.md` when available
-- `Harness/agent-workflow.md`
+- `Harness/specs/runtime/agent-workflow.md`
 
 Inputs you must receive:
 

@@ -10,8 +10,8 @@ const projectFacts = [
   'Harness/PROGRESS.md',
   'Harness/research/PRD.md',
   'Harness/research/research-results.md',
-  'Harness/architecture.md',
-  'Harness/architecture.md',
+  'Harness/project/architecture.md',
+  'Harness/project/architecture.md',
 ];
 
 const tempRoots = [];
@@ -79,7 +79,7 @@ The project exists to validate the harness.
 - **Core References**: Existing scaffold documentation.
 `);
 
-  writeRel(targetDir, 'Harness/architecture.md', `# Harness Architecture - validated
+  writeRel(targetDir, 'Harness/project/architecture.md', `# Harness Architecture - validated
 
 ## 1. Layering Rules
 
@@ -172,8 +172,8 @@ test('validation fails when WF complete role chain contract is removed', () => {
   const targetDir = generateProject();
   writeRel(
     targetDir,
-    'Harness/WF.md',
-    readRel(targetDir, 'Harness/WF.md').replace('Orchestration Loop', 'WF mode may use one or more passes'),
+    'Harness/specs/workflows/WF.md',
+    readRel(targetDir, 'Harness/specs/workflows/WF.md').replace('Orchestration Loop', 'WF mode may use one or more passes'),
   );
 
   const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
@@ -183,7 +183,7 @@ test('validation fails when WF complete role chain contract is removed', () => {
   const output = `${result.stdout}\n${result.stderr}`;
 
   assert.notEqual(result.status, 0);
-  assert.match(output, /Harness\/WF\.md missing WF orchestration loop/);
+  assert.match(output, /Harness\/specs\/workflows\/WF\.md missing WF orchestration loop/);
 });
 
 test('validation fails when compact task record guidance is removed', () => {
@@ -208,8 +208,8 @@ test('validation fails when cache-first context contract is removed', () => {
   const targetDir = generateProject();
   writeRel(
     targetDir,
-    'Harness/context-loading.md',
-    readRel(targetDir, 'Harness/context-loading.md').replace('Cache-First Context Contract', 'Context Loading Contract'),
+    'Harness/specs/runtime/context-loading.md',
+    readRel(targetDir, 'Harness/specs/runtime/context-loading.md').replace('Cache-First Context Contract', 'Context Loading Contract'),
   );
 
   const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
@@ -219,15 +219,15 @@ test('validation fails when cache-first context contract is removed', () => {
   const output = `${result.stdout}\n${result.stderr}`;
 
   assert.notEqual(result.status, 0);
-  assert.match(output, /Harness\/context-loading\.md missing cache-first context contract/);
+  assert.match(output, /Harness\/specs\/runtime\/context-loading\.md missing cache-first context contract/);
 });
 
 test('validation fails when real cache telemetry boundary is removed', () => {
   const targetDir = generateProject();
   writeRel(
     targetDir,
-    'Harness/context-loading.md',
-    readRel(targetDir, 'Harness/context-loading.md').replace('Do not claim real cache hits', 'Claim cache hits'),
+    'Harness/specs/runtime/context-loading.md',
+    readRel(targetDir, 'Harness/specs/runtime/context-loading.md').replace('Do not claim real cache hits', 'Claim cache hits'),
   );
 
   const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
@@ -237,7 +237,7 @@ test('validation fails when real cache telemetry boundary is removed', () => {
   const output = `${result.stdout}\n${result.stderr}`;
 
   assert.notEqual(result.status, 0);
-  assert.match(output, /Harness\/context-loading\.md missing real cache telemetry boundary/);
+  assert.match(output, /Harness\/specs\/runtime\/context-loading\.md missing real cache telemetry boundary/);
 });
 
 test('validation fails when L2 telemetry claim gate is removed', () => {
@@ -278,6 +278,62 @@ test('validation fails when workflow skill cache discipline is removed', () => {
   assert.match(output, /\.claude\/skills\/wf\/SKILL\.md missing wf skill cache discipline/);
 });
 
+test('validation fails when WF task-id naming convention is removed', () => {
+  const targetDir = generateProject();
+  writeRel(
+    targetDir,
+    'Harness/specs/workflows/WF.md',
+    readRel(targetDir, 'Harness/specs/workflows/WF.md').replace('`task-<verb>-<noun>[-detail]`', '`work-<verb>-<noun>`'),
+  );
+
+  const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
+    cwd: targetDir,
+    encoding: 'utf8',
+  });
+  const output = `${result.stdout}\n${result.stderr}`;
+
+  assert.notEqual(result.status, 0);
+  assert.match(output, /Harness\/specs\/workflows\/WF\.md missing WF task-id naming convention/);
+});
+
+test('validation fails when WF-MAX useful-degrade source-edit boundary is removed', () => {
+  const targetDir = generateProject();
+  writeRel(
+    targetDir,
+    'Harness/specs/workflows/WF-MAX.md',
+    readRel(targetDir, 'Harness/specs/workflows/WF-MAX.md').replace('This does not authorize CEO source edits', 'CEO may edit directly'),
+  );
+
+  const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
+    cwd: targetDir,
+    encoding: 'utf8',
+  });
+  const output = `${result.stdout}\n${result.stderr}`;
+
+  assert.notEqual(result.status, 0);
+  assert.match(output, /Harness\/specs\/workflows\/WF-MAX\.md missing WF-MAX useful-degrade CEO source-edit boundary/);
+});
+
+test('validation fails when WF-AUTO bounded tick auto capsule rule is removed', () => {
+  const targetDir = generateProject();
+  for (const rel of ['.claude/skills/wf-auto/SKILL.md', '.agents/skills/wf-auto/SKILL.md']) {
+    writeRel(
+      targetDir,
+      rel,
+      readRel(targetDir, rel).replace('missing auto capsule evidence', 'missing evidence'),
+    );
+  }
+
+  const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
+    cwd: targetDir,
+    encoding: 'utf8',
+  });
+  const output = `${result.stdout}\n${result.stderr}`;
+
+  assert.notEqual(result.status, 0);
+  assert.match(output, /\.claude\/skills\/wf-auto\/SKILL\.md missing wf-auto skill missing auto capsule failure rule/);
+});
+
 test('validation fails when OpenCode workflow wrapper cache-first routing is removed', () => {
   const targetDir = generateProject();
   writeRel(
@@ -315,6 +371,24 @@ test('validation fails when wf-update direct command loses safe-apply flow', () 
 
   assert.notEqual(result.status, 0);
   assert.match(output, /\.claude\/commands\/wf-update\.md missing .*apply-safe command/);
+});
+
+test('validation fails when wf-update direct command loses release highlights reporting', () => {
+  const targetDir = generateProject();
+  writeRel(
+    targetDir,
+    '.claude/commands/wf-update.md',
+    readRel(targetDir, '.claude/commands/wf-update.md').replaceAll('agent.releaseHighlights', 'agent.fileCounts'),
+  );
+
+  const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
+    cwd: targetDir,
+    encoding: 'utf8',
+  });
+  const output = `${result.stdout}\n${result.stderr}`;
+
+  assert.notEqual(result.status, 0);
+  assert.match(output, /\.claude\/commands\/wf-update\.md missing .*release highlights summary/);
 });
 
 test('validation fails when ECC direct command exemption is removed', () => {
@@ -457,8 +531,8 @@ test('validation fails when stale eight-angle exhaustion rule is present in WF-A
   const targetDir = generateProject();
   writeRel(
     targetDir,
-    'Harness/WF-AUTO.md',
-    readRel(targetDir, 'Harness/WF-AUTO.md') + '\nAll 8 exhausted.\n',
+    'Harness/specs/workflows/WF-AUTO.md',
+    readRel(targetDir, 'Harness/specs/workflows/WF-AUTO.md') + '\nAll 8 exhausted.\n',
   );
 
   const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
@@ -475,8 +549,8 @@ test('validation fails when stale three-consecutive-all-exhausted stop rule is p
   const targetDir = generateProject();
   writeRel(
     targetDir,
-    'Harness/WF-AUTO.md',
-    readRel(targetDir, 'Harness/WF-AUTO.md') + '\n3 consecutive all-exhausted rounds.\n',
+    'Harness/specs/workflows/WF-AUTO.md',
+    readRel(targetDir, 'Harness/specs/workflows/WF-AUTO.md') + '\n3 consecutive all-exhausted rounds.\n',
   );
 
   const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
@@ -493,8 +567,8 @@ test('validation fails when stale 8-Angle Exhaustion Gate name is present in WF-
   const targetDir = generateProject();
   writeRel(
     targetDir,
-    'Harness/WF-AUTO.md',
-    readRel(targetDir, 'Harness/WF-AUTO.md').replace(
+    'Harness/specs/workflows/WF-AUTO.md',
+    readRel(targetDir, 'Harness/specs/workflows/WF-AUTO.md').replace(
       'Adaptive Coverage Exhaustion Gate',
       '8-Angle Exhaustion Gate',
     ),
@@ -514,8 +588,8 @@ test('validation fails when stale eight-spark fixed-count search is present in W
   const targetDir = generateProject();
   writeRel(
     targetDir,
-    'Harness/WF-AUTO-SPARK.md',
-    readRel(targetDir, 'Harness/WF-AUTO-SPARK.md').replace(
+    'Harness/specs/workflows/WF-AUTO-SPARK.md',
+    readRel(targetDir, 'Harness/specs/workflows/WF-AUTO-SPARK.md').replace(
       'parallel external searches',
       '8 parallel external searches',
     ),
@@ -535,8 +609,8 @@ test('validation fails when wf-auto-spark task-scribe recorder delegation is mis
   const targetDir = generateProject();
   writeRel(
     targetDir,
-    'Harness/WF-AUTO-SPARK.md',
-    readRel(targetDir, 'Harness/WF-AUTO-SPARK.md').replaceAll(
+    'Harness/specs/workflows/WF-AUTO-SPARK.md',
+    readRel(targetDir, 'Harness/specs/workflows/WF-AUTO-SPARK.md').replaceAll(
       'task-scribe formats task-state writes',
       'CEO writes task-state files directly',
     ),
@@ -564,7 +638,7 @@ test('validation passes when WF-AUTO.md uses adaptive coverage contract exclusiv
   assert.equal(result.status, 0);
   assert.match(output, /Harness validation passed/);
   // Must contain the adaptive contract
-  const wfAuto = readRel(targetDir, 'Harness/WF-AUTO.md');
+  const wfAuto = readRel(targetDir, 'Harness/specs/workflows/WF-AUTO.md');
   assert.match(wfAuto, /Adaptive Coverage Exhaustion Gate/);
   assert.match(wfAuto, /dynamic high-risk obligations/);
   assert.match(wfAuto, /two different confirmation strategies/);
@@ -583,7 +657,7 @@ test('validation passes when WF-AUTO-SPARK.md uses non-fixed-count spark search'
   const output = `${result.stdout}\n${result.stderr}`;
 
   assert.equal(result.status, 0);
-  const wfAutoSpark = readRel(targetDir, 'Harness/WF-AUTO-SPARK.md');
+  const wfAutoSpark = readRel(targetDir, 'Harness/specs/workflows/WF-AUTO-SPARK.md');
   assert.doesNotMatch(wfAutoSpark, /8 parallel external searches/);
   assert.match(wfAutoSpark, /parallel external searches/);
   assert.match(wfAutoSpark, /task-scribe formats task-state writes/);
@@ -597,8 +671,8 @@ test('validation fails when old default complete-role-chain contract returns to 
   const targetDir = generateProject();
   writeRel(
     targetDir,
-    'Harness/dispatch.md',
-    `${readRel(targetDir, 'Harness/dispatch.md')}\n- /wf requires the complete role chain by default.\n`,
+    'Harness/specs/runtime/dispatch.md',
+    `${readRel(targetDir, 'Harness/specs/runtime/dispatch.md')}\n- /wf requires the complete role chain by default.\n`,
   );
 
   const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
@@ -615,8 +689,8 @@ test('validation fails when old unconditional wf-max fan-out contract returns to
   const targetDir = generateProject();
   writeRel(
     targetDir,
-    'Harness/WF-AUTO.md',
-    readRel(targetDir, 'Harness/WF-AUTO.md').replace(
+    'Harness/specs/workflows/WF-AUTO.md',
+    readRel(targetDir, 'Harness/specs/workflows/WF-AUTO.md').replace(
       'does not inherit WF-MAX fan-out modes (Useful or Strict)',
       'does not inherit WF-MAX mandatory maximum fan-out',
     ),
@@ -632,12 +706,12 @@ test('validation fails when old unconditional wf-max fan-out contract returns to
   assert.match(output, /old \/wf-max unconditional fan-out contract/);
 });
 
-test('validation fails when CLAUDE.md references Harness/SETUP.md', () => {
+test('validation fails when CLAUDE.md references Harness/specs/guides/SETUP.md', () => {
   const targetDir = generateProject();
   writeRel(
     targetDir,
     'CLAUDE.md',
-    `${readRel(targetDir, 'CLAUDE.md')}\nIf setup is needed, route normal work through Harness/SETUP.md.\n`,
+    `${readRel(targetDir, 'CLAUDE.md')}\nIf setup is needed, route normal work through Harness/specs/guides/SETUP.md.\n`,
   );
 
   const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
@@ -654,10 +728,10 @@ test('validation fails when SETUP.md requires CLAUDE.md to reference SETUP.md', 
   const targetDir = generateProject();
   writeRel(
     targetDir,
-    'Harness/SETUP.md',
-    readRel(targetDir, 'Harness/SETUP.md').replace(
+    'Harness/specs/guides/SETUP.md',
+    readRel(targetDir, 'Harness/specs/guides/SETUP.md').replace(
       'no startup dependency on this setup reference',
-      'with the `Harness/SETUP.md` bootstrap contract line',
+      'with the `Harness/specs/guides/SETUP.md` bootstrap contract line',
     ),
   );
 

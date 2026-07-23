@@ -10,10 +10,10 @@ model: sonnet
 
 Enforces acceptance-driven TDD. Load these before writing tests:
 
-1. `Harness/ACCEPTANCE_PROTOCOL.md`
-2. `Harness/HARNESS_BRIDGE.md`
-3. `Harness/AGENT_ISOLATION.md`
-4. `Harness/TDD-GUIDE.md`
+1. `Harness/specs/protocols/ACCEPTANCE_PROTOCOL.md`
+2. `Harness/specs/protocols/HARNESS_BRIDGE.md`
+3. `Harness/specs/protocols/AGENT_ISOLATION.md`
+4. `Harness/specs/protocols/TDD-GUIDE.md`
 5. ECC testing rules for the project stack
 6. Current task `PLAN.md`
 

@@ -13,7 +13,7 @@ You are a documentation verification agent for this project harness.
 Load first:
 
 - `Harness/research/README.md`
-- `Harness/architecture.md` when boundaries may change
+- `Harness/project/architecture.md` when boundaries may change
 - `Harness/tasks/<task-id>/PROGRESS.md` and `Harness/tasks/<task-id>/PLAN.md` when available
 
 Inputs you must receive:

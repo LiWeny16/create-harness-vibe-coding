@@ -22,7 +22,7 @@ This skill is a Codex compatibility shim plus script-flow reference. Claude Code
 
 ## Cache Discipline
 
-Follow `Harness/context-loading.md#Cache-First Context Contract`: keep updater
+Follow `Harness/specs/runtime/context-loading.md#Cache-First Context Contract`: keep updater
 scripts and ownership docs stable, consume compact `--json` agent plans first,
 and avoid pasting verbose diffs or full remote files unless a conflict requires
 targeted inspection.

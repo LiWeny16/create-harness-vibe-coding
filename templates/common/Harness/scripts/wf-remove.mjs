@@ -55,6 +55,7 @@ const USER_DATA_PATTERNS = [
   /^Harness\/research\/PRD\.md$/,
   /^Harness\/research\/research-results\.md$/,
   /^Harness\/architecture\.md$/,
+  /^Harness\/project\/architecture\.md$/,
   /^Harness\/workflows\//,
   /^Harness\/features\//,
   /^Harness\/domain\//,
@@ -72,6 +73,7 @@ const PURGEABLE_HARNESS_DATA_PATTERNS = [
   /^Harness\/research\/PRD\.md$/,
   /^Harness\/research\/research-results\.md$/,
   /^Harness\/architecture\.md$/,
+  /^Harness\/project\/architecture\.md$/,
   /^Harness\/workflows\//,
   /^Harness\/features\//,
   /^Harness\/domain\//,
@@ -217,6 +219,12 @@ const CLEANUP_DIRS = [
   '.claude/rules/ecc',
   '.claude/rules',
   'Harness/scripts',
+  'Harness/specs/guides',
+  'Harness/specs/protocols',
+  'Harness/specs/runtime',
+  'Harness/specs/workflows',
+  'Harness/specs',
+  'Harness/project',
   'Harness/research',
   'Harness/workflows',
   'Harness/domain',
@@ -369,7 +377,7 @@ async function main() {
   // from disk. This keeps JSON plans honest about what will remain.
   for (const file of [
     'Harness/PROGRESS.md',
-    'Harness/architecture.md',
+    'Harness/project/architecture.md',
   ]) {
     addExistingFile(allFiles, file, scanIssues);
   }
@@ -393,7 +401,7 @@ async function main() {
     '.agents/skills/tdd/SKILL.md',
     '.claude/skills/wf-auto/SKILL.md',
     '.agents/skills/wf-auto/SKILL.md',
-    'Harness/WF-AUTO.md',
+    'Harness/specs/workflows/WF-AUTO.md',
     'Harness/tasks/auto/PROGRESS.md',
     'Harness/tasks/auto/PLAN.md',
     'Harness/tasks/_template/ARTIFACTS.md',

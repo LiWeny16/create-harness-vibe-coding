@@ -231,7 +231,7 @@ test('--recommend records external recommendations without installing them', () 
 
   execFileSync(process.execPath, [bin, 'recommended', target, '-y', '--recommend', 'superpowers,codegraph,grill-me'], { encoding: 'utf8' });
 
-  const setup = fs.readFileSync(path.join(target, 'Harness', 'SETUP.md'), 'utf8');
+  const setup = fs.readFileSync(path.join(target, 'Harness', 'specs', 'guides', 'SETUP.md'), 'utf8');
   assert.match(setup, /Selected External Recommendations/);
   assert.match(setup, /superpowers/);
   assert.match(setup, /codegraph/);
@@ -459,13 +459,13 @@ test('--json with --on-conflict skip outputs structured result', () => {
   assert.ok(Array.isArray(data.plan.skip));
   assert.ok(data.plan.skip.includes('CLAUDE.md'));
   assert.ok(Array.isArray(data.plan.create));
-  assert.ok(data.plan.create.includes('Harness/SETUP.md'));
+  assert.ok(data.plan.create.includes('Harness/specs/guides/SETUP.md'));
   assert.equal(data.summary.skipped, data.plan.skip.length);
   assert.ok(data.agent.aiMergeRequired.some(item => item.file === 'CLAUDE.md'));
   assert.ok(data.agent.next.some(item => item.action === 'ai-merge'));
   // Verify legacy file preserved and new files created
   assert.equal(fs.readFileSync(path.join(target, 'CLAUDE.md'), 'utf8'), 'legacy\n');
-  assert.ok(fs.existsSync(path.join(target, 'Harness', 'SETUP.md')));
+  assert.ok(fs.existsSync(path.join(target, 'Harness', 'specs', 'guides', 'SETUP.md')));
 });
 
 test('--json mode is non-interactive and uses defaults', () => {
@@ -484,7 +484,7 @@ test('--json mode is non-interactive and uses defaults', () => {
   assert.equal(data.success, true);
   // Non-interactive mode used defaults — plan includes expected core files
   assert.ok(data.plan.create.includes('CLAUDE.md'));
-  assert.ok(data.plan.create.includes('Harness/SETUP.md'));
+  assert.ok(data.plan.create.includes('Harness/specs/guides/SETUP.md'));
   assert.ok(data.plan.create.includes('Harness/MEMORY.md'));
   assert.ok(data.plan.create.includes('.agents/skills/wf/SKILL.md'));
   // Verify no interactive text leaked

@@ -6,7 +6,7 @@ Run the Harness update checker script. Do not invoke a skill or start WF mode.
 
 MANIFEST-FIRST. The installer and updater read `Harness/ownership.manifest.json`:
 
-- `preserve[]` - never touched (tasks, memory, research, root README, package, architecture). `Harness/tasks/**` is always preserved.
+- `preserve[]` - existing user data is never overwritten (tasks, memory, research, root README, package, architecture). Missing scaffold starter files may be created when no local user data exists. `Harness/tasks/**` is always preserved.
 - `merge[]` - CLAUDE.md, AGENTS.md, MEMORY.md, Harness/MEMORY.md, Harness/README.md -> merge or accept-local; prior accepted decisions carry forward.
 - `frameworkOwned[]` - safe overwrite-upgrade fast path (concurrent fetch + hash + all-or-nothing write after checksum validation).
 - `optionalOwned[]` - upgraded only when that option is installed.
@@ -15,7 +15,7 @@ Content markers (`harness: wf-agent`, `project harness`, `Harness/...`) are the 
 
 ## Cache Discipline
 
-Follow `Harness/context-loading.md#Cache-First Context Contract`: keep updater
+Follow `Harness/specs/runtime/context-loading.md#Cache-First Context Contract`: keep updater
 scripts and ownership docs stable, consume compact `--json` agent plans first,
 and avoid pasting verbose diffs or full remote files unless a conflict requires
 targeted inspection.
@@ -23,13 +23,16 @@ targeted inspection.
 ## Flow
 
 1. Run `node Harness/scripts/wf-update-check.mjs --json` first and use the
-   `agent` block as the action plan. Current updaters try npm
+   `agent` block as the action plan. Preserve `agent.releaseHighlights` for the
+   user-facing update summary. Current updaters try npm
    `create-harness-vibe-coding@latest` first, then the canonical GitHub source
    `LiWeny16/create-harness-vibe-coding`, then the legacy compatibility mirror
    `zingspark/create-harness-vibe-coding`.
-2. Preserve all PRESERVE files. Never overwrite user task, memory, research,
-   root README.md, package, or architecture files. Harness/README.md is
-   merge-tier, not PRESERVE.
+2. Preserve all existing PRESERVE files. Never overwrite user task, memory,
+   research, root README.md, package, or architecture files. Missing scaffold
+   starter files may be created, and checksum-matching legacy architecture can
+   move to `Harness/project/architecture.md`. Harness/README.md is merge-tier,
+   not PRESERVE.
 3. If `agent.safeApplyCommand` is present, run it to apply SAFE, NEW, and
    adopted metadata-only files before spending AI time on conflicts. Default
    command: `node Harness/scripts/wf-update-check.mjs --apply-safe`.
@@ -79,5 +82,7 @@ node Harness/scripts/wf-update-check.mjs --json --source-base https://raw.github
 ## Return
 
 Report version, SAFE/NEW updates, conflicts and decisions, preserved files,
-partialUpdate status if any, validation output, scan-clean result, and
-remaining risks.
+partialUpdate status if any, validation output, scan-clean result, and remaining
+risks. Also report the core release highlights from `agent.releaseHighlights`
+or `releaseNotes.highlights` so the user understands what changed in this
+Harness version, not only which files changed.

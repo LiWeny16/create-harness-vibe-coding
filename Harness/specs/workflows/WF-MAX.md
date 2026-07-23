@@ -1,0 +1,129 @@
+# WF-MAX — Maximum Safe Parallelism
+
+`/wf-max` = `/wf` kernel + maximum safe fan-out. It is NOT a separate workflow. It is a parallelism superset of `/wf` and inherits the full [WF-KERNEL.md](WF-KERNEL.md) orchestration engine and [WF.md](WF.md) tier contract, then expands execution through a three-layer architecture (CEO → Manager → Worker) with dispatch permissions (writeSet, forbidden, verification). Global mode != every agent is CEO.
+
+WF-MAX is **explicit only**. Enter ONLY when the user explicitly types `/wf-max`, `$wf-max`, or `/skills wf-max`.
+
+## Delta from /wf
+
+| Dimension | /wf | /wf-max |
+|---|---|---|
+| Orchestration | Ready-queue, tier-gated | Same ready-queue + max decomposition |
+| Exploration | codebase-explorer fan-out | explore-manager → 5-10 researchers |
+| Architecture | architect (when triggered) | architect-manager → 3 architects |
+| Implementation | One implementer per wave | implement-manager → 5-7 implementers (one file_claim each) |
+| Review | Reviewer(s) per wave | review-manager → 3-4 parallel reviewers |
+| State | Controller or task-scribe | task-scribe continuously maintains dispatch ledger |
+| Source edits | Implementer writes | Workers write ONLY dispatch.writeSet; CEO never writes source |
+
+## Fan-Out Modes
+
+**WF-Max-Useful** (default): fan-out only where writeSets or review lenses are meaningfully independent. Overhead > 0.30 degrades a wave to flat role pass. This does not authorize CEO source edits: source implementation still goes through an implementer/Worker role, or the run records an honest downgrade before editing.
+
+**WF-Max-Strict** (explicit `--strict`, `strict wf-max`, or `strict mode`): unconditional fan-out per span formula. Every file gets a Worker.
+
+## CEO Contract
+
+CEO reads, plans, dispatches, synthesizes, and writes task state only.
+- **CEO never writes production source code.** All source edits are delegated to Workers.
+- Any new task capsule uses `task-<verb>-<noun>[-detail]` under
+  `Harness/tasks/<task-id>/`; never use bare `fix-*` task ids.
+- When updating `Harness/PROGRESS.md`, preserve required headings such as
+  `## Active Task`, `## Task Index`, and `## Cross-Task Decisions`; append or
+  update rows instead of replacing the file skeleton.
+- CEO spawns task-scribe (haiku) by default to maintain dispatch ledger, heartbeat, and evidence pointers; if unavailable, CEO records the degradation and writes only the smallest durable checkpoint.
+- CEO may spawn codebase-explorer(s) (haiku) for scoped source discovery.
+
+## Worker Channel Degradation & Independence
+
+WF-MAX Workers MUST execute as **independent agent contexts** — never as in-process tool calls from the CEO thread. When a worker channel is unavailable, degrade honestly; never disguise an in-process tool call as a Worker.
+
+### Independence Levels
+
+| Channel | Independence | Counts as Worker? |
+|---|---|---|
+| native subagent (Agent-tool dispatch) | independent | yes |
+| peer CLI (`claude -p`, `codex exec`, `opencode run`) | independent (separate process) | yes |
+| MCP tools (`mcp__codex.codex_implement`, `mcp__claude.claude_implement`, etc.) | inprocess (CEO thread) | NEVER |
+
+### Degradation Chain
+
+When delegating source edits to a Worker, try channels in order; descend on failure; when all independent channels are unavailable, stop honestly and ask the user — do NOT fall back to an in-process MCP tool:
+
+0. **Use proven channels only** — prefer the current runtime's native subagent channel when it has already returned successfully in this session. If a peer CLI is needed, follow `.claude/skills/wf-agents-docs/SKILL.md`, keep output on stdout, and return an Evidence-Packet instead of scratch files.
+1. native subagent (preferred — independent context, bounded writeSet)
+2. `claude -p` peer CLI (independent process)
+3. `codex exec` peer CLI (independent process)
+4. all unavailable → honest pause + human escalation (record blocker in task PROGRESS.md)
+
+### Hard Prohibition
+
+`mcp__codex.codex_implement`, `mcp__claude.claude_implement`, and any CEO-thread MCP tool call MUST NOT be recorded or used as Worker execution. An in-process tool call has no independent context boundary and no enforced writeSet — using it and logging "CEO did not edit source" is fake compliance. Historical instance: `tasks/task-framework-metrics-and-entry-contract/PLAN.md:791`.
+
+### Timeout & Retry
+
+Every Worker dispatch or peer-CLI call must be bounded by the controller's command timeout. A Worker dispatch that returns `unavailable-timeout` or `unavailable-error` (transient) is retried **once**; a second failure descends to the next channel in the chain. WF-MAX MUST NEVER hang on an unresponsive channel (historical failure: a 300s Codex read-only query hang, `tasks/task-framework-metrics-and-entry-contract/PLAN.md`). Bounded calls + single retry + honest descent replace silent hangs.
+
+### Capability Evidence
+
+Record the channel actually used, command/tool form, timeout, exit status, and a <=250 token Evidence-Packet in the task capsule. Do not create ad hoc probe scripts or write peer-CLI output to `%TEMP%`; persistent evidence belongs only under the current task's `evidence/` directory when it is intentionally part of the task record.
+
+## Parallelism Priority
+
+1. Read-only exploration — max parallel, all readSets
+2. Docs/research — max parallel
+3. Test design — max parallel
+4. Implementation — parallel only when writeSets are DISJOINT
+5. WriteSet conflicts → sequential wave, patch-only return, or worktree/branch isolation
+6. Review — parallel per-wave when verifier evidence is ready
+7. Idle capacity → immediately dispatch next ready item from queue
+
+## Span Formula (WF-Max-Strict)
+
+```
+Manager_min = max(1, ceil(write_files / 7), ceil(sqrt(write_files) / 2))
+Manager_max = min(max(Manager_min * 2, Manager_min), 7)
+```
+
+## Worker Discipline
+
+- One file_claim per write Worker
+- WriteSet must be disjoint across parallel Workers
+- Workers return <=250 tokens + evidence/file paths
+- task-scribe (haiku) runs alongside any wave when available; process-file delegation is the default, not a token-heavy CEO formatting task
+
+## Token Budget and Fan-Out Caps
+
+WF-MAX fan-out is bounded. Unbounded worker dispatch is forbidden.
+
+- **Total worker cap**: Maximum 15 agents per WF-MAX task (all waves combined). Managers, reviewers, and verifiers count toward this cap. Read-only scouts and task-scribe do not count.
+- **Per-wave cap**: Maximum 7 Workers per implementation wave (enforced by implement-manager span formula).
+- **Reviewer cap**: Maximum 4 reviewers per wave (review-manager).
+- **Manager cap**: Maximum 4 Managers total (explore, architect, implement, review).
+- **Token budget**: If `budget.total` is set (user-specified budget), CEO MUST reserve >=30% for review/verify/reflect phases. Stop dispatching Workers when remaining budget is below 50k tokens.
+- **Overflow discipline**: Cross-CLI overflow (Codex → Claude, Claude → Codex) is allowed only after native subagent pool is genuinely exhausted (not just busy). Each overflow dispatch costs context; prefer closing completed agents first.
+- **Idle workers**: Close completed agents before declaring the pool exhausted. Do not spawn new workers while idle capacity is available.
+
+## Organization Model
+
+```
+CEO(1) -> Manager_1(span) -> Worker_1..n
+       -> Manager_2(span) -> Sub-Manager(span) -> Worker_1..n
+```
+
+## D-GATE
+
+D-GATE is mandatory before implementation waves per [WF-KERNEL.md](WF-KERNEL.md) dispatch packet format: dispatch table, AC IDs, disjoint file claims, self-audit, reviewer plan. CEO may NOT proceed to W2 implementation dispatch with a failing gate.
+
+## Overflow
+
+1. Current runtime subagents first.
+2. Close completed agents; fill idle slots immediately.
+3. Cross-CLI overflow: use an available peer CLI with explicit dispatch packets: `claude -p`, `codex exec`, or `opencode run --agent <role> --dir .`.
+4. Bounded-pass fallback only when subagents and overflow are exhausted.
+5. Generated Codex config defaults to `agents.max_threads = 12` and `agents.max_depth = 1`. Ask the user before raising `agents.max_threads` above that default. Keep `max_depth = 1` unless recursive delegation is explicitly approved.
+6. Do not rely on Codex++, undocumented config, environment variables, forked/derived conversations, or third-party forks as stable capacity.
+
+## Anti-Patterns and Sizing
+
+See original [WF-MAX.md](WF-MAX.md) anti-pattern catalog (AP1-AP7) and sizing table (XS-XXXL). These apply under WF-Max-Strict and serve as reference for WF-Max-Useful decomposition.

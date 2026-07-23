@@ -63,7 +63,7 @@ Define the next Harness framework iteration with enough precision to implement s
 Targeted `git grep` confirmed the hard dependencies that must move with the slim contract:
 
 - `Harness/scripts/validate-harness.mjs` and `templates/common/scripts/validate-harness.mjs` currently require exact `CLAUDE.md` strings for memory triggers, subagent routing, `/wf-update`, `/wf-max`, and the old rule section headings.
-- `Harness/SETUP.md` and `templates/common/SETUP.md` currently declare a required `CLAUDE.md` contract containing `## 1. Harness Binding & Startup`, `## 6. Memory & Self-Learning`, memory trigger phrases, and the setup bootstrap line.
+- `Harness/specs/guides/SETUP.md` and `templates/common/SETUP.md` currently declare a required `CLAUDE.md` contract containing `## 1. Harness Binding & Startup`, `## 6. Memory & Self-Learning`, memory trigger phrases, and the setup bootstrap line.
 - `Harness/README.md` and `templates/common/Harness/README.md` already own command routing through `Load By Task` and `Skill Commands`.
 - `.claude/skills/*`, `.agents/skills/*`, and `templates/common/.claude/skills/*` already own command-specific invocation details for `wf-max`, `wf-review`, `wf-update`, and `wf-remove`.
 - Memory trigger details currently exist in `CLAUDE.md` and `templates/common/CLAUDE.md`, not in `Harness/MEMORY.md`; Phase A must migrate or summarize them there before removing them from `CLAUDE.md`.
@@ -118,13 +118,13 @@ Target structure:
 ## Harness Entry
 - If `Harness/` exists, this repo is governed by Harness.
 - Load `Harness/MEMORY.md`, then `Harness/README.md`.
-- If `Harness/SETUP.md` exists, complete it before normal work.
+- If `Harness/specs/guides/SETUP.md` exists, complete it before normal work.
 - Do not bulk-read `Harness/`; use `Harness/README.md#Load By Task`.
 
 ## Command Handoff
 - If the user invokes `/wf-*`, `$wf-*`, or a named Harness skill, use that skill.
 - Otherwise route through `Harness/README.md#Load By Task`.
-- `/wf-max` active: CEO does not edit source; load `Harness/WF-MAX.md`.
+- `/wf-max` active: CEO does not edit source; load `Harness/specs/workflows/WF-MAX.md`.
 
 ## Operating Invariants
 - Clarify intent before implementation when uncertain.
@@ -135,7 +135,7 @@ Target structure:
 ## Durable State
 - Task state lives in `Harness/tasks/<task-id>/`.
 - Memory routing starts from `Harness/MEMORY.md`.
-- Project architecture belongs in `Harness/architecture.md`.
+- Project architecture belongs in `Harness/project/architecture.md`.
 
 ## Boundaries
 - Build/run/release commands belong in `README.md`.
@@ -153,7 +153,7 @@ Entry point for coding agents. If `Harness/` exists, this repository is governed
 ## Harness Entry
 
 - Load `Harness/MEMORY.md` first, then `Harness/README.md`.
-- If `Harness/SETUP.md` exists, follow it before normal project work; it is the install/bootstrap contract and may be deleted after setup is complete.
+- If `Harness/specs/guides/SETUP.md` exists, follow it before normal project work; it is the install/bootstrap contract and may be deleted after setup is complete.
 - Never bulk-read `Harness/`. Use `Harness/README.md#Load By Task` to route only the files needed for the current request.
 - Load `Harness/PROGRESS.md` when work is active or when task history matters.
 
@@ -165,7 +165,7 @@ Entry point for coding agents. If `Harness/` exists, this repository is governed
 
 ## WF-MAX Safety
 
-When `/wf-max` is active, you are CEO, not implementer. Do not edit source files directly. Spawn Workers for source changes. The only CEO write exception is task state under `Harness/tasks/<task-id>/PLAN.md` and `PROGRESS.md`. Load `Harness/WF-MAX.md` for the full contract.
+When `/wf-max` is active, you are CEO, not implementer. Do not edit source files directly. Spawn Workers for source changes. The only CEO write exception is task state under `Harness/tasks/<task-id>/PLAN.md` and `PROGRESS.md`. Load `Harness/specs/workflows/WF-MAX.md` for the full contract.
 
 ## Operating Invariants
 
@@ -180,7 +180,7 @@ When `/wf-max` is active, you are CEO, not implementer. Do not edit source files
 - Multi-step task state lives in `Harness/tasks/<task-id>/`.
 - Memory/resource routing starts from `Harness/MEMORY.md`.
 - Durable lessons and user corrections belong under `Harness/memory/`.
-- Architecture belongs in `Harness/architecture.md` or the current feature doc.
+- Architecture belongs in `Harness/project/architecture.md` or the current feature doc.
 
 ## Boundaries
 
@@ -197,13 +197,13 @@ Target size: roughly 60-100 lines. Hard cap: 150 lines unless a validator-critic
 |---|---:|---|
 | Startup load order | Yes | `CLAUDE.md`, mirrored in `AGENTS.md` if needed |
 | No bulk-read rule | Yes | `CLAUDE.md` + `Harness/README.md` |
-| Full CEO contract table | No, keep only emergency guard | `Harness/WF-MAX.md`, `Harness/README.md#Load By Task`, wf-max skill |
+| Full CEO contract table | No, keep only emergency guard | `Harness/specs/workflows/WF-MAX.md`, `Harness/README.md#Load By Task`, wf-max skill |
 | `/wf`, `/wf-review`, `/wf-update`, `/wf-auto` descriptions | No | Skill docs and `Harness/README.md` command catalog |
-| Subagent orchestration details | No | `Harness/subagents.md`, `Harness/dispatch.md`, `subagent-orchestrator` skill |
+| Subagent orchestration details | No | `Harness/specs/runtime/subagents.md`, `Harness/specs/runtime/dispatch.md`, `subagent-orchestrator` skill |
 | Memory trigger details | No | `Harness/MEMORY.md`, `Harness/memory/*`, wf-learn skill |
 | Think-before-coding / simplicity / surgical edits | Condense | `CLAUDE.md` invariants + `.claude/rules/ecc/common.md` |
 | Browser/UI evidence rule | No | Relevant workflow doc or `.claude/rules/ecc/common.md` |
-| Project-specific source paths | No | Project `README.md`, `docs/`, `Harness/architecture.md` |
+| Project-specific source paths | No | Project `README.md`, `docs/`, `Harness/project/architecture.md` |
 | Build/run/git conventions | No | `README.md` |
 
 ### 3. HarnessBench v0.1 Goal
@@ -345,7 +345,7 @@ Write scope:
 
 - `CLAUDE.md`
 - `templates/common/CLAUDE.md`
-- `Harness/SETUP.md`
+- `Harness/specs/guides/SETUP.md`
 - `templates/common/SETUP.md`
 - `Harness/scripts/validate-harness.mjs`
 - `templates/common/scripts/validate-harness.mjs`
@@ -367,7 +367,7 @@ Acceptance:
 |------|---------|-------------|--------------|------------|
 | `CLAUDE.md` | Dogfood slim entry contract | implementer | impl-root-claude | No |
 | `templates/common/CLAUDE.md` | Generated slim entry contract | implementer | impl-template-claude | No |
-| `Harness/SETUP.md` | Runtime setup contract text | implementer | impl-root-setup | No |
+| `Harness/specs/guides/SETUP.md` | Runtime setup contract text | implementer | impl-root-setup | No |
 | `templates/common/SETUP.md` | Template setup contract text | implementer | impl-template-setup | No |
 | `Harness/scripts/validate-harness.mjs` | Runtime validator retargeting | implementer | impl-root-validator | No |
 | `templates/common/scripts/validate-harness.mjs` | Template validator retargeting | implementer | impl-template-validator | No |
@@ -677,12 +677,12 @@ Implementation write candidates:
 - `AGENTS.md`
 - `templates/common/CLAUDE.md`
 - `templates/common/AGENTS.md` if present
-- `Harness/WF-MAX.md`
-- `templates/common/Harness/WF-MAX.md` if present
-- `Harness/dispatch.md`
-- `templates/common/Harness/dispatch.md`
-- `Harness/subagents.md`
-- `templates/common/Harness/subagents.md`
+- `Harness/specs/workflows/WF-MAX.md`
+- `templates/common/Harness/specs/workflows/WF-MAX.md` if present
+- `Harness/specs/runtime/dispatch.md`
+- `templates/common/Harness/specs/runtime/dispatch.md`
+- `Harness/specs/runtime/subagents.md`
+- `templates/common/Harness/specs/runtime/subagents.md`
 - `.claude/settings.json` runtime-interceptor docs/config if role-aware enforcement is encoded there
 - validators/tests that assert WF-MAX wording or runtime-interceptor behavior
 
@@ -700,7 +700,7 @@ Reviewer implementation map:
 |---|---|---|
 | `AGENTS.md`, `CLAUDE.md` | Say `/wf-max active -> you are CEO` globally | Say WF-MAX sets global mode; only controller is CEO; spawned agents get explicit role/writeSet |
 | `Harness/README.md` | Command table and CEO note imply injected global CEO | Scope CEO restrictions to `agentRole=ceo`; Worker writes are dispatch-scoped |
-| `Harness/WF-MAX.md` | Sticky contract says current agent is CEO | Split into mode contract, CEO role contract, Manager role, Worker role |
+| `Harness/specs/workflows/WF-MAX.md` | Sticky contract says current agent is CEO | Split into mode contract, CEO role contract, Manager role, Worker role |
 | WF-MAX D-GATE/tool boundary docs | CEO-specific boundaries written as global identity | Keep CEO boundaries, add Worker writeSet allow/deny rules |
 | `wf-max` skill docs | Adapter says "treat yourself as CEO" | "Top-level agent is CEO unless dispatch assigns another role" |
 | statusline scripts | Display only when role is CEO | Superseded: no runtime-interceptor/statusline layer after `task-remove-hook-docs` |
@@ -730,7 +730,7 @@ Dispatch table:
 |------|---------|-------------|--------------|------------|
 | `CLAUDE.md` | Dogfood root slim entry contract | implementer | impl-root-claude | No |
 | `templates/common/CLAUDE.md` | Template slim entry contract | implementer | impl-template-claude | No |
-| `Harness/SETUP.md` | Dogfood setup contract references | implementer | impl-root-setup | No |
+| `Harness/specs/guides/SETUP.md` | Dogfood setup contract references | implementer | impl-root-setup | No |
 | `templates/common/SETUP.md` | Template setup contract references | implementer | impl-template-setup | No |
 | `Harness/scripts/validate-harness.mjs` | Dogfood validator assertions | implementer | impl-root-validator | No |
 | `templates/common/scripts/validate-harness.mjs` | Template validator assertions | implementer | impl-template-validator | No |
@@ -767,7 +767,7 @@ Out of scope for this wave: HarnessBench Phase B/C docs and runner.
 |------|---------|-------------|--------------|------------|
 | `CLAUDE.md` | Root slim entry contract | implementer | impl-root-claude | No |
 | `templates/common/CLAUDE.md` | Template slim entry contract parity | implementer | impl-template-claude | No |
-| `Harness/SETUP.md` | Setup contract accepts slim CLAUDE | implementer | impl-runtime-setup | No |
+| `Harness/specs/guides/SETUP.md` | Setup contract accepts slim CLAUDE | implementer | impl-runtime-setup | No |
 | `templates/common/SETUP.md` | Template setup contract accepts slim CLAUDE | implementer | impl-template-setup | No |
 | `Harness/scripts/validate-harness.mjs` | Runtime validator slim-contract checks | implementer | impl-runtime-validator | No |
 | `templates/common/scripts/validate-harness.mjs` | Template validator slim-contract checks | implementer | impl-template-validator | No |
@@ -788,7 +788,7 @@ Out of scope for this wave: HarnessBench Phase B/C docs and runner.
 
 ### Worker Fallback Rationale
 
-> ANTI-PATTERN (historical, do not repeat): the fallback below violated the WF-MAX role contract. Per `Harness/WF-MAX.md` "Worker Channel Degradation & Independence", an in-process MCP tool call is NEVER a Worker. This record is retained as a lesson only.
+> ANTI-PATTERN (historical, do not repeat): the fallback below violated the WF-MAX role contract. Per `Harness/specs/workflows/WF-MAX.md` "Worker Channel Degradation & Independence", an in-process MCP tool call is NEVER a Worker. This record is retained as a lesson only.
 
 Read-only Worker attempts using `mcp__codex.codex_query` and `mcp__claude.claude_query` failed because the named Codex model was unavailable, Claude CLI was not installed, and the default Codex read-only query timed out after 300 seconds. To preserve the CEO no-source-edit invariant and still progress, source edits are delegated to `mcp__codex.codex_implement` with the exact user write scope and this dispatch table.
 
@@ -799,7 +799,7 @@ Status: active override for the current implementation request. This supersedes 
 User constraints:
 
 - Phase A only.
-- Write scope is limited to `CLAUDE.md`, `templates/common/CLAUDE.md`, `Harness/SETUP.md`, `templates/common/SETUP.md`, `Harness/scripts/validate-harness.mjs`, `templates/common/scripts/validate-harness.mjs`, `tests/generator.test.js`, and `tests/validate-harness.test.js` if needed.
+- Write scope is limited to `CLAUDE.md`, `templates/common/CLAUDE.md`, `Harness/specs/guides/SETUP.md`, `templates/common/SETUP.md`, `Harness/scripts/validate-harness.mjs`, `templates/common/scripts/validate-harness.mjs`, `tests/generator.test.js`, and `tests/validate-harness.test.js` if needed.
 - Do not add benchmark docs.
 - Do not add a dogfood sync script.
 - Use the slim `CLAUDE.md` replacement text from this PLAN.
@@ -811,7 +811,7 @@ Dispatch table:
 |------|---------|-------------|--------------|------------|
 | `CLAUDE.md` | Root slim entry contract | implementer | impl-root-claude | No |
 | `templates/common/CLAUDE.md` | Template slim entry contract parity | implementer | impl-template-claude | No |
-| `Harness/SETUP.md` | Runtime setup contract accepts slim CLAUDE | implementer | impl-runtime-setup | No |
+| `Harness/specs/guides/SETUP.md` | Runtime setup contract accepts slim CLAUDE | implementer | impl-runtime-setup | No |
 | `templates/common/SETUP.md` | Template setup contract accepts slim CLAUDE | implementer | impl-template-setup | No |
 | `Harness/scripts/validate-harness.mjs` | Runtime validator slim-contract checks | implementer | impl-runtime-validator | No |
 | `templates/common/scripts/validate-harness.mjs` | Template validator slim-contract checks | implementer | impl-template-validator | No |
@@ -850,12 +850,12 @@ Worker dispatch packet:
     "AGENTS.md",
     "templates/common/CLAUDE.md",
     "templates/common/AGENTS.md",
-    "Harness/WF-MAX.md",
-    "templates/common/Harness/WF-MAX.md",
-    "Harness/dispatch.md",
-    "templates/common/Harness/dispatch.md",
-    "Harness/subagents.md",
-    "templates/common/Harness/subagents.md",
+    "Harness/specs/workflows/WF-MAX.md",
+    "templates/common/Harness/specs/workflows/WF-MAX.md",
+    "Harness/specs/runtime/dispatch.md",
+    "templates/common/Harness/specs/runtime/dispatch.md",
+    "Harness/specs/runtime/subagents.md",
+    "templates/common/Harness/specs/runtime/subagents.md",
     ".claude/settings.json",
     "Harness/scripts/validate-harness.mjs",
     "templates/common/scripts/validate-harness.mjs",
@@ -887,12 +887,12 @@ Dispatch table:
 | `AGENTS.md` | Root WF-MAX role wording for non-Claude agents | implementer | impl-role-architecture | No |
 | `templates/common/CLAUDE.md` | Template parity for root entry contract | implementer | impl-role-architecture | No |
 | `templates/common/AGENTS.md` | Template parity for non-Claude agents, if present | implementer | impl-role-architecture | No |
-| `Harness/WF-MAX.md` | Authoritative three-layer WF-MAX model | implementer | impl-role-architecture | No |
-| `templates/common/Harness/WF-MAX.md` | Template parity for WF-MAX model, if present | implementer | impl-role-architecture | No |
-| `Harness/dispatch.md` | Dispatch packet fields and role/writeSet contract | implementer | impl-role-architecture | No |
-| `templates/common/Harness/dispatch.md` | Template parity for dispatch protocol | implementer | impl-role-architecture | No |
-| `Harness/subagents.md` | Subagent role and write permission language | implementer | impl-role-architecture | No |
-| `templates/common/Harness/subagents.md` | Template parity for subagent role language | implementer | impl-role-architecture | No |
+| `Harness/specs/workflows/WF-MAX.md` | Authoritative three-layer WF-MAX model | implementer | impl-role-architecture | No |
+| `templates/common/Harness/specs/workflows/WF-MAX.md` | Template parity for WF-MAX model, if present | implementer | impl-role-architecture | No |
+| `Harness/specs/runtime/dispatch.md` | Dispatch packet fields and role/writeSet contract | implementer | impl-role-architecture | No |
+| `templates/common/Harness/specs/runtime/dispatch.md` | Template parity for dispatch protocol | implementer | impl-role-architecture | No |
+| `Harness/specs/runtime/subagents.md` | Subagent role and write permission language | implementer | impl-role-architecture | No |
+| `templates/common/Harness/specs/runtime/subagents.md` | Template parity for subagent role language | implementer | impl-role-architecture | No |
 | `.claude/settings.json` | Runtime-interceptor docs/config only if needed; preserve valid JSON | implementer | impl-role-architecture | No |
 | `Harness/scripts/validate-harness.mjs` | Validator role-architecture assertions | implementer | impl-role-architecture | No |
 | `templates/common/scripts/validate-harness.mjs` | Template validator role-architecture assertions | implementer | impl-role-architecture | No |

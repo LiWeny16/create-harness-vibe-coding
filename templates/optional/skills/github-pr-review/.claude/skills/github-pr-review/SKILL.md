@@ -37,4 +37,4 @@ Update `Harness/tasks/<task-id>/PLAN.md` only when the PR review is part of a tr
 
 ## dispatch.md Usage
 
-Use `Harness/dispatch.md` when independent review areas can be assigned separately, such as backend, frontend, and CI.
+Use `Harness/specs/runtime/dispatch.md` when independent review areas can be assigned separately, such as backend, frontend, and CI.

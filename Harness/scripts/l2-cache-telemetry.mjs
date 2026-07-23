@@ -40,7 +40,7 @@ const GROUPS = {
     tools: 'Read,Grep,Glob',
     maxTurns: 6,
     prompts: [
-      '/wf Read only CLAUDE.md, Harness/MEMORY.md, Harness/README.md, Harness/WF.md, Harness/WF-KERNEL.md, and Harness/context-loading.md. Return exactly three bullets: route used, cache-first boundary, no-edit confirmation.',
+      '/wf Read only CLAUDE.md, Harness/MEMORY.md, Harness/README.md, Harness/specs/workflows/WF.md, Harness/specs/workflows/WF-KERNEL.md, and Harness/specs/runtime/context-loading.md. Return exactly three bullets: route used, cache-first boundary, no-edit confirmation.',
       'Do not read files or run tools. Based on this same session, one sentence: name the stable-prefix file categories.',
       'Do not read files or run tools. Answer exactly: cache_read_input_tokens should stay high when the prefix is stable.',
     ],

@@ -21,7 +21,7 @@ Built-in agents:
 - `.claude/agents/researcher.md`: product, market, open-source, dependency, pricing, policy, and ecosystem research.
 - `.claude/agents/docs-researcher.md`: official docs, API, SDK, config, limits, errors, and examples verification.
 
-For multi-agent research plus build work, create the dispatch table in `Harness/tasks/<task-id>/PLAN.md` and follow `Harness/dispatch.md`.
+For multi-agent research plus build work, create the dispatch table in `Harness/tasks/<task-id>/PLAN.md` and follow `Harness/specs/runtime/dispatch.md`.
 
 Research Agent input:
 
@@ -107,11 +107,11 @@ Use these patterns when turning research into PRD or feature docs:
 - Research process, queries, and limitations: this file or `Harness/tasks/<task-id>/PLAN.md`.
 - Final research decisions: [research-results.md](research-results.md).
 - Product scope: [PRD.md](PRD.md).
-- Architecture consequences: `Harness/architecture.md`.
+- Architecture consequences: `Harness/project/architecture.md`.
 
 ## Architecture Decision References
 
-When filling `Harness/architecture.md` and `Harness/research/research-results.md`, use these high-trust sources as starting points. Search within them; do not read them whole.
+When filling `Harness/project/architecture.md` and `Harness/research/research-results.md`, use these high-trust sources as starting points. Search within them; do not read them whole.
 
 ### System Design & Architecture Patterns
 

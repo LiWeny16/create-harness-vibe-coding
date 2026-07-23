@@ -21,8 +21,8 @@
     "running": [],
     "blocked": [],
     "done": [
-      "Updated Harness/WF-AUTO-SPARK.md and template mirror.",
-      "Updated Harness/WF-MAX.md and template mirror.",
+      "Updated Harness/specs/workflows/WF-AUTO-SPARK.md and template mirror.",
+      "Updated Harness/specs/workflows/WF-MAX.md and template mirror.",
       "Added validator requireText coverage in root and template validators.",
       "Added generator and validator tests for new spark protocol clauses.",
       "Ran build-version to refresh templates/common/.harness-version and root Harness/.harness-version.",

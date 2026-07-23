@@ -29,6 +29,16 @@
 
 它不是 prompt 集合，也不是模型本身。它解决的是另一个问题：同一个 agent 为什么第一轮看起来很好，第二轮却开始忘记决策、扩大修改范围、跳过验证？
 
+## 0.8.15 新增重点
+
+这一版把“cache-first 设计”从原则推进到可复现实测：
+
+- 新增真实 Claude Code L2 telemetry：`Harness/scripts/l2-cache-telemetry.mjs` 会用受控预算采集 provider-control、thin-startup 和 `/wf` light-route 的 usage、费用、耗时和 session 证据。
+- 本 dogfood 仓库的实测结果已经写入 README：`harness-thin` warm median cache read 为 `98.7%`，相对 provider-control 提升 `+5.4` 个百分点；`/wf` wf-light 为 `99.1%`，提升 `+5.8` 个百分点。
+- 增加缓存回归防线：L0 结构校验、L1 SHA-256 stable-prefix 模拟、L2 provider telemetry claim gate、以及 route-profile context budget。
+- 启动与升级链路更清晰：正常会话保持 thin startup，`Harness/specs/guides/SETUP.md` 保留为安装/bootstrap/迁移/升级参考，`/wf-update` 完成后必须向用户汇报 changelog 核心改进点和验证结果。
+- 新增 `wf-agents-docs`：沉淀 Claude Code、Codex、OpenCode 的 CLI 调用、JSON telemetry 解析、peer review 和 batch probe 规则。
+
 ## 一句话安装（已有项目推荐）
 
 把下面这句话原样丢给正在使用的 Agent：
@@ -43,11 +53,11 @@ Agent 读取本 README 后，按项目状态选择安装路径：
 |---|---|
 | 新项目 | `npx create-harness-vibe-coding@latest my-project -y` |
 | 已有项目 | `npx create-harness-vibe-coding@latest my-project . -y --on-conflict skip --json` |
-| 已有 `Harness/` 且存在 `Harness/scripts/wf-update-check.mjs` | `node Harness/scripts/wf-update-check.mjs --json`，走更新流程，不要重复安装 |
+| 已有 `Harness/` 且存在 `Harness/scripts/wf-update-check.mjs` | `node Harness/scripts/wf-update-check.mjs --json`，走更新流程，不要重复安装；apply/finalize 后要汇报 `agent.releaseHighlights` 和验证结果 |
 | 已有 `Harness/` 但缺少 `Harness/scripts/wf-update-check.mjs` | `npx create-harness-vibe-coding@latest my-project . -y --on-conflict skip --json`。然后执行 `node Harness/scripts/wf-update-check.mjs --json` |
 | 安装或更新完成 | `node Harness/scripts/validate-harness.mjs --strict` |
 
-安装后的 handoff 按阶段区分：正常会话入口是 `CLAUDE.md`；`Harness/SETUP.md` 只用于安装/bootstrap、迁移或升级决策；需要 Harness 工作流路由时再读 `Harness/README.md`。遵守项目已有边界；先研究和计划，再修改代码；完成后运行测试、校验和审查，未验证不要声称完成。
+安装后的 handoff 按阶段区分：正常会话入口是 `CLAUDE.md`；`Harness/specs/guides/SETUP.md` 只用于安装/bootstrap、迁移或升级决策；需要 Harness 工作流路由时再读 `Harness/README.md`。遵守项目已有边界；先研究和计划，再修改代码；完成后运行测试、校验和审查，未验证不要声称完成。
 
 用户不需要手动执行命令。把上面一句话交给 Agent，Agent 负责安装、冲突处理、校验和汇报。
 
@@ -65,13 +75,13 @@ Agent 读取本 README 后，按项目状态选择安装路径：
 | `/wf-learn` | 同类错误反复出现，或一次任务结束后要沉淀经验 | 汇总上下文、记忆和项目经验，形成下一次可复用规则 | `/wf-learn 总结这次返修原因` |
 | `/wf-browser <任务>` | 浏览器冒烟、E2E、截图、表单或页面验证 | 使用真实浏览器完成操作并提供截图、追踪和验证证据 | `/wf-browser 验证登录和支付流程` |
 | `/wf-readme <任务>` | README、安装文档、架构图或项目说明需要重写 | 保留事实，整理结构，补充安装和使用说明 | `/wf-readme 优化中文 README` |
-| `/wf-update` | 已经安装 Harness，需要检查和应用框架更新 | 比较版本，自动处理安全变更，把语义冲突留给 Agent | `/wf-update` |
+| `/wf-update` | 已经安装 Harness，需要检查和应用框架更新 | 比较版本，自动处理安全变更，把语义冲突留给 Agent，并从 changelog metadata 汇报本次升级核心变化 | `/wf-update` |
 | `/wf-remove` | 需要卸载 Harness | 自动清理安全文件，保留用户数据，冲突文件先确认 | `/wf-remove` |
 | `/wf-help` | 不知道该用哪个命令 | 只返回命令、用途和用法，不启动工作流 | `/wf-help` |
 
 Claude Code 使用 `/wf-*`；Codex 使用对应的 `$wf-*`；OpenCode 使用已注册的命令或 Agent instruction。`/wf-auto` 和 `/wf-auto-spark` 是持续模式，启动前要给 Agent 清晰的目标、范围和验收标准。
 
-常见场景可以这样起步：Web/API 先看正确性、安全、可靠性和验证；CLI/SDK 先看契约、兼容性、错误体验和文档；AI Agent 先看上下文质量、工具安全、评测和恢复；数据任务先看幂等性、失败恢复和可观测性。完整的自适应选择规则见 [WF-AUTO-ANGLES.md](Harness/WF-AUTO-ANGLES.md)。
+常见场景可以这样起步：Web/API 先看正确性、安全、可靠性和验证；CLI/SDK 先看契约、兼容性、错误体验和文档；AI Agent 先看上下文质量、工具安全、评测和恢复；数据任务先看幂等性、失败恢复和可观测性。完整的自适应选择规则见 [WF-AUTO-ANGLES.md](Harness/specs/workflows/WF-AUTO-ANGLES.md)。
 
 ## 它改变了什么？
 
@@ -184,7 +194,7 @@ Harness 把一次模糊请求变成一条可以追踪的路径：
 | `python-backend` | FastAPI、pytest 项目 |
 | `github-pr-review` | PR diff 审查和 CI 证据 |
 
-外部推荐只会记录到 `Harness/SETUP.md`，不会自动安装：
+外部推荐只会记录到 `Harness/specs/guides/SETUP.md`，不会自动安装：
 
 | 推荐 | 用途 | 来源 |
 |---|---|---|
@@ -239,9 +249,11 @@ my-project/
 ├── CLAUDE.md / AGENTS.md       ← agent 入口
 ├── Harness/
 │   ├── README.md               ← 文档路由器
-│   ├── SETUP.md                ← 安装/bootstrap 参考
 │   ├── MEMORY.md               ← 资源索引
 │   ├── PROGRESS.md             ← 任务追踪器
+│   ├── settings.json           ← 框架配置
+│   ├── specs/                  ← 工作流、协议、运行时与安装指南
+│   ├── project/                ← 项目架构文档
 │   ├── tasks/                  ← 任务胶囊
 │   ├── research/               ← PRD 与研究模板
 │   └── scripts/                ← 校验器

@@ -63,8 +63,8 @@
     "Runtime and template mirrors must stay consistent."
   ],
   "artifacts": [
-    "Harness/context-loading.md",
-    "templates/common/Harness/context-loading.md",
+    "Harness/specs/runtime/context-loading.md",
+    "templates/common/Harness/specs/runtime/context-loading.md",
     "Harness/scripts/validate-harness.mjs",
     "templates/common/Harness/scripts/validate-harness.mjs",
     "tests/validate-harness.test.js",

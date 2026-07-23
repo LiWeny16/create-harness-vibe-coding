@@ -8,7 +8,7 @@
 - **Current Milestone**: M2 — 诚实降级链 + 独立性分级写入协议
 - **Completed**: M1 (cycle 1)
 - **Roadmap**: [SPARK-ROADMAP.md](SPARK-ROADMAP.md)
-- **Channel matrix**: [CHANNEL-MATRIX.md](CHANNEL-MATRIX.md)
+- **Channel matrix**: [CHANNEL-MATRIX.md](CHANNEL-MATRIX.md) (historical snapshot; current checks use `wf-agents-docs` evidence packets)
 - **Root-cause evidence**: `tasks/task-framework-metrics-and-entry-contract/PLAN.md:784-791` (failure count 4)
 
 ## Protocol Update — 2026-07-13
@@ -23,7 +23,7 @@
 ### Cycle 1 — M1 ✅ PASS (2026-07-21)
 **Milestone**: M1 — Worker 渠道可用性探测
 **Spark Source**: 3 (CLI detection) + 6 (governance) + 4 (VMAO, Agents SDK)
-**Change**: `Harness/scripts/probe-worker-channels.mjs`（~210 行，零依赖，bounded 15s）+ CHANNEL-MATRIX.md
+**Change**: CHANNEL-MATRIX.md historical snapshot; later simplified by removing the ad hoc probe script and using `wf-agents-docs` evidence packets
 **Deviation**: ~10%
 **Implementer**: native subagent（未用 mcp 冒充）
 **AC**: AC-M1-PROBE/MATRIX/TIMEOUT/INDEPENDENCE 全 PASS（CEO 独立重跑确认）
@@ -78,7 +78,7 @@
 ### Cycle 4 — M3 (probe 预检协议化 + timeout/retry) ✅ PASS (2026-07-21)
 **Milestone**: M3 — 超时/重试/CLI 预检工程化
 **Spark Source**: 2+3 (graceful degradation retry+backoff；M1 probe 已覆盖 bounded 超时)
-**Change**: WF-MAX.md（根 + templates）降级链增 **Step 0（派 Worker 前先跑 probe）** + **Timeout & Retry** 小节（bounded ≤15s + 单次重试 + 300s 教训）+ validator requireText WF-MAX.md 引用 `probe-worker-channels.mjs`（防回归）+ 补根 `.harness-version` drift
+**Change**: WF-MAX.md（根 + templates）降级链增 **Step 0 capability evidence** + **Timeout & Retry** 小节（bounded command timeout + 单次重试 + 300s 教训）+ validator requireText WF-MAX.md 引用 no-scratch/evidence-packet rule（防回归）+ 补根 `.harness-version` drift
 **Deviation**: ~10%
 **Implementer**: native subagent（未用 mcp 冒充）+ CEO 补根 checksum drift
 **AC**: AC-M3-PROBE-STEP / RETRY / REQUIRETEXT / SYNC 全 PASS（含 swap-test anti-regression 验证）

@@ -13,6 +13,7 @@
     "docs/images/harness-icon.png",
     "docs/images/harness-architecture-light.png",
     "docs/images/harness-architecture.drawio",
+    "CHANGELOG.md",
     "README-CN.md"
   ],
   "scripts": {

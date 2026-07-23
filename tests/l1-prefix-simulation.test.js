@@ -6,7 +6,7 @@ import { createHash } from 'node:crypto';
 // L1 prefix simulation: serializes context/dispatch packets and proves
 // byte-identical stable prefixes across dynamic-suffix-only changes.
 // This is a structural cache-friendliness proof, NOT a provider cache-hit claim.
-// See Harness/context-loading.md#Cache Validation Levels.
+// See Harness/specs/runtime/context-loading.md#Cache Validation Levels.
 // ============================================================================
 
 // Deterministic JSON serialization: stable key order, no trailing whitespace.
@@ -23,7 +23,7 @@ function sha256(text) {
 
 // ---------------------------------------------------------------------------
 // Minimal dispatch packet — mirrors the three-layer structure from
-// Harness/context-loading.md § Cache-First Context Contract:
+// Harness/specs/runtime/context-loading.md § Cache-First Context Contract:
 //   1. Stable prefix
 //   2. Scoped references
 //   3. Dynamic suffix
@@ -42,10 +42,10 @@ function makePacket(opts = {}) {
     },
     workflowDocs: [
       // canonical, deterministic order
-      { name: 'Harness/WF.md', digest: 'sha256:wf11111111' },
-      { name: 'Harness/WF-KERNEL.md', digest: 'sha256:wfK2222222' },
-      { name: 'Harness/subagents.md', digest: 'sha256:sub3333333' },
-      { name: 'Harness/dispatch.md', digest: 'sha256:dis44444444' },
+      { name: 'Harness/specs/workflows/WF.md', digest: 'sha256:wf11111111' },
+      { name: 'Harness/specs/workflows/WF-KERNEL.md', digest: 'sha256:wfK2222222' },
+      { name: 'Harness/specs/runtime/subagents.md', digest: 'sha256:sub3333333' },
+      { name: 'Harness/specs/runtime/dispatch.md', digest: 'sha256:dis44444444' },
     ],
     skillIndex: [
       { skill: 'subagent-orchestrator', version: '1.0' },

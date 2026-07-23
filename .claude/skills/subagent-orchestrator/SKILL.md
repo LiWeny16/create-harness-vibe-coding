@@ -16,17 +16,17 @@ subagent surfaces; follow the same Harness role contract either way.
 
 ## Load
 
-- `Harness/subagents.md`
-- `Harness/dispatch.md`
-- `Harness/context-loading.md`
-- `Harness/agent-workflow.md`
+- `Harness/specs/runtime/subagents.md`
+- `Harness/specs/runtime/dispatch.md`
+- `Harness/specs/runtime/context-loading.md`
+- `Harness/specs/runtime/agent-workflow.md`
 - `Harness/PROGRESS.md`
 - Active `Harness/tasks/<task-id>/PROGRESS.md` and `PLAN.md`, when present
-- `Harness/WF.md` when in explicit `/wf`, `$wf`, or `/skills wf`
+- `Harness/specs/workflows/WF.md` when in explicit `/wf`, `$wf`, or `/skills wf`
 
 ## Cache Discipline
 
-Follow `Harness/context-loading.md#Cache-First Context Contract`: inject only
+Follow `Harness/specs/runtime/context-loading.md#Cache-First Context Contract`: inject only
 routed docs and selected files, keep dispatch packet fields deterministic, defer
 unused skill/tool schemas, and require bounded summaries instead of transcripts.
 
@@ -48,7 +48,7 @@ unused skill/tool schemas, and require bounded summaries instead of transcripts.
   integrates returns, and owns final verification.
 - Subagents or bounded passes are readers and reporters unless a write set is
   explicitly assigned and disjoint.
-- Explicit WF/WF-MAX requires tier-specific role coverage per `Harness/WF.md`.
+- Explicit WF/WF-MAX requires tier-specific role coverage per `Harness/specs/workflows/WF.md`.
 - Every dispatch needs role, goal, mode, read set, write set, forbidden scope,
   injected docs, dependencies, evidence, stop condition, and return format.
 - Prefer parallel read-only exploration first. Serialize writers unless write

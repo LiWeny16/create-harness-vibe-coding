@@ -13,7 +13,7 @@ Load:
 
 ## Cache Discipline
 
-Follow `Harness/context-loading.md#Cache-First Context Contract`: keep workflow
+Follow `Harness/specs/runtime/context-loading.md#Cache-First Context Contract`: keep workflow
 docs stable, use CLI state/screenshot paths as dynamic evidence, and avoid
 replaying full browser logs or screenshots in prompts unless a failed AC needs
 targeted inspection.

@@ -21,7 +21,7 @@ Compact heartbeat. Update on phase changes, blockers, failures, and closeout.
 
 ## Changes
 
-- Added cache-first context ordering to runtime and template `Harness/context-loading.md`: stable prefix, scoped references, dynamic suffix, deferred skill/tool loading, bounded summaries, and cache-boundary triggers.
+- Added cache-first context ordering to runtime and template `Harness/specs/runtime/context-loading.md`: stable prefix, scoped references, dynamic suffix, deferred skill/tool loading, bounded summaries, and cache-boundary triggers.
 - Added cache validation levels:
   - L0 structural regression checks prove only that the framework preserves cache-friendly shape.
   - L1 prefix simulation proves byte-identical stable prefixes across dynamic suffix changes.

@@ -24,7 +24,7 @@ agents only provide evidence-backed suggestions.
 
 ## Cache Discipline
 
-Follow `Harness/context-loading.md#Cache-First Context Contract`: build review
+Follow `Harness/specs/runtime/context-loading.md#Cache-First Context Contract`: build review
 context from changed-file lists, ACs, validation evidence, and targeted diffs;
 avoid pasting unrelated history, full transcripts, or unused tool schemas into
 the review prompt.
@@ -73,8 +73,8 @@ AgentName: reviewer
 Mode: read-only
 Objective: review the current diff for correctness, security, architecture,
 performance, tests, and spec/AC compliance
-Read set: changed files, tests, task PLAN/PROGRESS, Harness/agent-workflow.md,
-Harness/subagents.md, Harness/dispatch.md, architecture docs when affected
+Read set: changed files, tests, task PLAN/PROGRESS, Harness/specs/runtime/agent-workflow.md,
+Harness/specs/runtime/subagents.md, Harness/specs/runtime/dispatch.md, architecture docs when affected
 Write set: none
 Forbidden: file edits, git mutations, formatting-only advice, ungrounded claims
 ReturnSchema: findings by severity, file/line refs, missing verification,
@@ -87,6 +87,6 @@ deduplicate reviewer output and decide what to accept.
 
 ## Context
 
-Include the relevant diff, `Harness/architecture.md` when architecture is in
+Include the relevant diff, `Harness/project/architecture.md` when architecture is in
 scope, and any task acceptance criteria. If the diff is too large, ask for a
 narrower scope before invoking a peer CLI or reviewer subagent.

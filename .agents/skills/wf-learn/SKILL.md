@@ -24,7 +24,7 @@ fallback.
 
 ## Cache Discipline
 
-Follow `Harness/context-loading.md#Cache-First Context Contract`: load memory
+Follow `Harness/specs/runtime/context-loading.md#Cache-First Context Contract`: load memory
 indexes first, then only the routed detailed memory files; summarize durable
 patterns by file path and signal instead of pasting session transcripts.
 

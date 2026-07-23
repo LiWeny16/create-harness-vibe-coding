@@ -30,9 +30,9 @@ If the user says "continue", "resume", "last task", "current task", "status", "w
 6. Do NOT bulk-read `Harness/tasks/` to find context. Use the active pointer.
 7. Direct simple tasks may skip STATE/PLAN/PROGRESS unless the user says "continue"/"resume".
 
-See `Harness/WF-STATE.md` for the full state machine contract. Completed/abandoned tasks are archived to `Harness/tasks/_archive/` per `Harness/TASK_ARCHIVE.md`.
+See `Harness/specs/workflows/WF-STATE.md` for the full state machine contract. Completed/abandoned tasks are archived to `Harness/tasks/_archive/` per `Harness/specs/protocols/TASK_ARCHIVE.md`.
 
-Use **/wf** for multi-step work that needs structured coordination. Use **/wf-max** for maximum-parallelism with CEO/Manager/Worker decomposition. See `Harness/WF.md` for tier selection (WF-Light, WF-Standard, WF-Full) and `Harness/WF-MAX.md` for fan-out rules (WF-Max-Useful, WF-Max-Strict).
+Use **/wf** for multi-step work that needs structured coordination. Use **/wf-max** for maximum-parallelism with CEO/Manager/Worker decomposition. See `Harness/specs/workflows/WF.md` for tier selection (WF-Light, WF-Standard, WF-Full) and `Harness/specs/workflows/WF-MAX.md` for fan-out rules (WF-Max-Useful, WF-Max-Strict).
 
 ### 1a. WF-MAX Role Contract
 
@@ -46,7 +46,7 @@ Each Worker dispatch must define: role, objective, allowed writeSet, forbidden f
 
 Workers may edit only inside their assigned writeSet. Reviewers and verifiers must be independent from the Worker whose output they evaluate.
 
-Detailed WF-MAX role rules live in `Harness/WF-KERNEL.md`, `Harness/WF-MAX.md`, and `Harness/subagents.md`.
+Detailed WF-MAX role rules live in `Harness/specs/workflows/WF-KERNEL.md`, `Harness/specs/workflows/WF-MAX.md`, and `Harness/specs/runtime/subagents.md`.
 
 ### 1b. User-Facing Language
 
@@ -87,8 +87,8 @@ Match the user's language for all user-facing prose. Use the dominant language o
 - Every task needs a test, build check, validator run, or recorded manual check.
 - Do not claim web/UI acceptance without real-browser evidence from Chrome DevTools, CDP, Playwright, or documented manual browser checks.
 - Do not place project build scripts, git conventions, run commands, or release process in this file. Put them in `README.md`.
-- Do not place code architecture here. Put architecture in `Harness/architecture.md` or the current feature doc.
-- If this file has accumulated unrelated project notes, pause and propose moving them to the right place: `README.md` for development operations, `Harness/architecture.md` for architecture, `Harness/WF.md` or `Harness/workflows/` for workflow rules.
+- Do not place code architecture here. Put architecture in `Harness/project/architecture.md` or the current feature doc.
+- If this file has accumulated unrelated project notes, pause and propose moving them to the right place: `README.md` for development operations, `Harness/project/architecture.md` for architecture, `Harness/specs/workflows/WF.md` or `Harness/workflows/` for workflow rules.
 
 ## 5a. Low-Noise Progress
 
@@ -109,9 +109,9 @@ Never record secrets, credentials, tokens, or private data in memory.
 
 ## 7. Mode Constraints
 
-- Never call `EnterPlanMode`. Delegate planning to `planner` subagents (see `Harness/WF.md`).
+- Never call `EnterPlanMode`. Delegate planning to `planner` subagents (see `Harness/specs/workflows/WF.md`).
 - In `/wf` or `/wf-max`, follow the selected workflow role contract instead of improvising execution flow.
 - In `/wf-max`, the CEO must not edit source files directly. Implementation must be delegated to Workers with explicit writeSet boundaries.
 - If a Worker dispatch is missing role, objective, writeSet, forbidden scope, or verification requirements, the controller must not proceed with source edits.
 
-Keep CLAUDE.md as a thin routing and global-behavior file. Put detailed workflows in `Harness/WF.md` or `Harness/workflows/`, subagent rules in `Harness/subagents.md`, architecture in `Harness/architecture.md`, and project operations in `README.md`.
+Keep CLAUDE.md as a thin routing and global-behavior file. Put detailed workflows in `Harness/specs/workflows/WF.md` or `Harness/workflows/`, subagent rules in `Harness/specs/runtime/subagents.md`, architecture in `Harness/project/architecture.md`, and project operations in `README.md`.

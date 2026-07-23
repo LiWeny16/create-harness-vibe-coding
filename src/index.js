@@ -294,9 +294,9 @@ function printResult(result, targetDir) {
     console.log(`  ${pc.cyan('claude')}                          # Start Claude Code`);
     console.log(`  ${pc.cyan('codex')}                           # Or start Codex`);
     console.log(`  ${pc.cyan('opencode')}                        # Or start OpenCode`);
-    console.log(`  Tell your agent: "${pc.yellow('Read Harness/SETUP.md. Bootstrap this project from idea to first vertical slice.')}"`);
+    console.log(`  Tell your agent: "${pc.yellow('Read Harness/specs/guides/SETUP.md. Bootstrap this project from idea to first vertical slice.')}"`);
     console.log('');
-    console.log(pc.dim('  Keep Harness/SETUP.md as a setup reference; normal sessions start at CLAUDE.md, with Harness/README.md as the routed workflow router.'));
+    console.log(pc.dim('  Keep Harness/specs/guides/SETUP.md as a setup reference; normal sessions start at CLAUDE.md, with Harness/README.md as the routed workflow router.'));
     console.log('');
 
   } else {
@@ -742,7 +742,7 @@ function createAgentGuidance(result, { projectName, targetDir, options, scan }) 
   } else if (result.success) {
     next.push({
       action: 'bootstrap',
-      command: 'Read Harness/SETUP.md and use this JSON plan before opening any package templates.',
+      command: 'Read Harness/specs/guides/SETUP.md and use this JSON plan before opening any package templates.',
       reason: 'Scaffold files were written; bootstrap project facts from local evidence.',
     });
   } else {
@@ -820,7 +820,7 @@ function createFileGuidance(file) {
 }
 
 function templateHintFor(file) {
-  if (file === 'Harness/SETUP.md') return 'templates/common/Harness/SETUP.md';
+  if (file === 'Harness/specs/guides/SETUP.md') return 'templates/common/Harness/specs/guides/SETUP.md';
   return `templates/common/${file}`;
 }
 

@@ -1,8 +1,8 @@
 # Worker Channel Matrix — M1 产出
 
 **Probed**: 2026-07-21 (node v24.18.0, win32)
-**Probe script**: [`Harness/scripts/probe-worker-channels.mjs`](../../scripts/probe-worker-channels.mjs)
-**Re-run anytime**: `node Harness/scripts/probe-worker-channels.mjs [--json]`
+**Status**: Historical capability snapshot. The ad hoc probe script was removed; new checks use `wf-agents-docs` peer-CLI evidence packets on stdout.
+**Re-run method**: invoke the selected peer CLI with a bounded read-only prompt and return `tool`, `command`, `exit`, `evidence`, and `risks`; do not write scratch files or `%TEMP%` output.
 
 ## Matrix
 
@@ -20,7 +20,7 @@
 2. **native subagent 当时就可用的活证据**——framework-metrics 失败时 CEO 本可用 native subagent（Agent 工具），却去试 `mcp__codex/claude` 然后冒充 Worker。**根因是「渠道选择错误 + 无降级链」，不是「渠道全挂」**。这把 M2-M3 的工作重心从"修超时"调整为"建降级链 + 禁冒充"。
 3. **当前环境可用的独立 Worker 渠道**：native-subagent（首选）、claude peer-cli、codex peer-cli。opencode 缺失，降级链应跳过。
 4. **mcp 永远 inprocess**——North Star 硬约束首次以可检测形式落地：任何"用 `mcp__codex.codex_implement` 当 Worker"的记录都应被 validator 拒绝（M2 落地）。
-5. **超时已自愈**：`--version` 探测 bounded 15s 内（实测 <1s）。M3 的超时工程化从"救火"降级为"防回归"。
+5. **超时已自愈**：历史 `--version` 探测 bounded 15s 内（实测 <1s）。M3 的超时工程化从"救火"降级为"防回归"；当前不再维护独立探针脚本。
 
 ## 给 M2 的降级链草案（基于此矩阵）
 

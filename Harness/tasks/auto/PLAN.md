@@ -5,7 +5,7 @@
 ## Cycle 5 — M4 (WF-MAX 自反验证: 修复 .harness-version drift 根因)
 
 **Mode**: WF-MAX (WF-Max-Useful) within spark cycle 5
-**Step 0 probe**: native-subagent + claude/codex peer-CLI available（[CHANNEL-MATRIX.md](CHANNEL-MATRIX.md)）；零 mcp 冒充
+**Step 0 capability evidence**: native-subagent + claude/codex peer-CLI observed in prior matrix（[CHANNEL-MATRIX.md](CHANNEL-MATRIX.md)）；new peer CLI calls must follow `wf-agents-docs` evidence-packet/no-scratch rules；零 mcp 冒充
 **Task**: 修复根 `.harness-version` drift 根因——`build-version.mjs` 不同步根 + `pre-push-check.mjs` 不检查根 drift
 
 ### D-GATE Dispatch Table

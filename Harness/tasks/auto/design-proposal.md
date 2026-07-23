@@ -155,12 +155,12 @@ If /wf-auto-spark:
 ## Files to Create/Modify
 
 ### New files:
-1. `Harness/WF-AUTO-SPARK.md` — spark mode spec
+1. `Harness/specs/workflows/WF-AUTO-SPARK.md` — spark mode spec
 2. `.claude/skills/wf-auto-spark/SKILL.md` — spark skill loader
 3. `.claude/commands/wf-auto-spark.md` — /wf-auto-spark command bridge
 
 ### Modified files:
-4. `Harness/WF-AUTO.md` — add Intent Re-anchoring Gate section, cross-reference spark mode
+4. `Harness/specs/workflows/WF-AUTO.md` — add Intent Re-anchoring Gate section, cross-reference spark mode
 5. `.claude/skills/wf-auto/SKILL.md` — add re-anchor constraint
 6. `.claude/commands/wf-auto.md` — add re-anchor to loop
 7. `Harness/README.md` — add spark routing

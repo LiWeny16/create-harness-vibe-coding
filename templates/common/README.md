@@ -26,7 +26,7 @@ Replace the examples with the real commands discovered from this project. If a c
 
 - Keep branch, commit, pull request, CI, and release conventions in this README.
 - Do not place build scripts, git policy, or project maintenance instructions in `CLAUDE.md`.
-- Keep code architecture notes in `Harness/architecture.md` or feature docs.
+- Keep code architecture notes in `Harness/project/architecture.md` or feature docs.
 - For README improvements, use `.claude/skills/wf-readme/SKILL.md`; preserve public docs unless a rewrite is approved.
 
 ## Harness
@@ -34,14 +34,15 @@ Replace the examples with the real commands discovered from this project. If a c
 The agentic engineering harness lives in `Harness/`.
 
 - Normal agent sessions start from `CLAUDE.md`.
-- Use `Harness/SETUP.md` only for install/bootstrap guidance, migration, upgrade decisions, or explicit setup requests.
+- Use `Harness/specs/guides/SETUP.md` only for install/bootstrap guidance, migration, upgrade decisions, or explicit setup requests.
 - Use `Harness/README.md` as the Harness workflow router when a routed task needs it.
 - Load memory and resource registrations from `Harness/MEMORY.md` only when routed.
 - Track active work in `Harness/PROGRESS.md` and `Harness/tasks/<task-id>/PROGRESS.md`.
-- Use `Harness/WF.md` only when the user explicitly invokes a WF command such as `/wf` or `/wf-max`; complex work may still use direct planning, tests, and subagents without entering WF.
+- Use `/wf-update` or `$wf-update` for Harness upgrades; the agent should report version, changed files, validation results, and release highlights from update metadata.
+- Use `Harness/specs/workflows/WF.md` only when the user explicitly invokes a WF command such as `/wf` or `/wf-max`; complex work may still use direct planning, tests, and subagents without entering WF.
   - Claude Code: invoke the `wf` skill with `/wf`.
   - Codex: invoke the `wf` skill with `$wf` or `/skills`.
-- Use `Harness/subagents.md` when coordinating multiple agents.
+- Use `Harness/specs/runtime/subagents.md` when coordinating multiple agents.
 
 Tool discovery files stay at the repository root:
 

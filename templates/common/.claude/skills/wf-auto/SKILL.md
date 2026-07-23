@@ -5,18 +5,28 @@ description: Perpetual adaptive auto-optimization mode. Selects probes from proj
 
 # WF Auto - Perpetual Auto-Optimization
 
+## Memory Preflight
+
+1. Load `CLAUDE.md`, `Harness/MEMORY.md` index only, then `Harness/README.md`
+   before planning, dispatch, edits, validation, or review.
+2. Load detailed `Harness/memory/*` files only when `MEMORY_PROTOCOL.md`
+   scenario hints match; otherwise record "memory hints: none".
+
 ## Load
 
-- `Harness/WF-AUTO.md`
-- `Harness/WF-AUTO-ANGLES.md`
-- `Harness/subagents.md`
-- `Harness/dispatch.md`
-- `Harness/agent-workflow.md`
+- `CLAUDE.md`
+- `Harness/MEMORY.md` (index only per Memory Preflight)
+- `Harness/README.md`
+- `Harness/specs/workflows/WF-AUTO.md`
+- `Harness/specs/workflows/WF-AUTO-ANGLES.md`
+- `Harness/specs/runtime/subagents.md`
+- `Harness/specs/runtime/dispatch.md`
+- `Harness/specs/runtime/agent-workflow.md`
 - `.claude/skills/wf-review/SKILL.md`
 
 ## Cache Discipline
 
-Follow `Harness/context-loading.md#Cache-First Context Contract`: keep the
+Follow `Harness/specs/runtime/context-loading.md#Cache-First Context Contract`: keep the
 auto-mode docs in listed order, run selected probes only, append fresh probe
 outputs last, and record compact evidence instead of carrying full logs between
 cycles.
@@ -51,6 +61,9 @@ that auto scanning costs more than it helps.
    below 3.
 8. Intent Checkpoint is adaptive: 2 -> 5 -> 10 cycles, exactly two questions.
 9. Record compact evidence per cycle; do not paste full logs or transcripts.
+10. A bounded test tick still creates or updates `Harness/tasks/auto/PLAN.md`
+    and `Harness/tasks/auto/PROGRESS.md`; missing auto capsule evidence is a
+    failed cycle record.
 
 ## Loop
 
@@ -65,5 +78,5 @@ LOOP: next W0
 
 ## Return
 
-Report cycles run, findings addressed by source, evidence ledger, exhaustion
-evidence if any, weak spark count, final state, and residual risks.
+Report cycles run, findings addressed by source, evidence ledger path/summary,
+exhaustion evidence if any, weak spark count, final state, and residual risks.

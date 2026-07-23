@@ -404,23 +404,24 @@ test('update-check: default source can use npm latest tarball without GitHub', a
   const proj = path.join(root, 'proj');
   fs.mkdirSync(path.join(proj, 'Harness', 'scripts'), { recursive: true });
   fs.copyFileSync(path.join(SCRIPTS, 'wf-update-check.mjs'), path.join(proj, 'Harness', 'scripts', 'wf-update-check.mjs'));
-  fs.writeFileSync(path.join(proj, 'Harness', 'WF.md'), 'old wf\n');
+  fs.mkdirSync(path.join(proj, 'Harness', 'specs', 'workflows'), { recursive: true });
+  fs.writeFileSync(path.join(proj, 'Harness', 'specs', 'workflows', 'WF.md'), 'old wf\n');
   fs.writeFileSync(path.join(proj, 'Harness', '.harness-version'), JSON.stringify({
     generator: '1.0.0',
     generated: '2026-01-01T00:00:00Z',
-    checksums: { 'Harness/WF.md': sha('old wf\n') },
+    checksums: { 'Harness/specs/workflows/WF.md': sha('old wf\n') },
   }, null, 2) + '\n');
 
-  const remoteFiles = { 'Harness/WF.md': 'new wf\n' };
+  const remoteFiles = { 'Harness/specs/workflows/WF.md': 'new wf\n' };
   const remoteVersion = {
     generator: '9.9.9',
     generated: '2026-07-22T00:00:00Z',
-    checksums: { 'Harness/WF.md': sha(remoteFiles['Harness/WF.md']) },
-    sources: { 'Harness/WF.md': 'Harness/WF.md' },
+    checksums: { 'Harness/specs/workflows/WF.md': sha(remoteFiles['Harness/specs/workflows/WF.md']) },
+    sources: { 'Harness/specs/workflows/WF.md': 'Harness/specs/workflows/WF.md' },
   };
   const tgz = makeTgz({
     'package/templates/common/.harness-version': JSON.stringify(remoteVersion, null, 2) + '\n',
-    'package/templates/common/Harness/WF.md': remoteFiles['Harness/WF.md'],
+    'package/templates/common/Harness/specs/workflows/WF.md': remoteFiles['Harness/specs/workflows/WF.md'],
   });
 
   const server = createServer((req, res) => {
@@ -455,11 +456,151 @@ test('update-check: default source can use npm latest tarball without GitHub', a
     assert.equal(json.status, 'update-available');
     assert.equal(json.to, '9.9.9');
     assert.match(json.sourceBase, /^npm:create-harness-vibe-coding@9\.9\.9\/templates\/common\//);
-    assert.ok(json.plan.updated.some(entry => entry.file === 'Harness/WF.md'));
+    assert.ok(json.plan.updated.some(entry => entry.file === 'Harness/specs/workflows/WF.md'));
   } finally {
     await new Promise(resolve => server.close(resolve));
     fs.rmSync(root, { recursive: true, force: true });
   }
+});
+
+test('update-check: safe path moves create canonical specs path and remove legacy root doc', () => {
+  const root = tmpdir();
+  const proj = path.join(root, 'proj');
+  const remote = path.join(root, 'remote');
+  const from = 'Harness/WF.md';
+  const to = 'Harness/specs/workflows/WF.md';
+  const oldContent = 'old wf\n';
+  const newContent = 'new wf\n';
+
+  fs.mkdirSync(path.join(proj, 'Harness', 'scripts'), { recursive: true });
+  fs.copyFileSync(path.join(SCRIPTS, 'wf-update-check.mjs'), path.join(proj, 'Harness', 'scripts', 'wf-update-check.mjs'));
+  fs.writeFileSync(path.join(proj, ...from.split('/')), oldContent);
+  fs.writeFileSync(path.join(proj, 'Harness', '.harness-version'), JSON.stringify({
+    generator: '1.0.0',
+    generated: '2026-01-01T00:00:00Z',
+    checksums: { [from]: sha(oldContent) },
+    sources: { [from]: from },
+  }, null, 2) + '\n');
+
+  fs.mkdirSync(path.join(remote, 'Harness', 'specs', 'workflows'), { recursive: true });
+  fs.writeFileSync(path.join(remote, ...to.split('/')), newContent);
+  fs.writeFileSync(path.join(remote, '.harness-version'), JSON.stringify({
+    generator: '2.0.0',
+    generated: '2026-07-23T00:00:00.000Z',
+    checksums: { [to]: sha(newContent) },
+    sources: { [to]: to },
+    moves: [{ from, to, deleteOldIfChecksumMatches: true, preserveOldIfModified: true }],
+  }, null, 2) + '\n');
+
+  const sourceBase = fileSourceBase(remote);
+  const planResult = runNode(path.join(proj, 'Harness', 'scripts', 'wf-update-check.mjs'), ['--json', '--full-plan'], {
+    cwd: proj,
+    env: { WF_SOURCE_BASE: sourceBase },
+  });
+  assert.equal(planResult.status, 0, planResult.stderr || planResult.stdout);
+  const planJson = JSON.parse(planResult.stdout.trim());
+  assert.equal(planJson.moved, 1);
+  assert.ok(planJson.plan.moved.some(entry => entry.from === from && entry.to === to));
+  assert.ok(!planJson.plan.created.some(entry => entry.file === to), 'moved file should not be double-counted as created');
+
+  const applyResult = runNode(path.join(proj, 'Harness', 'scripts', 'wf-update-check.mjs'), ['--apply-safe'], {
+    cwd: proj,
+    env: { WF_SOURCE_BASE: sourceBase },
+  });
+  assert.equal(applyResult.status, 0, applyResult.stderr || applyResult.stdout);
+  assert.equal(fs.existsSync(path.join(proj, ...from.split('/'))), false, 'legacy root doc should be removed after safe move');
+  assert.equal(fs.readFileSync(path.join(proj, ...to.split('/')), 'utf8'), newContent);
+
+  const version = JSON.parse(fs.readFileSync(path.join(proj, 'Harness', '.harness-version'), 'utf8'));
+  assert.equal(version.checksums[to], sha(newContent));
+  assert.equal(version.sources[to], to);
+  assert.equal(version.checksums[from], undefined);
+  assert.equal(version.sources[from], undefined);
+});
+
+test('update-check: missing PRESERVE starter files are created without overwriting user data', () => {
+  const root = tmpdir();
+  const proj = path.join(root, 'proj');
+  const remote = path.join(root, 'remote');
+  const file = 'Harness/project/architecture.md';
+  const content = '# Project Architecture\n\nStarter architecture notes.\n';
+
+  fs.mkdirSync(path.join(proj, 'Harness', 'scripts'), { recursive: true });
+  fs.copyFileSync(path.join(SCRIPTS, 'wf-update-check.mjs'), path.join(proj, 'Harness', 'scripts', 'wf-update-check.mjs'));
+  fs.writeFileSync(path.join(proj, 'Harness', '.harness-version'), JSON.stringify({
+    generator: '1.0.0',
+    generated: '2026-01-01T00:00:00Z',
+    checksums: {},
+    sources: {},
+  }, null, 2) + '\n');
+
+  fs.mkdirSync(path.join(remote, 'Harness', 'project'), { recursive: true });
+  fs.writeFileSync(path.join(remote, ...file.split('/')), content);
+  fs.writeFileSync(path.join(remote, '.harness-version'), JSON.stringify({
+    generator: '2.0.0',
+    generated: '2026-07-23T00:00:00.000Z',
+    checksums: { [file]: sha(content) },
+    sources: { [file]: file },
+  }, null, 2) + '\n');
+
+  const sourceBase = fileSourceBase(remote);
+  const planResult = runNode(path.join(proj, 'Harness', 'scripts', 'wf-update-check.mjs'), ['--json', '--full-plan'], {
+    cwd: proj,
+    env: { WF_SOURCE_BASE: sourceBase },
+  });
+  assert.equal(planResult.status, 0, planResult.stderr || planResult.stdout);
+  const planJson = JSON.parse(planResult.stdout.trim());
+  assert.ok(planJson.plan.created.some(entry => entry.file === file), 'missing PRESERVE starter should be created');
+
+  const applyResult = runNode(path.join(proj, 'Harness', 'scripts', 'wf-update-check.mjs'), ['--apply-safe'], {
+    cwd: proj,
+    env: { WF_SOURCE_BASE: sourceBase },
+  });
+  assert.equal(applyResult.status, 0, applyResult.stderr || applyResult.stdout);
+  assert.equal(fs.readFileSync(path.join(proj, ...file.split('/')), 'utf8'), content);
+
+  fs.rmSync(root, { recursive: true, force: true });
+});
+
+test('update-check: unmodified legacy architecture moves to Harness/project', () => {
+  const root = tmpdir();
+  const proj = path.join(root, 'proj');
+  const remote = path.join(root, 'remote');
+  const from = 'Harness/architecture.md';
+  const to = 'Harness/project/architecture.md';
+  const oldContent = '# Old Architecture\n';
+  const newContent = '# Project Architecture\n\n## 2. Interface Decoupling\n';
+
+  fs.mkdirSync(path.join(proj, 'Harness', 'scripts'), { recursive: true });
+  fs.copyFileSync(path.join(SCRIPTS, 'wf-update-check.mjs'), path.join(proj, 'Harness', 'scripts', 'wf-update-check.mjs'));
+  fs.writeFileSync(path.join(proj, ...from.split('/')), oldContent);
+  fs.writeFileSync(path.join(proj, 'Harness', '.harness-version'), JSON.stringify({
+    generator: '1.0.0',
+    generated: '2026-01-01T00:00:00Z',
+    checksums: { [from]: sha(oldContent) },
+    sources: { [from]: from },
+  }, null, 2) + '\n');
+
+  fs.mkdirSync(path.join(remote, 'Harness', 'project'), { recursive: true });
+  fs.writeFileSync(path.join(remote, ...to.split('/')), newContent);
+  fs.writeFileSync(path.join(remote, '.harness-version'), JSON.stringify({
+    generator: '2.0.0',
+    generated: '2026-07-23T00:00:00.000Z',
+    checksums: { [to]: sha(newContent) },
+    sources: { [to]: to },
+    moves: [{ from, to, deleteOldIfChecksumMatches: true, preserveOldIfModified: true }],
+  }, null, 2) + '\n');
+
+  const sourceBase = fileSourceBase(remote);
+  const applyResult = runNode(path.join(proj, 'Harness', 'scripts', 'wf-update-check.mjs'), ['--apply-safe'], {
+    cwd: proj,
+    env: { WF_SOURCE_BASE: sourceBase },
+  });
+  assert.equal(applyResult.status, 0, applyResult.stderr || applyResult.stdout);
+  assert.equal(fs.existsSync(path.join(proj, ...from.split('/'))), false, 'legacy architecture should be removed after safe move');
+  assert.equal(fs.readFileSync(path.join(proj, ...to.split('/')), 'utf8'), newContent);
+
+  fs.rmSync(root, { recursive: true, force: true });
 });
 
 test('update-check: default source falls back to zingspark legacy mirror', async () => {
@@ -664,22 +805,22 @@ test('apply-safe: hash mismatch on a served SAFE file writes zero files and leav
   const remote = path.join(root, 'remote');
   fs.mkdirSync(path.join(proj, 'Harness', 'scripts'), { recursive: true });
   fs.copyFileSync(path.join(SCRIPTS, 'wf-update-check.mjs'), path.join(proj, 'Harness', 'scripts', 'wf-update-check.mjs'));
-  fs.mkdirSync(path.join(proj, 'Harness'), { recursive: true });
-  fs.writeFileSync(path.join(proj, 'Harness', 'WF.md'), 'old wf\n');
+  fs.mkdirSync(path.join(proj, 'Harness', 'specs', 'workflows'), { recursive: true });
+  fs.writeFileSync(path.join(proj, 'Harness', 'specs', 'workflows', 'WF.md'), 'old wf\n');
   fs.writeFileSync(path.join(proj, 'Harness', '.harness-version'), JSON.stringify({
     generator: '1.0.0',
     generated: '2026-01-01T00:00:00Z',
-    checksums: { 'Harness/WF.md': sha('old wf\n') },
+    checksums: { 'Harness/specs/workflows/WF.md': sha('old wf\n') },
   }, null, 2) + '\n');
 
   // Serve ONE SAFE file whose body is tampered so its sha256 differs from the manifest.
-  fs.mkdirSync(path.join(remote, 'Harness'), { recursive: true });
-  fs.writeFileSync(path.join(remote, 'Harness', 'WF.md'), 'tampered wf body\n');
+  fs.mkdirSync(path.join(remote, 'Harness', 'specs', 'workflows'), { recursive: true });
+  fs.writeFileSync(path.join(remote, 'Harness', 'specs', 'workflows', 'WF.md'), 'tampered wf body\n');
   fs.writeFileSync(path.join(remote, '.harness-version'), JSON.stringify({
     generator: '2.0.0',
     generated: '2026-07-22T00:00:00Z',
-    checksums: { 'Harness/WF.md': sha('the real canonical wf body\n') },
-    sources: { 'Harness/WF.md': 'Harness/WF.md' },
+    checksums: { 'Harness/specs/workflows/WF.md': sha('the real canonical wf body\n') },
+    sources: { 'Harness/specs/workflows/WF.md': 'Harness/specs/workflows/WF.md' },
   }, null, 2) + '\n');
 
   const result = runNode(path.join(proj, 'Harness', 'scripts', 'wf-update-check.mjs'), ['--apply-safe'], {
@@ -689,9 +830,9 @@ test('apply-safe: hash mismatch on a served SAFE file writes zero files and leav
 
   // Non-zero exit and a hash-mismatch failure is reported.
   assert.equal(result.status, 1, result.stdout + result.stderr);
-  assert.match(result.stdout + result.stderr, /Hash mismatch: Harness\/WF\.md/);
+  assert.match(result.stdout + result.stderr, /Hash mismatch: Harness\/specs\/workflows\/WF\.md/);
   // ZERO files written: destination keeps its original content (no partial application).
-  assert.equal(fs.readFileSync(path.join(proj, 'Harness', 'WF.md'), 'utf8'), 'old wf\n');
+  assert.equal(fs.readFileSync(path.join(proj, 'Harness', 'specs', 'workflows', 'WF.md'), 'utf8'), 'old wf\n');
   // Version tracking unchanged -> safe to re-run with --apply-safe.
   const version = JSON.parse(fs.readFileSync(path.join(proj, 'Harness', '.harness-version'), 'utf8'));
   assert.equal(version.generator, '1.0.0');

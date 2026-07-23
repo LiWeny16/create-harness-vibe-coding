@@ -1,0 +1,43 @@
+{
+  "schema": "harness-settings@1",
+  "language": {
+    "userFacing": "auto"
+  },
+  "context": {
+    "startupProfile": "thin",
+    "cacheFirst": true,
+    "budgetProfile": "auto"
+  },
+  "workflow": {
+    "defaultTier": "auto",
+    "taskCapsuleCap": 5
+  },
+  "wfMax": {
+    "mode": "useful",
+    "maxWorkersTotal": 15,
+    "maxWorkersPerWave": 7,
+    "maxReviewersPerWave": 4,
+    "maxManagersTotal": 4,
+    "reviewReservePercent": 30,
+    "stopDispatchBelowTokens": 50000
+  },
+  "wfAuto": {
+    "enabled": true,
+    "maxFilesPerCycle": 3,
+    "maxNetLinesPerCycle": 50,
+    "checkpointSchedule": [2, 5, 10]
+  },
+  "wfAutoSpark": {
+    "enabled": true,
+    "minNorthStarAlignmentPercent": 50,
+    "rollingAlignmentFloorPercent": 65,
+    "roadmapReviewEveryCycles": 10
+  },
+  "telemetry": {
+    "l2Cache": {
+      "claimMinWarmTurns": 10,
+      "claimMinReadRatioPercent": 95,
+      "claimMinUpliftPoints": 2
+    }
+  }
+}

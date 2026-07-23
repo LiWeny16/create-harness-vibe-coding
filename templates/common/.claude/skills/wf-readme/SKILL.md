@@ -14,11 +14,11 @@ Improve `README.md` without breaking project-owned public docs.
 - CI files when present
 - `Harness/PROGRESS.md`
 - `Harness/tasks/<task-id>/PLAN.md` when available
-- `Harness/architecture.md` only when an architecture summary or diagram is requested
+- `Harness/project/architecture.md` only when an architecture summary or diagram is requested
 
 ## Cache Discipline
 
-Follow `Harness/context-loading.md#Cache-First Context Contract`: load project
+Follow `Harness/specs/runtime/context-loading.md#Cache-First Context Contract`: load project
 facts in the listed order, inspect only relevant README/package/CI sections, and
 keep unknowns or command output in the dynamic suffix.
 
@@ -40,7 +40,7 @@ If unanswered, use Preserve + append.
 - Do not invent features, benchmarks, roadmap, support policy, badges, install commands, or CI status.
 - Use tables for command matrices, environment variables, endpoints, and deployment notes when facts are known.
 - Use Mermaid or ASCII architecture diagrams only when the structure is observed or approved; label uncertain diagrams as proposed.
-- Keep detailed architecture in `Harness/architecture.md`; README may link to it or show a short overview.
+- Keep detailed architecture in `Harness/project/architecture.md`; README may link to it or show a short overview.
 - Keep agent rules in `CLAUDE.md`/`AGENTS.md`, not README.
 - Record the chosen mode and any skipped README improvements in `Harness/tasks/<task-id>/PLAN.md` when available.
 

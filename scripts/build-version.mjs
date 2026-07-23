@@ -21,6 +21,7 @@ import {
   skillDestMirrors,
   MANIFEST_DEST,
   MANIFEST_REL,
+  PATH_MOVES,
 } from './lib/ownership-manifest.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -60,6 +61,27 @@ function sortedByKey(obj) {
   return Object.fromEntries(Object.keys(obj).sort().map(k => [k, obj[k]]));
 }
 
+function latestReleaseNotes(rootDir, version) {
+  const changelogPath = path.join(rootDir, 'CHANGELOG.md');
+  if (!fs.existsSync(changelogPath)) return null;
+  const body = fs.readFileSync(changelogPath, 'utf8').replace(/\r\n/g, '\n');
+  const escaped = version.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const match = body.match(new RegExp(`(?:^|\\n)## \\[${escaped}\\] - ([^\\n]+)\\n([\\s\\S]*?)(?=\\n## \\[|$)`));
+  if (!match) return null;
+  const highlights = match[2]
+    .split('\n')
+    .map(line => line.trim())
+    .filter(line => line.startsWith('- '))
+    .map(line => line.slice(2).trim())
+    .filter(Boolean)
+    .slice(0, 8);
+  return {
+    version,
+    date: match[1].trim(),
+    highlights,
+  };
+}
+
 /**
  * Walk templates/optional/skills/<id>/ for every catalog skill and return
  * { id, paths } pairs (dests via harnessDest + codex mirror). Pure-ish: reads
@@ -90,11 +112,62 @@ function collectOptionalSkills(rootDir) {
   });
 }
 
+function collectOptionalInstallMaps(rootDir, selectedIds) {
+  const selected = new Set(Array.isArray(selectedIds) ? selectedIds.map(String).filter(Boolean) : []);
+  if (selected.size === 0) return { checksums: {}, sources: {} };
+
+  const optionalDir = path.join(rootDir, 'templates', 'optional');
+  const catalogPath = path.join(optionalDir, 'catalog.json');
+  if (!fs.existsSync(catalogPath)) return { checksums: {}, sources: {} };
+
+  let catalog;
+  try {
+    catalog = JSON.parse(fs.readFileSync(catalogPath, 'utf8'));
+  } catch {
+    return { checksums: {}, sources: {} };
+  }
+
+  const skillsById = new Map((Array.isArray(catalog.skills) ? catalog.skills : []).map(skill => [String(skill.id), skill]));
+  const files = [];
+  const optionalSources = {};
+
+  for (const id of selected) {
+    const skill = skillsById.get(id);
+    if (!skill || !Array.isArray(skill.files)) continue;
+    for (const fileRoot of skill.files) {
+      const absRoot = path.join(optionalDir, ...String(fileRoot).split('/'));
+      if (!fs.existsSync(absRoot)) continue;
+      for (const rawRel of walkFiles(absRoot)) {
+        const rel = normalizePath(rawRel);
+        const src = path.join(absRoot, ...rel.split('/'));
+        const dest = harnessDest(rel);
+        const optionalRel = normalizePath(path.relative(optionalDir, src));
+        const content = fs.readFileSync(src, 'utf8');
+
+        optionalSources[dest] = optionalRel;
+        if (!isChecksumExcluded(dest)) files.push({ dest, content });
+
+        if (dest.startsWith('.claude/skills/')) {
+          const mirrorDest = dest.replace(/^\.claude\/skills\//, '.agents/skills/');
+          optionalSources[mirrorDest] = optionalRel;
+          if (!isChecksumExcluded(mirrorDest)) files.push({ dest: mirrorDest, content });
+        }
+      }
+    }
+  }
+
+  return {
+    checksums: computeChecksums(files),
+    sources: sortedByKey(optionalSources),
+  };
+}
+
 // --- main ---
 
 const pkgPath = path.join(ROOT, 'package.json');
 const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
 const generatorVersion = pkg.version;
+const releaseNotes = latestReleaseNotes(ROOT, generatorVersion);
 
 const TEMPLATES_DIR = path.join(ROOT, 'templates', 'common');
 const HARNESS_VERSION_PATH = path.join(TEMPLATES_DIR, '.harness-version');
@@ -197,6 +270,8 @@ const versionObj = {
   options: [],
   autoCheck: true,
   source: sourceUrl,
+  ...(releaseNotes ? { releaseNotes } : {}),
+  moves: PATH_MOVES.map(move => ({ ...move })),
   checksums: sortedByKey(checksums),
   sources: sortedByKey(sources),
 };
@@ -259,9 +334,18 @@ function rootFileExists(dest) {
 }
 
 function syncExistingRootTemplateMap(existing, templateMap) {
-  const next = { ...(existing || {}) };
+  const next = {};
   let added = 0;
   let updated = 0;
+  let removed = 0;
+
+  for (const [key, value] of Object.entries(existing || {})) {
+    if (rootFileExists(key)) {
+      next[key] = value;
+    } else {
+      removed++;
+    }
+  }
 
   for (const [key, value] of Object.entries(templateMap)) {
     if (!rootFileExists(key)) continue;
@@ -273,7 +357,7 @@ function syncExistingRootTemplateMap(existing, templateMap) {
     next[key] = value;
   }
 
-  return { next: sortedByKey(next), added, updated };
+  return { next: sortedByKey(next), added, updated, removed };
 }
 
 if (fs.existsSync(ROOT_HARNESS_VERSION)) {
@@ -285,19 +369,26 @@ if (fs.existsSync(ROOT_HARNESS_VERSION)) {
     root = null;
   }
   if (root && typeof root === 'object') {
+    const optionalInstall = collectOptionalInstallMaps(ROOT, root.options);
+    const rootChecksums = sortedByKey({ ...ROOT_CHECKSUMS, ...optionalInstall.checksums });
+    const rootSources = sortedByKey({ ...ROOT_SOURCES, ...optionalInstall.sources });
+
     const checksumSync = syncExistingRootTemplateMap(
       root.checksums && typeof root.checksums === 'object' ? root.checksums : {},
-      ROOT_CHECKSUMS
+      rootChecksums
     );
     const sourceSync = syncExistingRootTemplateMap(
       root.sources && typeof root.sources === 'object' ? root.sources : {},
-      ROOT_SOURCES
+      rootSources
     );
 
     root.generator = generatorVersion;
     root.generated = versionObj.generated;
     root.autoCheck = true;
     root.source = sourceUrl;
+    if (releaseNotes) root.releaseNotes = releaseNotes;
+    else delete root.releaseNotes;
+    root.moves = PATH_MOVES.map(move => ({ ...move }));
     root.checksums = checksumSync.next;
     root.sources = sourceSync.next;
 
@@ -305,7 +396,8 @@ if (fs.existsSync(ROOT_HARNESS_VERSION)) {
     console.log(
       `[build-version] synced root Harness/.harness-version ` +
       `(generator ${generatorVersion}, checksums ${checksumSync.updated} updated/${checksumSync.added} added, ` +
-      `sources ${sourceSync.updated} updated/${sourceSync.added} added)`
+      `${checksumSync.removed} removed, sources ${sourceSync.updated} updated/${sourceSync.added} added, ` +
+      `${sourceSync.removed} removed)`
     );
   }
 }

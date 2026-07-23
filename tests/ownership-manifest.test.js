@@ -14,6 +14,7 @@ import {
   PRESERVE_PATTERNS,
   MERGE_PATHS,
   BOOTSTRAP_ONLY_PATHS,
+  PATH_MOVES,
   MANIFEST_DEST,
   SCHEMA_VERSION,
 } from '../scripts/lib/ownership-manifest.mjs';
@@ -81,6 +82,7 @@ test('preserve / merge / bootstrap equal the fixed constants', () => {
   assert.deepEqual(m.preserve, PRESERVE_PATTERNS);
   assert.deepEqual(m.merge, MERGE_PATHS);
   assert.deepEqual(m.bootstrapOnly, BOOTSTRAP_ONLY_PATHS);
+  assert.deepEqual(m.moves, PATH_MOVES);
 });
 
 test('Harness/PROGRESS.md is PRESERVE (active task index), never frameworkOwned', () => {
@@ -102,12 +104,29 @@ test('Harness/PROGRESS.md is PRESERVE (active task index), never frameworkOwned'
   );
 });
 
-test('Harness/SETUP.md is a retained framework-owned doc, not bootstrap-only', () => {
+test('Harness/specs/guides/SETUP.md is a retained framework-owned doc, not bootstrap-only', () => {
   const m = buildRealManifest();
   assert.deepEqual(m.bootstrapOnly, []);
   assert.ok(
-    m.frameworkOwned.some((e) => e.path === 'Harness/SETUP.md' && e.kind === 'doc'),
-    'Harness/SETUP.md must be frameworkOwned so updates can keep or recreate it',
+    m.frameworkOwned.some((e) => e.path === 'Harness/specs/guides/SETUP.md' && e.kind === 'doc'),
+    'Harness/specs/guides/SETUP.md must be frameworkOwned so updates can keep or recreate it',
+  );
+});
+
+test('settings is merge-tier and path moves cover legacy root specs', () => {
+  const m = buildRealManifest();
+  assert.ok(m.merge.includes('Harness/settings.json'), 'settings should be merge-tier so user edits are protected');
+  assert.ok(
+    m.moves.some(move => move.from === 'Harness/WF.md' && move.to === 'Harness/specs/workflows/WF.md'),
+    'WF.md legacy root path should have a migration move',
+  );
+  assert.ok(
+    m.moves.some(move => move.from === 'Harness/SETUP.md' && move.to === 'Harness/specs/guides/SETUP.md'),
+    'SETUP.md legacy root path should have a migration move',
+  );
+  assert.ok(
+    m.moves.some(move => move.from === 'Harness/architecture.md' && move.to === 'Harness/project/architecture.md'),
+    'architecture.md legacy root path should have a migration move',
   );
 });
 
@@ -255,7 +274,7 @@ test('deriveKind maps representative dests deterministically', () => {
   assert.equal(deriveKind('.codex/config.toml'), 'config');
   assert.equal(deriveKind('.opencode/plugins/harness-wf-status.mjs'), 'config');
   assert.equal(deriveKind('Harness/scripts/wf-update-check.mjs'), 'script');
-  assert.equal(deriveKind('Harness/WF.md'), 'doc');
+  assert.equal(deriveKind('Harness/specs/workflows/WF.md'), 'doc');
   assert.equal(deriveKind('opencode.json'), 'config');
 });
 

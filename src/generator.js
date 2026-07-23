@@ -3,7 +3,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 
-/** PRESERVE patterns — files excluded from checksums (user data). Mirror of wf-update-check.mjs. */
+/** Files excluded from checksum tracking. Most are PRESERVE user data; starter
+ * docs that need move/create upgrade tracking may remain PRESERVE while still
+ * being checksummed. */
 const CHECKSUM_EXCLUDE = [
   /^Harness\/PROGRESS\.md$/,
   /^Harness\/tasks\//,
@@ -74,7 +76,7 @@ const EMPTY_DIRS = [
 
 export function harnessDest(file) {
   if (file === '.harness-version') return 'Harness/.harness-version';
-  if (file === 'SETUP.md') return 'Harness/SETUP.md';
+  if (file === 'SETUP.md') return 'Harness/specs/guides/SETUP.md';
   if (file === 'MEMORY.md') return 'Harness/MEMORY.md';
   if (file.startsWith('scripts/')) return `Harness/${file}`;
   if (file.startsWith('memory/')) return `Harness/${file}`;
@@ -388,7 +390,7 @@ const HARNESS_OWNED_CONTENT_MARKERS = [
   /^harness:\s*(?:wf-agent|wf-framework|create-harness-vibe-coding)\b/im,
   /\bcreate-harness-vibe-coding\b/i,
   /\bproject harness\b/i,
-  /\bHarness\/(?:WF|MEMORY|tasks|scripts|subagents|dispatch|context-loading|lifecycle|SETUP)\b/,
+  /\bHarness\/(?:specs|WF|MEMORY|tasks|scripts|subagents|dispatch|context-loading|lifecycle|SETUP)\b/,
   /\bWF-(?:MAX|AUTO|KERNEL|STATE)\b/,
 ];
 
@@ -532,7 +534,7 @@ function registerOptionalContent(file, content, selectedSkills) {
 }
 
 function registerExternalRecommendations(file, content, selectedRecommendations) {
-  if (!selectedRecommendations.length || file !== 'Harness/SETUP.md') return content;
+  if (!selectedRecommendations.length || file !== 'Harness/specs/guides/SETUP.md') return content;
 
   const lines = selectedRecommendations.map(item => (
     `- \`${item.id}\` - ${item.description} Recommendation only; not installed by this scaffold. Source: ${item.url}`

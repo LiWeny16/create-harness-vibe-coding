@@ -5,7 +5,7 @@ description: Use for /wf-max in Claude Code, $wf-max or /skills wf-max in Codex.
 
 # WF-MAX Adapter
 
-The authoritative workflow lives in `Harness/WF-MAX.md`; this adapter only
+The authoritative workflow lives in `Harness/specs/workflows/WF-MAX.md`; this adapter only
 routes and summarizes hard constraints.
 
 ## Invocation
@@ -24,14 +24,14 @@ routes and summarizes hard constraints.
 1. `CLAUDE.md`
 2. `Harness/MEMORY.md` (index only per Memory Preflight)
 3. `Harness/README.md`
-4. `Harness/WF-MAX.md`
-5. `Harness/subagents.md`
-6. `Harness/dispatch.md`
-7. `Harness/agent-workflow.md`
+4. `Harness/specs/workflows/WF-MAX.md`
+5. `Harness/specs/runtime/subagents.md`
+6. `Harness/specs/runtime/dispatch.md`
+7. `Harness/specs/runtime/agent-workflow.md`
 
 ## Cache Discipline
 
-Follow `Harness/context-loading.md#Cache-First Context Contract`: keep the
+Follow `Harness/specs/runtime/context-loading.md#Cache-First Context Contract`: keep the
 listed loads in order, defer unused skill/tool schemas, append volatile task
 state and runtime facts last, and bound Worker returns through dispatch
 `MaxReturnTokens`/`ReturnSchema`.
@@ -39,27 +39,35 @@ state and runtime facts last, and bound Worker returns through dispatch
 ## Rules
 
 WF-MAX inherits the selected WF tier and the shared WF-KERNEL gates
-(`Harness/WF-KERNEL.md`), then expands safe parallelism. WF-Max-Useful is
+(`Harness/specs/workflows/WF-KERNEL.md`), then expands safe parallelism. WF-Max-Useful is
 default; WF-Max-Strict only on explicit strict request. Execution expands
 through:
 
+- New task state directories MUST use task ids matching
+  `task-<verb>-<noun>[-detail]` under `Harness/tasks/<task-id>/`; never
+  create bare `fix-*` task ids.
 1. Global mode: `wf-max`
 2. Agent role: `ceo | manager | worker | reviewer | verifier | reflector`
 3. Dispatch permission: `writeSet`, `forbidden`, `verification`
 
 WF-Max-Useful (default): `/wf-max` fans out only where write sets or review
 lenses are meaningfully independent. Overhead > 0.30 degrades the wave.
+Degrading fan-out does not authorize CEO source edits; source implementation
+still goes through an implementer/Worker role, or the run records an honest
+downgrade before editing.
 
 WF-Max-Strict (explicit override): user says `--strict`, `strict wf-max`, or
 `strict mode`. Unconditional fan-out per the original span formula.
 
 - CEO reads, plans, dispatches, synthesizes, and writes task state only. CEO
   never edits production source.
+- Task-state updates must preserve required `Harness/PROGRESS.md` headings:
+  `## Active Task`, `## Task Index`, and `## Cross-Task Decisions`.
 - Workers edit only the dispatch `writeSet`; outside write set is blocked.
 - Managers coordinate and synthesize. Reviewers read/report only.
 - D-GATE is mandatory before implementation waves: dispatch table, AC IDs,
   disjoint file claims, self-audit, and reviewer plan.
-- Final acceptance is tier-aware per `Harness/WF-KERNEL.md`:
+- Final acceptance is tier-aware per `Harness/specs/workflows/WF-KERNEL.md`:
   - WF-Light + `/wf-max`: verification + state evidence suffices unless risk
     triggers review/reflector.
   - WF-Standard + `/wf-max`: verifier evidence + one independent review PASS.

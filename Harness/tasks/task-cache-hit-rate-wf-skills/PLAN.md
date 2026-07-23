@@ -25,13 +25,13 @@ Compact task record. Keep only facts needed to resume, review, and verify.
 Allowed write set:
 - `Harness/tasks/task-cache-hit-rate-wf-skills/*`
 - `Harness/PROGRESS.md`
-- `Harness/WF.md`
-- `Harness/WF-KERNEL.md`
-- `Harness/WF-MAX.md`
-- `Harness/WF-AUTO.md`
-- `Harness/WF-AUTO-SPARK.md`
-- `Harness/context-loading.md`
-- `Harness/subagents.md`
+- `Harness/specs/workflows/WF.md`
+- `Harness/specs/workflows/WF-KERNEL.md`
+- `Harness/specs/workflows/WF-MAX.md`
+- `Harness/specs/workflows/WF-AUTO.md`
+- `Harness/specs/workflows/WF-AUTO-SPARK.md`
+- `Harness/specs/runtime/context-loading.md`
+- `Harness/specs/runtime/subagents.md`
 - `.claude/skills/*/SKILL.md`
 - `.agents/skills/*/SKILL.md`
 - `.opencode/commands/wf*.md`
@@ -58,7 +58,7 @@ Forbidden:
 
 ## Context
 
-- Loaded: `CLAUDE.md`, `Harness/memory/startup-hints.md`, `Harness/MEMORY.md`, `Harness/README.md`, `Harness/PROGRESS.md`, `Harness/WF.md`, `Harness/WF-KERNEL.md`, `Harness/subagents.md`, `Harness/dispatch.md`, `Harness/context-loading.md`, `Harness/agent-workflow.md`, active previous task state.
+- Loaded: `CLAUDE.md`, `Harness/memory/startup-hints.md`, `Harness/MEMORY.md`, `Harness/README.md`, `Harness/PROGRESS.md`, `Harness/specs/workflows/WF.md`, `Harness/specs/workflows/WF-KERNEL.md`, `Harness/specs/runtime/subagents.md`, `Harness/specs/runtime/dispatch.md`, `Harness/specs/runtime/context-loading.md`, `Harness/specs/runtime/agent-workflow.md`, active previous task state.
 - Assumptions: Cache-hit-rate improvements should be instruction/layout changes in the Harness framework, not a new provider API layer.
 
 ## Agents

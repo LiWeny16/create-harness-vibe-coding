@@ -11,7 +11,7 @@ Worker 执行 = 独立 agent context（native subagent 或 peer CLI 独立进程
 ## Completed Milestones（全部 ✅）
 
 ### ✅ M1 — Worker 渠道可用性探测 (cycle 1)
-- `Harness/scripts/probe-worker-channels.mjs`（零依赖，bounded 15s）+ [CHANNEL-MATRIX.md](CHANNEL-MATRIX.md)
+- `wf-agents-docs` evidence-packet/no-scratch peer-CLI method + [CHANNEL-MATRIX.md](CHANNEL-MATRIX.md) historical snapshot
 - 颠覆性发现：失败日志前提过时；native subagent 当时可用；根因=渠道选择+无降级链
 
 ### ✅ M2 — 诚实降级链 + 独立性分级写入协议 (cycle 2-3)
