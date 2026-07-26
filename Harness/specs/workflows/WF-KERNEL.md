@@ -131,7 +131,7 @@ ReturnSchema:
 
 | Task Type | Primary Agents | Skills |
 |---|---|---|
-| UI/browser behavior | test-writer, implementer, verifier, reviewer | browser-e2e, wf-browser |
+| UI/browser behavior | test-writer, implementer, verifier, reviewer | wf-browser |
 | API/backend | docs-researcher, test-writer, implementer, verifier, reviewer (security) | tdd |
 | Architecture/migration | architect, codebase-explorer, planner, reviewer | — |
 | Docs/README | wf-readme, reviewer, task-scribe | wf-readme |

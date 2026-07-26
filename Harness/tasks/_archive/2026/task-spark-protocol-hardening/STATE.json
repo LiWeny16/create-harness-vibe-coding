@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-spark-protocol-hardening",
+  "status": "archived",
+  "mode": "direct",
+  "tier": "none",
+  "phase": "archived",
+  "gate": "VALIDATION-GATE passed",
+  "updatedAt": "2026-07-24T13:16:53.334Z",
+  "activeQuestion": null,
+  "nextAction": "Closed; ready to commit with the spark protocol hardening changes.",
+  "acceptance": [
+    "AC-STABLE: WF-AUTO-SPARK documents search/scoped-skill fallbacks and discovery-only fallback boundaries.",
+    "AC-TOKEN: task-state writing is delegated to task-scribe by default, with explicit CEO degradation behavior.",
+    "AC-DELEGATION: WF-AUTO-SPARK and WF-MAX specify CEO bullets plus task-scribe formatting for process files.",
+    "AC-EDGE: anti-pattern/drift/fake-delegation guards are documented.",
+    "AC-SYNC: root docs, templates, validators, tests, and .harness-version are synchronized."
+  ],
+  "queues": {
+    "ready": [],
+    "running": [],
+    "blocked": [],
+    "done": [
+      "Updated Harness/specs/workflows/WF-AUTO-SPARK.md and template mirror.",
+      "Updated Harness/specs/workflows/WF-MAX.md and template mirror.",
+      "Added validator requireText coverage in root and template validators.",
+      "Added generator and validator tests for new spark protocol clauses.",
+      "Ran build-version to refresh templates/common/.harness-version and root Harness/.harness-version.",
+      "Verified targeted tests, strict validators, checksum checks, and npm test."
+    ]
+  },
+  "risks": [],
+  "artifacts": [],
+  "dispatchLedger": [],
+  "decisions": []
+}

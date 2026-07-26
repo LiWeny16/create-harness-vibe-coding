@@ -38,11 +38,13 @@ const commonAgents = [
 
 const commonSkills = [
   'wf',
+  'wf-help',
   'tdd',
   'wf-update',
   'wf-max',
   'wf-review',
   'wf-learn',
+  'wf-browser',
   'subagent-orchestrator',
   'wf-readme',
   'wf-agents-docs',
@@ -51,19 +53,22 @@ const commonSkills = [
   'wf-auto-spark',
 ];
 
-const opencodeWorkflowCommands = [
+const workflowCommands = [
   'wf',
   'wf-max',
   'wf-auto',
   'wf-auto-spark',
   'wf-learn',
   'wf-review',
+  'wf-browser',
   'wf-readme',
   'wf-remove',
 ];
 
+const opencodeWorkflowCommands = workflowCommands;
+
 const cacheDisciplinedSkills = commonSkills.filter(skill => (
-  skill === 'subagent-orchestrator' || skill.startsWith('wf')
+  skill === 'subagent-orchestrator' || (skill.startsWith('wf') && skill !== 'wf-help')
 ));
 
 const memoryFiles = [
@@ -95,10 +100,12 @@ const required = [
   'Harness/templates/VALIDATION_REPORT.template.md',
   ...memoryFiles,
   '.codex/config.toml',
+  '.codex/hooks.json',
   'opencode.json',
   '.claude/settings.json',
   '.claude/commands/wf-help.md',
   '.claude/commands/wf-update.md',
+  ...workflowCommands.map(command => `.claude/commands/${command}.md`),
   '.opencode/commands/wf-help.md',
   '.opencode/commands/wf-update.md',
   ...opencodeWorkflowCommands.map(command => `.opencode/commands/${command}.md`),
@@ -129,6 +136,7 @@ const required = [
   'Harness/scripts/wf-update-check.mjs',
   'Harness/scripts/wf-remove.mjs',
   'Harness/scripts/scan-clean.mjs',
+  'Harness/scripts/task-state.mjs',
   'Harness/scripts/archive-tasks.mjs',
   'Harness/specs/workflows/WF-STATE.md',
   'Harness/specs/protocols/TASK_ARCHIVE.md',
@@ -206,6 +214,19 @@ function forbidText(rel, text, label = text) {
   if (body && body.includes(text)) errors.push(`${rel} contains forbidden ${label}`);
 }
 
+function activeToml(rel) {
+  return read(rel)
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(line => line && !line.startsWith('#'))
+    .join('\n');
+}
+
+function forbidActiveToml(rel, pattern, label) {
+  const body = activeToml(rel);
+  if (body && pattern.test(body)) errors.push(`${rel} contains active forbidden ${label}`);
+}
+
 function frontmatterField(text, field) {
   const match = text.match(new RegExp(`^${field}:\\s*(.+)$`, 'm'));
   return match ? match[1].trim() : '';
@@ -234,6 +255,28 @@ function listMarkdownFiles(rel) {
 const TASK_NAME_RE = /^task-[a-z]+(-[a-z0-9]+){1,4}$/;
 const TASK_NAME_MAX = 46; // "task-" (5) + ≤40 chars body + 1 safety = 46
 const TASK_RESERVED = new Set(['_template', 'auto', '_archive']);
+const TASK_SAFE_ARCHIVE_STATUSES = new Set(['complete', 'verified', 'archived', 'abandoned', 'obsolete', 'done', 'closed', 'closeout']);
+const TASK_NEVER_ARCHIVE_STATUSES = new Set(['active', 'blocked', 'in_progress', 'running', 'pending', 'needs-user-decision']);
+const TASK_PHASE_ALIASES = new Map([
+  ['implementation', 'implement'],
+  ['build', 'implement'],
+  ['validation', 'verify'],
+  ['complete', 'verified'],
+  ['done', 'verified'],
+  ['closed', 'closeout'],
+]);
+const TASK_STATUS_ALIASES = new Map([
+  ['in-progress', 'in_progress'],
+  ['inprogress', 'in_progress'],
+  ['needs_user_decision', 'needs-user-decision'],
+  ['needs-user', 'needs-user-decision'],
+]);
+const TASK_VALID_PHASES = new Set([
+  'intake', 'clarify', 'requirements', 'prd', 'acceptance', 'plan', 'explore',
+  'implement', 'verify', 'review', 'fix', 'reflect', 'closeout', 'blocked',
+  'archived', 'verified',
+]);
+const TASK_VALID_STATUSES = new Set([...TASK_SAFE_ARCHIVE_STATUSES, ...TASK_NEVER_ARCHIVE_STATUSES, 'skipped', 'failed']);
 
 function validateTaskName(name, strict) {
   if (TASK_RESERVED.has(name)) return null;
@@ -248,6 +291,57 @@ function validateTaskName(name, strict) {
     return `Task name "${name}" — must be task-<verb>-<noun>[-detail], kebab-case, 2-5 words after prefix`;
   }
   return null;
+}
+
+function normalizeTaskToken(value, validSet, aliasMap) {
+  if (value === null || value === undefined) return '';
+  const raw = String(value).trim().toLowerCase();
+  if (!raw) return '';
+  const compact = raw.replace(/\s+/g, '-');
+  const direct = aliasMap.get(compact) || compact;
+  if (validSet.has(direct)) return direct;
+  const tokens = raw
+    .replace(/[`*_()[\]{}:]/g, ' ')
+    .replace(/[^a-z0-9_-]+/g, ' ')
+    .split(/\s+/)
+    .map(token => token.trim())
+    .filter(Boolean);
+  for (const token of tokens) {
+    const canonical = aliasMap.get(token) || token;
+    if (validSet.has(canonical)) return canonical;
+  }
+  return '';
+}
+
+function normalizeTaskStatus(value) {
+  return normalizeTaskToken(value, TASK_VALID_STATUSES, TASK_STATUS_ALIASES);
+}
+
+function normalizeTaskPhase(value) {
+  return normalizeTaskToken(value, TASK_VALID_PHASES, TASK_PHASE_ALIASES);
+}
+
+function taskStateIssue(message) {
+  if (strict) errors.push(message);
+  else console.warn(`Warning: ${message}`);
+}
+
+function parseRootTaskProgress(text) {
+  const activeMatch = text.match(/## Active Task\s*\r?\n+(?:\s*\r?\n)?\s*-\s*([^\r\n]+)/);
+  const rawActive = activeMatch ? activeMatch[1].trim() : '';
+  const activeTask = rawActive && !/^none$/i.test(rawActive) ? rawActive : null;
+  const rows = [];
+  const taskIndexMatch = text.match(/## Task Index\s*\r?\n([\s\S]*?)(?=\r?\n## |\s*$)/);
+  if (taskIndexMatch) {
+    for (const line of taskIndexMatch[1].split(/\r?\n/)) {
+      const trimmed = line.trim();
+      if (!trimmed.startsWith('|')) continue;
+      if (/^\|\s*-+/.test(trimmed) || /^\|\s*ID\s*\|/i.test(trimmed)) continue;
+      const cells = trimmed.split('|').slice(1, -1).map(cell => cell.trim());
+      if (cells.length >= 4 && cells[0]) rows.push({ id: cells[0], phase: cells[2] });
+    }
+  }
+  return { activeTask, rows };
 }
 
 function unresolvedTemplatePlaceholders(text) {
@@ -297,7 +391,6 @@ function listedWorkflowCommands(...texts) {
     for (const match of text.matchAll(pattern)) {
       const command = `/${match[1]}`;
       if (command === '/wf-help') continue;
-      if (command === '/wf-browser') continue; // optional workflow, not a required skill
       commands.add(command);
     }
   }
@@ -463,7 +556,7 @@ requireText('CLAUDE.md', 'Keep intermediate user updates to 1-2 short sentences'
 requireText('.claude/rules/ecc/common.md', '## Low-Noise Progress', 'ECC low-noise progress section');
 requireText('.claude/rules/ecc/common.md', "Match the user's language for user-facing prose", 'ECC user-facing language match rule');
 requireText('.claude/rules/ecc/common.md', 'Do not recap plans, paste logs, or narrate obvious file reads', 'ECC low-noise no-recap rule');
-requireText('.claude/rules/ecc/common.md', 'excluding `/wf-help` and `/wf-update`', 'ECC direct command exemption');
+requireText('.claude/rules/ecc/common.md', 'excluding `/wf-help`, `$wf-help`, `/skills wf-help`, `/wf-update`, `$wf-update`, and `/skills wf-update`', 'ECC direct command exemption');
 requireText('Harness/README.md', 'Load By Task', 'Harness task router');
 requireText('Harness/README.md', 'Need context/cache/token efficiency', 'cache/token router row');
 requireText('Harness/specs/runtime/context-loading.md', 'Context Tiers', 'context tier load budget section');
@@ -582,7 +675,7 @@ for (const command of listedWorkflowCommands(docsReadme, read('.claude/commands/
 
 for (const workflowFile of registeredWorkflowFiles(docsReadme, memory)) {
   if (!fs.existsSync(path.join(root, workflowFile))) {
-    // Optional workflows (browser-e2e, ts-react-frontend, etc.) may not be installed
+    // Optional workflows (ts-react-frontend, ui-ux-review, etc.) may not be installed
     continue;
   }
 }
@@ -602,8 +695,13 @@ function requireUiSelectorContract(rel) {
   }
 }
 
-requireUiSelectorContract('Harness/workflows/browser-e2e.md');
+requireUiSelectorContract('.claude/skills/wf-browser/SKILL.md');
+requireUiSelectorContract('.agents/skills/wf-browser/SKILL.md');
 requireUiSelectorContract('Harness/workflows/ts-react-frontend.md');
+
+if (fs.existsSync(path.join(root, 'Harness/workflows/browser-e2e.md'))) {
+  errors.push('retired optional workflow must not exist: Harness/workflows/browser-e2e.md');
+}
 
 for (const skill of commonSkills) {
   const rel = `.claude/skills/${skill}/SKILL.md`;
@@ -784,28 +882,56 @@ requireText('Harness/specs/workflows/WF-MAX.md', 'inherits the full', 'WF-MAX st
 requireText('Harness/specs/workflows/WF-MAX.md', 'Cross-CLI', 'WF-MAX cross-CLI overflow');
 requireText('Harness/specs/workflows/WF-MAX.md', 'claude -p', 'WF-MAX Claude CLI overflow');
 requireText('Harness/specs/workflows/WF-MAX.md', 'codex exec', 'WF-MAX Codex CLI overflow');
-requireText('Harness/specs/workflows/WF-MAX.md', 'agents.max_threads', 'WF-MAX Codex max_threads config');
-requireText('Harness/specs/workflows/WF-MAX.md', 'agents.max_depth', 'WF-MAX Codex max_depth config');
-requireText('Harness/specs/workflows/WF-MAX.md', 'max_threads = 12', 'WF-MAX Codex scaffold max_threads default');
-requireText('Harness/specs/workflows/WF-MAX.md', 'max_depth = 1', 'WF-MAX Codex scaffold max_depth default');
-requireText('Harness/specs/workflows/WF-MAX.md', 'Ask the user before raising', 'WF-MAX asks before raising Codex thread cap');
+requireText('Harness/specs/workflows/WF-MAX.md', 'agents.max_threads', 'WF-MAX Codex legacy max_threads alias');
+requireText('Harness/specs/workflows/WF-MAX.md', 'max_concurrent_threads_per_session', 'WF-MAX Codex concurrent thread config');
+requireText('Harness/specs/workflows/WF-MAX.md', 'Mandatory Fan-Out Contract', 'WF-MAX mandatory fan-out attempt contract');
+requireText('Harness/specs/workflows/WF-MAX.md', 'fanoutAttempted: true', 'WF-MAX records fan-out attempt');
+requireText('Harness/specs/workflows/WF-MAX.md', 'Runtime Capacity Map', 'WF-MAX runtime capacity map');
+requireText('Harness/specs/workflows/WF-MAX.md', 'CLAUDE_CODE_MAX_SUBAGENTS_PER_SESSION', 'WF-MAX Claude Code subagent cap docs');
+requireText('Harness/specs/workflows/WF-MAX.md', 'CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS', 'WF-MAX Claude Code concurrent subagent cap docs');
+requireText('Harness/specs/workflows/WF-MAX.md', 'CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH', 'WF-MAX Claude Code spawn-depth cap docs');
+requireText('Harness/specs/workflows/WF-MAX.md', 'Do not scaffold Codex scalar agent caps', 'WF-MAX Codex config compatibility guard');
+requireText('Harness/specs/workflows/WF-MAX.md', 'subagent_depth = 2', 'WF-MAX OpenCode subagent depth default');
+requireText('Harness/specs/workflows/WF-MAX.md', 'asks the user before any project/global Codex config change', 'WF-MAX asks before changing Codex config');
 requireText('Harness/specs/workflows/WF-MAX.md', 'Close completed agents', 'WF-MAX close completed agents before overflow');
 requireText('Harness/specs/workflows/WF-MAX.md', 'Codex++', 'WF-MAX forbids relying on Codex++ as stable capacity');
 requireText('Harness/specs/workflows/WF-MAX.md', 'does not authorize CEO source edits', 'WF-MAX useful-degrade CEO source-edit boundary');
 requireText('Harness/specs/workflows/WF-MAX.md', '## Cross-Task Decisions', 'WF-MAX PROGRESS heading preservation');
-requireText('.claude/skills/wf-max/SKILL.md', 'agents.max_threads', 'wf-max skill Codex thread config');
-requireText('.claude/skills/wf-max/SKILL.md', 'max_threads = 12', 'wf-max skill Codex scaffold max_threads default');
+requireText('.claude/skills/wf-max/SKILL.md', 'agents.max_concurrent_threads_per_session', 'wf-max skill Codex thread config');
+requireText('.claude/skills/wf-max/SKILL.md', 'agents.max_threads', 'wf-max skill Codex legacy alias');
+requireText('.claude/skills/wf-max/SKILL.md', 'Do not scaffold scalar `[agents]` caps', 'wf-max skill Codex config compatibility guard');
+requireText('.claude/skills/wf-max/SKILL.md', 'CLAUDE_CODE_MAX_SUBAGENTS_PER_SESSION', 'wf-max skill Claude Code subagent cap');
+requireText('.claude/skills/wf-max/SKILL.md', 'CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS', 'wf-max skill Claude Code concurrent subagent cap');
+requireText('.claude/skills/wf-max/SKILL.md', 'CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH', 'wf-max skill Claude Code spawn-depth cap');
+requireText('.claude/skills/wf-max/SKILL.md', 'subagent_depth = 2', 'wf-max skill OpenCode subagent depth default');
 requireText('.claude/skills/wf-max/SKILL.md', 'ask the user before raising', 'wf-max skill asks before raising Codex thread cap');
 requireText('.claude/skills/wf-max/SKILL.md', 'Codex++', 'wf-max skill forbids Codex++ capacity assumption');
 requireText('.claude/skills/wf-max/SKILL.md', taskIdConvention, 'wf-max skill task-id naming convention');
 requireText('.agents/skills/wf-max/SKILL.md', taskIdConvention, 'Codex wf-max skill task-id naming convention');
 requireText('.claude/skills/wf-max/SKILL.md', 'does not authorize CEO source edits', 'wf-max skill useful-degrade CEO source-edit boundary');
 requireText('.claude/skills/wf-max/SKILL.md', '## Cross-Task Decisions', 'wf-max skill PROGRESS heading preservation');
-requireText('.codex/config.toml', '[agents]', 'Codex agents config table');
-requireText('.codex/config.toml', 'max_threads = 12', 'Codex scaffold max_threads default');
-requireText('.codex/config.toml', 'max_depth = 1', 'Codex scaffold max_depth default');
+requireText('.codex/config.toml', 'intentionally avoids WF-MAX capacity defaults', 'Codex config compatibility note');
+forbidActiveToml('.codex/config.toml', /^\[agents\]$/m, 'Codex project config agents table');
+forbidActiveToml('.codex/config.toml', /^\s*max_concurrent_threads_per_session\s*=/m, 'Codex project config concurrent thread scalar');
+forbidActiveToml('.codex/config.toml', /^\s*max_depth\s*=/m, 'Codex project config max_depth scalar');
+forbidActiveToml('.codex/config.toml', /^\s*max_threads\s*=/m, 'Codex project config legacy max_threads scalar');
 requireText('opencode.json', '"$schema": "https://opencode.ai/config.json"', 'OpenCode config schema');
 requireText('opencode.json', '.claude/rules/ecc/common.md', 'OpenCode instructions reference to ECC rules');
+requireText('opencode.json', '"subagent_depth": 2', 'OpenCode WF-MAX subagent nesting depth');
+requireText('.opencode/commands/wf-max.md', 'MUST attempt native runtime subagent fan-out', 'OpenCode wf-max command fan-out attempt');
+requireText('.opencode/commands/wf-max.md', 'subagent_depth >= 2', 'OpenCode wf-max command subagent depth requirement');
+requireText('.opencode/commands/wf-max.md', 'fanoutAttempted: true', 'OpenCode wf-max command records fan-out attempt');
+requireText('.opencode/agents/explore-manager.md', 'task:', 'OpenCode explore-manager task permission');
+requireText('.opencode/agents/explore-manager.md', '"codebase-explorer": allow', 'OpenCode explore-manager child allowlist');
+requireText('.opencode/agents/explore-manager.md', '"git status*": allow', 'OpenCode explore-manager read-only git status');
+requireText('.opencode/agents/explore-manager.md', '"git diff*": allow', 'OpenCode explore-manager read-only git diff');
+forbidText('.opencode/agents/explore-manager.md', '"git *": allow', 'OpenCode explore-manager broad git permission');
+requireText('.opencode/agents/architect-manager.md', '"architect": allow', 'OpenCode architect-manager child allowlist');
+requireText('.opencode/agents/implement-manager.md', '"implementer": allow', 'OpenCode implement-manager child allowlist');
+forbidText('.opencode/agents/implement-manager.md', '"node *": allow', 'OpenCode implement-manager broad node permission');
+forbidText('.opencode/agents/implement-manager.md', '"npm *": allow', 'OpenCode implement-manager broad npm permission');
+requireText('.opencode/agents/review-manager.md', '"reviewer": allow', 'OpenCode review-manager child allowlist');
+forbidText('.opencode/agents/review-manager.md', '"node *": allow', 'OpenCode review-manager broad node permission');
 requireText('Harness/README.md', '/wf-max', 'wf max router alias');
 requireText('Harness/README.md', 'WF-MAX.md', 'WF-MAX router reference');
 requireText('Harness/README.md', 'ACCEPTANCE_PROTOCOL.md', 'acceptance protocol router reference');
@@ -893,13 +1019,14 @@ requireText('.claude/commands/wf-help.md', '| `/wf-help` |', 'wf-help command ro
 requireText('.claude/commands/wf-help.md', '| `/wf-max <task>` |', 'wf-help wf-max row');
 requireText('.claude/commands/wf-help.md', '| `/wf-auto` |', 'wf-help wf-auto row');
 requireText('.claude/commands/wf-help.md', '| `/wf-readme <task>` |', 'wf-help wf-readme row');
+forbidText('.claude/commands/wf-help.md', '.opencode/skills/', 'wf-help nonexistent OpenCode skills directory claim');
+forbidText('.opencode/commands/wf-help.md', '.opencode/skills/', 'OpenCode wf-help nonexistent skills directory claim');
 requireText('Harness/README.md', '## Direct Commands', 'direct commands section');
 requireText('Harness/README.md', '.claude/commands/wf-help.md', 'wf-help router reference');
 requireText('Harness/specs/workflows/WF-MAX.md', 'three-layer architecture', 'CLAUDE.md three-layer role architecture');
-requireText('Harness/README.md', 'no runtime hook state', 'CLAUDE no-hook role enforcement statement');
-requireText('Harness/README.md', 'no runtime hook state', 'README no-hook runtime statement');
-requireText('Harness/specs/workflows/WF-AUTO.md', 'WF-AUTO Hook Exception', 'wf-auto-only hook exception');
-requireText('Harness/specs/workflows/WF-AUTO.md', 'only `/wf-auto` may use a runtime hook', 'wf-auto-only hook boundary');
+requireText('Harness/README.md', 'role enforcement has no runtime hook state', 'CLAUDE no-hook role enforcement statement');
+requireText('Harness/specs/workflows/WF-AUTO.md', 'Runtime Hook Boundaries', 'runtime hook boundaries');
+requireText('Harness/specs/workflows/WF-AUTO.md', 'only `/wf-auto` may use a runtime hook to drive auto-optimization', 'wf-auto-only hook boundary');
 forbidText('CLAUDE.md', 'Enforced by hooks', 'WF-MAX hook enforcement claim');
 forbidText('Harness/specs/workflows/WF.md', 'MUST use at least 3 distinct role passes', 'old WF role-pass minimum');
 forbidText('Harness/specs/workflows/WF.md', 'at least three distinct role passes', 'old WF role-pass wording');
@@ -919,18 +1046,20 @@ const codexHookConfig = read('.codex/hooks.json');
 const claudeSettings = read('.claude/settings.json');
 requireText('.codex/hooks.json', '"SessionStart"', 'Codex startup-only update hook');
 requireText('.claude/settings.json', '"SessionStart"', 'Claude startup-only update hook');
-forbidText('.codex/hooks.json', 'UserPromptSubmit', 'Codex turn-by-turn update hook');
+forbidText('.codex/hooks.json', 'UserPromptSubmit', 'Codex turn-by-turn status hook');
+forbidText('.codex/hooks.json', '"Stop"', 'Codex stop status hook');
+forbidText('.codex/hooks.json', 'wf-status.mjs', 'removed Codex WF status script');
 forbidText('.claude/settings.json', 'UserPromptSubmit', 'Claude turn-by-turn update hook');
 requireText('.opencode/plugins/harness-wf-status.mjs', 'opencode.startup', 'OpenCode startup-only update check');
 forbidText('.opencode/plugins/harness-wf-status.mjs', "'chat.message'", 'OpenCode turn-by-turn update hook');
-if (codexHookConfig && !codexHookConfig.includes('wf-auto')) {
-  errors.push('.codex/hooks.json may only exist for a wf-auto hook configuration');
+if (codexHookConfig && !codexHookConfig.includes('wf-auto-update-prompt.mjs')) {
+  errors.push('.codex/hooks.json missing startup wf-auto update check');
 }
 if (claudeSettings.includes('"hooks"') && !claudeSettings.includes('wf-auto')) {
   errors.push('.claude/settings.json hooks may only be used for wf-auto');
 }
-if (read('.codex/config.toml').includes('hooks = true') && !codexHookConfig.includes('wf-auto')) {
-  errors.push('.codex/config.toml may enable hooks only with a wf-auto hook configuration');
+if (read('.codex/config.toml').includes('hooks = true') && !codexHookConfig.includes('wf-auto-update-prompt.mjs')) {
+  errors.push('.codex/config.toml may enable hooks only with a Harness hook configuration');
 }
 
 // AGENTS.md must be a thin shim — no Harness/WF-MAX/command table content
@@ -966,6 +1095,17 @@ requireText('.claude/skills/wf-auto/SKILL.md', 'Harness/tasks/auto/PROGRESS.md',
 requireText('.claude/skills/wf-auto/SKILL.md', 'evidence ledger path/summary', 'wf-auto skill return evidence ledger path');
 if (fs.existsSync(path.join(root, '.claude/skills/wf-browser/SKILL.md'))) {
   requireText('.claude/skills/wf-browser/SKILL.md', 'Cache Discipline', 'wf-browser skill cache discipline');
+  requireText('.claude/skills/wf-browser/SKILL.md', 'Browser Evidence Contract', 'wf-browser browser evidence contract');
+  requireText('.claude/skills/wf-browser/SKILL.md', 'Controllable UI Contract', 'wf-browser controllable UI contract');
+  requireText('.claude/skills/wf-browser/SKILL.md', 'Browser Use CLI', 'wf-browser current Browser Use CLI guidance');
+  requireText('.claude/skills/wf-browser/SKILL.md', 'browser-use --doctor', 'wf-browser Browser Use doctor command');
+  requireText('.claude/skills/wf-browser/SKILL.md', 'browser-use skill', 'wf-browser Browser Use skill command');
+  requireText('.claude/skills/wf-browser/SKILL.md', 'new_tab("https://example.com")', 'wf-browser Browser Use script-style example');
+  requireText('.claude/skills/wf-browser/SKILL.md', 'capture_screenshot', 'wf-browser Browser Use screenshot helper');
+  requireText('.claude/skills/wf-browser/SKILL.md', 'old `browser-use open/state/click/screenshot/input/wait` subcommands are removed', 'wf-browser removed old Browser Use subcommands');
+  requireText('.claude/skills/wf-browser/SKILL.md', 'data-testid', 'wf-browser data-testid guidance');
+  requireText('.claude/skills/wf-browser/SKILL.md', 'accessible labels/roles', 'wf-browser accessible selector guidance');
+  requireText('.claude/skills/wf-browser/SKILL.md', 'inputs, buttons, filters, rows, empty/error/loading states', 'wf-browser controllable UI coverage targets');
 }
 
 // Direct command checks
@@ -988,8 +1128,9 @@ for (const rel of ['.claude/commands/wf-update.md', '.opencode/commands/wf-updat
 requireText('Harness/scripts/wf-update-check.mjs', 'releaseHighlights', 'wf-update-check release highlights metadata');
 requireText('Harness/scripts/wf-update-check.mjs', 'updateReportRequired', 'wf-update-check user update report requirement');
 requireText('.claude/commands/wf-help.md', 'direct command', 'wf-help wf-update direct command classification');
-requireText('.claude/commands/wf-help.md', '/wf-browser', 'wf-help optional browser workflow row');
-requireText('.opencode/commands/wf-help.md', '/wf-browser', 'OpenCode wf-help optional browser workflow row');
+requireText('.claude/commands/wf-help.md', '$wf-help', 'wf-help Codex compatibility usage');
+requireText('.claude/commands/wf-help.md', '/wf-browser', 'wf-help built-in browser workflow row');
+requireText('.opencode/commands/wf-help.md', '/wf-browser', 'OpenCode wf-help built-in browser workflow row');
 
 // wf-update skill must NOT claim Claude Code /wf-update as a skill invocation
 // (allow mentions in the description/body that say "direct command" — those are correct)
@@ -1080,12 +1221,76 @@ requireText('CLAUDE.md', 'Harness/specs/workflows/WF-STATE.md', 'CLAUDE.md WF-ST
 requireText('CLAUDE.md', 'Harness/specs/protocols/TASK_ARCHIVE.md', 'CLAUDE.md TASK_ARCHIVE routing');
 requireText('Harness/README.md', 'WF-STATE.md', 'README WF-STATE routing');
 requireText('Harness/specs/protocols/TASK_ARCHIVE.md', 'archive-tasks.mjs', 'TASK_ARCHIVE script reference');
+requireText('Harness/specs/workflows/WF-STATE.md', 'task-state.mjs', 'WF-STATE task-state script contract');
+requireText('Harness/specs/protocols/TASK_ARCHIVE.md', 'task-state.mjs', 'TASK_ARCHIVE task-state script reference');
+
+// Task-state consistency: prompt text is not authoritative for machine state.
+const rootTaskProgress = parseRootTaskProgress(read('Harness/PROGRESS.md'));
+const outerTaskSet = new Set(taskDirs.filter(name => !TASK_RESERVED.has(name) && !name.startsWith('_')));
+const rootTaskRows = new Set(rootTaskProgress.rows.map(row => row.id));
+
+if (rootTaskProgress.activeTask && !outerTaskSet.has(rootTaskProgress.activeTask)) {
+  taskStateIssue(`Harness/PROGRESS.md Active Task "${rootTaskProgress.activeTask}" does not exist under Harness/tasks/`);
+}
+
+for (const row of rootTaskProgress.rows) {
+  if (!outerTaskSet.has(row.id)) {
+    taskStateIssue(`Harness/PROGRESS.md Task Index row has no outer task directory: ${row.id}`);
+  }
+  if (row.phase && !normalizeTaskPhase(row.phase)) {
+    taskStateIssue(`Harness/PROGRESS.md Task Index row has unknown phase for ${row.id}: ${row.phase}`);
+  }
+}
+
+const activeStateTasks = [];
+for (const taskDir of outerTaskSet) {
+  if (!rootTaskRows.has(taskDir)) {
+    taskStateIssue(`Harness/tasks/${taskDir}/ is missing from Harness/PROGRESS.md Task Index`);
+  }
+
+  const statePath = path.join(root, 'Harness', 'tasks', taskDir, 'STATE.json');
+  if (!fs.existsSync(statePath)) {
+    taskStateIssue(`Harness/tasks/${taskDir}/STATE.json is missing; run node Harness/scripts/task-state.mjs reconcile --apply`);
+    continue;
+  }
+
+  let state;
+  try {
+    state = JSON.parse(fs.readFileSync(statePath, 'utf8'));
+  } catch (err) {
+    taskStateIssue(`Harness/tasks/${taskDir}/STATE.json is invalid JSON: ${err.message}`);
+    continue;
+  }
+
+  if (state.taskId && state.taskId !== taskDir) {
+    taskStateIssue(`Harness/tasks/${taskDir}/STATE.json taskId "${state.taskId}" does not match directory`);
+  }
+  const status = normalizeTaskStatus(state.status);
+  const phase = normalizeTaskPhase(state.phase);
+  if (state.status && !status) {
+    taskStateIssue(`Harness/tasks/${taskDir}/STATE.json has unknown status "${state.status}"`);
+  }
+  if (state.phase && !phase) {
+    taskStateIssue(`Harness/tasks/${taskDir}/STATE.json has unknown phase "${state.phase}"`);
+  }
+  if (status === 'active') activeStateTasks.push(taskDir);
+  if (status === 'active' && taskDir !== rootTaskProgress.activeTask) {
+    taskStateIssue(`Harness/tasks/${taskDir}/STATE.json is active but Harness/PROGRESS.md Active Task is ${rootTaskProgress.activeTask || 'None'}; run node Harness/scripts/task-state.mjs reconcile --apply`);
+  }
+  if (taskDir === rootTaskProgress.activeTask && status && status !== 'active') {
+    taskStateIssue(`Harness/PROGRESS.md Active Task points to ${taskDir}, but STATE.json status is "${status}"; run node Harness/scripts/task-state.mjs reconcile --apply`);
+  }
+}
+
+if (activeStateTasks.length > 1) {
+  taskStateIssue(`Multiple STATE.json files are active: ${activeStateTasks.join(', ')}; run node Harness/scripts/task-state.mjs reconcile --apply`);
+}
 
 // Outer task capsule cap: keep Harness/tasks/ lean (see Harness/specs/protocols/TASK_ARCHIVE.md)
 const OUTER_TASK_CAP = 5;
 const outerTasks = taskDirs.filter(name => !TASK_RESERVED.has(name) && !name.startsWith('_'));
 if (outerTasks.length > OUTER_TASK_CAP) {
-  const capMsg = `Harness/tasks/ has ${outerTasks.length} outer task capsules (cap ${OUTER_TASK_CAP}); archive completed tasks with node Harness/scripts/archive-tasks.mjs --apply (see Harness/specs/protocols/TASK_ARCHIVE.md)`;
+  const capMsg = `Harness/tasks/ has ${outerTasks.length} outer task capsules (cap ${OUTER_TASK_CAP}); archive completed tasks with node Harness/scripts/task-state.mjs archive --apply (compat: node Harness/scripts/archive-tasks.mjs --apply; see Harness/specs/protocols/TASK_ARCHIVE.md)`;
   if (strict) errors.push(capMsg);
   else console.warn(`Warning: ${capMsg}`);
 }

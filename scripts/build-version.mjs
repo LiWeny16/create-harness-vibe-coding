@@ -37,6 +37,7 @@ const ROOT = ROOT_ARG_IDX !== -1 && process.argv[ROOT_ARG_IDX + 1]
   : path.resolve(__dirname, '..');
 
 const CHECK_MODE = process.argv.includes('--check');
+const RETIRED_OPTION_IDS = new Set(['browser-e2e']);
 
 // --- helpers ---
 
@@ -369,7 +370,10 @@ if (fs.existsSync(ROOT_HARNESS_VERSION)) {
     root = null;
   }
   if (root && typeof root === 'object') {
-    const optionalInstall = collectOptionalInstallMaps(ROOT, root.options);
+    const selectedOptions = Array.isArray(root.options)
+      ? root.options.map(String).filter(id => id && !RETIRED_OPTION_IDS.has(id))
+      : [];
+    const optionalInstall = collectOptionalInstallMaps(ROOT, selectedOptions);
     const rootChecksums = sortedByKey({ ...ROOT_CHECKSUMS, ...optionalInstall.checksums });
     const rootSources = sortedByKey({ ...ROOT_SOURCES, ...optionalInstall.sources });
 
@@ -384,6 +388,7 @@ if (fs.existsSync(ROOT_HARNESS_VERSION)) {
 
     root.generator = generatorVersion;
     root.generated = versionObj.generated;
+    root.options = selectedOptions;
     root.autoCheck = true;
     root.source = sourceUrl;
     if (releaseNotes) root.releaseNotes = releaseNotes;

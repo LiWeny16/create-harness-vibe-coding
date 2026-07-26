@@ -37,6 +37,11 @@ Recovery action: Do not edit source from the parent CEO thread. Report blocker e
 ## Notes
 
 - Current user direction: fix the dogfood CLAUDE issue first, then design benchmark and promotion toward 1k stars.
+- User correction: HarnessBench must be an external repository proof asset, not dogfood/runtime Harness content. Generated user installs should carry only published result summaries, not benchmark tasks, fixtures, schemas, or tests.
 - Current mode prevents direct source edits by the main agent.
 - Read-only planner/architect, validator-impact, and HarnessBench architect workers returned; their accepted findings are synthesized in `PLAN.md`.
 - A write Worker confirmed it cannot override the higher-priority WF-MAX CEO source-write ban. Do not retry source implementation from this CEO thread; switch to an implementation context first.
+
+## Status
+
+- Phase: Blocked

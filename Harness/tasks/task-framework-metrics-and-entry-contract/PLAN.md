@@ -46,7 +46,7 @@ Define the next Harness framework iteration with enough precision to implement s
 | Decision | Current Lean | Evidence Needed |
 |---|---|---|
 | Max size for slim `CLAUDE.md` | 120-180 lines or less | Worker CLAUDE spec |
-| Benchmark location | Decided: runtime `Harness/benchmarks/`, generated source `templates/common/Harness/benchmarks/` | HarnessBench architect worker |
+| Benchmark location | Revised: external `docs/benchmarks/HarnessBench.md`; no benchmark suite under runtime `Harness/` or `templates/common/Harness/` | User correction |
 | Runner now or later | Methodology first, runner later | Worker implementation plan |
 | Public benchmark citations | Use as alignment, not as direct proof | Stable citation list |
 
@@ -81,7 +81,7 @@ Findings accepted:
 - WF-MAX implementation cannot proceed until a D-GATE table assigns exactly one write Worker per write file.
 - Phase A must include exact test file claims, not a generic "tests that assert required scaffold docs" row.
 - Phase A must update both root and template validators to avoid scaffold drift.
-- Phase B benchmark docs should live under `templates/common/Harness/benchmarks/` and mirror to root `Harness/benchmarks/` for dogfood runtime.
+- Phase B benchmark docs should live outside generated Harness assets, under `docs/benchmarks/`, so users receive only published result summaries rather than benchmark tasks/fixtures.
 - Phase C runner should be score-only in v0.1 and live under `templates/common/scripts/harness-bench.mjs`, mirrored to `Harness/scripts/harness-bench.mjs`.
 
 Conflicts:
@@ -90,7 +90,7 @@ Conflicts:
 
 Decisions:
 
-- Benchmark docs location is no longer open: use `Harness/benchmarks/` runtime and `templates/common/Harness/benchmarks/` source.
+- Benchmark docs location is no longer open: use external `docs/benchmarks/`, not runtime `Harness/` or template `templates/common/Harness/`.
 - Phase A verification tests are `tests/generator.test.js` and `tests/validate-harness.test.js`.
 - Add `Harness/.harness-version` to Phase A write scope if template checksum metadata must change.
 
@@ -315,7 +315,7 @@ Suggested result fields:
 
 Run every task in three modes:
 
-1. `bare-agent`: same model, no Harness docs beyond ordinary project README
+1. `direct-run`: same model, no Harness docs beyond ordinary project README
 2. `harness-wf`: same model with standard Harness `/wf`
 3. `harness-wf-max`: same model with CEO->Worker delegation
 
@@ -388,13 +388,15 @@ Self-audit:
 
 Write scope:
 
-- `templates/common/Harness/benchmarks/README.md`
-- `templates/common/Harness/benchmarks/schema/result.schema.json`
-- `templates/common/Harness/benchmarks/tasks/*.md`
-- `Harness/benchmarks/README.md`
-- `Harness/benchmarks/schema/result.schema.json`
-- `Harness/benchmarks/tasks/*.md`
+- `docs/benchmarks/HarnessBench.md`
 - README summary link
+- README-CN summary link
+
+Explicit non-scope:
+
+- No `Harness/benchmarks/**`
+- No `templates/common/Harness/benchmarks/**`
+- No generated benchmark task, fixture, or schema files in user installs
 
 Acceptance:
 
@@ -409,8 +411,7 @@ Write scope:
 
 - `templates/common/scripts/harness-bench.mjs`
 - `Harness/scripts/harness-bench.mjs`
-- fixture/task definitions under `templates/common/Harness/benchmarks/`
-- fixture/task definitions under `Harness/benchmarks/`
+- external fixture/task definitions under repository benchmark docs or future external `benchmarks/` directory only; do not generate them into installed Harness projects
 - tests for schema parsing and score calculation
 
 Acceptance:
@@ -426,7 +427,7 @@ Write scope:
 
 - `README.md`
 - `README-CN.md`
-- `docs/benchmarks/HarnessBench.md` or `Harness/benchmarks/README.md`
+- `docs/benchmarks/HarnessBench.md`
 - `docs/launch/positioning.md`
 - `docs/launch/assets.md`
 - optional examples/screenshots generated from benchmark outputs
@@ -460,7 +461,7 @@ Expected updates:
 | Existing installs expect section anchors like `§1a` | Keep a stable `WF-MAX` anchor or update all references |
 | Agents miss command routing after slimming | Add explicit “command handoff to skills” in slim CLAUDE |
 | Memory triggers become undiscoverable | Move them to `Harness/MEMORY.md` and ensure README routes memory tasks there |
-| Benchmark appears self-serving | Use delta against bare-agent baseline and cite public benchmarks only as context |
+| Benchmark appears self-serving | Use delta against direct-run baseline and cite public benchmarks only as context |
 | Runner over-automates too early | Phase B docs first; runner only scores collected evidence in v0.1 |
 
 ### 10. 95% Confidence Gate Before Source Edits
@@ -721,7 +722,7 @@ Status: PASS for the bounded Phase A write set supplied on 2026-07-01.
 Accepted W0 cross-check findings:
 
 - The slim `CLAUDE.md` plan is architecture-ready but required a concrete D-GATE before source implementation.
-- Benchmark docs location is chosen as `Harness/benchmarks/` for generated runtime artifacts and `templates/common/Harness/benchmarks/` for scaffold-owned source artifacts in later phases.
+- Benchmark docs location is chosen as external `docs/benchmarks/` only; benchmark assets are not generated into runtime `Harness/` or `templates/common/Harness/`.
 - Phase A implementation is limited to the entry contract, setup contract, validator assertions, and scaffold-doc tests.
 
 Dispatch table:

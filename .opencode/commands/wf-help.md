@@ -6,6 +6,9 @@ description: Show the Harness WF command table
 Return this help table directly. Do not invoke a skill, do not start WF mode,
 do not dispatch agents, and do not edit files.
 
+Codex compatibility: `$wf-help` or `/skills wf-help` loads the `wf-help` shim,
+which returns this same table without loading `Harness/MEMORY.md` or entering WF.
+
 | Command | Type | Usage | Purpose |
 | --- | --- | --- | --- |
 | `/wf-help` | direct command | `/wf-help` | Show this command table. |
@@ -15,14 +18,14 @@ do not dispatch agents, and do not edit files.
 | `/wf-auto-spark` | workflow skill | `/wf-auto-spark` | Perpetual inspiration mode with roadmap anchoring and external spark search. |
 | `/wf-review <focus>` | workflow skill | `/wf-review security and test coverage` | Peer CLI review through Claude/Codex/OpenCode, with reviewer subagent fallback. |
 | `/wf-learn` | workflow skill | `/wf-learn` | Force context-master -> memory-master learning cycle after repeated failures or closeout. |
-| `/wf-browser <task>` | optional workflow skill | `/wf-browser verify checkout flow` | Browser automation/E2E workflow with real UI interaction, screenshots, traces, and CDP/network evidence when installed. |
+| `/wf-browser <task>` | workflow skill | `/wf-browser verify checkout flow` | Built-in browser automation/E2E workflow with real UI interaction, screenshots, traces, and CDP/network evidence. |
 | `/wf-readme <task>` | workflow skill | `/wf-readme polish quickstart` | Preserve, merge, or improve README docs without trampling existing project documentation. |
 | `/wf-update` | direct command | `/wf-update` | Check/apply Harness scaffold updates with safe file classification and conflict handling. |
 | `/wf-remove` | workflow skill | `/wf-remove` | Safely remove Harness files while preserving project/user data unless explicitly purged. |
 
 Source of truth: `Harness/README.md#Skill Commands` plus installed skills under
-`.claude/skills/` (Claude Code) or `.agents/skills/` (Codex). In OpenCode the
-same skills load from `.claude/skills/`, `.agents/skills/`, and `.opencode/skills/`.
-In OpenCode, every workflow command above is also visible as a thin command
-wrapper under `.opencode/commands/` (e.g. `/wf`, `/wf-max`); each wrapper only
-routes to the matching skill adapter and does not duplicate the workflow.
+`.claude/skills/` (Claude Code and OpenCode adapters) or `.agents/skills/`
+(Codex). In OpenCode, every workflow command above is visible as a thin command
+wrapper under `.opencode/commands/` (e.g. `/wf`, `/wf-max`); each wrapper routes
+to the matching `.claude/skills/<command>/SKILL.md` adapter and does not
+duplicate the workflow.

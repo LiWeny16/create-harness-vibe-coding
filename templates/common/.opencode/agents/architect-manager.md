@@ -3,10 +3,16 @@ harness: wf-agent
 description: WF-MAX Manager for W1 architecture wave. Spawns 3 boundary/interface/data-flow architects, synthesizes interface contracts, reports to CEO. Read-only + Agent spawn; no Edit/Write.
 mode: subagent
 permission:
+  task:
+    "*": deny
+    "architect": allow
+    "codebase-explorer": allow
   edit: deny
   bash:
     "*": deny
-    "git *": allow
+    "git status*": allow
+    "git diff*": allow
+    "git log*": allow
     "ls *": allow
     "dir *": allow
   websearch: deny

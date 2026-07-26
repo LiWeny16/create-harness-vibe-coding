@@ -70,6 +70,9 @@ const TEMPLATES_DIR = path.resolve(__dirname, '..', 'templates', 'common');
 const OPTIONAL_DIR = path.resolve(__dirname, '..', 'templates', 'optional');
 const OPTIONAL_CATALOG = path.join(OPTIONAL_DIR, 'catalog.json');
 const VALID_CONFLICT_POLICIES = new Set(['fail', 'skip', 'backup', 'overwrite']);
+const RETIRED_OPTION_MESSAGES = new Map([
+  ['browser-e2e', 'Optional workflow "browser-e2e" has been retired; wf-browser is built in by default. Use /wf-browser, $wf-browser, or /skills wf-browser instead.'],
+]);
 const EMPTY_DIRS = [
   'tests',
 ];
@@ -154,6 +157,7 @@ function resolveOptionalSelection({
   const recommendationsById = new Map(externalRecommendations(catalog).map(item => [item.id, item]));
   const selected = [];
   const errors = [];
+  const warnings = [];
 
   if (preset) {
     if (!catalog.presets[preset]) {
@@ -168,12 +172,16 @@ function resolveOptionalSelection({
   const ids = [...new Set(selected)];
   const withoutIds = [...new Set(normalizeOptionList(withoutOptions))];
   for (const id of ids) {
-    if (!skillsById.has(id)) {
+    if (RETIRED_OPTION_MESSAGES.has(id)) {
+      warnings.push(RETIRED_OPTION_MESSAGES.get(id));
+    } else if (!skillsById.has(id)) {
       errors.push(`Unknown optional skill "${id}". Run --list-options to see available options.`);
     }
   }
   for (const id of withoutIds) {
-    if (!skillsById.has(id)) {
+    if (RETIRED_OPTION_MESSAGES.has(id)) {
+      warnings.push(`Optional workflow "${id}" is retired and built in/no-op for --without.`);
+    } else if (!skillsById.has(id)) {
       errors.push(`Unknown optional skill in --without "${id}". Run --list-options to see available options.`);
     }
   }
@@ -186,13 +194,14 @@ function resolveOptionalSelection({
   }
 
   const withoutSet = new Set(withoutIds);
-  const selectedIds = ids.filter(id => !withoutSet.has(id));
+  const selectedIds = ids.filter(id => !withoutSet.has(id) && !RETIRED_OPTION_MESSAGES.has(id));
 
   return {
     catalog,
     selectedSkills: errors.length ? [] : selectedIds.map(id => skillsById.get(id)),
     selectedRecommendations: errors.length ? [] : recommendationIds.map(id => recommendationsById.get(id)),
     errors,
+    warnings,
   };
 }
 
@@ -350,7 +359,7 @@ function readOwnershipManifest() {
  *
  * Manifest-present: candidate set = manifest.frameworkOwned paths UNION the
  * selected optional skills' manifest.optionalOwned paths. This includes optional
- * skill paths like browser-e2e (fixing the bug where same-name user files at
+ * skill paths like ui-ux-review (fixing the bug where same-name user files at
  * optional-skill paths were clobbered).
  *
  * Manifest-absent (null): candidate set = all fileSpec dests (the exact set of
@@ -493,7 +502,6 @@ function nextBackupPath(destPath) {
 
 function registerOptionalContent(file, content, selectedSkills) {
   if (!selectedSkills.length) return content;
-  const hasBrowserE2e = selectedSkills.some(skill => skill.id === 'browser-e2e');
 
   if (file === 'Harness/MEMORY.md') {
     const lines = selectedSkills.map(skill => (
@@ -509,25 +517,7 @@ function registerOptionalContent(file, content, selectedSkills) {
     const lines = selectedSkills.map(skill => (
       `- [${skill.title}](workflows/${skill.id}.md) - ${skill.description}`
     ));
-    let next = content;
-    if (hasBrowserE2e) {
-      next = next.replace(
-        '| Optional workflow installed |',
-        '| Browser E2E testing or automation | /wf-browser, $wf-browser, browser, e2e, web automation, screenshot verify, page test, browser test, Playwright, CDP | [workflows/browser-e2e.md](workflows/browser-e2e.md), [HARNESS_BRIDGE.md](HARNESS_BRIDGE.md) | UI/API contract, CLI commands, screenshots, traces, validation matrix |\n| Optional workflow installed |',
-      );
-      next = next.replace(
-        '| `/wf-readme [task]` |',
-        '| `/wf-browser [task]` | `$wf-browser [task]` | Optional browser automation/E2E workflow when `browser-e2e` is installed |\n| `/wf-readme [task]` |',
-      );
-    }
-    return `${next.trimEnd()}\n\n## Installed Optional Workflows\n\n${lines.join('\n')}\n`;
-  }
-
-  if ((file === '.claude/commands/wf-help.md' || file === '.opencode/commands/wf-help.md') && hasBrowserE2e) {
-    return content.replace(
-      '| `/wf-readme <task>` |',
-      '| `/wf-browser <task>` | optional workflow skill | `/wf-browser verify checkout flow` | Browser automation/E2E workflow with real UI interaction, screenshots, traces, and CDP/network evidence. |\n| `/wf-readme <task>` |',
-    );
+    return `${content.trimEnd()}\n\n## Installed Optional Workflows\n\n${lines.join('\n')}\n`;
   }
 
   return content;
@@ -595,6 +585,7 @@ export function generate({
   };
 
   const optional = resolveOptionalSelection({ withOptions, withoutOptions, preset, externalOptions });
+  warnings.push(...optional.warnings);
   const fileSpecs = [
     ...createCoreFileSpecs(),
     ...createOptionalFileSpecs(optional.selectedSkills),

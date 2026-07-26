@@ -3,10 +3,19 @@ harness: wf-agent
 description: WF-MAX Manager for W0 exploration wave. Spawns 5-10 read-only researchers/explorers, synthesizes findings, reports to CEO. Read-only + Agent spawn; no Edit/Write.
 mode: subagent
 permission:
+  task:
+    "*": deny
+    "codebase-explorer": allow
+    "researcher": allow
+    "docs-researcher": allow
+    "explore": allow
+    "scout": allow
   edit: deny
   bash:
     "*": deny
-    "git *": allow
+    "git status*": allow
+    "git diff*": allow
+    "git log*": allow
     "ls *": allow
     "dir *": allow
     "tree *": allow

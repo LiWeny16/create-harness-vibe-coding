@@ -152,7 +152,7 @@ The harness validator checks for specific structural invariants. When comparing 
 | `Harness/tasks/<id>/PROGRESS.md` | `## Current Goal`, `## Phase`, `## Heartbeat`, `## Loaded Context` headings |
 | `Harness/tasks/<id>/PLAN.md` | `## Tasks`, `## Parallel Dispatch`, `## Subagent Synthesis`, `## Verification` headings |
 | `Harness/specs/guides/SETUP.md` | Retained install/bootstrap guide for new projects, existing projects, legacy upgrades, and Harness update decisions. Keep "Install or Upgrade Path" present. |
-| `Harness/workflows/browser-e2e.md` (if installed as optional) | `data-testid`, `accessible labels/roles`, and `inputs, buttons, filters, rows, empty/error/loading states` requirement |
+| `.claude/skills/wf-browser/SKILL.md` and `.agents/skills/wf-browser/SKILL.md` | Built-in browser workflow requires `data-testid`, `accessible labels/roles`, and `inputs, buttons, filters, rows, empty/error/loading states` guidance |
 | `Harness/workflows/ts-react-frontend.md` (if installed as optional) | Same UI selector contract as above |
 
 **Files that do NOT need manual merge when the path does not already exist (auto-created by harness):**
@@ -172,7 +172,7 @@ The generated file list is authoritative by path, not by stale count labels. Cur
 Optional workflow examples:
 
 ```bash
-npx create-harness-vibe-coding@latest my-app ./my-app -y --with browser-e2e,ts-react-frontend
+npx create-harness-vibe-coding@latest my-app ./my-app -y --with ts-react-frontend,ui-ux-review
 npx create-harness-vibe-coding@latest my-app ./my-app -y --preset web-app
 npx create-harness-vibe-coding@latest my-app ./my-app -y --recommend superpowers,codegraph
 ```

@@ -75,16 +75,30 @@ WF-Max-Strict (explicit override): user says `--strict`, `strict wf-max`, or
 
 ## Fan-Out Discipline
 
+- MUST attempt native subagent fan-out before implementation planning is
+  considered complete. A solo controller path is allowed only after recording
+  `fanoutAttempted: true`, the runtime, channel tried, agents requested,
+  limit/cap facts, failure reason, and fallback path in task state.
 - Use as many useful subagents as the runtime safely allows.
-- Codex capacity may be configured through official `agents.max_threads` and
-  `agents.max_depth`; generated Harness config defaults to
-  `.codex/config.toml` with `max_threads = 12` and `max_depth = 1`.
+- Claude Code documents session, concurrent, and spawn-depth subagent caps:
+  `CLAUDE_CODE_MAX_SUBAGENTS_PER_SESSION`,
+  `CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS`, and
+  `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH`; Harness still enforces its lower
+  WF-MAX caps unless the user explicitly approves a task-local override.
+- Codex capacity is configured through official
+  `agents.max_concurrent_threads_per_session`; `agents.max_threads` is a
+  legacy alias. Do not scaffold scalar `[agents]` caps into
+  `.codex/config.toml`; codex-cli 0.144.x can reject them during TUI
+  `skills/list`. Treat Codex capacity as a runtime probe and manage Harness
+  caps in the dispatch ledger unless the installed Codex version is verified
+  with `codex --strict-config doctor`.
+- OpenCode uses `subagent_depth` for nesting. WF-MAX manager -> worker fan-out
+  requires `subagent_depth >= 2` plus manager `permission.task` allowlists; the
+  scaffold sets `subagent_depth = 2`.
 - Close completed agents before declaring the pool exhausted.
 - If Codex remains bottlenecked, ask the user before raising
-  `agents.max_threads` above the scaffold default. Do not silently edit project
-  or global Codex config.
-- Keep `agents.max_depth = 1` unless the user explicitly approves recursive
-  delegation.
+  `agents.max_concurrent_threads_per_session`. Do not silently edit project or
+  global Codex config.
 - If the current runtime is exhausted, overflow to a peer CLI with explicit
   dispatch packets: `claude -p`, `codex exec`, or
   `opencode run --agent <role> --dir .`.

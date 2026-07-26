@@ -35,11 +35,13 @@ Stack-specific agents can be added after the product shape is known.
 - [wf-readme](../.claude/skills/wf-readme/SKILL.md) - README preservation, append-only development sections, structured tables, and approved architecture diagrams.
 - [wf-agents-docs](../.claude/skills/wf-agents-docs/SKILL.md) - source-backed Claude/Codex/OpenCode CLI invocation, JSON output, resume, telemetry, and automation gotchas.
 - [wf-review](../.claude/skills/wf-review/SKILL.md) - peer review: prefer another agent CLI (Claude/Codex/OpenCode); otherwise use the installed reviewer role as an independent subagent context. Controller decides.
+- [wf-help](../.claude/skills/wf-help/SKILL.md) - Codex compatibility shim for `$wf-help` / `/skills wf-help`; returns the direct command table without entering WF.
 - [wf-update](../.claude/skills/wf-update/SKILL.md) - GitHub-based incremental harness update, checksum comparison, and safe in-place updates.
 - [wf-learn](../.claude/skills/wf-learn/SKILL.md) - force memory learning cycle: context-master -> memory-master -> project + global memory.
 - [wf-max](../.claude/skills/wf-max/SKILL.md) - WF kernel + maximum safe fan-out: WF-Max-Useful by default (fan out only where independent), WF-Max-Strict only on explicit strict request; current runtime subagents first, peer-CLI overflow when available.
 - [wf-auto](../.claude/skills/wf-auto/SKILL.md) - perpetual adaptive auto-optimization: evidence-selected probes, dynamic obligations, intent checkpoints, evidence ledger.
 - [wf-auto-spark](../.claude/skills/wf-auto-spark/SKILL.md) - perpetual inspiration mode: external spark search, long-term roadmap with staged milestones, <=50% deviation guard.
+- [wf-browser](../.claude/skills/wf-browser/SKILL.md) - built-in browser automation/E2E workflow with controllable UI contracts, Browser Use, Playwright, CDP/network evidence, screenshots, traces, and validation matrix.
 - [tdd](../.claude/skills/tdd/SKILL.md) - acceptance-driven TDD: AC-linked RED tests, real UI clicks for browser-visible behavior, Playwright/CDP evidence, and configured coverage gate.
 - [wf-remove](../.claude/skills/wf-remove/SKILL.md) - safely remove Harness framework files (SAFE/MODIFIED/USER classes), auto-prune empty directories, backup option.
 
@@ -47,12 +49,10 @@ Codex repo-skill mirrors live under `../.agents/skills/` with the same skill nam
 
 ## Direct Commands
 
-- [wf-help](../.claude/commands/wf-help.md) - direct `/wf-help` command that returns a WF command table without invoking a skill.
+- [wf-help](../.claude/commands/wf-help.md) - direct `/wf-help` command that returns a WF command table; Codex mirror skill supports `$wf-help` without entering WF.
 - [wf-update](../.claude/commands/wf-update.md) - direct `/wf-update` command for script-driven update checks, safe apply, conflict handling, and release highlights.
 
 Stack-specific skills can be added after the product shape is known.
-
-- [browser-e2e](workflows/browser-e2e.md)
 
 ## Rules (Harness Constraints)
 

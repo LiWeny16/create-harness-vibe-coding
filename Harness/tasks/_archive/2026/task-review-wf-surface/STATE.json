@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-review-wf-surface",
+  "status": "archived",
+  "mode": "wf",
+  "tier": "standard",
+  "phase": "archived",
+  "gate": "VERIFIED",
+  "updatedAt": "2026-07-26T09:23:21.764Z",
+  "activeQuestion": null,
+  "nextAction": "Report review findings and verification results to the user.",
+  "acceptance": [
+    {
+      "id": "AC-001",
+      "text": "Current staged and unstaged worktree scope is inventoried, with staged vs unstaged state called out.",
+      "status": "passed"
+    },
+    {
+      "id": "AC-002",
+      "text": "wf-max, wf-help, and wf-browser fixes are checked against authoritative docs, generated templates, runtime command wrappers, mirrors, and tests.",
+      "status": "passed"
+    },
+    {
+      "id": "AC-003",
+      "text": "Package/distribution boundaries are checked so external benchmark assets and retired browser-e2e assets do not leak into generated installs or npm package files.",
+      "status": "passed"
+    },
+    {
+      "id": "AC-004",
+      "text": "Targeted tests, full test suite, task-state validation, build-version check, and strict Harness validator pass, or failures are recorded with next action.",
+      "status": "passed"
+    }
+  ],
+  "queues": {
+    "ready": [],
+    "running": [],
+    "blocked": [],
+    "done": [
+      "memory-preflight",
+      "task-capsule-created",
+      "inventory-worktree",
+      "review-command-surfaces",
+      "verify-boundaries",
+      "targeted-validation",
+      "full-validation"
+    ]
+  },
+  "dispatchLedger": [],
+  "decisions": [
+    "Use WF-Standard review for current worktree command-surface changes.",
+    "Do not revert unrelated existing dirty worktree changes.",
+    "Treat benchmark assets as external-only; generated/package installs expose README results but not benchmark files.",
+    "Keep wf-browser built in and browser-e2e retired as a warning no-op."
+  ],
+  "risks": [
+    "Existing worktree contains many dirty files from earlier work; findings must separate scope."
+  ],
+  "artifacts": [
+    "tests/generator.test.js",
+    "tests/validate-harness.test.js",
+    "tests/harness-bench.test.js",
+    "Harness/scripts/validate-harness.mjs",
+    "Harness/ownership.manifest.json"
+  ]
+}

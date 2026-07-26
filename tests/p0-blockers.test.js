@@ -46,7 +46,13 @@ function runNode(scriptAbs, args, opts = {}) {
 
 function runShell(command, opts = {}) {
   // Run a hook command string the way a shell would (cross-platform).
-  return spawnSync(command, { cwd: opts.cwd || ROOT, encoding: 'utf8', shell: true, env: { ...process.env, ...(opts.env || {}) } });
+  return spawnSync(command, {
+    cwd: opts.cwd || ROOT,
+    encoding: 'utf8',
+    shell: true,
+    input: opts.input,
+    env: { ...process.env, ...(opts.env || {}) },
+  });
 }
 
 function runNodeAsync(scriptAbs, args, opts = {}) {
@@ -210,6 +216,11 @@ test('hook: SessionStart settings command exits 0 from project root and from Har
   fs.mkdirSync(subdir, { recursive: true });
   const fromSubdir = runShell(cmd, { cwd: subdir });
   assert.equal(fromSubdir.status, 0, 'hook exit 0 from Harness/memory subdir; stderr: ' + fromSubdir.stderr);
+
+  const codexHooks = JSON.parse(fs.readFileSync(path.join(targetDir, '.codex', 'hooks.json'), 'utf8'));
+  assert.ok(codexHooks.hooks.SessionStart, 'Codex SessionStart hook present');
+  assert.equal(codexHooks.hooks.UserPromptSubmit, undefined, 'Codex turn-by-turn status hook is not installed');
+  assert.equal(codexHooks.hooks.Stop, undefined, 'Codex stop status hook is not installed');
   fs.rmSync(root, { recursive: true, force: true });
 });
 
@@ -739,7 +750,7 @@ test('update-check: prereleases are ignored and explicit older sources still ref
   fs.rmSync(root, { recursive: true, force: true });
 });
 
-test('scan-clean: managed .opencode/commands and installed optional wf-browser are not orphaned', () => {
+test('scan-clean: managed .opencode/commands and built-in wf-browser are not orphaned', () => {
   const base = fileSourceBase(path.join(ROOT, 'templates', 'common'));
 
   // Default install: .opencode/commands/wf-update.md is checksum-tracked → not orphan.
@@ -751,21 +762,11 @@ test('scan-clean: managed .opencode/commands and installed optional wf-browser a
   let scJson = JSON.parse(sc.stdout.trim());
   let orphans = (scJson.orphan || []).map((o) => o.file);
   assert.ok(!orphans.includes('.opencode/commands/wf-update.md'), 'wf-update OpenCode wrapper not orphan; got: ' + orphans.join(','));
+  assert.ok(!orphans.includes('.opencode/commands/wf-browser.md'), 'wf-browser OpenCode wrapper not orphan; got: ' + orphans.join(','));
   assert.ok(!orphans.some((f) => f.startsWith('.opencode/commands/')), 'no OpenCode command wrappers orphaned; got: ' + orphans.join(','));
-  fs.rmSync(root, { recursive: true, force: true });
-
-  // Optional browser-e2e install: wf-browser wrapper must not be orphan/dead.
-  const root2 = tmpdir();
-  targetDir = path.join(root2, 'proj');
-  gen = generate({ projectName: 'proj', targetDir, withOptions: ['browser-e2e'] });
-  assert.equal(gen.success, true, gen.errors.join('\n'));
-  sc = runNode(path.join(SCRIPTS, 'scan-clean.mjs'), ['--json'], { cwd: targetDir, env: { WF_SOURCE_BASE: base } });
-  scJson = JSON.parse(sc.stdout.trim());
-  orphans = (scJson.orphan || []).map((o) => o.file);
   const dead = (scJson.dead || []).map((o) => o.file);
-  assert.ok(!orphans.includes('.opencode/commands/wf-browser.md'), 'wf-browser optional wrapper not orphan; got: ' + orphans.join(','));
-  assert.ok(!dead.includes('.opencode/commands/wf-browser.md'), 'wf-browser optional wrapper not dead; got: ' + dead.join(','));
-  fs.rmSync(root2, { recursive: true, force: true });
+  assert.ok(!dead.includes('.opencode/commands/wf-browser.md'), 'wf-browser OpenCode wrapper not dead; got: ' + dead.join(','));
+  fs.rmSync(root, { recursive: true, force: true });
 });
 
 // ── #8: generator rejects a symlinked parent directory (chain safety) ──────
@@ -1094,35 +1095,35 @@ test('manifest-first: frameworkOwned file classifies as SAFE update tier', () =>
 test('manifest-first: optionalOwned file SAFE when option selected, skipped when not selected', () => {
   const root = tmpdir();
   const remote = path.join(root, 'remote');
-  const browserPath = '.claude/skills/wf-browser/SKILL.md';
+  const optionalPath = '.claude/skills/ui-ux-review/SKILL.md';
   const manifest = fixtureManifest({
     frameworkOwned: ['Harness/ownership.manifest.json'],
-    optionalOwned: [{ option: 'browser-e2e', paths: [browserPath], overwrite: 'safe-if-installed' }],
+    optionalOwned: [{ option: 'ui-ux-review', paths: [optionalPath], overwrite: 'safe-if-installed' }],
   });
 
   fs.mkdirSync(remote, { recursive: true });
-  writeProjFile(remote, browserPath, 'browser v2\n');
+  writeProjFile(remote, optionalPath, 'ui ux v2\n');
   writeRemoteVersion(remote, {
     generator: '2.0.0', generated: '2026-07-22T00:00:00Z',
-    checksums: { [browserPath]: sha('browser v2\n') },
-    sources: { [browserPath]: browserPath },
+    checksums: { [optionalPath]: sha('ui ux v2\n') },
+    sources: { [optionalPath]: optionalPath },
   });
 
   // Option IS selected + file tracked locally -> SAFE update (not skipped as unselected).
   const projSel = path.join(root, 'selected');
   copyUpdater(projSel);
   writeManifest(projSel, manifest);
-  writeProjFile(projSel, browserPath, 'browser v1\n');
+  writeProjFile(projSel, optionalPath, 'ui ux v1\n');
   writeProjVersion(projSel, {
     generator: '1.0.0', generated: '2026-01-01T00:00:00Z',
-    options: ['browser-e2e'],
-    checksums: { [browserPath]: sha('browser v1\n') },
+    options: ['ui-ux-review'],
+    checksums: { [optionalPath]: sha('ui ux v1\n') },
   });
   let res = runUpdateCheck(projSel, remote);
   assert.equal(res.status, 0, res.stderr || res.stdout);
   let json = JSON.parse(res.stdout.trim());
-  assert.ok(json.plan.updated.some(e => e.file === browserPath), 'optional installed -> SAFE update: ' + JSON.stringify(json.plan));
-  assert.ok(!json.plan.skipped.some(e => e.file === browserPath && /not selected/.test(e.reason)), 'optional installed not skipped as unselected');
+  assert.ok(json.plan.updated.some(e => e.file === optionalPath), 'optional installed -> SAFE update: ' + JSON.stringify(json.plan));
+  assert.ok(!json.plan.skipped.some(e => e.file === optionalPath && /not selected/.test(e.reason)), 'optional installed not skipped as unselected');
 
   // Option NOT selected, file not tracked locally -> skipped, never force-applied.
   const projNo = path.join(root, 'not-selected');
@@ -1136,9 +1137,9 @@ test('manifest-first: optionalOwned file SAFE when option selected, skipped when
   res = runUpdateCheck(projNo, remote);
   assert.equal(res.status, 0, res.stderr || res.stdout);
   json = JSON.parse(res.stdout.trim());
-  assert.ok(json.plan.skipped.some(e => e.file === browserPath && /not selected/.test(e.reason)), 'optional unselected -> skipped: ' + JSON.stringify(json.plan.skipped));
-  assert.ok(!json.plan.created.some(e => e.file === browserPath), 'optional unselected not force-created');
-  assert.ok(!json.plan.updated.some(e => e.file === browserPath), 'optional unselected not force-updated');
+  assert.ok(json.plan.skipped.some(e => e.file === optionalPath && /not selected/.test(e.reason)), 'optional unselected -> skipped: ' + JSON.stringify(json.plan.skipped));
+  assert.ok(!json.plan.created.some(e => e.file === optionalPath), 'optional unselected not force-created');
+  assert.ok(!json.plan.updated.some(e => e.file === optionalPath), 'optional unselected not force-updated');
   fs.rmSync(root, { recursive: true, force: true });
 });
 

@@ -4,8 +4,7 @@ Global task index. Load at session start to see what is active and what was done
 
 ## Active Task
 
-- None.
-
+- task-release-stable-github
 
 ## Task Index
 
@@ -13,11 +12,11 @@ Non-archived tasks only (max 5). Archived tasks are listed in `Harness/tasks/_ar
 
 | ID | Goal | Phase | Closed |
 |----|------|-------|--------|
+| task-release-stable-github | Bump version to 0.8.17, synchronize generated metadata, and run release-grade checks. | Validation | - |
+| task-build-state-cli | Add deterministic task-state CLI and archive reconciliation so state is managed by code, not prompt-only discipline | Verified | - |
 | task-framework-metrics-and-entry-contract | Define slim CLAUDE entry contract and HarnessBench v0.1 methodology | Blocked | - |
-| task-spark-protocol-hardening | Harden wf-auto-spark: stability + token-saving + task-scribe delegation of process files | Verified | 2026-07-22 |
 | task-homepage-act1-flat-layout | Redesign Act 1 opening: 5 flat staggered boxes, zero tilt, no float, no singled-out openable box | Implementation | - |
-| task-tempdir-cleanup | Stop littering user machine: audit+fix no-cleanup temp writes, purge %Temp% garbage, add guard | Verified | 2026-07-22 |
-| task-cache-hit-rate-wf-skills | Improve WF command family and skills framework prompt-cache hit-rate discipline from GitHub/web research | Verified | 2026-07-23 |
+| task-run-harnessbench-results | Run full validation chain and independent review | Verified | - |
 
 ## Cross-Task Decisions
 

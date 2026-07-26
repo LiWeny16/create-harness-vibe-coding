@@ -296,11 +296,11 @@ Every cycle writes one entry to `Harness/tasks/auto/PROGRESS.md`:
 
 IMMEDIATELY return to W0. No pause between cycles — the only breaks are the adaptive Intent Checkpoint and the A-GATE.
 
-### WF-AUTO Hook Exception
+### Runtime Hook Boundaries
 
-Runtime hooks are disabled by default across the Harness scaffold. The only
-allowed exception is an explicitly enabled `/wf-auto` tick hook for long-running
-auto-optimization.
+Execution-control hooks are disabled by default across the Harness scaffold.
+Startup update-check hooks are not execution-control hooks. Only an explicitly
+enabled `/wf-auto` tick hook may drive long-running auto-optimization.
 
 Manual or benchmark-driven single-cycle `/wf-auto` runs use the same bounded
 tick contract: they may stop because the caller explicitly requested one tick,
@@ -321,8 +321,8 @@ wf-auto hook event
 
 Hard boundaries:
 
-- no hook is installed or registered by default
-- only `/wf-auto` may use a runtime hook
+- no execution-control hook is installed or registered by default
+- only `/wf-auto` may use a runtime hook to drive auto-optimization
 - the hook must run one bounded tick, not an unbounded process
 - the hook must respect `Harness/tasks/auto/STOP`, `state=paused`, user stop,
   and the Adaptive Coverage Exhaustion Gate

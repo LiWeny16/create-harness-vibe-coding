@@ -396,7 +396,10 @@ test('validation fails when ECC direct command exemption is removed', () => {
   writeRel(
     targetDir,
     '.claude/rules/ecc/common.md',
-    readRel(targetDir, '.claude/rules/ecc/common.md').replace(', excluding `/wf-help` and `/wf-update`', ''),
+    readRel(targetDir, '.claude/rules/ecc/common.md').replace(
+      ', excluding `/wf-help`, `$wf-help`, `/skills wf-help`, `/wf-update`, `$wf-update`, and `/skills wf-update`',
+      '',
+    ),
   );
 
   const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
@@ -462,12 +465,12 @@ test('validation fails when user-facing language match rule is removed', () => {
   assert.match(output, /CLAUDE\.md missing user-facing language match rule/);
 });
 
-test('validation fails when optional web workflows lose stable selector requirements', () => {
-  const targetDir = generateProject({ withOptions: ['browser-e2e,ts-react-frontend'] });
+test('validation fails when built-in wf-browser loses stable selector requirements', () => {
+  const targetDir = generateProject({ withOptions: ['ts-react-frontend'] });
   writeRel(
     targetDir,
-    'Harness/workflows/browser-e2e.md',
-    readRel(targetDir, 'Harness/workflows/browser-e2e.md').replaceAll('data-testid', 'data-qa-id'),
+    '.claude/skills/wf-browser/SKILL.md',
+    readRel(targetDir, '.claude/skills/wf-browser/SKILL.md').replaceAll('data-testid', 'data-qa-id'),
   );
 
   const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
@@ -477,12 +480,11 @@ test('validation fails when optional web workflows lose stable selector requirem
   const output = `${result.stdout}\n${result.stderr}`;
 
   assert.notEqual(result.status, 0);
-  assert.match(output, /Harness\/workflows\/browser-e2e\.md missing stable UI selector contract/);
+  assert.match(output, /\.claude\/skills\/wf-browser\/SKILL\.md missing stable UI selector contract/);
 });
 
-test('validation passes when an optional workflow file is not installed', () => {
+test('validation passes when retired browser-e2e is requested but not installed', () => {
   const targetDir = generateProject({ withOptions: ['browser-e2e'] });
-  fs.rmSync(path.join(targetDir, 'Harness', 'workflows', 'browser-e2e.md'), { force: true });
 
   const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
     cwd: targetDir,
@@ -492,11 +494,12 @@ test('validation passes when an optional workflow file is not installed', () => 
 
   assert.equal(result.status, 0);
   assert.match(output, /Harness validation passed/);
+  assert.equal(fs.existsSync(path.join(targetDir, 'Harness', 'workflows', 'browser-e2e.md')), false);
 });
 
 test('validation fails when a registered optional skill file is missing', () => {
-  const targetDir = generateProject({ withOptions: ['browser-e2e'] });
-  fs.rmSync(path.join(targetDir, '.claude', 'skills', 'browser-e2e'), { recursive: true, force: true });
+  const targetDir = generateProject({ withOptions: ['ui-ux-review'] });
+  fs.rmSync(path.join(targetDir, '.claude', 'skills', 'ui-ux-review'), { recursive: true, force: true });
 
   const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
     cwd: targetDir,
@@ -505,7 +508,7 @@ test('validation fails when a registered optional skill file is missing', () => 
   const output = `${result.stdout}\n${result.stderr}`;
 
   assert.notEqual(result.status, 0);
-  assert.match(output, /registered skill file is missing: \.claude\/skills\/browser-e2e\/SKILL\.md/);
+  assert.match(output, /registered skill file is missing: \.claude\/skills\/ui-ux-review\/SKILL\.md/);
 });
 
 test('AC-004 validation fails when command docs list a missing skill command', () => {

@@ -213,7 +213,7 @@ for (const status of ['error', 'offline', 'template-remote', 'downgrade-refused'
 
 test('--list-options prints built-in optional catalog', () => {
   const output = execFileSync(process.execPath, [bin, '--list-options'], { encoding: 'utf8' });
-  assert.match(output, /browser-e2e/);
+  assert.doesNotMatch(output, /browser-e2e/);
   assert.match(output, /ts-react-frontend/);
   assert.match(output, /web-app/);
   assert.match(output, /External recommendations/);
@@ -246,25 +246,32 @@ test('--recommend records external recommendations without installing them', () 
   assert.equal(fs.existsSync(path.join(target, '.agents', 'skills', 'grill-me', 'SKILL.md')), false);
 });
 
-test('--with copies optional skills and workflows', () => {
+test('--with copies optional skills and workflows while wf-browser stays built in', () => {
   const root = tmpdir();
   const target = path.join(root, 'web');
 
-  execFileSync(process.execPath, [bin, 'web', target, '-y', '--with', 'ts-react-frontend,browser-e2e'], { encoding: 'utf8' });
+  execFileSync(process.execPath, [bin, 'web', target, '-y', '--with', 'ts-react-frontend,ui-ux-review'], { encoding: 'utf8' });
 
   assert.ok(fs.existsSync(path.join(target, '.claude', 'skills', 'ts-react-frontend', 'SKILL.md')));
   assert.ok(fs.existsSync(path.join(target, '.agents', 'skills', 'ts-react-frontend', 'SKILL.md')));
-  assert.ok(fs.existsSync(path.join(target, '.claude', 'skills', 'browser-e2e', 'SKILL.md')));
-  assert.ok(fs.existsSync(path.join(target, '.agents', 'skills', 'browser-e2e', 'SKILL.md')));
-  assert.ok(fs.existsSync(path.join(target, 'Harness', 'workflows', 'browser-e2e.md')));
+  assert.ok(fs.existsSync(path.join(target, '.claude', 'skills', 'ui-ux-review', 'SKILL.md')));
+  assert.ok(fs.existsSync(path.join(target, '.agents', 'skills', 'ui-ux-review', 'SKILL.md')));
+  assert.ok(fs.existsSync(path.join(target, '.claude', 'skills', 'wf-browser', 'SKILL.md')));
+  assert.ok(fs.existsSync(path.join(target, '.agents', 'skills', 'wf-browser', 'SKILL.md')));
+  assert.equal(fs.existsSync(path.join(target, '.claude', 'skills', 'browser-e2e', 'SKILL.md')), false);
+  assert.equal(fs.existsSync(path.join(target, '.agents', 'skills', 'browser-e2e', 'SKILL.md')), false);
+  assert.equal(fs.existsSync(path.join(target, 'Harness', 'workflows', 'browser-e2e.md')), false);
   assert.equal(
-    fs.readFileSync(path.join(target, '.agents', 'skills', 'browser-e2e', 'SKILL.md'), 'utf8'),
-    fs.readFileSync(path.join(target, '.claude', 'skills', 'browser-e2e', 'SKILL.md'), 'utf8'),
+    fs.readFileSync(path.join(target, '.agents', 'skills', 'wf-browser', 'SKILL.md'), 'utf8'),
+    fs.readFileSync(path.join(target, '.claude', 'skills', 'wf-browser', 'SKILL.md'), 'utf8'),
   );
   assert.match(fs.readFileSync(path.join(target, 'Harness', 'MEMORY.md'), 'utf8'), /ts-react-frontend/);
+  assert.match(fs.readFileSync(path.join(target, 'Harness', 'MEMORY.md'), 'utf8'), /wf-browser/);
   const docsReadme = fs.readFileSync(path.join(target, 'Harness', 'README.md'), 'utf8');
   const workflowLinks = [...docsReadme.matchAll(/\]\((workflows\/[^)]+)\)/g)].map(match => match[1]);
-  assert.ok(workflowLinks.includes('workflows/browser-e2e.md'));
+  assert.ok(workflowLinks.includes('workflows/ts-react-frontend.md'));
+  assert.ok(workflowLinks.includes('workflows/ui-ux-review.md'));
+  assert.equal(workflowLinks.includes('workflows/browser-e2e.md'), false);
   for (const link of workflowLinks) {
     assert.ok(fs.existsSync(path.join(target, 'Harness', link)), `Expected ${link} to resolve from Harness/README.md`);
   }
@@ -274,9 +281,10 @@ test('--with equals form copies optional workflows', () => {
   const root = tmpdir();
   const target = path.join(root, 'web-equals');
 
-  execFileSync(process.execPath, [bin, 'web-equals', target, '-y', '--with=browser-e2e'], { encoding: 'utf8' });
+  execFileSync(process.execPath, [bin, 'web-equals', target, '-y', '--with=ui-ux-review'], { encoding: 'utf8' });
 
-  assert.ok(fs.existsSync(path.join(target, 'Harness', 'workflows', 'browser-e2e.md')));
+  assert.ok(fs.existsSync(path.join(target, 'Harness', 'workflows', 'ui-ux-review.md')));
+  assert.equal(fs.existsSync(path.join(target, 'Harness', 'workflows', 'browser-e2e.md')), false);
 });
 
 test('--preset web-app expands optional skills', () => {
@@ -287,8 +295,10 @@ test('--preset web-app expands optional skills', () => {
 
   assert.ok(fs.existsSync(path.join(target, '.claude', 'skills', 'ts-react-frontend', 'SKILL.md')));
   assert.ok(fs.existsSync(path.join(target, '.agents', 'skills', 'ts-react-frontend', 'SKILL.md')));
-  assert.ok(fs.existsSync(path.join(target, '.claude', 'skills', 'browser-e2e', 'SKILL.md')));
-  assert.ok(fs.existsSync(path.join(target, '.agents', 'skills', 'browser-e2e', 'SKILL.md')));
+  assert.ok(fs.existsSync(path.join(target, '.claude', 'skills', 'wf-browser', 'SKILL.md')));
+  assert.ok(fs.existsSync(path.join(target, '.agents', 'skills', 'wf-browser', 'SKILL.md')));
+  assert.equal(fs.existsSync(path.join(target, '.claude', 'skills', 'browser-e2e', 'SKILL.md')), false);
+  assert.equal(fs.existsSync(path.join(target, '.agents', 'skills', 'browser-e2e', 'SKILL.md')), false);
   assert.ok(fs.existsSync(path.join(target, '.claude', 'skills', 'ui-ux-review', 'SKILL.md')));
   assert.ok(fs.existsSync(path.join(target, '.agents', 'skills', 'ui-ux-review', 'SKILL.md')));
 });
@@ -299,7 +309,9 @@ test('--preset equals form expands optional workflows', () => {
 
   execFileSync(process.execPath, [bin, 'web-preset-equals', target, '-y', '--preset=web-app'], { encoding: 'utf8' });
 
-  assert.ok(fs.existsSync(path.join(target, 'Harness', 'workflows', 'browser-e2e.md')));
+  assert.ok(fs.existsSync(path.join(target, 'Harness', 'workflows', 'ts-react-frontend.md')));
+  assert.ok(fs.existsSync(path.join(target, 'Harness', 'workflows', 'ui-ux-review.md')));
+  assert.equal(fs.existsSync(path.join(target, 'Harness', 'workflows', 'browser-e2e.md')), false);
 });
 
 test('--without subtracts optional workflows after preset and with', () => {
@@ -314,14 +326,30 @@ test('--without subtracts optional workflows after preset and with', () => {
 
   assert.ok(fs.existsSync(path.join(target, '.claude', 'skills', 'ts-react-frontend', 'SKILL.md')));
   assert.ok(fs.existsSync(path.join(target, '.agents', 'skills', 'ts-react-frontend', 'SKILL.md')));
-  assert.ok(fs.existsSync(path.join(target, '.claude', 'skills', 'browser-e2e', 'SKILL.md')));
-  assert.ok(fs.existsSync(path.join(target, '.agents', 'skills', 'browser-e2e', 'SKILL.md')));
+  assert.ok(fs.existsSync(path.join(target, '.claude', 'skills', 'wf-browser', 'SKILL.md')));
+  assert.ok(fs.existsSync(path.join(target, '.agents', 'skills', 'wf-browser', 'SKILL.md')));
+  assert.equal(fs.existsSync(path.join(target, '.claude', 'skills', 'browser-e2e', 'SKILL.md')), false);
+  assert.equal(fs.existsSync(path.join(target, '.agents', 'skills', 'browser-e2e', 'SKILL.md')), false);
   assert.ok(fs.existsSync(path.join(target, '.claude', 'skills', 'ui-ux-review', 'SKILL.md')));
   assert.ok(fs.existsSync(path.join(target, '.agents', 'skills', 'ui-ux-review', 'SKILL.md')));
   assert.equal(fs.existsSync(path.join(target, '.claude', 'skills', 'python-backend', 'SKILL.md')), false);
   assert.equal(fs.existsSync(path.join(target, '.agents', 'skills', 'python-backend', 'SKILL.md')), false);
   assert.equal(fs.existsSync(path.join(target, '.claude', 'skills', 'github-pr-review', 'SKILL.md')), false);
   assert.equal(fs.existsSync(path.join(target, '.agents', 'skills', 'github-pr-review', 'SKILL.md')), false);
+});
+
+test('retired --with browser-e2e is a warning no-op because wf-browser is built in', () => {
+  const root = tmpdir();
+  const target = path.join(root, 'retired-browser');
+
+  const output = execFileSync(process.execPath, [bin, 'retired-browser', target, '-y', '--with', 'browser-e2e'], { encoding: 'utf8' });
+
+  assert.match(output, /browser-e2e/);
+  assert.match(output, /retired/);
+  assert.ok(fs.existsSync(path.join(target, '.claude', 'skills', 'wf-browser', 'SKILL.md')));
+  assert.ok(fs.existsSync(path.join(target, '.agents', 'skills', 'wf-browser', 'SKILL.md')));
+  assert.equal(fs.existsSync(path.join(target, '.claude', 'skills', 'browser-e2e', 'SKILL.md')), false);
+  assert.equal(fs.existsSync(path.join(target, 'Harness', 'workflows', 'browser-e2e.md')), false);
 });
 
 test('--without equals form accepts known unselected optional ids as no-op', () => {
@@ -384,7 +412,7 @@ test('generated optional project passes harness validator', () => {
   const root = tmpdir();
   const target = path.join(root, 'validated-web');
 
-  execFileSync(process.execPath, [bin, 'validated-web', target, '-y', '--with', 'browser-e2e,ts-react-frontend'], { encoding: 'utf8' });
+  execFileSync(process.execPath, [bin, 'validated-web', target, '-y', '--with', 'ui-ux-review,ts-react-frontend'], { encoding: 'utf8' });
   const output = execFileSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], { cwd: target, encoding: 'utf8' });
 
   assert.match(output, /Harness validation passed/);

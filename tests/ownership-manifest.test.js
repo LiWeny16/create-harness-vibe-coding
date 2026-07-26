@@ -179,24 +179,17 @@ test('no dest appears in both frameworkOwned and optionalOwned', () => {
   }
 });
 
-test('optionalOwned browser-e2e paths include the expected dests', () => {
+test('retired browser-e2e is absent and wf-browser is frameworkOwned', () => {
   const m = buildRealManifest();
-  const browser = m.optionalOwned.find((s) => s.option === 'browser-e2e');
-  assert.ok(browser, 'browser-e2e optional entry exists');
-  const expected = [
-    '.claude/skills/browser-e2e/SKILL.md',
-    '.agents/skills/browser-e2e/SKILL.md',
+  assert.equal(m.optionalOwned.some((s) => s.option === 'browser-e2e'), false, 'browser-e2e optional entry is retired');
+  const frameworkPaths = new Set(m.frameworkOwned.map((entry) => entry.path));
+  for (const p of [
     '.claude/skills/wf-browser/SKILL.md',
+    '.agents/skills/wf-browser/SKILL.md',
     '.opencode/commands/wf-browser.md',
-    'Harness/workflows/browser-e2e.md',
-  ];
-  for (const p of expected) {
-    assert.ok(browser.paths.includes(p), `browser-e2e missing path: ${p}`);
+  ]) {
+    assert.ok(frameworkPaths.has(p), `wf-browser built-in path missing from frameworkOwned: ${p}`);
   }
-  // paths are sorted
-  const sorted = [...browser.paths].sort();
-  assert.deepEqual(browser.paths, sorted);
-  assert.equal(browser.overwrite, 'safe-if-installed');
 });
 
 test('every optionalOwned option exists in the catalog', () => {

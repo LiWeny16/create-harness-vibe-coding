@@ -149,8 +149,11 @@ function optionalSkillFromSource(source) {
   return match ? match[1] : null;
 }
 
+const RETIRED_OPTION_IDS = new Set(['browser-e2e']);
+
 function isInstalledOptionalFile(file, localVersion) {
   const skillId = optionalSkillFromSource(localVersion?.sources?.[file]);
+  if (skillId && RETIRED_OPTION_IDS.has(skillId)) return false;
   return Boolean(skillId && selectedOptionIds(localVersion).has(skillId));
 }
 

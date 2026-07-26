@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-unify-command-surface",
+  "status": "archived",
+  "mode": "wf",
+  "tier": "WF-Standard",
+  "phase": "archived",
+  "gate": "AC-GATE",
+  "updatedAt": "2026-07-26T08:10:55.790Z",
+  "activeQuestion": null,
+  "nextAction": "User review",
+  "acceptance": [
+    "AC-001: Complete wf-* command coverage across Claude Code, Codex, and OpenCode",
+    "AC-002: Codex can invoke wf-help via $wf-help",
+    "AC-003: wf-browser is built in by default",
+    "AC-004: browser-e2e optional skill/workflow is removed",
+    "AC-005: browser guidance is current and testable"
+  ],
+  "queues": {
+    "ready": [
+      "user-review"
+    ],
+    "running": [],
+    "blocked": [],
+    "done": [
+      "intake",
+      "implementation",
+      "verification"
+    ]
+  },
+  "dispatchLedger": [
+    {
+      "role": "explorer",
+      "status": "errored",
+      "summary": "stream disconnected before completion"
+    }
+  ],
+  "decisions": [
+    "Use WF-Standard",
+    "Make wf-browser common built-in",
+    "Remove browser-e2e optional workflow",
+    "Remove Codex custom WF status implementation because Codex does not document a command-backed custom status bar/statusline"
+  ],
+  "risks": [],
+  "artifacts": [
+    "Harness/tasks/task-unify-command-surface/PLAN.md",
+    "Harness/tasks/task-unify-command-surface/PROGRESS.md",
+    ".codex/config.toml",
+    ".codex/hooks.json"
+  ]
+}

@@ -130,11 +130,15 @@ Max parallelism removes the Harness default cap, not the runtime's physical or
 account cap. For WF-MAX, record the current runtime budget, use native
 subagents first, close completed agents before declaring the pool exhausted,
 then overflow to a peer CLI (`claude -p`, `codex exec`, or `opencode run --agent <role> --dir .`) with explicit
-dispatch packets. Generated Harness Codex config defaults to
-`agents.max_threads = 12` and `agents.max_depth = 1`; if that becomes the
-bottleneck, ask the user before raising `agents.max_threads` and keep
-`max_depth = 1` unless recursive delegation is explicitly approved. Do not rely
-on undocumented fork/derive bypasses as stable capacity.
+dispatch packets. WF-MAX must attempt native subagent fan-out and record
+`fanoutAttempted: true` before any solo fallback. Do not scaffold Codex scalar
+`[agents]` capacity fields into `.codex/config.toml`; codex-cli 0.144.x can
+reject them during TUI `skills/list`. Probe the installed runtime first and
+manage Codex WF-MAX caps through the dispatch ledger unless the installed
+version accepts the config shape. Generated OpenCode config defaults to
+`subagent_depth = 2` so manager subagents can invoke worker subagents; manager
+agents also need `permission.task` allowlists. Do not rely on undocumented
+fork/derive bypasses as stable capacity.
 
 Default for explicit WF invocation: tier-based. WF-Light: planner + test-writer + implementer + verifier (bounded passes acceptable). WF-Standard: adds research/docs + one independent review lens. WF-Full: complete role chain, use bounded role passes as the recorded fallback when subagents are unavailable.
 

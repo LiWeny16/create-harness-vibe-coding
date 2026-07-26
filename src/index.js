@@ -57,7 +57,7 @@ if (showHelp) {
   console.log('    npx create-harness-vibe-coding@latest my-project ./dist/my-project -y');
   console.log('    npx create-harness-vibe-coding@latest legacy ./legacy -y --dry-run');
   console.log('    npx create-harness-vibe-coding@latest legacy ./legacy -y --on-conflict skip');
-  console.log('    npx create-harness-vibe-coding@latest web ./web -y --with ts-react-frontend,browser-e2e');
+  console.log('    npx create-harness-vibe-coding@latest web ./web -y --with ts-react-frontend,ui-ux-review');
   console.log('    npx create-harness-vibe-coding@latest web ./web -y --preset web-app');
   console.log('    npx create-harness-vibe-coding@latest api ./api -y --preset fullstack --without github-pr-review');
   console.log('');

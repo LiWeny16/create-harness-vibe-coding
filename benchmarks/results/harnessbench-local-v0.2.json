@@ -1,0 +1,2724 @@
+{
+  "schemaVersion": 1,
+  "suiteId": "harnessbench-local-v0.2",
+  "resultType": "deterministic-local-lifecycle-proof",
+  "generatedAt": "2026-07-26T08:47:07.420Z",
+  "claimBoundary": "Local filesystem lifecycle benchmark only: safe install, existing-file preservation, same-name skill protection, updater recovery, and generated-install benchmark exclusion. It is not a model-success A/B benchmark.",
+  "benchmarkScope": {
+    "roundsPerMode": 15,
+    "fixtureFamilies": [
+      {
+        "id": "LIFE-01-fresh-install",
+        "name": "Fresh install"
+      },
+      {
+        "id": "LIFE-02-existing-readme-package",
+        "name": "Existing README and package files"
+      },
+      {
+        "id": "LIFE-03-existing-agent-entry",
+        "name": "Existing agent entry files"
+      },
+      {
+        "id": "LIFE-04-user-owned-wf-skill",
+        "name": "User-owned same-name WF skills"
+      },
+      {
+        "id": "LIFE-05-old-harness-recovery",
+        "name": "Old Harness missing updater"
+      }
+    ],
+    "modes": [
+      {
+        "id": "direct-run",
+        "label": "No Harness baseline (direct file writes)"
+      },
+      {
+        "id": "harness-wf",
+        "label": "Harness safe path"
+      }
+    ],
+    "generatedInstallBoundary": "Benchmark runner, fixtures, scorer, and raw JSON stay outside generated Harness installs."
+  },
+  "runs": [
+    {
+      "schemaVersion": 1,
+      "runId": "LIFE-01-fresh-install-direct-run-seed-01",
+      "taskId": "LIFE-01-fresh-install",
+      "taskName": "Fresh install",
+      "mode": "direct-run",
+      "modeLabel": "No Harness baseline (direct file writes)",
+      "model": "local-filesystem-control",
+      "runtime": "node-cli",
+      "fixtureCommit": "local-worktree",
+      "seed": 1,
+      "budget": {
+        "minutes": 1,
+        "tokens": 0
+      },
+      "timing": {
+        "durationSeconds": 0.126,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cacheCreationInputTokens": 0
+      },
+      "status": {
+        "verifiedCompletion": true,
+        "safetyIncident": false,
+        "boundaryViolation": false
+      },
+      "quality": {
+        "correctness": 4,
+        "minimality": 4,
+        "maintainability": 4,
+        "testStrength": 4,
+        "domainFit": 3,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "Scored from filesystem assertions: required files, protected-file preservation, and benchmark leakage."
+      },
+      "boundary": {
+        "fileBoundary": 5,
+        "userDataSafety": 5,
+        "taskStateDiscipline": null,
+        "conflictHandling": null,
+        "recoverySurface": null,
+        "applicableMax": 10,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "A protected overwrite, missing required file, or benchmark leakage is a boundary violation."
+      },
+      "verification": {
+        "points": 10,
+        "commands": [
+          {
+            "command": "filesystem required-file assertions",
+            "status": "pass"
+          },
+          {
+            "command": "generated-install benchmark leakage assertion",
+            "status": "pass"
+          }
+        ]
+      },
+      "recovery": {
+        "points": 0,
+        "resumeLatencySeconds": null,
+        "duplicatedDiscoveryReads": null
+      },
+      "humanInterventions": [],
+      "metrics": {
+        "protectedFilesChecked": 0,
+        "protectedOverwrites": 0,
+        "protectedOverwriteFiles": [],
+        "requiredFilesMissing": [],
+        "benchmarkFilesLeaked": [],
+        "repairRun": 0,
+        "manualRepairEvents": 0,
+        "updaterRestored": true
+      },
+      "evidence": {
+        "fixtureDirectory": ".harnessbench-local-cG4raW\\LIFE-01-fresh-install-seed-01-direct-run",
+        "actionStatus": 0,
+        "actionSummary": {
+          "created": 157,
+          "overwritten": 0
+        }
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "LIFE-01-fresh-install-harness-wf-seed-01",
+      "taskId": "LIFE-01-fresh-install",
+      "taskName": "Fresh install",
+      "mode": "harness-wf",
+      "modeLabel": "Harness safe path",
+      "model": "local-filesystem-control",
+      "runtime": "node-cli",
+      "fixtureCommit": "local-worktree",
+      "seed": 1,
+      "budget": {
+        "minutes": 1,
+        "tokens": 0
+      },
+      "timing": {
+        "durationSeconds": 0.271,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cacheCreationInputTokens": 0
+      },
+      "status": {
+        "verifiedCompletion": true,
+        "safetyIncident": false,
+        "boundaryViolation": false
+      },
+      "quality": {
+        "correctness": 4,
+        "minimality": 4,
+        "maintainability": 4,
+        "testStrength": 4,
+        "domainFit": 4,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "Scored from filesystem assertions: required files, protected-file preservation, and benchmark leakage."
+      },
+      "boundary": {
+        "fileBoundary": 5,
+        "userDataSafety": 5,
+        "taskStateDiscipline": 4,
+        "conflictHandling": null,
+        "recoverySurface": null,
+        "applicableMax": 14,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "A protected overwrite, missing required file, or benchmark leakage is a boundary violation."
+      },
+      "verification": {
+        "points": 10,
+        "commands": [
+          {
+            "command": "filesystem required-file assertions",
+            "status": "pass"
+          },
+          {
+            "command": "generated-install benchmark leakage assertion",
+            "status": "pass"
+          }
+        ]
+      },
+      "recovery": {
+        "points": 8,
+        "resumeLatencySeconds": null,
+        "duplicatedDiscoveryReads": null
+      },
+      "humanInterventions": [],
+      "metrics": {
+        "protectedFilesChecked": 0,
+        "protectedOverwrites": 0,
+        "protectedOverwriteFiles": [],
+        "requiredFilesMissing": [],
+        "benchmarkFilesLeaked": [],
+        "repairRun": 0,
+        "manualRepairEvents": 0,
+        "updaterRestored": true
+      },
+      "evidence": {
+        "fixtureDirectory": ".harnessbench-local-cG4raW\\LIFE-01-fresh-install-seed-01-harness-wf",
+        "actionStatus": 0,
+        "actionSummary": {
+          "created": 158,
+          "skipped": 0,
+          "overwritten": 0,
+          "backedUp": 0,
+          "conflicts": 0,
+          "mkdir": 55
+        }
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "LIFE-01-fresh-install-direct-run-seed-02",
+      "taskId": "LIFE-01-fresh-install",
+      "taskName": "Fresh install",
+      "mode": "direct-run",
+      "modeLabel": "No Harness baseline (direct file writes)",
+      "model": "local-filesystem-control",
+      "runtime": "node-cli",
+      "fixtureCommit": "local-worktree",
+      "seed": 2,
+      "budget": {
+        "minutes": 1,
+        "tokens": 0
+      },
+      "timing": {
+        "durationSeconds": 0.116,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cacheCreationInputTokens": 0
+      },
+      "status": {
+        "verifiedCompletion": true,
+        "safetyIncident": false,
+        "boundaryViolation": false
+      },
+      "quality": {
+        "correctness": 4,
+        "minimality": 4,
+        "maintainability": 4,
+        "testStrength": 4,
+        "domainFit": 3,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "Scored from filesystem assertions: required files, protected-file preservation, and benchmark leakage."
+      },
+      "boundary": {
+        "fileBoundary": 5,
+        "userDataSafety": 5,
+        "taskStateDiscipline": null,
+        "conflictHandling": null,
+        "recoverySurface": null,
+        "applicableMax": 10,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "A protected overwrite, missing required file, or benchmark leakage is a boundary violation."
+      },
+      "verification": {
+        "points": 10,
+        "commands": [
+          {
+            "command": "filesystem required-file assertions",
+            "status": "pass"
+          },
+          {
+            "command": "generated-install benchmark leakage assertion",
+            "status": "pass"
+          }
+        ]
+      },
+      "recovery": {
+        "points": 0,
+        "resumeLatencySeconds": null,
+        "duplicatedDiscoveryReads": null
+      },
+      "humanInterventions": [],
+      "metrics": {
+        "protectedFilesChecked": 0,
+        "protectedOverwrites": 0,
+        "protectedOverwriteFiles": [],
+        "requiredFilesMissing": [],
+        "benchmarkFilesLeaked": [],
+        "repairRun": 0,
+        "manualRepairEvents": 0,
+        "updaterRestored": true
+      },
+      "evidence": {
+        "fixtureDirectory": ".harnessbench-local-cG4raW\\LIFE-01-fresh-install-seed-02-direct-run",
+        "actionStatus": 0,
+        "actionSummary": {
+          "created": 157,
+          "overwritten": 0
+        }
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "LIFE-01-fresh-install-harness-wf-seed-02",
+      "taskId": "LIFE-01-fresh-install",
+      "taskName": "Fresh install",
+      "mode": "harness-wf",
+      "modeLabel": "Harness safe path",
+      "model": "local-filesystem-control",
+      "runtime": "node-cli",
+      "fixtureCommit": "local-worktree",
+      "seed": 2,
+      "budget": {
+        "minutes": 1,
+        "tokens": 0
+      },
+      "timing": {
+        "durationSeconds": 0.265,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cacheCreationInputTokens": 0
+      },
+      "status": {
+        "verifiedCompletion": true,
+        "safetyIncident": false,
+        "boundaryViolation": false
+      },
+      "quality": {
+        "correctness": 4,
+        "minimality": 4,
+        "maintainability": 4,
+        "testStrength": 4,
+        "domainFit": 4,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "Scored from filesystem assertions: required files, protected-file preservation, and benchmark leakage."
+      },
+      "boundary": {
+        "fileBoundary": 5,
+        "userDataSafety": 5,
+        "taskStateDiscipline": 4,
+        "conflictHandling": null,
+        "recoverySurface": null,
+        "applicableMax": 14,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "A protected overwrite, missing required file, or benchmark leakage is a boundary violation."
+      },
+      "verification": {
+        "points": 10,
+        "commands": [
+          {
+            "command": "filesystem required-file assertions",
+            "status": "pass"
+          },
+          {
+            "command": "generated-install benchmark leakage assertion",
+            "status": "pass"
+          }
+        ]
+      },
+      "recovery": {
+        "points": 8,
+        "resumeLatencySeconds": null,
+        "duplicatedDiscoveryReads": null
+      },
+      "humanInterventions": [],
+      "metrics": {
+        "protectedFilesChecked": 0,
+        "protectedOverwrites": 0,
+        "protectedOverwriteFiles": [],
+        "requiredFilesMissing": [],
+        "benchmarkFilesLeaked": [],
+        "repairRun": 0,
+        "manualRepairEvents": 0,
+        "updaterRestored": true
+      },
+      "evidence": {
+        "fixtureDirectory": ".harnessbench-local-cG4raW\\LIFE-01-fresh-install-seed-02-harness-wf",
+        "actionStatus": 0,
+        "actionSummary": {
+          "created": 158,
+          "skipped": 0,
+          "overwritten": 0,
+          "backedUp": 0,
+          "conflicts": 0,
+          "mkdir": 55
+        }
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "LIFE-01-fresh-install-direct-run-seed-03",
+      "taskId": "LIFE-01-fresh-install",
+      "taskName": "Fresh install",
+      "mode": "direct-run",
+      "modeLabel": "No Harness baseline (direct file writes)",
+      "model": "local-filesystem-control",
+      "runtime": "node-cli",
+      "fixtureCommit": "local-worktree",
+      "seed": 3,
+      "budget": {
+        "minutes": 1,
+        "tokens": 0
+      },
+      "timing": {
+        "durationSeconds": 0.115,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cacheCreationInputTokens": 0
+      },
+      "status": {
+        "verifiedCompletion": true,
+        "safetyIncident": false,
+        "boundaryViolation": false
+      },
+      "quality": {
+        "correctness": 4,
+        "minimality": 4,
+        "maintainability": 4,
+        "testStrength": 4,
+        "domainFit": 3,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "Scored from filesystem assertions: required files, protected-file preservation, and benchmark leakage."
+      },
+      "boundary": {
+        "fileBoundary": 5,
+        "userDataSafety": 5,
+        "taskStateDiscipline": null,
+        "conflictHandling": null,
+        "recoverySurface": null,
+        "applicableMax": 10,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "A protected overwrite, missing required file, or benchmark leakage is a boundary violation."
+      },
+      "verification": {
+        "points": 10,
+        "commands": [
+          {
+            "command": "filesystem required-file assertions",
+            "status": "pass"
+          },
+          {
+            "command": "generated-install benchmark leakage assertion",
+            "status": "pass"
+          }
+        ]
+      },
+      "recovery": {
+        "points": 0,
+        "resumeLatencySeconds": null,
+        "duplicatedDiscoveryReads": null
+      },
+      "humanInterventions": [],
+      "metrics": {
+        "protectedFilesChecked": 0,
+        "protectedOverwrites": 0,
+        "protectedOverwriteFiles": [],
+        "requiredFilesMissing": [],
+        "benchmarkFilesLeaked": [],
+        "repairRun": 0,
+        "manualRepairEvents": 0,
+        "updaterRestored": true
+      },
+      "evidence": {
+        "fixtureDirectory": ".harnessbench-local-cG4raW\\LIFE-01-fresh-install-seed-03-direct-run",
+        "actionStatus": 0,
+        "actionSummary": {
+          "created": 157,
+          "overwritten": 0
+        }
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "LIFE-01-fresh-install-harness-wf-seed-03",
+      "taskId": "LIFE-01-fresh-install",
+      "taskName": "Fresh install",
+      "mode": "harness-wf",
+      "modeLabel": "Harness safe path",
+      "model": "local-filesystem-control",
+      "runtime": "node-cli",
+      "fixtureCommit": "local-worktree",
+      "seed": 3,
+      "budget": {
+        "minutes": 1,
+        "tokens": 0
+      },
+      "timing": {
+        "durationSeconds": 0.255,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cacheCreationInputTokens": 0
+      },
+      "status": {
+        "verifiedCompletion": true,
+        "safetyIncident": false,
+        "boundaryViolation": false
+      },
+      "quality": {
+        "correctness": 4,
+        "minimality": 4,
+        "maintainability": 4,
+        "testStrength": 4,
+        "domainFit": 4,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "Scored from filesystem assertions: required files, protected-file preservation, and benchmark leakage."
+      },
+      "boundary": {
+        "fileBoundary": 5,
+        "userDataSafety": 5,
+        "taskStateDiscipline": 4,
+        "conflictHandling": null,
+        "recoverySurface": null,
+        "applicableMax": 14,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "A protected overwrite, missing required file, or benchmark leakage is a boundary violation."
+      },
+      "verification": {
+        "points": 10,
+        "commands": [
+          {
+            "command": "filesystem required-file assertions",
+            "status": "pass"
+          },
+          {
+            "command": "generated-install benchmark leakage assertion",
+            "status": "pass"
+          }
+        ]
+      },
+      "recovery": {
+        "points": 8,
+        "resumeLatencySeconds": null,
+        "duplicatedDiscoveryReads": null
+      },
+      "humanInterventions": [],
+      "metrics": {
+        "protectedFilesChecked": 0,
+        "protectedOverwrites": 0,
+        "protectedOverwriteFiles": [],
+        "requiredFilesMissing": [],
+        "benchmarkFilesLeaked": [],
+        "repairRun": 0,
+        "manualRepairEvents": 0,
+        "updaterRestored": true
+      },
+      "evidence": {
+        "fixtureDirectory": ".harnessbench-local-cG4raW\\LIFE-01-fresh-install-seed-03-harness-wf",
+        "actionStatus": 0,
+        "actionSummary": {
+          "created": 158,
+          "skipped": 0,
+          "overwritten": 0,
+          "backedUp": 0,
+          "conflicts": 0,
+          "mkdir": 55
+        }
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "LIFE-02-existing-readme-package-direct-run-seed-01",
+      "taskId": "LIFE-02-existing-readme-package",
+      "taskName": "Existing README and package files",
+      "mode": "direct-run",
+      "modeLabel": "No Harness baseline (direct file writes)",
+      "model": "local-filesystem-control",
+      "runtime": "node-cli",
+      "fixtureCommit": "local-worktree",
+      "seed": 1,
+      "budget": {
+        "minutes": 1,
+        "tokens": 0
+      },
+      "timing": {
+        "durationSeconds": 0.123,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cacheCreationInputTokens": 0
+      },
+      "status": {
+        "verifiedCompletion": false,
+        "safetyIncident": true,
+        "boundaryViolation": true
+      },
+      "quality": {
+        "correctness": 4,
+        "minimality": 0,
+        "maintainability": 2,
+        "testStrength": 4,
+        "domainFit": 1,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "Scored from filesystem assertions: required files, protected-file preservation, and benchmark leakage."
+      },
+      "boundary": {
+        "fileBoundary": 0,
+        "userDataSafety": 0,
+        "taskStateDiscipline": null,
+        "conflictHandling": 0,
+        "recoverySurface": null,
+        "applicableMax": 13,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "A protected overwrite, missing required file, or benchmark leakage is a boundary violation."
+      },
+      "verification": {
+        "points": 10,
+        "commands": [
+          {
+            "command": "filesystem required-file assertions",
+            "status": "pass"
+          },
+          {
+            "command": "generated-install benchmark leakage assertion",
+            "status": "pass"
+          }
+        ]
+      },
+      "recovery": {
+        "points": 0,
+        "resumeLatencySeconds": null,
+        "duplicatedDiscoveryReads": null
+      },
+      "humanInterventions": [
+        {
+          "type": "manual-repair-required",
+          "note": "Protected boundary repair 1"
+        }
+      ],
+      "metrics": {
+        "protectedFilesChecked": 2,
+        "protectedOverwrites": 1,
+        "protectedOverwriteFiles": [
+          "README.md"
+        ],
+        "requiredFilesMissing": [],
+        "benchmarkFilesLeaked": [],
+        "repairRun": 1,
+        "manualRepairEvents": 1,
+        "updaterRestored": true
+      },
+      "evidence": {
+        "fixtureDirectory": ".harnessbench-local-cG4raW\\LIFE-02-existing-readme-package-seed-01-direct-run",
+        "actionStatus": 0,
+        "actionSummary": {
+          "created": 156,
+          "overwritten": 1
+        }
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "LIFE-02-existing-readme-package-harness-wf-seed-01",
+      "taskId": "LIFE-02-existing-readme-package",
+      "taskName": "Existing README and package files",
+      "mode": "harness-wf",
+      "modeLabel": "Harness safe path",
+      "model": "local-filesystem-control",
+      "runtime": "node-cli",
+      "fixtureCommit": "local-worktree",
+      "seed": 1,
+      "budget": {
+        "minutes": 1,
+        "tokens": 0
+      },
+      "timing": {
+        "durationSeconds": 0.26,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cacheCreationInputTokens": 0
+      },
+      "status": {
+        "verifiedCompletion": true,
+        "safetyIncident": false,
+        "boundaryViolation": false
+      },
+      "quality": {
+        "correctness": 4,
+        "minimality": 4,
+        "maintainability": 4,
+        "testStrength": 4,
+        "domainFit": 4,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "Scored from filesystem assertions: required files, protected-file preservation, and benchmark leakage."
+      },
+      "boundary": {
+        "fileBoundary": 5,
+        "userDataSafety": 5,
+        "taskStateDiscipline": 4,
+        "conflictHandling": 3,
+        "recoverySurface": null,
+        "applicableMax": 17,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "A protected overwrite, missing required file, or benchmark leakage is a boundary violation."
+      },
+      "verification": {
+        "points": 10,
+        "commands": [
+          {
+            "command": "filesystem required-file assertions",
+            "status": "pass"
+          },
+          {
+            "command": "generated-install benchmark leakage assertion",
+            "status": "pass"
+          }
+        ]
+      },
+      "recovery": {
+        "points": 8,
+        "resumeLatencySeconds": null,
+        "duplicatedDiscoveryReads": null
+      },
+      "humanInterventions": [],
+      "metrics": {
+        "protectedFilesChecked": 2,
+        "protectedOverwrites": 0,
+        "protectedOverwriteFiles": [],
+        "requiredFilesMissing": [],
+        "benchmarkFilesLeaked": [],
+        "repairRun": 0,
+        "manualRepairEvents": 0,
+        "updaterRestored": true
+      },
+      "evidence": {
+        "fixtureDirectory": ".harnessbench-local-cG4raW\\LIFE-02-existing-readme-package-seed-01-harness-wf",
+        "actionStatus": 0,
+        "actionSummary": {
+          "created": 157,
+          "skipped": 1,
+          "overwritten": 0,
+          "backedUp": 0,
+          "conflicts": 0,
+          "mkdir": 55
+        }
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "LIFE-02-existing-readme-package-direct-run-seed-02",
+      "taskId": "LIFE-02-existing-readme-package",
+      "taskName": "Existing README and package files",
+      "mode": "direct-run",
+      "modeLabel": "No Harness baseline (direct file writes)",
+      "model": "local-filesystem-control",
+      "runtime": "node-cli",
+      "fixtureCommit": "local-worktree",
+      "seed": 2,
+      "budget": {
+        "minutes": 1,
+        "tokens": 0
+      },
+      "timing": {
+        "durationSeconds": 0.117,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cacheCreationInputTokens": 0
+      },
+      "status": {
+        "verifiedCompletion": false,
+        "safetyIncident": true,
+        "boundaryViolation": true
+      },
+      "quality": {
+        "correctness": 4,
+        "minimality": 0,
+        "maintainability": 2,
+        "testStrength": 4,
+        "domainFit": 1,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "Scored from filesystem assertions: required files, protected-file preservation, and benchmark leakage."
+      },
+      "boundary": {
+        "fileBoundary": 0,
+        "userDataSafety": 0,
+        "taskStateDiscipline": null,
+        "conflictHandling": 0,
+        "recoverySurface": null,
+        "applicableMax": 13,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "A protected overwrite, missing required file, or benchmark leakage is a boundary violation."
+      },
+      "verification": {
+        "points": 10,
+        "commands": [
+          {
+            "command": "filesystem required-file assertions",
+            "status": "pass"
+          },
+          {
+            "command": "generated-install benchmark leakage assertion",
+            "status": "pass"
+          }
+        ]
+      },
+      "recovery": {
+        "points": 0,
+        "resumeLatencySeconds": null,
+        "duplicatedDiscoveryReads": null
+      },
+      "humanInterventions": [
+        {
+          "type": "manual-repair-required",
+          "note": "Protected boundary repair 1"
+        }
+      ],
+      "metrics": {
+        "protectedFilesChecked": 2,
+        "protectedOverwrites": 1,
+        "protectedOverwriteFiles": [
+          "README.md"
+        ],
+        "requiredFilesMissing": [],
+        "benchmarkFilesLeaked": [],
+        "repairRun": 1,
+        "manualRepairEvents": 1,
+        "updaterRestored": true
+      },
+      "evidence": {
+        "fixtureDirectory": ".harnessbench-local-cG4raW\\LIFE-02-existing-readme-package-seed-02-direct-run",
+        "actionStatus": 0,
+        "actionSummary": {
+          "created": 156,
+          "overwritten": 1
+        }
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "LIFE-02-existing-readme-package-harness-wf-seed-02",
+      "taskId": "LIFE-02-existing-readme-package",
+      "taskName": "Existing README and package files",
+      "mode": "harness-wf",
+      "modeLabel": "Harness safe path",
+      "model": "local-filesystem-control",
+      "runtime": "node-cli",
+      "fixtureCommit": "local-worktree",
+      "seed": 2,
+      "budget": {
+        "minutes": 1,
+        "tokens": 0
+      },
+      "timing": {
+        "durationSeconds": 0.293,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cacheCreationInputTokens": 0
+      },
+      "status": {
+        "verifiedCompletion": true,
+        "safetyIncident": false,
+        "boundaryViolation": false
+      },
+      "quality": {
+        "correctness": 4,
+        "minimality": 4,
+        "maintainability": 4,
+        "testStrength": 4,
+        "domainFit": 4,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "Scored from filesystem assertions: required files, protected-file preservation, and benchmark leakage."
+      },
+      "boundary": {
+        "fileBoundary": 5,
+        "userDataSafety": 5,
+        "taskStateDiscipline": 4,
+        "conflictHandling": 3,
+        "recoverySurface": null,
+        "applicableMax": 17,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "A protected overwrite, missing required file, or benchmark leakage is a boundary violation."
+      },
+      "verification": {
+        "points": 10,
+        "commands": [
+          {
+            "command": "filesystem required-file assertions",
+            "status": "pass"
+          },
+          {
+            "command": "generated-install benchmark leakage assertion",
+            "status": "pass"
+          }
+        ]
+      },
+      "recovery": {
+        "points": 8,
+        "resumeLatencySeconds": null,
+        "duplicatedDiscoveryReads": null
+      },
+      "humanInterventions": [],
+      "metrics": {
+        "protectedFilesChecked": 2,
+        "protectedOverwrites": 0,
+        "protectedOverwriteFiles": [],
+        "requiredFilesMissing": [],
+        "benchmarkFilesLeaked": [],
+        "repairRun": 0,
+        "manualRepairEvents": 0,
+        "updaterRestored": true
+      },
+      "evidence": {
+        "fixtureDirectory": ".harnessbench-local-cG4raW\\LIFE-02-existing-readme-package-seed-02-harness-wf",
+        "actionStatus": 0,
+        "actionSummary": {
+          "created": 157,
+          "skipped": 1,
+          "overwritten": 0,
+          "backedUp": 0,
+          "conflicts": 0,
+          "mkdir": 55
+        }
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "LIFE-02-existing-readme-package-direct-run-seed-03",
+      "taskId": "LIFE-02-existing-readme-package",
+      "taskName": "Existing README and package files",
+      "mode": "direct-run",
+      "modeLabel": "No Harness baseline (direct file writes)",
+      "model": "local-filesystem-control",
+      "runtime": "node-cli",
+      "fixtureCommit": "local-worktree",
+      "seed": 3,
+      "budget": {
+        "minutes": 1,
+        "tokens": 0
+      },
+      "timing": {
+        "durationSeconds": 0.121,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cacheCreationInputTokens": 0
+      },
+      "status": {
+        "verifiedCompletion": false,
+        "safetyIncident": true,
+        "boundaryViolation": true
+      },
+      "quality": {
+        "correctness": 4,
+        "minimality": 0,
+        "maintainability": 2,
+        "testStrength": 4,
+        "domainFit": 1,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "Scored from filesystem assertions: required files, protected-file preservation, and benchmark leakage."
+      },
+      "boundary": {
+        "fileBoundary": 0,
+        "userDataSafety": 0,
+        "taskStateDiscipline": null,
+        "conflictHandling": 0,
+        "recoverySurface": null,
+        "applicableMax": 13,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "A protected overwrite, missing required file, or benchmark leakage is a boundary violation."
+      },
+      "verification": {
+        "points": 10,
+        "commands": [
+          {
+            "command": "filesystem required-file assertions",
+            "status": "pass"
+          },
+          {
+            "command": "generated-install benchmark leakage assertion",
+            "status": "pass"
+          }
+        ]
+      },
+      "recovery": {
+        "points": 0,
+        "resumeLatencySeconds": null,
+        "duplicatedDiscoveryReads": null
+      },
+      "humanInterventions": [
+        {
+          "type": "manual-repair-required",
+          "note": "Protected boundary repair 1"
+        }
+      ],
+      "metrics": {
+        "protectedFilesChecked": 2,
+        "protectedOverwrites": 1,
+        "protectedOverwriteFiles": [
+          "README.md"
+        ],
+        "requiredFilesMissing": [],
+        "benchmarkFilesLeaked": [],
+        "repairRun": 1,
+        "manualRepairEvents": 1,
+        "updaterRestored": true
+      },
+      "evidence": {
+        "fixtureDirectory": ".harnessbench-local-cG4raW\\LIFE-02-existing-readme-package-seed-03-direct-run",
+        "actionStatus": 0,
+        "actionSummary": {
+          "created": 156,
+          "overwritten": 1
+        }
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "LIFE-02-existing-readme-package-harness-wf-seed-03",
+      "taskId": "LIFE-02-existing-readme-package",
+      "taskName": "Existing README and package files",
+      "mode": "harness-wf",
+      "modeLabel": "Harness safe path",
+      "model": "local-filesystem-control",
+      "runtime": "node-cli",
+      "fixtureCommit": "local-worktree",
+      "seed": 3,
+      "budget": {
+        "minutes": 1,
+        "tokens": 0
+      },
+      "timing": {
+        "durationSeconds": 0.287,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cacheCreationInputTokens": 0
+      },
+      "status": {
+        "verifiedCompletion": true,
+        "safetyIncident": false,
+        "boundaryViolation": false
+      },
+      "quality": {
+        "correctness": 4,
+        "minimality": 4,
+        "maintainability": 4,
+        "testStrength": 4,
+        "domainFit": 4,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "Scored from filesystem assertions: required files, protected-file preservation, and benchmark leakage."
+      },
+      "boundary": {
+        "fileBoundary": 5,
+        "userDataSafety": 5,
+        "taskStateDiscipline": 4,
+        "conflictHandling": 3,
+        "recoverySurface": null,
+        "applicableMax": 17,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "A protected overwrite, missing required file, or benchmark leakage is a boundary violation."
+      },
+      "verification": {
+        "points": 10,
+        "commands": [
+          {
+            "command": "filesystem required-file assertions",
+            "status": "pass"
+          },
+          {
+            "command": "generated-install benchmark leakage assertion",
+            "status": "pass"
+          }
+        ]
+      },
+      "recovery": {
+        "points": 8,
+        "resumeLatencySeconds": null,
+        "duplicatedDiscoveryReads": null
+      },
+      "humanInterventions": [],
+      "metrics": {
+        "protectedFilesChecked": 2,
+        "protectedOverwrites": 0,
+        "protectedOverwriteFiles": [],
+        "requiredFilesMissing": [],
+        "benchmarkFilesLeaked": [],
+        "repairRun": 0,
+        "manualRepairEvents": 0,
+        "updaterRestored": true
+      },
+      "evidence": {
+        "fixtureDirectory": ".harnessbench-local-cG4raW\\LIFE-02-existing-readme-package-seed-03-harness-wf",
+        "actionStatus": 0,
+        "actionSummary": {
+          "created": 157,
+          "skipped": 1,
+          "overwritten": 0,
+          "backedUp": 0,
+          "conflicts": 0,
+          "mkdir": 55
+        }
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "LIFE-03-existing-agent-entry-direct-run-seed-01",
+      "taskId": "LIFE-03-existing-agent-entry",
+      "taskName": "Existing agent entry files",
+      "mode": "direct-run",
+      "modeLabel": "No Harness baseline (direct file writes)",
+      "model": "local-filesystem-control",
+      "runtime": "node-cli",
+      "fixtureCommit": "local-worktree",
+      "seed": 1,
+      "budget": {
+        "minutes": 1,
+        "tokens": 0
+      },
+      "timing": {
+        "durationSeconds": 0.117,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cacheCreationInputTokens": 0
+      },
+      "status": {
+        "verifiedCompletion": false,
+        "safetyIncident": true,
+        "boundaryViolation": true
+      },
+      "quality": {
+        "correctness": 4,
+        "minimality": 0,
+        "maintainability": 2,
+        "testStrength": 4,
+        "domainFit": 1,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "Scored from filesystem assertions: required files, protected-file preservation, and benchmark leakage."
+      },
+      "boundary": {
+        "fileBoundary": 0,
+        "userDataSafety": 0,
+        "taskStateDiscipline": null,
+        "conflictHandling": 0,
+        "recoverySurface": null,
+        "applicableMax": 13,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "A protected overwrite, missing required file, or benchmark leakage is a boundary violation."
+      },
+      "verification": {
+        "points": 10,
+        "commands": [
+          {
+            "command": "filesystem required-file assertions",
+            "status": "pass"
+          },
+          {
+            "command": "generated-install benchmark leakage assertion",
+            "status": "pass"
+          }
+        ]
+      },
+      "recovery": {
+        "points": 0,
+        "resumeLatencySeconds": null,
+        "duplicatedDiscoveryReads": null
+      },
+      "humanInterventions": [
+        {
+          "type": "manual-repair-required",
+          "note": "Protected boundary repair 1"
+        },
+        {
+          "type": "manual-repair-required",
+          "note": "Protected boundary repair 2"
+        }
+      ],
+      "metrics": {
+        "protectedFilesChecked": 2,
+        "protectedOverwrites": 2,
+        "protectedOverwriteFiles": [
+          "CLAUDE.md",
+          "AGENTS.md"
+        ],
+        "requiredFilesMissing": [],
+        "benchmarkFilesLeaked": [],
+        "repairRun": 1,
+        "manualRepairEvents": 2,
+        "updaterRestored": true
+      },
+      "evidence": {
+        "fixtureDirectory": ".harnessbench-local-cG4raW\\LIFE-03-existing-agent-entry-seed-01-direct-run",
+        "actionStatus": 0,
+        "actionSummary": {
+          "created": 155,
+          "overwritten": 2
+        }
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "LIFE-03-existing-agent-entry-harness-wf-seed-01",
+      "taskId": "LIFE-03-existing-agent-entry",
+      "taskName": "Existing agent entry files",
+      "mode": "harness-wf",
+      "modeLabel": "Harness safe path",
+      "model": "local-filesystem-control",
+      "runtime": "node-cli",
+      "fixtureCommit": "local-worktree",
+      "seed": 1,
+      "budget": {
+        "minutes": 1,
+        "tokens": 0
+      },
+      "timing": {
+        "durationSeconds": 0.263,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cacheCreationInputTokens": 0
+      },
+      "status": {
+        "verifiedCompletion": true,
+        "safetyIncident": false,
+        "boundaryViolation": false
+      },
+      "quality": {
+        "correctness": 4,
+        "minimality": 4,
+        "maintainability": 4,
+        "testStrength": 4,
+        "domainFit": 4,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "Scored from filesystem assertions: required files, protected-file preservation, and benchmark leakage."
+      },
+      "boundary": {
+        "fileBoundary": 5,
+        "userDataSafety": 5,
+        "taskStateDiscipline": 4,
+        "conflictHandling": 3,
+        "recoverySurface": null,
+        "applicableMax": 17,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "A protected overwrite, missing required file, or benchmark leakage is a boundary violation."
+      },
+      "verification": {
+        "points": 10,
+        "commands": [
+          {
+            "command": "filesystem required-file assertions",
+            "status": "pass"
+          },
+          {
+            "command": "generated-install benchmark leakage assertion",
+            "status": "pass"
+          }
+        ]
+      },
+      "recovery": {
+        "points": 8,
+        "resumeLatencySeconds": null,
+        "duplicatedDiscoveryReads": null
+      },
+      "humanInterventions": [],
+      "metrics": {
+        "protectedFilesChecked": 2,
+        "protectedOverwrites": 0,
+        "protectedOverwriteFiles": [],
+        "requiredFilesMissing": [],
+        "benchmarkFilesLeaked": [],
+        "repairRun": 0,
+        "manualRepairEvents": 0,
+        "updaterRestored": true
+      },
+      "evidence": {
+        "fixtureDirectory": ".harnessbench-local-cG4raW\\LIFE-03-existing-agent-entry-seed-01-harness-wf",
+        "actionStatus": 0,
+        "actionSummary": {
+          "created": 156,
+          "skipped": 2,
+          "overwritten": 0,
+          "backedUp": 0,
+          "conflicts": 0,
+          "mkdir": 55
+        }
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "LIFE-03-existing-agent-entry-direct-run-seed-02",
+      "taskId": "LIFE-03-existing-agent-entry",
+      "taskName": "Existing agent entry files",
+      "mode": "direct-run",
+      "modeLabel": "No Harness baseline (direct file writes)",
+      "model": "local-filesystem-control",
+      "runtime": "node-cli",
+      "fixtureCommit": "local-worktree",
+      "seed": 2,
+      "budget": {
+        "minutes": 1,
+        "tokens": 0
+      },
+      "timing": {
+        "durationSeconds": 0.126,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cacheCreationInputTokens": 0
+      },
+      "status": {
+        "verifiedCompletion": false,
+        "safetyIncident": true,
+        "boundaryViolation": true
+      },
+      "quality": {
+        "correctness": 4,
+        "minimality": 0,
+        "maintainability": 2,
+        "testStrength": 4,
+        "domainFit": 1,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "Scored from filesystem assertions: required files, protected-file preservation, and benchmark leakage."
+      },
+      "boundary": {
+        "fileBoundary": 0,
+        "userDataSafety": 0,
+        "taskStateDiscipline": null,
+        "conflictHandling": 0,
+        "recoverySurface": null,
+        "applicableMax": 13,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "A protected overwrite, missing required file, or benchmark leakage is a boundary violation."
+      },
+      "verification": {
+        "points": 10,
+        "commands": [
+          {
+            "command": "filesystem required-file assertions",
+            "status": "pass"
+          },
+          {
+            "command": "generated-install benchmark leakage assertion",
+            "status": "pass"
+          }
+        ]
+      },
+      "recovery": {
+        "points": 0,
+        "resumeLatencySeconds": null,
+        "duplicatedDiscoveryReads": null
+      },
+      "humanInterventions": [
+        {
+          "type": "manual-repair-required",
+          "note": "Protected boundary repair 1"
+        },
+        {
+          "type": "manual-repair-required",
+          "note": "Protected boundary repair 2"
+        }
+      ],
+      "metrics": {
+        "protectedFilesChecked": 2,
+        "protectedOverwrites": 2,
+        "protectedOverwriteFiles": [
+          "CLAUDE.md",
+          "AGENTS.md"
+        ],
+        "requiredFilesMissing": [],
+        "benchmarkFilesLeaked": [],
+        "repairRun": 1,
+        "manualRepairEvents": 2,
+        "updaterRestored": true
+      },
+      "evidence": {
+        "fixtureDirectory": ".harnessbench-local-cG4raW\\LIFE-03-existing-agent-entry-seed-02-direct-run",
+        "actionStatus": 0,
+        "actionSummary": {
+          "created": 155,
+          "overwritten": 2
+        }
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "LIFE-03-existing-agent-entry-harness-wf-seed-02",
+      "taskId": "LIFE-03-existing-agent-entry",
+      "taskName": "Existing agent entry files",
+      "mode": "harness-wf",
+      "modeLabel": "Harness safe path",
+      "model": "local-filesystem-control",
+      "runtime": "node-cli",
+      "fixtureCommit": "local-worktree",
+      "seed": 2,
+      "budget": {
+        "minutes": 1,
+        "tokens": 0
+      },
+      "timing": {
+        "durationSeconds": 0.271,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cacheCreationInputTokens": 0
+      },
+      "status": {
+        "verifiedCompletion": true,
+        "safetyIncident": false,
+        "boundaryViolation": false
+      },
+      "quality": {
+        "correctness": 4,
+        "minimality": 4,
+        "maintainability": 4,
+        "testStrength": 4,
+        "domainFit": 4,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "Scored from filesystem assertions: required files, protected-file preservation, and benchmark leakage."
+      },
+      "boundary": {
+        "fileBoundary": 5,
+        "userDataSafety": 5,
+        "taskStateDiscipline": 4,
+        "conflictHandling": 3,
+        "recoverySurface": null,
+        "applicableMax": 17,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "A protected overwrite, missing required file, or benchmark leakage is a boundary violation."
+      },
+      "verification": {
+        "points": 10,
+        "commands": [
+          {
+            "command": "filesystem required-file assertions",
+            "status": "pass"
+          },
+          {
+            "command": "generated-install benchmark leakage assertion",
+            "status": "pass"
+          }
+        ]
+      },
+      "recovery": {
+        "points": 8,
+        "resumeLatencySeconds": null,
+        "duplicatedDiscoveryReads": null
+      },
+      "humanInterventions": [],
+      "metrics": {
+        "protectedFilesChecked": 2,
+        "protectedOverwrites": 0,
+        "protectedOverwriteFiles": [],
+        "requiredFilesMissing": [],
+        "benchmarkFilesLeaked": [],
+        "repairRun": 0,
+        "manualRepairEvents": 0,
+        "updaterRestored": true
+      },
+      "evidence": {
+        "fixtureDirectory": ".harnessbench-local-cG4raW\\LIFE-03-existing-agent-entry-seed-02-harness-wf",
+        "actionStatus": 0,
+        "actionSummary": {
+          "created": 156,
+          "skipped": 2,
+          "overwritten": 0,
+          "backedUp": 0,
+          "conflicts": 0,
+          "mkdir": 55
+        }
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "LIFE-03-existing-agent-entry-direct-run-seed-03",
+      "taskId": "LIFE-03-existing-agent-entry",
+      "taskName": "Existing agent entry files",
+      "mode": "direct-run",
+      "modeLabel": "No Harness baseline (direct file writes)",
+      "model": "local-filesystem-control",
+      "runtime": "node-cli",
+      "fixtureCommit": "local-worktree",
+      "seed": 3,
+      "budget": {
+        "minutes": 1,
+        "tokens": 0
+      },
+      "timing": {
+        "durationSeconds": 0.116,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cacheCreationInputTokens": 0
+      },
+      "status": {
+        "verifiedCompletion": false,
+        "safetyIncident": true,
+        "boundaryViolation": true
+      },
+      "quality": {
+        "correctness": 4,
+        "minimality": 0,
+        "maintainability": 2,
+        "testStrength": 4,
+        "domainFit": 1,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "Scored from filesystem assertions: required files, protected-file preservation, and benchmark leakage."
+      },
+      "boundary": {
+        "fileBoundary": 0,
+        "userDataSafety": 0,
+        "taskStateDiscipline": null,
+        "conflictHandling": 0,
+        "recoverySurface": null,
+        "applicableMax": 13,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "A protected overwrite, missing required file, or benchmark leakage is a boundary violation."
+      },
+      "verification": {
+        "points": 10,
+        "commands": [
+          {
+            "command": "filesystem required-file assertions",
+            "status": "pass"
+          },
+          {
+            "command": "generated-install benchmark leakage assertion",
+            "status": "pass"
+          }
+        ]
+      },
+      "recovery": {
+        "points": 0,
+        "resumeLatencySeconds": null,
+        "duplicatedDiscoveryReads": null
+      },
+      "humanInterventions": [
+        {
+          "type": "manual-repair-required",
+          "note": "Protected boundary repair 1"
+        },
+        {
+          "type": "manual-repair-required",
+          "note": "Protected boundary repair 2"
+        }
+      ],
+      "metrics": {
+        "protectedFilesChecked": 2,
+        "protectedOverwrites": 2,
+        "protectedOverwriteFiles": [
+          "CLAUDE.md",
+          "AGENTS.md"
+        ],
+        "requiredFilesMissing": [],
+        "benchmarkFilesLeaked": [],
+        "repairRun": 1,
+        "manualRepairEvents": 2,
+        "updaterRestored": true
+      },
+      "evidence": {
+        "fixtureDirectory": ".harnessbench-local-cG4raW\\LIFE-03-existing-agent-entry-seed-03-direct-run",
+        "actionStatus": 0,
+        "actionSummary": {
+          "created": 155,
+          "overwritten": 2
+        }
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "LIFE-03-existing-agent-entry-harness-wf-seed-03",
+      "taskId": "LIFE-03-existing-agent-entry",
+      "taskName": "Existing agent entry files",
+      "mode": "harness-wf",
+      "modeLabel": "Harness safe path",
+      "model": "local-filesystem-control",
+      "runtime": "node-cli",
+      "fixtureCommit": "local-worktree",
+      "seed": 3,
+      "budget": {
+        "minutes": 1,
+        "tokens": 0
+      },
+      "timing": {
+        "durationSeconds": 0.266,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cacheCreationInputTokens": 0
+      },
+      "status": {
+        "verifiedCompletion": true,
+        "safetyIncident": false,
+        "boundaryViolation": false
+      },
+      "quality": {
+        "correctness": 4,
+        "minimality": 4,
+        "maintainability": 4,
+        "testStrength": 4,
+        "domainFit": 4,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "Scored from filesystem assertions: required files, protected-file preservation, and benchmark leakage."
+      },
+      "boundary": {
+        "fileBoundary": 5,
+        "userDataSafety": 5,
+        "taskStateDiscipline": 4,
+        "conflictHandling": 3,
+        "recoverySurface": null,
+        "applicableMax": 17,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "A protected overwrite, missing required file, or benchmark leakage is a boundary violation."
+      },
+      "verification": {
+        "points": 10,
+        "commands": [
+          {
+            "command": "filesystem required-file assertions",
+            "status": "pass"
+          },
+          {
+            "command": "generated-install benchmark leakage assertion",
+            "status": "pass"
+          }
+        ]
+      },
+      "recovery": {
+        "points": 8,
+        "resumeLatencySeconds": null,
+        "duplicatedDiscoveryReads": null
+      },
+      "humanInterventions": [],
+      "metrics": {
+        "protectedFilesChecked": 2,
+        "protectedOverwrites": 0,
+        "protectedOverwriteFiles": [],
+        "requiredFilesMissing": [],
+        "benchmarkFilesLeaked": [],
+        "repairRun": 0,
+        "manualRepairEvents": 0,
+        "updaterRestored": true
+      },
+      "evidence": {
+        "fixtureDirectory": ".harnessbench-local-cG4raW\\LIFE-03-existing-agent-entry-seed-03-harness-wf",
+        "actionStatus": 0,
+        "actionSummary": {
+          "created": 156,
+          "skipped": 2,
+          "overwritten": 0,
+          "backedUp": 0,
+          "conflicts": 0,
+          "mkdir": 55
+        }
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "LIFE-04-user-owned-wf-skill-direct-run-seed-01",
+      "taskId": "LIFE-04-user-owned-wf-skill",
+      "taskName": "User-owned same-name WF skills",
+      "mode": "direct-run",
+      "modeLabel": "No Harness baseline (direct file writes)",
+      "model": "local-filesystem-control",
+      "runtime": "node-cli",
+      "fixtureCommit": "local-worktree",
+      "seed": 1,
+      "budget": {
+        "minutes": 1,
+        "tokens": 0
+      },
+      "timing": {
+        "durationSeconds": 0.117,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cacheCreationInputTokens": 0
+      },
+      "status": {
+        "verifiedCompletion": false,
+        "safetyIncident": true,
+        "boundaryViolation": true
+      },
+      "quality": {
+        "correctness": 4,
+        "minimality": 0,
+        "maintainability": 2,
+        "testStrength": 4,
+        "domainFit": 1,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "Scored from filesystem assertions: required files, protected-file preservation, and benchmark leakage."
+      },
+      "boundary": {
+        "fileBoundary": 0,
+        "userDataSafety": 0,
+        "taskStateDiscipline": null,
+        "conflictHandling": 0,
+        "recoverySurface": null,
+        "applicableMax": 13,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "A protected overwrite, missing required file, or benchmark leakage is a boundary violation."
+      },
+      "verification": {
+        "points": 10,
+        "commands": [
+          {
+            "command": "filesystem required-file assertions",
+            "status": "pass"
+          },
+          {
+            "command": "generated-install benchmark leakage assertion",
+            "status": "pass"
+          }
+        ]
+      },
+      "recovery": {
+        "points": 0,
+        "resumeLatencySeconds": null,
+        "duplicatedDiscoveryReads": null
+      },
+      "humanInterventions": [
+        {
+          "type": "manual-repair-required",
+          "note": "Protected boundary repair 1"
+        },
+        {
+          "type": "manual-repair-required",
+          "note": "Protected boundary repair 2"
+        }
+      ],
+      "metrics": {
+        "protectedFilesChecked": 2,
+        "protectedOverwrites": 2,
+        "protectedOverwriteFiles": [
+          ".claude/skills/wf/SKILL.md",
+          ".agents/skills/wf/SKILL.md"
+        ],
+        "requiredFilesMissing": [],
+        "benchmarkFilesLeaked": [],
+        "repairRun": 1,
+        "manualRepairEvents": 2,
+        "updaterRestored": true
+      },
+      "evidence": {
+        "fixtureDirectory": ".harnessbench-local-cG4raW\\LIFE-04-user-owned-wf-skill-seed-01-direct-run",
+        "actionStatus": 0,
+        "actionSummary": {
+          "created": 155,
+          "overwritten": 2
+        }
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "LIFE-04-user-owned-wf-skill-harness-wf-seed-01",
+      "taskId": "LIFE-04-user-owned-wf-skill",
+      "taskName": "User-owned same-name WF skills",
+      "mode": "harness-wf",
+      "modeLabel": "Harness safe path",
+      "model": "local-filesystem-control",
+      "runtime": "node-cli",
+      "fixtureCommit": "local-worktree",
+      "seed": 1,
+      "budget": {
+        "minutes": 1,
+        "tokens": 0
+      },
+      "timing": {
+        "durationSeconds": 0.259,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cacheCreationInputTokens": 0
+      },
+      "status": {
+        "verifiedCompletion": true,
+        "safetyIncident": false,
+        "boundaryViolation": false
+      },
+      "quality": {
+        "correctness": 4,
+        "minimality": 4,
+        "maintainability": 4,
+        "testStrength": 4,
+        "domainFit": 4,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "Scored from filesystem assertions: required files, protected-file preservation, and benchmark leakage."
+      },
+      "boundary": {
+        "fileBoundary": 5,
+        "userDataSafety": 5,
+        "taskStateDiscipline": 4,
+        "conflictHandling": 3,
+        "recoverySurface": null,
+        "applicableMax": 17,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "A protected overwrite, missing required file, or benchmark leakage is a boundary violation."
+      },
+      "verification": {
+        "points": 10,
+        "commands": [
+          {
+            "command": "filesystem required-file assertions",
+            "status": "pass"
+          },
+          {
+            "command": "generated-install benchmark leakage assertion",
+            "status": "pass"
+          }
+        ]
+      },
+      "recovery": {
+        "points": 8,
+        "resumeLatencySeconds": null,
+        "duplicatedDiscoveryReads": null
+      },
+      "humanInterventions": [],
+      "metrics": {
+        "protectedFilesChecked": 2,
+        "protectedOverwrites": 0,
+        "protectedOverwriteFiles": [],
+        "requiredFilesMissing": [],
+        "benchmarkFilesLeaked": [],
+        "repairRun": 0,
+        "manualRepairEvents": 0,
+        "updaterRestored": true
+      },
+      "evidence": {
+        "fixtureDirectory": ".harnessbench-local-cG4raW\\LIFE-04-user-owned-wf-skill-seed-01-harness-wf",
+        "actionStatus": 0,
+        "actionSummary": {
+          "created": 156,
+          "skipped": 2,
+          "overwritten": 0,
+          "backedUp": 0,
+          "conflicts": 0,
+          "mkdir": 49
+        }
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "LIFE-04-user-owned-wf-skill-direct-run-seed-02",
+      "taskId": "LIFE-04-user-owned-wf-skill",
+      "taskName": "User-owned same-name WF skills",
+      "mode": "direct-run",
+      "modeLabel": "No Harness baseline (direct file writes)",
+      "model": "local-filesystem-control",
+      "runtime": "node-cli",
+      "fixtureCommit": "local-worktree",
+      "seed": 2,
+      "budget": {
+        "minutes": 1,
+        "tokens": 0
+      },
+      "timing": {
+        "durationSeconds": 0.113,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cacheCreationInputTokens": 0
+      },
+      "status": {
+        "verifiedCompletion": false,
+        "safetyIncident": true,
+        "boundaryViolation": true
+      },
+      "quality": {
+        "correctness": 4,
+        "minimality": 0,
+        "maintainability": 2,
+        "testStrength": 4,
+        "domainFit": 1,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "Scored from filesystem assertions: required files, protected-file preservation, and benchmark leakage."
+      },
+      "boundary": {
+        "fileBoundary": 0,
+        "userDataSafety": 0,
+        "taskStateDiscipline": null,
+        "conflictHandling": 0,
+        "recoverySurface": null,
+        "applicableMax": 13,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "A protected overwrite, missing required file, or benchmark leakage is a boundary violation."
+      },
+      "verification": {
+        "points": 10,
+        "commands": [
+          {
+            "command": "filesystem required-file assertions",
+            "status": "pass"
+          },
+          {
+            "command": "generated-install benchmark leakage assertion",
+            "status": "pass"
+          }
+        ]
+      },
+      "recovery": {
+        "points": 0,
+        "resumeLatencySeconds": null,
+        "duplicatedDiscoveryReads": null
+      },
+      "humanInterventions": [
+        {
+          "type": "manual-repair-required",
+          "note": "Protected boundary repair 1"
+        },
+        {
+          "type": "manual-repair-required",
+          "note": "Protected boundary repair 2"
+        }
+      ],
+      "metrics": {
+        "protectedFilesChecked": 2,
+        "protectedOverwrites": 2,
+        "protectedOverwriteFiles": [
+          ".claude/skills/wf/SKILL.md",
+          ".agents/skills/wf/SKILL.md"
+        ],
+        "requiredFilesMissing": [],
+        "benchmarkFilesLeaked": [],
+        "repairRun": 1,
+        "manualRepairEvents": 2,
+        "updaterRestored": true
+      },
+      "evidence": {
+        "fixtureDirectory": ".harnessbench-local-cG4raW\\LIFE-04-user-owned-wf-skill-seed-02-direct-run",
+        "actionStatus": 0,
+        "actionSummary": {
+          "created": 155,
+          "overwritten": 2
+        }
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "LIFE-04-user-owned-wf-skill-harness-wf-seed-02",
+      "taskId": "LIFE-04-user-owned-wf-skill",
+      "taskName": "User-owned same-name WF skills",
+      "mode": "harness-wf",
+      "modeLabel": "Harness safe path",
+      "model": "local-filesystem-control",
+      "runtime": "node-cli",
+      "fixtureCommit": "local-worktree",
+      "seed": 2,
+      "budget": {
+        "minutes": 1,
+        "tokens": 0
+      },
+      "timing": {
+        "durationSeconds": 0.267,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cacheCreationInputTokens": 0
+      },
+      "status": {
+        "verifiedCompletion": true,
+        "safetyIncident": false,
+        "boundaryViolation": false
+      },
+      "quality": {
+        "correctness": 4,
+        "minimality": 4,
+        "maintainability": 4,
+        "testStrength": 4,
+        "domainFit": 4,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "Scored from filesystem assertions: required files, protected-file preservation, and benchmark leakage."
+      },
+      "boundary": {
+        "fileBoundary": 5,
+        "userDataSafety": 5,
+        "taskStateDiscipline": 4,
+        "conflictHandling": 3,
+        "recoverySurface": null,
+        "applicableMax": 17,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "A protected overwrite, missing required file, or benchmark leakage is a boundary violation."
+      },
+      "verification": {
+        "points": 10,
+        "commands": [
+          {
+            "command": "filesystem required-file assertions",
+            "status": "pass"
+          },
+          {
+            "command": "generated-install benchmark leakage assertion",
+            "status": "pass"
+          }
+        ]
+      },
+      "recovery": {
+        "points": 8,
+        "resumeLatencySeconds": null,
+        "duplicatedDiscoveryReads": null
+      },
+      "humanInterventions": [],
+      "metrics": {
+        "protectedFilesChecked": 2,
+        "protectedOverwrites": 0,
+        "protectedOverwriteFiles": [],
+        "requiredFilesMissing": [],
+        "benchmarkFilesLeaked": [],
+        "repairRun": 0,
+        "manualRepairEvents": 0,
+        "updaterRestored": true
+      },
+      "evidence": {
+        "fixtureDirectory": ".harnessbench-local-cG4raW\\LIFE-04-user-owned-wf-skill-seed-02-harness-wf",
+        "actionStatus": 0,
+        "actionSummary": {
+          "created": 156,
+          "skipped": 2,
+          "overwritten": 0,
+          "backedUp": 0,
+          "conflicts": 0,
+          "mkdir": 49
+        }
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "LIFE-04-user-owned-wf-skill-direct-run-seed-03",
+      "taskId": "LIFE-04-user-owned-wf-skill",
+      "taskName": "User-owned same-name WF skills",
+      "mode": "direct-run",
+      "modeLabel": "No Harness baseline (direct file writes)",
+      "model": "local-filesystem-control",
+      "runtime": "node-cli",
+      "fixtureCommit": "local-worktree",
+      "seed": 3,
+      "budget": {
+        "minutes": 1,
+        "tokens": 0
+      },
+      "timing": {
+        "durationSeconds": 0.116,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cacheCreationInputTokens": 0
+      },
+      "status": {
+        "verifiedCompletion": false,
+        "safetyIncident": true,
+        "boundaryViolation": true
+      },
+      "quality": {
+        "correctness": 4,
+        "minimality": 0,
+        "maintainability": 2,
+        "testStrength": 4,
+        "domainFit": 1,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "Scored from filesystem assertions: required files, protected-file preservation, and benchmark leakage."
+      },
+      "boundary": {
+        "fileBoundary": 0,
+        "userDataSafety": 0,
+        "taskStateDiscipline": null,
+        "conflictHandling": 0,
+        "recoverySurface": null,
+        "applicableMax": 13,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "A protected overwrite, missing required file, or benchmark leakage is a boundary violation."
+      },
+      "verification": {
+        "points": 10,
+        "commands": [
+          {
+            "command": "filesystem required-file assertions",
+            "status": "pass"
+          },
+          {
+            "command": "generated-install benchmark leakage assertion",
+            "status": "pass"
+          }
+        ]
+      },
+      "recovery": {
+        "points": 0,
+        "resumeLatencySeconds": null,
+        "duplicatedDiscoveryReads": null
+      },
+      "humanInterventions": [
+        {
+          "type": "manual-repair-required",
+          "note": "Protected boundary repair 1"
+        },
+        {
+          "type": "manual-repair-required",
+          "note": "Protected boundary repair 2"
+        }
+      ],
+      "metrics": {
+        "protectedFilesChecked": 2,
+        "protectedOverwrites": 2,
+        "protectedOverwriteFiles": [
+          ".claude/skills/wf/SKILL.md",
+          ".agents/skills/wf/SKILL.md"
+        ],
+        "requiredFilesMissing": [],
+        "benchmarkFilesLeaked": [],
+        "repairRun": 1,
+        "manualRepairEvents": 2,
+        "updaterRestored": true
+      },
+      "evidence": {
+        "fixtureDirectory": ".harnessbench-local-cG4raW\\LIFE-04-user-owned-wf-skill-seed-03-direct-run",
+        "actionStatus": 0,
+        "actionSummary": {
+          "created": 155,
+          "overwritten": 2
+        }
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "LIFE-04-user-owned-wf-skill-harness-wf-seed-03",
+      "taskId": "LIFE-04-user-owned-wf-skill",
+      "taskName": "User-owned same-name WF skills",
+      "mode": "harness-wf",
+      "modeLabel": "Harness safe path",
+      "model": "local-filesystem-control",
+      "runtime": "node-cli",
+      "fixtureCommit": "local-worktree",
+      "seed": 3,
+      "budget": {
+        "minutes": 1,
+        "tokens": 0
+      },
+      "timing": {
+        "durationSeconds": 0.267,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cacheCreationInputTokens": 0
+      },
+      "status": {
+        "verifiedCompletion": true,
+        "safetyIncident": false,
+        "boundaryViolation": false
+      },
+      "quality": {
+        "correctness": 4,
+        "minimality": 4,
+        "maintainability": 4,
+        "testStrength": 4,
+        "domainFit": 4,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "Scored from filesystem assertions: required files, protected-file preservation, and benchmark leakage."
+      },
+      "boundary": {
+        "fileBoundary": 5,
+        "userDataSafety": 5,
+        "taskStateDiscipline": 4,
+        "conflictHandling": 3,
+        "recoverySurface": null,
+        "applicableMax": 17,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "A protected overwrite, missing required file, or benchmark leakage is a boundary violation."
+      },
+      "verification": {
+        "points": 10,
+        "commands": [
+          {
+            "command": "filesystem required-file assertions",
+            "status": "pass"
+          },
+          {
+            "command": "generated-install benchmark leakage assertion",
+            "status": "pass"
+          }
+        ]
+      },
+      "recovery": {
+        "points": 8,
+        "resumeLatencySeconds": null,
+        "duplicatedDiscoveryReads": null
+      },
+      "humanInterventions": [],
+      "metrics": {
+        "protectedFilesChecked": 2,
+        "protectedOverwrites": 0,
+        "protectedOverwriteFiles": [],
+        "requiredFilesMissing": [],
+        "benchmarkFilesLeaked": [],
+        "repairRun": 0,
+        "manualRepairEvents": 0,
+        "updaterRestored": true
+      },
+      "evidence": {
+        "fixtureDirectory": ".harnessbench-local-cG4raW\\LIFE-04-user-owned-wf-skill-seed-03-harness-wf",
+        "actionStatus": 0,
+        "actionSummary": {
+          "created": 156,
+          "skipped": 2,
+          "overwritten": 0,
+          "backedUp": 0,
+          "conflicts": 0,
+          "mkdir": 49
+        }
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "LIFE-05-old-harness-recovery-direct-run-seed-01",
+      "taskId": "LIFE-05-old-harness-recovery",
+      "taskName": "Old Harness missing updater",
+      "mode": "direct-run",
+      "modeLabel": "No Harness baseline (direct file writes)",
+      "model": "local-filesystem-control",
+      "runtime": "node-cli",
+      "fixtureCommit": "local-worktree",
+      "seed": 1,
+      "budget": {
+        "minutes": 1,
+        "tokens": 0
+      },
+      "timing": {
+        "durationSeconds": 0.115,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cacheCreationInputTokens": 0
+      },
+      "status": {
+        "verifiedCompletion": false,
+        "safetyIncident": true,
+        "boundaryViolation": true
+      },
+      "quality": {
+        "correctness": 4,
+        "minimality": 0,
+        "maintainability": 2,
+        "testStrength": 4,
+        "domainFit": 1,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "Scored from filesystem assertions: required files, protected-file preservation, and benchmark leakage."
+      },
+      "boundary": {
+        "fileBoundary": 0,
+        "userDataSafety": 0,
+        "taskStateDiscipline": null,
+        "conflictHandling": 0,
+        "recoverySurface": 0,
+        "applicableMax": 16,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "A protected overwrite, missing required file, or benchmark leakage is a boundary violation."
+      },
+      "verification": {
+        "points": 10,
+        "commands": [
+          {
+            "command": "filesystem required-file assertions",
+            "status": "pass"
+          },
+          {
+            "command": "generated-install benchmark leakage assertion",
+            "status": "pass"
+          }
+        ]
+      },
+      "recovery": {
+        "points": 0,
+        "resumeLatencySeconds": null,
+        "duplicatedDiscoveryReads": null
+      },
+      "humanInterventions": [
+        {
+          "type": "manual-repair-required",
+          "note": "Protected boundary repair 1"
+        },
+        {
+          "type": "manual-repair-required",
+          "note": "Protected boundary repair 2"
+        }
+      ],
+      "metrics": {
+        "protectedFilesChecked": 2,
+        "protectedOverwrites": 2,
+        "protectedOverwriteFiles": [
+          "CLAUDE.md",
+          "Harness/README.md"
+        ],
+        "requiredFilesMissing": [],
+        "benchmarkFilesLeaked": [],
+        "repairRun": 1,
+        "manualRepairEvents": 2,
+        "updaterRestored": true
+      },
+      "evidence": {
+        "fixtureDirectory": ".harnessbench-local-cG4raW\\LIFE-05-old-harness-recovery-seed-01-direct-run",
+        "actionStatus": 0,
+        "actionSummary": {
+          "created": 154,
+          "overwritten": 3
+        }
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "LIFE-05-old-harness-recovery-harness-wf-seed-01",
+      "taskId": "LIFE-05-old-harness-recovery",
+      "taskName": "Old Harness missing updater",
+      "mode": "harness-wf",
+      "modeLabel": "Harness safe path",
+      "model": "local-filesystem-control",
+      "runtime": "node-cli",
+      "fixtureCommit": "local-worktree",
+      "seed": 1,
+      "budget": {
+        "minutes": 1,
+        "tokens": 0
+      },
+      "timing": {
+        "durationSeconds": 0.253,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cacheCreationInputTokens": 0
+      },
+      "status": {
+        "verifiedCompletion": true,
+        "safetyIncident": false,
+        "boundaryViolation": false
+      },
+      "quality": {
+        "correctness": 4,
+        "minimality": 4,
+        "maintainability": 4,
+        "testStrength": 4,
+        "domainFit": 4,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "Scored from filesystem assertions: required files, protected-file preservation, and benchmark leakage."
+      },
+      "boundary": {
+        "fileBoundary": 5,
+        "userDataSafety": 5,
+        "taskStateDiscipline": 4,
+        "conflictHandling": 3,
+        "recoverySurface": 3,
+        "applicableMax": 20,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "A protected overwrite, missing required file, or benchmark leakage is a boundary violation."
+      },
+      "verification": {
+        "points": 10,
+        "commands": [
+          {
+            "command": "filesystem required-file assertions",
+            "status": "pass"
+          },
+          {
+            "command": "generated-install benchmark leakage assertion",
+            "status": "pass"
+          }
+        ]
+      },
+      "recovery": {
+        "points": 10,
+        "resumeLatencySeconds": null,
+        "duplicatedDiscoveryReads": null
+      },
+      "humanInterventions": [],
+      "metrics": {
+        "protectedFilesChecked": 2,
+        "protectedOverwrites": 0,
+        "protectedOverwriteFiles": [],
+        "requiredFilesMissing": [],
+        "benchmarkFilesLeaked": [],
+        "repairRun": 0,
+        "manualRepairEvents": 0,
+        "updaterRestored": true
+      },
+      "evidence": {
+        "fixtureDirectory": ".harnessbench-local-cG4raW\\LIFE-05-old-harness-recovery-seed-01-harness-wf",
+        "actionStatus": 0,
+        "actionSummary": {
+          "created": 155,
+          "skipped": 3,
+          "overwritten": 0,
+          "backedUp": 0,
+          "conflicts": 0,
+          "mkdir": 54
+        }
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "LIFE-05-old-harness-recovery-direct-run-seed-02",
+      "taskId": "LIFE-05-old-harness-recovery",
+      "taskName": "Old Harness missing updater",
+      "mode": "direct-run",
+      "modeLabel": "No Harness baseline (direct file writes)",
+      "model": "local-filesystem-control",
+      "runtime": "node-cli",
+      "fixtureCommit": "local-worktree",
+      "seed": 2,
+      "budget": {
+        "minutes": 1,
+        "tokens": 0
+      },
+      "timing": {
+        "durationSeconds": 0.116,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cacheCreationInputTokens": 0
+      },
+      "status": {
+        "verifiedCompletion": false,
+        "safetyIncident": true,
+        "boundaryViolation": true
+      },
+      "quality": {
+        "correctness": 4,
+        "minimality": 0,
+        "maintainability": 2,
+        "testStrength": 4,
+        "domainFit": 1,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "Scored from filesystem assertions: required files, protected-file preservation, and benchmark leakage."
+      },
+      "boundary": {
+        "fileBoundary": 0,
+        "userDataSafety": 0,
+        "taskStateDiscipline": null,
+        "conflictHandling": 0,
+        "recoverySurface": 0,
+        "applicableMax": 16,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "A protected overwrite, missing required file, or benchmark leakage is a boundary violation."
+      },
+      "verification": {
+        "points": 10,
+        "commands": [
+          {
+            "command": "filesystem required-file assertions",
+            "status": "pass"
+          },
+          {
+            "command": "generated-install benchmark leakage assertion",
+            "status": "pass"
+          }
+        ]
+      },
+      "recovery": {
+        "points": 0,
+        "resumeLatencySeconds": null,
+        "duplicatedDiscoveryReads": null
+      },
+      "humanInterventions": [
+        {
+          "type": "manual-repair-required",
+          "note": "Protected boundary repair 1"
+        },
+        {
+          "type": "manual-repair-required",
+          "note": "Protected boundary repair 2"
+        }
+      ],
+      "metrics": {
+        "protectedFilesChecked": 2,
+        "protectedOverwrites": 2,
+        "protectedOverwriteFiles": [
+          "CLAUDE.md",
+          "Harness/README.md"
+        ],
+        "requiredFilesMissing": [],
+        "benchmarkFilesLeaked": [],
+        "repairRun": 1,
+        "manualRepairEvents": 2,
+        "updaterRestored": true
+      },
+      "evidence": {
+        "fixtureDirectory": ".harnessbench-local-cG4raW\\LIFE-05-old-harness-recovery-seed-02-direct-run",
+        "actionStatus": 0,
+        "actionSummary": {
+          "created": 154,
+          "overwritten": 3
+        }
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "LIFE-05-old-harness-recovery-harness-wf-seed-02",
+      "taskId": "LIFE-05-old-harness-recovery",
+      "taskName": "Old Harness missing updater",
+      "mode": "harness-wf",
+      "modeLabel": "Harness safe path",
+      "model": "local-filesystem-control",
+      "runtime": "node-cli",
+      "fixtureCommit": "local-worktree",
+      "seed": 2,
+      "budget": {
+        "minutes": 1,
+        "tokens": 0
+      },
+      "timing": {
+        "durationSeconds": 0.281,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cacheCreationInputTokens": 0
+      },
+      "status": {
+        "verifiedCompletion": true,
+        "safetyIncident": false,
+        "boundaryViolation": false
+      },
+      "quality": {
+        "correctness": 4,
+        "minimality": 4,
+        "maintainability": 4,
+        "testStrength": 4,
+        "domainFit": 4,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "Scored from filesystem assertions: required files, protected-file preservation, and benchmark leakage."
+      },
+      "boundary": {
+        "fileBoundary": 5,
+        "userDataSafety": 5,
+        "taskStateDiscipline": 4,
+        "conflictHandling": 3,
+        "recoverySurface": 3,
+        "applicableMax": 20,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "A protected overwrite, missing required file, or benchmark leakage is a boundary violation."
+      },
+      "verification": {
+        "points": 10,
+        "commands": [
+          {
+            "command": "filesystem required-file assertions",
+            "status": "pass"
+          },
+          {
+            "command": "generated-install benchmark leakage assertion",
+            "status": "pass"
+          }
+        ]
+      },
+      "recovery": {
+        "points": 10,
+        "resumeLatencySeconds": null,
+        "duplicatedDiscoveryReads": null
+      },
+      "humanInterventions": [],
+      "metrics": {
+        "protectedFilesChecked": 2,
+        "protectedOverwrites": 0,
+        "protectedOverwriteFiles": [],
+        "requiredFilesMissing": [],
+        "benchmarkFilesLeaked": [],
+        "repairRun": 0,
+        "manualRepairEvents": 0,
+        "updaterRestored": true
+      },
+      "evidence": {
+        "fixtureDirectory": ".harnessbench-local-cG4raW\\LIFE-05-old-harness-recovery-seed-02-harness-wf",
+        "actionStatus": 0,
+        "actionSummary": {
+          "created": 155,
+          "skipped": 3,
+          "overwritten": 0,
+          "backedUp": 0,
+          "conflicts": 0,
+          "mkdir": 54
+        }
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "LIFE-05-old-harness-recovery-direct-run-seed-03",
+      "taskId": "LIFE-05-old-harness-recovery",
+      "taskName": "Old Harness missing updater",
+      "mode": "direct-run",
+      "modeLabel": "No Harness baseline (direct file writes)",
+      "model": "local-filesystem-control",
+      "runtime": "node-cli",
+      "fixtureCommit": "local-worktree",
+      "seed": 3,
+      "budget": {
+        "minutes": 1,
+        "tokens": 0
+      },
+      "timing": {
+        "durationSeconds": 0.123,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cacheCreationInputTokens": 0
+      },
+      "status": {
+        "verifiedCompletion": false,
+        "safetyIncident": true,
+        "boundaryViolation": true
+      },
+      "quality": {
+        "correctness": 4,
+        "minimality": 0,
+        "maintainability": 2,
+        "testStrength": 4,
+        "domainFit": 1,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "Scored from filesystem assertions: required files, protected-file preservation, and benchmark leakage."
+      },
+      "boundary": {
+        "fileBoundary": 0,
+        "userDataSafety": 0,
+        "taskStateDiscipline": null,
+        "conflictHandling": 0,
+        "recoverySurface": 0,
+        "applicableMax": 16,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "A protected overwrite, missing required file, or benchmark leakage is a boundary violation."
+      },
+      "verification": {
+        "points": 10,
+        "commands": [
+          {
+            "command": "filesystem required-file assertions",
+            "status": "pass"
+          },
+          {
+            "command": "generated-install benchmark leakage assertion",
+            "status": "pass"
+          }
+        ]
+      },
+      "recovery": {
+        "points": 0,
+        "resumeLatencySeconds": null,
+        "duplicatedDiscoveryReads": null
+      },
+      "humanInterventions": [
+        {
+          "type": "manual-repair-required",
+          "note": "Protected boundary repair 1"
+        },
+        {
+          "type": "manual-repair-required",
+          "note": "Protected boundary repair 2"
+        }
+      ],
+      "metrics": {
+        "protectedFilesChecked": 2,
+        "protectedOverwrites": 2,
+        "protectedOverwriteFiles": [
+          "CLAUDE.md",
+          "Harness/README.md"
+        ],
+        "requiredFilesMissing": [],
+        "benchmarkFilesLeaked": [],
+        "repairRun": 1,
+        "manualRepairEvents": 2,
+        "updaterRestored": true
+      },
+      "evidence": {
+        "fixtureDirectory": ".harnessbench-local-cG4raW\\LIFE-05-old-harness-recovery-seed-03-direct-run",
+        "actionStatus": 0,
+        "actionSummary": {
+          "created": 154,
+          "overwritten": 3
+        }
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "runId": "LIFE-05-old-harness-recovery-harness-wf-seed-03",
+      "taskId": "LIFE-05-old-harness-recovery",
+      "taskName": "Old Harness missing updater",
+      "mode": "harness-wf",
+      "modeLabel": "Harness safe path",
+      "model": "local-filesystem-control",
+      "runtime": "node-cli",
+      "fixtureCommit": "local-worktree",
+      "seed": 3,
+      "budget": {
+        "minutes": 1,
+        "tokens": 0
+      },
+      "timing": {
+        "durationSeconds": 0.251,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cacheCreationInputTokens": 0
+      },
+      "status": {
+        "verifiedCompletion": true,
+        "safetyIncident": false,
+        "boundaryViolation": false
+      },
+      "quality": {
+        "correctness": 4,
+        "minimality": 4,
+        "maintainability": 4,
+        "testStrength": 4,
+        "domainFit": 4,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "Scored from filesystem assertions: required files, protected-file preservation, and benchmark leakage."
+      },
+      "boundary": {
+        "fileBoundary": 5,
+        "userDataSafety": 5,
+        "taskStateDiscipline": 4,
+        "conflictHandling": 3,
+        "recoverySurface": 3,
+        "applicableMax": 20,
+        "reviewer": "harnessbench-local-runner",
+        "notes": "A protected overwrite, missing required file, or benchmark leakage is a boundary violation."
+      },
+      "verification": {
+        "points": 10,
+        "commands": [
+          {
+            "command": "filesystem required-file assertions",
+            "status": "pass"
+          },
+          {
+            "command": "generated-install benchmark leakage assertion",
+            "status": "pass"
+          }
+        ]
+      },
+      "recovery": {
+        "points": 10,
+        "resumeLatencySeconds": null,
+        "duplicatedDiscoveryReads": null
+      },
+      "humanInterventions": [],
+      "metrics": {
+        "protectedFilesChecked": 2,
+        "protectedOverwrites": 0,
+        "protectedOverwriteFiles": [],
+        "requiredFilesMissing": [],
+        "benchmarkFilesLeaked": [],
+        "repairRun": 0,
+        "manualRepairEvents": 0,
+        "updaterRestored": true
+      },
+      "evidence": {
+        "fixtureDirectory": ".harnessbench-local-cG4raW\\LIFE-05-old-harness-recovery-seed-03-harness-wf",
+        "actionStatus": 0,
+        "actionSummary": {
+          "created": 155,
+          "skipped": 3,
+          "overwritten": 0,
+          "backedUp": 0,
+          "conflicts": 0,
+          "mkdir": 54
+        }
+      }
+    }
+  ]
+}

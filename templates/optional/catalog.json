@@ -1,13 +1,6 @@
 {
   "skills": [
     {
-      "id": "browser-e2e",
-      "title": "Browser E2E",
-      "description": "Mandatory real-browser smoke workflow using Playwright, Chrome DevTools/CDP, or documented manual evidence.",
-      "files": ["skills/browser-e2e"],
-      "tags": ["e2e", "browser", "playwright", "cdp"]
-    },
-    {
       "id": "ui-ux-review",
       "title": "UI/UX Review",
       "description": "Screenshot-driven responsive, accessibility, and visual polish review workflow.",
@@ -37,8 +30,8 @@
     }
   ],
   "presets": {
-    "web-app": ["ts-react-frontend", "browser-e2e", "ui-ux-review"],
-    "fullstack": ["ts-react-frontend", "python-backend", "browser-e2e", "github-pr-review"]
+    "web-app": ["ts-react-frontend", "ui-ux-review"],
+    "fullstack": ["ts-react-frontend", "python-backend", "github-pr-review"]
   },
   "externalRecommendations": [
     {

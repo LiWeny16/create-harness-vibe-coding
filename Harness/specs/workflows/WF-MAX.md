@@ -22,6 +22,24 @@ WF-MAX is **explicit only**. Enter ONLY when the user explicitly types `/wf-max`
 
 **WF-Max-Strict** (explicit `--strict`, `strict wf-max`, or `strict mode`): unconditional fan-out per span formula. Every file gets a Worker.
 
+## Mandatory Fan-Out Contract
+
+`/wf-max` MUST attempt native subagent fan-out before implementation planning is considered complete. A solo controller path is allowed only after an explicit degradation record.
+
+Minimum W0 attempt:
+
+- Start `task-scribe` when available to maintain task state and the dispatch ledger.
+- Start at least one independent read-only planning/exploration/review lane. For real multi-domain tasks, prefer `explore-manager` plus scoped researchers or codebase explorers.
+- Record `fanoutAttempted: true`, runtime, channel tried, agents requested, configured/runtime limit facts, result, and degradation reason in the task PLAN or PROGRESS.
+
+Mode interaction:
+
+- WF-Max-Useful may shrink the fan-out after the first native attempt when write sets or review lenses are not meaningfully independent. It may not silently skip the attempt.
+- WF-Max-Strict continues through the span formula until the Harness caps, runtime caps, user budget, or safety gates stop dispatch.
+- If native manager fan-out is unavailable, the controller dispatches leaf agents directly with exact WF-MAX dispatch packets; if no independent channel exists, stop honestly and ask the user.
+
+OpenCode-specific requirement: project `opencode.json` must set `subagent_depth >= 2` for manager -> worker nesting, and WF-MAX manager agents must expose `permission.task` allowlists for their child agents. Without those two settings, OpenCode may accept `/wf-max` but fail to fan out from manager subagents.
+
 ## CEO Contract
 
 CEO reads, plans, dispatches, synthesizes, and writes task state only.
@@ -104,11 +122,21 @@ WF-MAX fan-out is bounded. Unbounded worker dispatch is forbidden.
 - **Overflow discipline**: Cross-CLI overflow (Codex → Claude, Claude → Codex) is allowed only after native subagent pool is genuinely exhausted (not just busy). Each overflow dispatch costs context; prefer closing completed agents first.
 - **Idle workers**: Close completed agents before declaring the pool exhausted. Do not spawn new workers while idle capacity is available.
 
+## Runtime Capacity Map
+
+Harness treats vendor/runtime limits as outer ceilings, not as permission to exceed the WF-MAX caps above.
+
+| Runtime | Native limit/config surface | Harness rule |
+| --- | --- | --- |
+| Claude Code | Official docs describe subagent caps for session total `CLAUDE_CODE_MAX_SUBAGENTS_PER_SESSION` (default 200), concurrency `CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS` (default 20), and spawn depth `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH` (default 3); use current Claude Code agent/subagent settings when available. | Record the detected limit/source when known; Harness WF-MAX caps still apply unless the user approves a task-local override. Do not raise environment limits without user approval. |
+| Codex | Official manual documents `[agents].max_concurrent_threads_per_session`; `agents.max_threads` is a legacy alias. Local codex-cli 0.144.x can reject scalar `[agents]` caps from project `.codex/config.toml` during TUI `skills/list`. | Do not scaffold Codex scalar agent caps into `.codex/config.toml`. Probe the installed runtime first; Harness manages a conservative task-local cap through the dispatch ledger unless `codex --strict-config doctor` verifies the config shape. |
+| OpenCode | Official config uses `subagent_depth`; default `1` permits primary -> subagent but blocks subagent -> subagent. `0` disables subagent launches; `2` permits one nested manager -> worker level. No official concurrent-count cap was found in the current docs. | Generated config sets `subagent_depth = 2`; Harness manages total/per-wave counts through WF-MAX caps and manager `permission.task` allowlists. |
+
 ## Organization Model
 
 ```
 CEO(1) -> Manager_1(span) -> Worker_1..n
-       -> Manager_2(span) -> Sub-Manager(span) -> Worker_1..n
+       -> Manager_2(span) -> Worker_1..n
 ```
 
 ## D-GATE
@@ -121,7 +149,7 @@ D-GATE is mandatory before implementation waves per [WF-KERNEL.md](WF-KERNEL.md)
 2. Close completed agents; fill idle slots immediately.
 3. Cross-CLI overflow: use an available peer CLI with explicit dispatch packets: `claude -p`, `codex exec`, or `opencode run --agent <role> --dir .`.
 4. Bounded-pass fallback only when subagents and overflow are exhausted.
-5. Generated Codex config defaults to `agents.max_threads = 12` and `agents.max_depth = 1`. Ask the user before raising `agents.max_threads` above that default. Keep `max_depth = 1` unless recursive delegation is explicitly approved.
+5. Codex compatibility guard: do not write scalar `[agents]` capacity fields into project `.codex/config.toml` by default. Probe the installed version first; local codex-cli 0.144.x has been observed to reject those fields during TUI `skills/list`. Harness manages Codex WF-MAX concurrency through the dispatch ledger and asks the user before any project/global Codex config change.
 6. Do not rely on Codex++, undocumented config, environment variables, forked/derived conversations, or third-party forks as stable capacity.
 
 ## Anti-Patterns and Sizing

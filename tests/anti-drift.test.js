@@ -101,7 +101,7 @@ test('ECC /wf wildcard rule keeps direct command exemptions explicit', () => {
     'templates/common/.claude/rules/ecc/common.md',
   ]) {
     const body = read(rel);
-    assert.match(body, /excluding `\/wf-help` and `\/wf-update`/);
+    assert.match(body, /excluding `\/wf-help`, `\$wf-help`, `\/skills wf-help`, `\/wf-update`, `\$wf-update`, and `\/skills wf-update`/);
     assert.doesNotMatch(body, /When the user explicitly invokes a `\/wf-\*` command, load/);
     assert.match(body, /记住/);
     assert.doesNotMatch(body, /鍚|銆|绂|鈥/);

@@ -228,102 +228,102 @@ test('install overwrites a Harness-owned .agents/skills/wf/SKILL.md (marker pres
 });
 
 // ============================================================================
-// Manifest-aware collision protection for OPTIONAL skills (browser-e2e bug fix)
+// Manifest-aware collision protection for OPTIONAL skills
 // ============================================================================
 
-test('install preserves a user-owned .claude/skills/browser-e2e/SKILL.md (no marker) under --with browser-e2e overwrite', () => {
+test('install preserves a user-owned .claude/skills/ui-ux-review/SKILL.md (no marker) under --with ui-ux-review overwrite', () => {
   // Regression: optional skill paths used to be missing from the candidate set,
-  // so a user no-marker browser-e2e SKILL.md was clobbered under overwrite.
+  // so a user no-marker optional SKILL.md was clobbered under overwrite.
   const root = tmpdir();
-  const targetDir = path.join(root, 'browser-e2e-claude-user');
-  const userSkill = 'My custom browser-e2e skill.\nPersonal Playwright steps.\n';
-  writeExisting(targetDir, '.claude/skills/browser-e2e/SKILL.md', userSkill);
+  const targetDir = path.join(root, 'ui-ux-review-claude-user');
+  const userSkill = 'My custom ui-ux-review skill.\nPersonal review steps.\n';
+  writeExisting(targetDir, '.claude/skills/ui-ux-review/SKILL.md', userSkill);
   assert.equal(isHarnessOwnedContent(userSkill), false);
 
   const result = generate({
-    projectName: 'browser-e2e-claude-user',
+    projectName: 'ui-ux-review-claude-user',
     targetDir,
-    withOptions: ['browser-e2e'],
+    withOptions: ['ui-ux-review'],
     onConflict: 'overwrite',
   });
 
   assert.equal(result.success, true);
-  assert.ok(result.plan.skip.includes('.claude/skills/browser-e2e/SKILL.md'));
-  assert.equal(result.plan.overwrite.includes('.claude/skills/browser-e2e/SKILL.md'), false);
+  assert.ok(result.plan.skip.includes('.claude/skills/ui-ux-review/SKILL.md'));
+  assert.equal(result.plan.overwrite.includes('.claude/skills/ui-ux-review/SKILL.md'), false);
   assert.ok(
-    result.warnings.some(w => /\.claude\/skills\/browser-e2e\/SKILL\.md/.test(w) && /no Harness marker/.test(w)),
+    result.warnings.some(w => /\.claude\/skills\/ui-ux-review\/SKILL\.md/.test(w) && /no Harness marker/.test(w)),
     JSON.stringify(result.warnings),
   );
   assert.equal(
-    fs.readFileSync(path.join(targetDir, '.claude/skills/browser-e2e/SKILL.md'), 'utf8'),
+    fs.readFileSync(path.join(targetDir, '.claude/skills/ui-ux-review/SKILL.md'), 'utf8'),
     userSkill,
   );
 });
 
-test('install preserves a user-owned .agents/skills/browser-e2e/SKILL.md (no marker) under --with browser-e2e overwrite', () => {
+test('install preserves a user-owned .agents/skills/ui-ux-review/SKILL.md (no marker) under --with ui-ux-review overwrite', () => {
   const root = tmpdir();
-  const targetDir = path.join(root, 'browser-e2e-codex-user');
-  const userSkill = 'My custom codex-mirror browser-e2e skill.\nPersonal CDP steps.\n';
-  writeExisting(targetDir, '.agents/skills/browser-e2e/SKILL.md', userSkill);
+  const targetDir = path.join(root, 'ui-ux-review-codex-user');
+  const userSkill = 'My custom codex-mirror ui-ux-review skill.\nPersonal review steps.\n';
+  writeExisting(targetDir, '.agents/skills/ui-ux-review/SKILL.md', userSkill);
   assert.equal(isHarnessOwnedContent(userSkill), false);
 
   const result = generate({
-    projectName: 'browser-e2e-codex-user',
+    projectName: 'ui-ux-review-codex-user',
     targetDir,
-    withOptions: ['browser-e2e'],
+    withOptions: ['ui-ux-review'],
     onConflict: 'overwrite',
   });
 
   assert.equal(result.success, true);
-  assert.ok(result.plan.skip.includes('.agents/skills/browser-e2e/SKILL.md'));
-  assert.equal(result.plan.overwrite.includes('.agents/skills/browser-e2e/SKILL.md'), false);
+  assert.ok(result.plan.skip.includes('.agents/skills/ui-ux-review/SKILL.md'));
+  assert.equal(result.plan.overwrite.includes('.agents/skills/ui-ux-review/SKILL.md'), false);
   assert.equal(
-    fs.readFileSync(path.join(targetDir, '.agents/skills/browser-e2e/SKILL.md'), 'utf8'),
+    fs.readFileSync(path.join(targetDir, '.agents/skills/ui-ux-review/SKILL.md'), 'utf8'),
     userSkill,
   );
 });
 
-test('install overwrites a Harness-owned .claude/skills/browser-e2e/SKILL.md (marker present) under --with browser-e2e overwrite', () => {
+test('install overwrites a Harness-owned .claude/skills/ui-ux-review/SKILL.md (marker present) under --with ui-ux-review overwrite', () => {
   // A prior install leaves a marker; the marker makes the instance Harness-owned
   // so it upgrades normally instead of being protected.
   const root = tmpdir();
-  const targetDir = path.join(root, 'browser-e2e-harness');
-  const oldHarness = '---\nharness: wf-agent\n---\nOld harness browser-e2e skill body.\n';
-  writeExisting(targetDir, '.claude/skills/browser-e2e/SKILL.md', oldHarness);
+  const targetDir = path.join(root, 'ui-ux-review-harness');
+  const oldHarness = '---\nharness: wf-agent\n---\nOld harness ui-ux-review skill body.\n';
+  writeExisting(targetDir, '.claude/skills/ui-ux-review/SKILL.md', oldHarness);
 
   const result = generate({
-    projectName: 'browser-e2e-harness',
+    projectName: 'ui-ux-review-harness',
     targetDir,
-    withOptions: ['browser-e2e'],
+    withOptions: ['ui-ux-review'],
     onConflict: 'overwrite',
   });
 
   assert.equal(result.success, true);
-  assert.ok(result.plan.overwrite.includes('.claude/skills/browser-e2e/SKILL.md'));
-  assert.equal(result.plan.skip.includes('.claude/skills/browser-e2e/SKILL.md'), false);
-  const after = fs.readFileSync(path.join(targetDir, '.claude/skills/browser-e2e/SKILL.md'), 'utf8');
+  assert.ok(result.plan.overwrite.includes('.claude/skills/ui-ux-review/SKILL.md'));
+  assert.equal(result.plan.skip.includes('.claude/skills/ui-ux-review/SKILL.md'), false);
+  const after = fs.readFileSync(path.join(targetDir, '.claude/skills/ui-ux-review/SKILL.md'), 'utf8');
   assert.notEqual(after, oldHarness);
 });
 
-test('install blocks a user-owned .claude/skills/browser-e2e/SKILL.md (no marker) under --with browser-e2e fail and preserves the file', () => {
+test('install blocks a user-owned .claude/skills/ui-ux-review/SKILL.md (no marker) under --with ui-ux-review fail and preserves the file', () => {
   const root = tmpdir();
-  const targetDir = path.join(root, 'browser-e2e-fail');
-  const userSkill = 'My custom browser-e2e skill.\nPersonal Playwright steps.\n';
-  writeExisting(targetDir, '.claude/skills/browser-e2e/SKILL.md', userSkill);
+  const targetDir = path.join(root, 'ui-ux-review-fail');
+  const userSkill = 'My custom ui-ux-review skill.\nPersonal review steps.\n';
+  writeExisting(targetDir, '.claude/skills/ui-ux-review/SKILL.md', userSkill);
 
   const result = generate({
-    projectName: 'browser-e2e-fail',
+    projectName: 'ui-ux-review-fail',
     targetDir,
-    withOptions: ['browser-e2e'],
+    withOptions: ['ui-ux-review'],
     onConflict: 'fail',
   });
 
   assert.equal(result.success, false);
-  assert.ok(result.plan.conflict.includes('.claude/skills/browser-e2e/SKILL.md'));
-  assert.equal(result.plan.overwrite.includes('.claude/skills/browser-e2e/SKILL.md'), false);
-  assert.equal(result.plan.skip.includes('.claude/skills/browser-e2e/SKILL.md'), false);
+  assert.ok(result.plan.conflict.includes('.claude/skills/ui-ux-review/SKILL.md'));
+  assert.equal(result.plan.overwrite.includes('.claude/skills/ui-ux-review/SKILL.md'), false);
+  assert.equal(result.plan.skip.includes('.claude/skills/ui-ux-review/SKILL.md'), false);
   assert.equal(
-    fs.readFileSync(path.join(targetDir, '.claude/skills/browser-e2e/SKILL.md'), 'utf8'),
+    fs.readFileSync(path.join(targetDir, '.claude/skills/ui-ux-review/SKILL.md'), 'utf8'),
     userSkill,
   );
 });
@@ -385,31 +385,31 @@ test('manifest-present: a declared frameworkOwned path (.claude/agents/planner.m
 // Candidate-set builder unit tests (manifest-first vs fileSpecs fallback)
 // ============================================================================
 
-test('buildHarnessInterestCandidateSet (manifest-present) includes selected optional skill paths like browser-e2e', () => {
+test('buildHarnessInterestCandidateSet (manifest-present) includes selected optional skill paths like ui-ux-review', () => {
   const manifestPath = path.join(process.cwd(), 'templates/common/Harness/ownership.manifest.json');
   const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
   const fileSpecs = [
-    { dest: '.claude/skills/browser-e2e/SKILL.md' },
-    { dest: '.agents/skills/browser-e2e/SKILL.md' },
+    { dest: '.claude/skills/ui-ux-review/SKILL.md' },
+    { dest: '.agents/skills/ui-ux-review/SKILL.md' },
   ];
-  const selected = [{ id: 'browser-e2e' }];
+  const selected = [{ id: 'ui-ux-review' }];
 
   const set = buildHarnessInterestCandidateSet(manifest, fileSpecs, selected);
 
-  assert.ok(set.has('.claude/skills/browser-e2e/SKILL.md'));
-  assert.ok(set.has('.agents/skills/browser-e2e/SKILL.md'));
+  assert.ok(set.has('.claude/skills/ui-ux-review/SKILL.md'));
+  assert.ok(set.has('.agents/skills/ui-ux-review/SKILL.md'));
 });
 
 test('buildHarnessInterestCandidateSet (manifest-present) excludes optional skill paths that are not selected', () => {
   const manifestPath = path.join(process.cwd(), 'templates/common/Harness/ownership.manifest.json');
   const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-  const fileSpecs = [{ dest: '.claude/skills/browser-e2e/SKILL.md' }];
-  // browser-e2e NOT selected -> its optionalOwned paths must not be candidates.
+  const fileSpecs = [{ dest: '.claude/skills/ui-ux-review/SKILL.md' }];
+  // ui-ux-review NOT selected -> its optionalOwned paths must not be candidates.
   const selected = [];
 
   const set = buildHarnessInterestCandidateSet(manifest, fileSpecs, selected);
 
-  assert.equal(set.has('.claude/skills/browser-e2e/SKILL.md'), false);
+  assert.equal(set.has('.claude/skills/ui-ux-review/SKILL.md'), false);
 });
 
 test('buildHarnessInterestCandidateSet falls back to all fileSpec dests when manifest is absent (null)', () => {
@@ -417,11 +417,11 @@ test('buildHarnessInterestCandidateSet falls back to all fileSpec dests when man
   // candidate set falls back to every fileSpec dest so optional skills stay
   // protected by the marker rule even without the manifest.
   const fileSpecs = [
-    { dest: '.claude/skills/browser-e2e/SKILL.md' },
-    { dest: '.agents/skills/browser-e2e/SKILL.md' },
+    { dest: '.claude/skills/ui-ux-review/SKILL.md' },
+    { dest: '.agents/skills/ui-ux-review/SKILL.md' },
     { dest: '.claude/agents/planner.md' },
   ];
-  const selected = [{ id: 'browser-e2e' }];
+  const selected = [{ id: 'ui-ux-review' }];
 
   const set = buildHarnessInterestCandidateSet(null, fileSpecs, selected);
 

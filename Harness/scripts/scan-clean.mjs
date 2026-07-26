@@ -120,18 +120,12 @@ function optionalSkillFromSource(source) {
   return match ? match[1] : null;
 }
 
+const RETIRED_OPTION_IDS = new Set(['browser-e2e']);
+
 function isInstalledOptionalFile(file, localVersion) {
   const skillId = optionalSkillFromSource(localVersion?.sources?.[file]);
+  if (skillId && RETIRED_OPTION_IDS.has(skillId)) return false;
   if (skillId && selectedOptionIds(localVersion).has(skillId)) return true;
-  // Also check if the file is in the optional file patterns (not tracked in common checksums)
-  // e.g. .opencode/commands/wf-browser.md from browser-e2e
-  const canonical = canonicalPath(file);
-  if (/^\.opencode\/commands\/wf-browser\.md$/.test(canonical)) {
-    return selectedOptionIds(localVersion).has('browser-e2e');
-  }
-  if (/^\.claude\/skills\/wf-browser\//.test(canonical)) {
-    return selectedOptionIds(localVersion).has('browser-e2e');
-  }
   return false;
 }
 

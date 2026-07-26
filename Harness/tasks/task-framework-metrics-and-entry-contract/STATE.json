@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-framework-metrics-and-entry-contract",
+  "status": "blocked",
+  "mode": "direct",
+  "tier": "none",
+  "phase": "blocked",
+  "gate": null,
+  "updatedAt": "2026-07-24T13:15:42.706Z",
+  "activeQuestion": null,
+  "nextAction": "Review task state.",
+  "acceptance": [],
+  "queues": {
+    "ready": [],
+    "running": [],
+    "blocked": [],
+    "done": []
+  },
+  "dispatchLedger": [],
+  "decisions": [],
+  "risks": [],
+  "artifacts": []
+}

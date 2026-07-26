@@ -569,16 +569,16 @@ assert(scanCommandOrphanPlan.orphan?.some(x => x.file === '.claude/commands/lega
 const optionalGenerateResult = generate({
   projectName: 'optional-scan',
   targetDir: TMP_OPTIONAL,
-  withOptions: ['browser-e2e'],
+  withOptions: ['ui-ux-review'],
 });
-assert(optionalGenerateResult.success, 'optional browser-e2e fixture generates');
+assert(optionalGenerateResult.success, 'optional ui-ux-review fixture generates');
 const commonTemplateBase = pathToFileURL(resolve(ROOT, 'templates', 'common') + sep).href;
 const optionalScanResult = runNode(SCAN, '--json', TMP_OPTIONAL, { WF_SOURCE_BASE: commonTemplateBase });
 assert(optionalScanResult.ok, 'scan-clean JSON runs against optional install');
 const optionalScanPlan = JSON.parse(optionalScanResult.stdout.trim());
 assert(
-  !optionalScanPlan.dead?.some(x => x.file.includes('browser-e2e') || x.file.includes('wf-browser')),
-  'scan-clean does not mark installed optional browser workflow files dead',
+  !optionalScanPlan.dead?.some(x => x.file.includes('ui-ux-review') || x.file.includes('wf-browser') || x.file.includes('browser-e2e')),
+  'scan-clean does not mark installed optional workflow or built-in wf-browser files dead',
 );
 assert(
   !optionalScanPlan.dead?.some(x => x.file === 'tests/.gitkeep'),
@@ -603,8 +603,8 @@ assert(
   'wf-update-check routes optional Harness/README.md registration through merge',
 );
 assert(
-  optionalUpdatePlan.plan?.skipped?.some(x => x.file === '.claude/skills/wf-browser/SKILL.md' && x.reason.includes('optional workflow')),
-  'wf-update-check preserves optional wf-browser skill outside common manifest',
+  optionalUpdatePlan.plan?.skipped?.some(x => x.file === '.claude/skills/ui-ux-review/SKILL.md' && x.reason.includes('optional workflow')),
+  'wf-update-check preserves optional ui-ux-review skill outside common manifest',
 );
 
 // ── TEST: safePath() traversal rejection ──────────────────────────

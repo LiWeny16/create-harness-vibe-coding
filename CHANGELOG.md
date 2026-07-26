@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.8.17] - 2026-07-26
+
+- Add HarnessBench v0.2 as an external-only lifecycle proof: 15 runs per mode, direct file writes safe in 3/15 runs, Harness safe path safe in 15/15 runs.
+- Keep benchmark fixtures, raw results, and scorer scripts out of generated installs and npm package files while publishing the summary in README and README-CN.
+- Make `wf-browser` the built-in browser automation entry and retire `browser-e2e` as a warning no-op optional id.
+- Add `wf-help` compatibility surfaces for Claude, Codex, and OpenCode with guards against nonexistent OpenCode skill paths.
+- Harden WF-MAX fan-out docs and OpenCode manager allowlists while preserving the Codex config guard against unsupported scalar subagent caps.
+- Add deterministic task-state/archive reconciliation tooling and validators for active task consistency.
+
 ## [0.8.16] - 2026-07-23
 
 - Fix `scan-clean` default source selection so it honors the installed `Harness/.harness-version.source` before falling back to npm/GitHub, preventing false dead-file reports before npm publish catches up.

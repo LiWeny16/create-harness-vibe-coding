@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "generator": "0.8.16",
+  "generator": "0.8.17",
   "source": "https://raw.githubusercontent.com/LiWeny16/create-harness-vibe-coding/main/templates/common/",
-  "generated": "2026-07-23T11:33:41.125Z",
+  "generated": "2026-07-26T09:26:35.146Z",
   "preserve": [
     "Harness/PROGRESS.md",
     "Harness/tasks/**",
@@ -192,6 +192,16 @@
       "overwrite": "safe"
     },
     {
+      "path": ".agents/skills/wf-browser/SKILL.md",
+      "kind": "skill",
+      "overwrite": "safe"
+    },
+    {
+      "path": ".agents/skills/wf-help/SKILL.md",
+      "kind": "skill",
+      "overwrite": "safe"
+    },
+    {
       "path": ".agents/skills/wf-learn/SKILL.md",
       "kind": "skill",
       "overwrite": "safe"
@@ -322,12 +332,57 @@
       "overwrite": "safe"
     },
     {
+      "path": ".claude/commands/wf-auto-spark.md",
+      "kind": "command",
+      "overwrite": "safe"
+    },
+    {
+      "path": ".claude/commands/wf-auto.md",
+      "kind": "command",
+      "overwrite": "safe"
+    },
+    {
+      "path": ".claude/commands/wf-browser.md",
+      "kind": "command",
+      "overwrite": "safe"
+    },
+    {
       "path": ".claude/commands/wf-help.md",
       "kind": "command",
       "overwrite": "safe"
     },
     {
+      "path": ".claude/commands/wf-learn.md",
+      "kind": "command",
+      "overwrite": "safe"
+    },
+    {
+      "path": ".claude/commands/wf-max.md",
+      "kind": "command",
+      "overwrite": "safe"
+    },
+    {
+      "path": ".claude/commands/wf-readme.md",
+      "kind": "command",
+      "overwrite": "safe"
+    },
+    {
+      "path": ".claude/commands/wf-remove.md",
+      "kind": "command",
+      "overwrite": "safe"
+    },
+    {
+      "path": ".claude/commands/wf-review.md",
+      "kind": "command",
+      "overwrite": "safe"
+    },
+    {
       "path": ".claude/commands/wf-update.md",
+      "kind": "command",
+      "overwrite": "safe"
+    },
+    {
+      "path": ".claude/commands/wf.md",
       "kind": "command",
       "overwrite": "safe"
     },
@@ -363,6 +418,16 @@
     },
     {
       "path": ".claude/skills/wf-auto/SKILL.md",
+      "kind": "skill",
+      "overwrite": "safe"
+    },
+    {
+      "path": ".claude/skills/wf-browser/SKILL.md",
+      "kind": "skill",
+      "overwrite": "safe"
+    },
+    {
+      "path": ".claude/skills/wf-help/SKILL.md",
       "kind": "skill",
       "overwrite": "safe"
     },
@@ -517,6 +582,11 @@
       "overwrite": "safe"
     },
     {
+      "path": ".opencode/commands/wf-browser.md",
+      "kind": "command",
+      "overwrite": "safe"
+    },
+    {
       "path": ".opencode/commands/wf-help.md",
       "kind": "command",
       "overwrite": "safe"
@@ -588,6 +658,11 @@
     },
     {
       "path": "Harness/scripts/scan-clean.mjs",
+      "kind": "script",
+      "overwrite": "safe"
+    },
+    {
+      "path": "Harness/scripts/task-state.mjs",
       "kind": "script",
       "overwrite": "safe"
     },
@@ -763,18 +838,6 @@
     }
   ],
   "optionalOwned": [
-    {
-      "option": "browser-e2e",
-      "paths": [
-        ".agents/skills/browser-e2e/SKILL.md",
-        ".agents/skills/wf-browser/SKILL.md",
-        ".claude/skills/browser-e2e/SKILL.md",
-        ".claude/skills/wf-browser/SKILL.md",
-        ".opencode/commands/wf-browser.md",
-        "Harness/workflows/browser-e2e.md"
-      ],
-      "overwrite": "safe-if-installed"
-    },
     {
       "option": "github-pr-review",
       "paths": [

@@ -130,7 +130,6 @@ const BUILT_IN_AGENT_NAMES = [
 ];
 
 const BUILT_IN_SKILL_NAMES = [
-  'browser-e2e',
   'github-pr-review',
   'python-backend',
   'subagent-orchestrator',
@@ -142,6 +141,7 @@ const BUILT_IN_SKILL_NAMES = [
   'wf-auto',
   'wf-auto-spark',
   'wf-browser',
+  'wf-help',
   'wf-learn',
   'wf-max',
   'wf-readme',
@@ -172,12 +172,12 @@ function isKnownFrameworkFile(file) {
 /** Directories to clean up if empty after file removal. */
 const CLEANUP_DIRS = [
   '.claude/agents',
-  '.claude/skills/browser-e2e',
   '.claude/skills/github-pr-review',
   '.claude/skills/python-backend',
   '.claude/skills/wf-auto',
   '.claude/skills/wf-auto-spark',
   '.claude/skills/wf-browser',
+  '.claude/skills/wf-help',
   '.claude/skills/tdd',
   '.claude/skills/ts-react-frontend',
   '.claude/skills/ui-ux-review',
@@ -191,12 +191,12 @@ const CLEANUP_DIRS = [
   '.claude/skills/wf-remove',
   '.claude/skills/subagent-orchestrator',
   '.claude/skills',
-  '.agents/skills/browser-e2e',
   '.agents/skills/github-pr-review',
   '.agents/skills/python-backend',
   '.agents/skills/wf-auto',
   '.agents/skills/wf-auto-spark',
   '.agents/skills/wf-browser',
+  '.agents/skills/wf-help',
   '.agents/skills/tdd',
   '.agents/skills/ts-react-frontend',
   '.agents/skills/ui-ux-review',

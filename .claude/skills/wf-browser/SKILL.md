@@ -1,201 +1,176 @@
 ---
 name: wf-browser
-description: AI-driven browser automation for E2E testing, web scraping, form filling, and UI verification. Powered by Browser Use (89.1% WebVoyager benchmark). Use for Claude /wf-browser, Codex $wf-browser, browser testing, web automation, page interaction, form filling, screenshot verification, or any task requiring real browser control. Dual mode: CLI (fast iteration, no LLM needed) + Python Agent API (complex multi-step workflows with AI reasoning).
+description: Built-in browser automation and E2E verification workflow. Use for Claude /wf-browser, Codex $wf-browser or /skills wf-browser, Browser Use, Playwright, Chrome DevTools/CDP, screenshots, forms, UI verification, and browser-visible acceptance.
 ---
 
-# WF Browser — AI Browser Automation
+# WF Browser
 
-Load:
+This skill is the single Browser E2E entry. Do not use or create a separate
+browser E2E skill. The browser evidence contract lives here plus
+`Harness/specs/protocols/HARNESS_BRIDGE.md`.
 
-- `Harness/workflows/browser-e2e.md`
-- Official `browser-use` skill at `~/.claude/skills/browser-use/SKILL.md` (auto-installed if missing)
-- `Harness/PROGRESS.md` when work is active
+## Invocation
+
+- Claude Code: use `/wf-browser <task>` or select the `wf-browser` skill.
+- Codex CLI or IDE: use `$wf-browser <task>` or `/skills` then choose `wf-browser`.
+- OpenCode: use `/wf-browser <task>`.
+
+## Load
+
+- `CLAUDE.md`
+- `Harness/MEMORY.md` index only per Memory Preflight
+- `Harness/README.md`
+- `Harness/specs/protocols/HARNESS_BRIDGE.md`
+- Project run/build/test instructions
+- Official Browser Use skill text from `browser-use skill` when Browser Use is used
 
 ## Cache Discipline
 
-Follow `Harness/specs/runtime/context-loading.md#Cache-First Context Contract`: keep workflow
-docs stable, use CLI state/screenshot paths as dynamic evidence, and avoid
-replaying full browser logs or screenshots in prompts unless a failed AC needs
-targeted inspection.
+Follow `Harness/specs/runtime/context-loading.md#Cache-First Context Contract`: keep stable
+workflow docs first, then append only the current URL, selectors, concise browser
+state, screenshot paths, trace paths, and failing assertions. Do not paste full
+accessibility trees, browser logs, screenshots, videos, or network dumps into
+task state.
 
-## Modes
+## Browser Evidence Contract
 
-Choose based on task complexity:
+Every browser-visible claim needs real browser evidence:
 
-### Mode 1: CLI (fast iteration, ~50ms per call)
+1. URL and viewport/browser scope.
+2. Stable selector contract using `data-testid` and accessible labels/roles.
+3. Real interaction evidence from Browser Use, Playwright, Chrome DevTools/CDP,
+   or documented manual browser checks.
+4. Console and network checks for runtime exceptions, failed requests, and
+   frontend-backend side effects.
+5. Screenshot, trace, video, state snapshot, or command output path.
+6. AC-by-AC validation matrix when acceptance criteria exist.
 
-Best for: single-page checks, quick screenshots, form fills, element inspection. No LLM needed — Claude Code reasons and issues CLI commands.
+No `data-testid` or stable accessible selector, no UI acceptance. No API
+contract, no backend integration acceptance.
 
-```bash
-browser-use --headed open https://example.com   # Open page (headed = visible browser)
-browser-use state                                # Get page title, text, interactive elements with indices
-browser-use screenshot evidence.png              # Capture screenshot as evidence
-browser-use click 5                              # Click element by index from state output
-browser-use input 3 "user@example.com"           # Fill input field by index
-browser-use eval "document.title"                # Run JavaScript in page
-browser-use close                                # Close browser when done
-```
+## Controllable UI Contract
 
-Daemon keeps the browser open between commands — no cold-start per action.
+UI built for browser control must expose targetable, user-meaningful controls:
 
-### Mode 2: Python Agent API (multi-step AI reasoning)
+| Category | Required control surface |
+| --- | --- |
+| Inputs | `<label>` association or `aria-label`, `data-testid`, disabled/invalid states, deterministic placeholder only as fallback |
+| Buttons | accessible name, `data-testid`, disabled/loading state, no icon-only button without `aria-label` |
+| Filters | stable test id for input/menu/chip, selected state, clear/reset control |
+| Rows/items | stable row/item test id plus durable item key such as `data-row-id`; avoid index-only targeting |
+| Empty state | visible empty container with `data-testid="empty-state"` or feature-specific equivalent |
+| Error state | inline error/toast/banner with stable test id and accessible role when appropriate |
+| Loading state | stable spinner/skeleton/progress test id; verify duplicate submit prevention |
 
-Best for: complex multi-page workflows, dynamic navigation, data extraction across pages. Needs LLM API key.
+Required coverage targets: inputs, buttons, filters, rows, empty/error/loading states.
 
-```python
-from browser_use.beta import Agent, BrowserProfile
-from browser_use.llm import ChatAnthropic
+Selector priority:
 
-agent = Agent(
-    task="Go to github.com, search for 'browser-use', click the first result, and report the star count",
-    llm=ChatAnthropic(model="claude-haiku-4-5-20251001"),
-    browser_profile=BrowserProfile(headless=False),
-)
-history = await agent.run()
-print(history.final_result())
-```
+1. `data-testid`
+2. accessible labels/roles
+3. visible text for stable user-facing copy
 
-## Environment Setup
+Do not use generated class names, brittle CSS chains, XPath, DOM index selectors,
+or raw coordinates as the primary test contract. Coordinates are acceptable only
+after locating an element through the accessibility tree or when testing canvas
+or other non-DOM UI.
 
-Run once per machine:
+## Browser Use CLI
 
-```bash
-# 1. Install browser-use with CLI extras
-pip install "browser-use[cli]"
+Use the current script-style Browser Use CLI; old `browser-use open/state/click/screenshot/input/wait` subcommands are removed from the current CLI and must not be used in new docs or tests.
 
-# 2. Install Chromium browser
-browser-use install
-
-# 3. Verify installation
-browser-use doctor
-
-# 4. (Optional) Set LLM API key for Agent mode
-# Create .env file with: ANTHROPIC_API_KEY=sk-ant-...
-# Or: OPENAI_API_KEY=sk-...
-# Or: BROWSER_USE_API_KEY=bu-...
-```
-
-### Windows GBK Encoding Fix
-
-If you see `UnicodeEncodeError: 'gbk' codec can't encode character`, the install is auto-patched. If not, set env var before commands:
+Health check:
 
 ```bash
-set PYTHONIOENCODING=utf-8
+browser-use --doctor
+browser-use skill
 ```
 
-### Windows Daemon Patches
+PowerShell smoke:
 
-Browser Use v0.13.1 has two known issues on Windows that are auto-patched on install. If `browser-use open` fails with "Failed to start daemon" or socket timeout, re-apply:
+```powershell
+@'
+new_tab("https://example.com")
+wait_for_load()
+print(page_info())
+path = capture_screenshot("Harness/tasks/<task-id>/evidence/example.png")
+print(path)
+'@ | browser-use
+```
+
+Bash smoke:
 
 ```bash
-python -c "
-import browser_use.skill_cli.main as m
-p = m.__file__
-c = open(p, encoding='utf-8').read()
-# Patch 1: auto-clean stale state on dead PID
-c = c.replace(
-    'probe = _probe_session(session)\n\n\t# Socket reachable',
-    'probe = _probe_session(session)\n\n\t# Auto-clean stale state\n\tif not probe.socket_reachable and not probe.pid_alive and probe.phase:\n\t\t_clean_session_files(session)\n\t\tprobe = _probe_session(session)\n\n\t# Socket reachable'
-)
-# Patch 2: auto-recover from stale session instead of erroring
-c = c.replace(
-    \"f'Error: Session {session!r} is alive (phase={probe.phase}) but socket unreachable.\",\"
-    \"f'Warning: Session {session!r} has stale state (phase={probe.phase}), auto-cleaning...\",\"
-)
-c = c.replace(
-    \"sys.exit(1)\n\n\t\telif probe.phase == 'shutting_down'\",
-    \"_terminate_pid(probe.pid)\n\t\t\t_clean_session_files(session)\n\n\t\telif probe.phase == 'shutting_down'\"
-)
-# Patch 3: extend daemon startup timeout (15s -> 30s)
-c = c.replace('deadline = time.time() + 15', 'deadline = time.time() + 30')
-open(p, 'w', encoding='utf-8').write(c)
-print('Patches applied')
-"
+browser-use <<'PY'
+new_tab("https://example.com")
+wait_for_load()
+print(page_info())
+path = capture_screenshot("Harness/tasks/<task-id>/evidence/example.png")
+print(path)
+PY
 ```
 
-### Requirements
+Useful helpers include `new_tab(url)`, `goto_url(url)`, `page_info()`,
+`capture_screenshot(path)`, `click_at_xy(x, y)`, `type_text(text)`,
+`fill_input(selector, text)`, `press_key(key)`, `scroll(x, y)`, `js(code)`,
+`cdp(method, ...)`, `wait_for_load()`, `wait_for_element(selector)`,
+`list_tabs()`, `switch_tab(target)`, and `close_tab(target)`.
 
-| Requirement | Version | Check |
-|-------------|---------|-------|
-| Python | >= 3.11 | `python --version` |
-| pip | any | `pip --version` |
-| Chromium | auto-installed | `browser-use doctor` |
-| LLM API key | for Agent mode only | check `.env` |
+For local Chrome connection problems, run `browser-use --doctor`. If Chrome asks
+to allow remote debugging, stop and ask the user to approve the browser prompt.
 
-## Common Patterns
+## Playwright Test Pattern
 
-### Login Persistence
+Prefer Playwright for repeatable E2E tests and Browser Use/CDP for exploratory
+or interactive checks.
 
-```bash
-# Use real Chrome profile (preserves cookies/logins)
-browser-use --profile "Default" open https://app.target.com
-# Or connect to running Chrome with remote debugging
-browser-use connect
+```ts
+import { test, expect } from "@playwright/test";
+
+test("AC-001 user can submit the form", async ({ page }) => {
+  const requests: Array<{ url: string; method: string; postData: string | null }> = [];
+  page.on("request", request => {
+    requests.push({
+      url: request.url(),
+      method: request.method(),
+      postData: request.postData(),
+    });
+  });
+
+  await page.goto("/example");
+  await page.getByTestId("email-input").fill("test@example.com");
+  await page.getByRole("button", { name: "Submit" }).click();
+
+  await expect(page.getByTestId("loading-spinner")).toBeHidden();
+  await expect(page.getByTestId("result-row")).toBeVisible();
+  expect(requests.some(request => request.url.includes("/api/example"))).toBe(true);
+});
 ```
 
-### E2E Test Flow
+## Chrome DevTools / CDP Checklist
 
-```bash
-browser-use --headed open https://yourapp.local
-browser-use state                          # Verify page loaded
-browser-use screenshot step1-landing.png   # Evidence
-browser-use input 3 "test@email.com"       # Fill email
-browser-use input 5 "password123"          # Fill password
-browser-use click 8                        # Click login button
-browser-use wait text "Dashboard"           # Wait for navigation text
-browser-use state                          # Verify logged in
-browser-use screenshot step2-dashboard.png # Evidence
-browser-use close
-```
-
-### Console & Network Log Capture
-
-```bash
-browser-use eval "console.log('checkpoint');"   # Inject log marker
-browser-use eval "document.title"                # Read page state via JS
-browser-use get text 5                           # Get text of element index 5
-browser-use get value 3                          # Get value of input element index 3
-# For full console/network: use Python Agent mode with Playwright's page.on('console') and page.on('request')
-```
-
-### Error Recovery
-
-```bash
-# If daemon crashes or gets stuck:
-browser-use close          # Clean shutdown
-# Then restart:
-browser-use open <url>     # Fresh daemon starts automatically
-```
-
-## Verification Contract
-
-Every browser task must produce:
-
-1. **State evidence**: `browser-use state` output or screenshot
-2. **Action log**: sequence of commands issued
-3. **Result assertion**: explicit before/after state comparison
-
-No browser/UI claim without real-browser evidence.
-
-## Architecture Note
-
-Browser Use wraps Playwright with AI reasoning. The daemon keeps Chromium running between CLI commands (~50ms latency). The Agent mode adds an LLM observation→decision→action loop on top. This replaces fragile CSS-selector scripts with semantic element targeting via accessibility tree snapshots.
-
-Benchmarks: 89.1% WebVoyager (SOTA), 78k+ GitHub stars, MIT license.
+- [ ] Record URL, port, browser, and viewport.
+- [ ] Verify available Browser Use, Playwright, CDP, MCP, or manual tooling.
+- [ ] Check not just HTTP 200.
+- [ ] Verify no runtime exceptions, console errors, and failed network requests.
+- [ ] Confirm stable accessible labels/roles or `data-testid` on interactive elements.
+- [ ] Test the critical flow end-to-end with real user actions.
+- [ ] Capture screenshot, trace, video, state snapshot, or result artifact paths.
+- [ ] Produce an AC-by-AC validation matrix.
+- [ ] Clean up dev server or browser processes that the task started.
 
 ## Security
 
-- **Never log or screenshot credentials** — redact password fields, API keys, tokens before capturing evidence
-- **Chrome profiles contain sensitive data** — only use `--profile` with explicit user approval; never share profile data
-- **Screenshots may capture PII** — review before saving to task evidence directory
-- **Scraping targets need approval** — confirm the target site's ToS allow automated access before scraping
-- **`browser-use input` commands with passwords** — use placeholder values in documentation; never hardcode real credentials
-- **Agent mode sandbox** — run Agent API with `allowed_domains` restriction when possible
+- Never log or screenshot real credentials, API keys, tokens, or private data.
+- Use placeholder credentials in examples.
+- Ask before using a real Chrome profile because it contains cookies and private sessions.
+- Ask before leaving a remote/cloud browser running.
+- For scraping or repeated automated visits, confirm the user owns the target or has permission.
 
 ## Return
 
-- CLI commands issued and their output
-- screenshot paths
-- agent history (if Agent mode used)
-- verification pass/fail with evidence
-- remaining risks (flaky selectors, auth issues, CAPTCHAs)
+- Commands or scripts run
+- Selectors used
+- Screenshot/trace/video/state paths
+- Verified flows and AC matrix
+- Failures and remaining risks

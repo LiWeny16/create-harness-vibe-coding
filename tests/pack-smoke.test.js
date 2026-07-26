@@ -21,8 +21,12 @@ test('npm pack includes core and optional templates', () => {
   assert.match(output, /CHANGELOG\.md/);
   assert.doesNotMatch(output, /templates\/common\/docs\/README\.md|templates\\common\\docs\\README\.md/);
   assert.match(output, /templates\/common\/\.claude\/commands\/wf-help\.md|templates\\common\\.claude\\commands\\wf-help\.md/);
+  for (const command of ['wf', 'wf-max', 'wf-auto', 'wf-auto-spark', 'wf-review', 'wf-learn', 'wf-browser', 'wf-readme', 'wf-remove']) {
+    const escaped = command.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    assert.match(output, new RegExp(`templates/common/\\.claude/commands/${escaped}\\.md|templates\\\\common\\\\.claude\\\\commands\\\\${escaped}\\.md`));
+    assert.match(output, new RegExp(`templates/common/\\.opencode/commands/${escaped}\\.md|templates\\\\common\\\\.opencode\\\\commands\\\\${escaped}\\.md`));
+  }
   assert.doesNotMatch(output, /templates\/common\/commands\/wf|templates\\common\\commands\\wf/);
-  assert.doesNotMatch(output, /templates\/common\/\.claude\/commands\/wf(?:\.md|-(?:max|auto|review|learn|browser|readme|remove))(?:\/|\.md)|templates\\common\\.claude\\commands\\wf(?:\.md|-(?:max|auto|review|learn|browser|readme|remove))(?:\\|\.md)/);
   assert.doesNotMatch(output, /templates\/optional\/skills\/[^/\\]+\/\.claude\/commands|templates\\optional\\skills\\[^/\\]+\\.claude\\commands/);
   assert.doesNotMatch(output, /commands\/wf\.toml|commands\\wf\.toml/);
   assert.match(output, /src\/generator\.js|src\\generator\.js/);

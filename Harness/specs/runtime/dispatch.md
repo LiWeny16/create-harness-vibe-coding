@@ -13,7 +13,7 @@ Use when work needs parallel reading, independent review, cross-layer analysis, 
 - Important assumptions, decisions, blockers, evidence, and handoffs must be written to `Harness/tasks/<task-id>/PROGRESS.md` and `Harness/tasks/<task-id>/PLAN.md`, the current feature doc, `Harness/MEMORY.md`, or `Harness/memory/*` as appropriate.
 - Resumable state is governed by [WF-STATE.md](../workflows/WF-STATE.md). On session start, the controller reads STATE.json before building a fresh dispatch table.
 - PRD-derived Acceptance Criteria are the source of truth. Dispatch packets must carry the relevant AC IDs and contracts.
-- Agent count: default (non-WF) <=3 active agents; `/wf` selects a tier dynamically per [WF-KERNEL.md](../workflows/WF-KERNEL.md) (Light/Standard/Full); `/wf-max` inherits the selected tier and adds maximum safe fan-out (WF-Max-Useful default; WF-Max-Strict explicit only), removing the Harness default cap through the span formula. Real concurrency is still bounded by runtime thread budget, config, billing, and local resources. Use current runtime subagents first, close completed agents, then peer-CLI overflow (`claude -p`, `codex exec`, or `opencode run --agent <role> --dir .`). Generated Codex config defaults to `agents.max_threads = 12` and `agents.max_depth = 1`; ask the user before raising `agents.max_threads` above that default. See [WF.md](../workflows/WF.md) and [WF-MAX.md](../workflows/WF-MAX.md).
+- Agent count: default (non-WF) <=3 active agents; `/wf` selects a tier dynamically per [WF-KERNEL.md](../workflows/WF-KERNEL.md) (Light/Standard/Full); `/wf-max` inherits the selected tier and adds maximum safe fan-out (WF-Max-Useful default; WF-Max-Strict explicit only), removing the Harness default cap through the span formula. WF-MAX must attempt native subagent fan-out and record `fanoutAttempted: true` before any solo fallback. Real concurrency is still bounded by runtime thread budget, config, billing, and local resources. Use current runtime subagents first, close completed agents, then peer-CLI overflow (`claude -p`, `codex exec`, or `opencode run --agent <role> --dir .`). Do not scaffold Codex scalar `[agents]` capacity fields into project `.codex/config.toml`; probe the installed runtime and manage Codex caps through the dispatch ledger unless the installed version accepts the config shape. Generated OpenCode config defaults to `subagent_depth = 2` for manager -> worker nesting. See [WF.md](../workflows/WF.md) and [WF-MAX.md](../workflows/WF-MAX.md).
 - Read-only agents may run in parallel.
 - Writing agents run serially unless write sets are disjoint.
 - Use a worktree when two agents may touch overlapping files or long-running branches.
@@ -68,7 +68,7 @@ Objective:           <one-sentence goal>
 TaskType:            ui-browser | api-backend | architecture-migration | docs-readme | dependency-sdk | bug-fix | refactor | chore
 ModelTier:           small-fast | standard | high-reasoning
 AgentName:           <the agent file name, e.g. task-scribe, codebase-explorer, implementer>
-Skills:              <which skills to activate, e.g. tdd, browser-e2e>
+Skills:              <which skills to activate, e.g. tdd, wf-browser>
 ECC:                 <which ECC rules to load, e.g. web/design-quality.md, python/fastapi.md>
 PRD:                 <path or task PLAN section containing Mini PRD>
 Acceptance IDs:      <AC-001, AC-002, or "none" for non-behavioral work>

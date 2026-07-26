@@ -3,12 +3,15 @@ harness: wf-agent
 description: WF-MAX Manager for W2R review wave. Spawns 3-4 parallel reviewers (spec/code/security/perf), deduplicates findings, assigns severity, reports to CEO. Read-only + Agent spawn; no Edit/Write.
 mode: subagent
 permission:
+  task:
+    "*": deny
+    "reviewer": allow
   edit: deny
   bash:
     "*": deny
-    "git *": allow
+    "git status*": allow
     "git diff *": allow
-    "node *": allow
+    "git diff*": allow
   websearch: deny
   webfetch: deny
 ---
