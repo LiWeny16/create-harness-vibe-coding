@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.8.18] - 2026-07-29
+
+- Add explicit task capsule management with list, archive, record/open state recovery, create-or-resume matching, task dependency metadata, and validator coverage.
+- Add `wf-command-create` as the atomic command/skill creation workflow so new Harness commands update command files, skills, templates, mirrors, validators, and tests together.
+- Add global install metadata for Claude, Codex, and OpenCode while keeping Harness tasks and progress project-local.
+- Separate project/global memory and settings policy, with project settings taking precedence and task capsules remaining project-scoped.
+- Harden host-global ownership and validation rules so framework-owned global command/skill files can update safely while user-authored files remain protected.
+- Strengthen `wf-review`, `wf-agents-docs`, and WF-MAX guidance around explicit WF triggers, bounded peer output, and task capsule recording.
+
 ## [0.8.17] - 2026-07-26
 
 - Add HarnessBench v0.2 as an external-only lifecycle proof: 15 runs per mode, direct file writes safe in 3/15 runs, Harness safe path safe in 15/15 runs.

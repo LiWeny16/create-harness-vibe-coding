@@ -9,13 +9,10 @@ Use this skill before shelling out to `claude`, `codex`, or `opencode` from Harn
 
 ## Source Order
 
-1. Prefer installed help: `claude --help`, `codex exec --help`, `opencode run --help`.
-2. Check official docs for flags that affect cost, auth, JSON, resume, tools/MCP, or telemetry.
-3. When adding automation, record command, source, stdout/stderr shape, and failed patterns.
+Prefer installed help (`claude --help`, `codex exec --help`, `opencode run --help`), then official docs for cost/auth/JSON/resume/tools/telemetry; record command, source, stdout/stderr shape, and failures.
 
 ## Claude Code CLI
 
-- Interactive: `claude`.
 - Non-interactive JSON: pipe ASCII or UTF-8-safe stdin into `claude -p --output-format json`.
 - Stream JSON requires verbose mode: `claude -p --output-format stream-json --verbose`.
 - Continue/resume: `claude -c -p "..."` or `claude -p --resume <session-id> "..."`; for PowerShell automation, prefer stdin and validate non-empty JSON before parsing.
@@ -26,19 +23,15 @@ Use this skill before shelling out to `claude`, `codex`, or `opencode` from Harn
 
 ## Codex CLI
 
-- Interactive: `codex`.
 - Non-interactive: `codex exec "task"`.
-- Read stdin as the full prompt: `cat prompt.txt | codex exec -`.
-- Prompt plus stdin context: `some-command | codex exec "summarize this output"`.
+- Stdin modes: `cat prompt.txt | codex exec -`; `some-command | codex exec "summarize this output"`.
 - Machine output: `codex exec --json "task"` emits JSONL events; parse `turn.completed.usage`, including `cached_input_tokens` when present.
 - Resume: `codex exec resume --last "..."` or `codex exec resume <SESSION_ID> "..."`.
 - Permissions: default is read-only; set `--sandbox workspace-write` only when edits are required. Use `--ignore-user-config` / `--ignore-rules` for controlled automation.
 
 ## OpenCode CLI
 
-- Interactive: `opencode`.
-- Non-interactive: `opencode run [message..]`.
-- JSON events: `opencode run --format json "task"`.
+- Non-interactive: `opencode run [message..]`; JSON events: `opencode run --format json "task"`.
 - Resume: `opencode run --continue "..."` or `opencode run --session <id> "..."`.
 - Peer role: `opencode run --agent reviewer --dir . "review prompt"`.
 - Reuse a server to avoid MCP cold boot: `opencode serve`, then `opencode run --attach http://localhost:4096 "task"`.
@@ -48,31 +41,27 @@ Use this skill before shelling out to `claude`, `codex`, or `opencode` from Harn
 
 - Prefer stdin over trailing prompt args for `claude -p` in PowerShell.
 - Use ASCII prompts or explicitly UTF-8-safe input for automated probes.
-- Do not trust exit code alone. Fail on empty/non-JSON stdout or error/budget terminal fields.
+- Do not trust exit code alone. Fail on empty/non-JSON stdout, error/budget/fallback terminal fields, or missing final model text.
 - Avoid naming function parameters `$Args`; PowerShell treats `$Args` specially.
 - Store telemetry outside the repo, e.g. `$HOME/.claude/cache-telemetry/*.json`, so git status does not perturb prefixes.
 
 ## Evidence-Packet Review Pattern
 
-For peer review, route smokes, cache analysis, and audits, gather evidence
-first; the peer judges only the bounded packet.
+For peer review, route smokes, cache analysis, and audits, gather evidence first; the peer judges only the bounded packet.
 
-- Gather paths, line snippets, command names, exits, and invariants with `rg`,
-  `node` scripts, validators, or small reads.
-- Send only that packet. Exclude full docs, raw logs, timestamps, session IDs,
-  and screenshots unless they are the evidence.
-- Prefer no tools for judgment-only review; otherwise allow only read-only
-  tools and name the exact read set.
+- Gather paths, line snippets, command names, exits, and invariants with `rg`, `node` scripts, validators, or small reads.
+- Send only that packet. Exclude full docs, raw logs, timestamps, session IDs, and screenshots unless they are the evidence.
+- Prefer no tools for judgment-only review; otherwise allow only read-only tools and name the exact read set.
 - Controller accepts, rejects, or escalates findings. Peers do not own scope.
+- Fail on empty/non-JSON stdout, explicit error events, budget errors, fallback warnings, or missing final model text.
+- For `claude -p --output-format json`, check `is_error`, `subtype`, and `result` fields before treating output as review evidence.
+- For `opencode run --format json`, extract `text` from JSONL events; the stream is not a single review result.
 
 ## No Scratch-File Rule
 
-- Do not write CLI probe output under `%TEMP%`, `$env:TEMP`, `/tmp`, or other
-  system temp directories.
-- Prefer stdout, JSON/JSONL streaming, or in-memory parsing.
+- Do not write CLI probe output under `%TEMP%`, `$env:TEMP`, `/tmp`, or other system temp directories; prefer stdout, JSON/JSONL streaming, or in-memory parsing.
 - Persistent repo evidence goes under `Harness/tasks/<task-id>/evidence/`.
-- Cache telemetry may live under `$HOME/.claude/cache-telemetry/` to avoid repo
-  prompt-cache churn.
+- Cache telemetry may live under `$HOME/.claude/cache-telemetry/` to avoid repo prompt-cache churn.
 - Do not create prompt temp files. Use stdin.
 
 ## Subagent Output Contract
@@ -102,8 +91,7 @@ Follow `Harness/specs/runtime/context-loading.md#Cache-First Context Contract`: 
 ## Batch-Test Pattern
 
 1. Probe command availability with `Get-Command claude,codex,opencode -ErrorAction SilentlyContinue`.
-2. Build a compact evidence packet before invoking peer agents; use the peer
-   only for judgment unless the test explicitly requires live agent discovery.
+2. Build a compact evidence packet before invoking peer agents; use the peer only for judgment unless the test explicitly requires live agent discovery.
 3. Run a cold turn and capture session id.
 4. Resume that session for two warm turns.
 5. For each turn record input, cache creation, cache read, ratio, cost, model/session id, and exact flags.
@@ -111,9 +99,6 @@ Follow `Harness/specs/runtime/context-loading.md#Cache-First Context Contract`: 
 
 ## Official References
 
-- Claude Code CLI reference: https://code.claude.com/docs/en/cli-reference
-- Claude Code prompt caching: https://code.claude.com/docs/en/prompt-caching
-- Claude Code status line schema: https://code.claude.com/docs/en/statusline
+- Claude Code CLI/cache/statusline: https://code.claude.com/docs/en/cli-reference
 - Codex CLI: https://developers.openai.com/codex/cli
-- Codex non-interactive mode: https://learn.chatgpt.com/docs/non-interactive-mode
 - OpenCode CLI: https://opencode.ai/docs/cli/

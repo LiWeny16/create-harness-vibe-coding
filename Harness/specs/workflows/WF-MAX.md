@@ -86,6 +86,11 @@ Every Worker dispatch or peer-CLI call must be bounded by the controller's comma
 
 Record the channel actually used, command/tool form, timeout, exit status, and a <=250 token Evidence-Packet in the task capsule. Do not create ad hoc probe scripts or write peer-CLI output to `%TEMP%`; persistent evidence belongs only under the current task's `evidence/` directory when it is intentionally part of the task record.
 
+### Peer CLI Output Contract
+
+- `opencode run --agent reviewer`: installed agent is `mode: subagent` per `.opencode/agents/reviewer.md`. Do NOT claim primary-runner role use without a live probe.
+- Parse JSON/JSONL peer CLI output: fail on empty/non-JSON, error events, budget errors, fallback warnings, or missing final model text.
+
 ## Parallelism Priority
 
 1. Read-only exploration — max parallel, all readSets

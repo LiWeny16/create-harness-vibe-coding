@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "generator": "0.8.17",
+  "generator": "0.8.18",
   "source": "https://raw.githubusercontent.com/LiWeny16/create-harness-vibe-coding/main/templates/common/",
-  "generated": "2026-07-26T09:26:35.146Z",
+  "generated": "2026-07-29T06:33:44.000Z",
   "preserve": [
     "Harness/PROGRESS.md",
     "Harness/tasks/**",
@@ -197,6 +197,11 @@
       "overwrite": "safe"
     },
     {
+      "path": ".agents/skills/wf-command-create/SKILL.md",
+      "kind": "skill",
+      "overwrite": "safe"
+    },
+    {
       "path": ".agents/skills/wf-help/SKILL.md",
       "kind": "skill",
       "overwrite": "safe"
@@ -223,6 +228,21 @@
     },
     {
       "path": ".agents/skills/wf-review/SKILL.md",
+      "kind": "skill",
+      "overwrite": "safe"
+    },
+    {
+      "path": ".agents/skills/wf-task-archive/SKILL.md",
+      "kind": "skill",
+      "overwrite": "safe"
+    },
+    {
+      "path": ".agents/skills/wf-task-list/SKILL.md",
+      "kind": "skill",
+      "overwrite": "safe"
+    },
+    {
+      "path": ".agents/skills/wf-task-record/SKILL.md",
       "kind": "skill",
       "overwrite": "safe"
     },
@@ -347,6 +367,11 @@
       "overwrite": "safe"
     },
     {
+      "path": ".claude/commands/wf-command-create.md",
+      "kind": "command",
+      "overwrite": "safe"
+    },
+    {
       "path": ".claude/commands/wf-help.md",
       "kind": "command",
       "overwrite": "safe"
@@ -373,6 +398,21 @@
     },
     {
       "path": ".claude/commands/wf-review.md",
+      "kind": "command",
+      "overwrite": "safe"
+    },
+    {
+      "path": ".claude/commands/wf-task-archive.md",
+      "kind": "command",
+      "overwrite": "safe"
+    },
+    {
+      "path": ".claude/commands/wf-task-list.md",
+      "kind": "command",
+      "overwrite": "safe"
+    },
+    {
+      "path": ".claude/commands/wf-task-record.md",
       "kind": "command",
       "overwrite": "safe"
     },
@@ -427,6 +467,11 @@
       "overwrite": "safe"
     },
     {
+      "path": ".claude/skills/wf-command-create/SKILL.md",
+      "kind": "skill",
+      "overwrite": "safe"
+    },
+    {
       "path": ".claude/skills/wf-help/SKILL.md",
       "kind": "skill",
       "overwrite": "safe"
@@ -453,6 +498,21 @@
     },
     {
       "path": ".claude/skills/wf-review/SKILL.md",
+      "kind": "skill",
+      "overwrite": "safe"
+    },
+    {
+      "path": ".claude/skills/wf-task-archive/SKILL.md",
+      "kind": "skill",
+      "overwrite": "safe"
+    },
+    {
+      "path": ".claude/skills/wf-task-list/SKILL.md",
+      "kind": "skill",
+      "overwrite": "safe"
+    },
+    {
+      "path": ".claude/skills/wf-task-record/SKILL.md",
       "kind": "skill",
       "overwrite": "safe"
     },
@@ -587,6 +647,11 @@
       "overwrite": "safe"
     },
     {
+      "path": ".opencode/commands/wf-command-create.md",
+      "kind": "command",
+      "overwrite": "safe"
+    },
+    {
       "path": ".opencode/commands/wf-help.md",
       "kind": "command",
       "overwrite": "safe"
@@ -613,6 +678,21 @@
     },
     {
       "path": ".opencode/commands/wf-review.md",
+      "kind": "command",
+      "overwrite": "safe"
+    },
+    {
+      "path": ".opencode/commands/wf-task-archive.md",
+      "kind": "command",
+      "overwrite": "safe"
+    },
+    {
+      "path": ".opencode/commands/wf-task-list.md",
+      "kind": "command",
+      "overwrite": "safe"
+    },
+    {
+      "path": ".opencode/commands/wf-task-record.md",
       "kind": "command",
       "overwrite": "safe"
     },
@@ -744,6 +824,11 @@
     {
       "path": "Harness/specs/runtime/agent-workflow.md",
       "kind": "doc",
+      "overwrite": "safe"
+    },
+    {
+      "path": "Harness/specs/runtime/command-surface.json",
+      "kind": "config",
       "overwrite": "safe"
     },
     {

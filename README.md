@@ -67,6 +67,8 @@ After reading this README, the agent selects the path that matches the project:
 | Existing `Harness/` but missing `Harness/scripts/wf-update-check.mjs` | `npx create-harness-vibe-coding@latest my-project . -y --on-conflict skip --json`. Then run `node Harness/scripts/wf-update-check.mjs --json` |
 | After install or update | `node Harness/scripts/validate-harness.mjs --strict` |
 
+Install scope: project-local is the default. To seed a shared machine-level runtime, use `--install-scope global --global-dir <dir>`; commands/skills/agents are copied into Claude Code, Codex, and OpenCode host-global directories, while `Harness/tasks/`, `Harness/PROGRESS.md`, project memory, project facts, and project settings stay inside each target project.
+
 After installation, hand off by phase: use `CLAUDE.md` as the normal session entry, use `Harness/specs/guides/SETUP.md` only for install/bootstrap, migration, or upgrade decisions, and use `Harness/README.md` as the Harness workflow router when a routed task needs it. Preserve project boundaries; research and plan before editing; run tests, validation, and review before claiming completion.
 
 The user does not need to run commands manually. The agent handles installation, conflict handling, validation, and the handoff.

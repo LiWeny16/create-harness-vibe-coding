@@ -71,6 +71,8 @@ const STATUS_ALIASES = new Map([
   ['need-user-decision', 'needs-user-decision'],
   ['close-out', 'closeout'],
 ]);
+const OPEN_TASK_STATUSES = new Set(['active', 'blocked', 'in_progress', 'running', 'pending', 'needs-user-decision']);
+const VALUE_FLAGS = new Set(['--keep', '--mode', '--phase', '--status', '--task', '--text', '--title', '--note', '--context']);
 
 function hasFlag(name) {
   return args.includes(name);
@@ -80,6 +82,22 @@ function flagValue(name, fallback = null) {
   const index = args.indexOf(name);
   if (index === -1 || index + 1 >= args.length) return fallback;
   return args[index + 1];
+}
+
+function findTaskIdArg(startIndex = 1) {
+  for (let i = startIndex; i < args.length; i++) {
+    const a = args[i];
+    if (a.startsWith('--')) {
+      if (a.includes('=')) continue;
+      const next = args[i + 1];
+      if (VALUE_FLAGS.has(a) && next && !next.startsWith('--')) {
+        i++; // skip the value
+      }
+      continue;
+    }
+    return a;
+  }
+  return null;
 }
 
 const outputJson = hasFlag('--json');
@@ -127,12 +145,15 @@ function usage() {
     message: `Usage: node Harness/scripts/task-state.mjs <command> [options]
 
 Commands:
-  list [--json]                         List task state.
-  validate [--strict] [--json]          Validate state consistency.
+  list [--json]                         List task state with dependency/resume info.
+  validate [--strict] [--json]          Validate state consistency (includes link checks).
   reconcile [--dry-run|--apply] [--json] Normalize STATE.json and root PROGRESS.md.
   set-active <task-id> [--dry-run]       Set the single active task.
   transition <task-id> --status <s> --phase <p> [--dry-run]
   archive [--dry-run|--apply] [--keep n] [--task id] [--json]
+  record <task-id> [--create] [--text "description"] [--status <s>] [--mode <m>] [--dry-run|--apply] [--json]
+                                        Create or update a task record.
+  open [--json]                         List open (non-archived, active-status) tasks.
 
 Archive defaults to dry-run and keeps ${OUTER_TASK_CAP} non-archived task capsules.`,
   }, 0);
@@ -226,6 +247,23 @@ function defaultQueues() {
   };
 }
 
+const VALID_MODES = new Set([
+  'direct',
+  'wf',
+  'wf-max',
+  'wf-auto',
+  'wf-auto-spark',
+  'wf-review',
+  'wf-browser',
+]);
+
+function normalizeMode(value) {
+  if (value === null || value === undefined) return '';
+  const raw = String(value).trim().toLowerCase();
+  if (!raw) return '';
+  if (VALID_MODES.has(raw)) return raw;
+  return '';
+}
 function normalizeQueues(state) {
   const source = state && typeof state.queues === 'object' && state.queues ? state.queues : state || {};
   return {
@@ -398,6 +436,48 @@ function validateState({ strict = false } = {}) {
     if (task.id === rootProgress.activeTask && normalizeStatus(task.state.status) && normalizeStatus(task.state.status) !== 'active') {
       issue(`${task.id}: root Active Task points here but STATE.json status is "${normalizeStatus(task.state.status)}"`, true);
     }
+
+    const links = task.state.links || {};
+    if (Array.isArray(links.dependsOn)) {
+      for (const depId of links.dependsOn) {
+        if (!taskIds.has(depId)) issue(`${task.id}: links.dependsOn references non-existent task "${depId}"`);
+      }
+    }
+    if (Array.isArray(links.blocks)) {
+      for (const blockId of links.blocks) {
+        if (!taskIds.has(blockId)) issue(`${task.id}: links.blocks references non-existent task "${blockId}"`);
+      }
+    }
+    if (Array.isArray(task.state.workItems)) {
+      const runningItems = task.state.workItems.filter(wi => wi && normalizeStatus(wi.status) === 'running');
+      if (runningItems.length > 0 && (!Array.isArray(task.state.dispatchLedger) || task.state.dispatchLedger.length === 0)) {
+        issue(`${task.id}: workItems has ${runningItems.length} running item(s) but no dispatchLedger entries`);
+      }
+    }
+
+    const queues = normalizeQueues(task.state);
+    const queueMembership = new Map();
+    for (const queueName of ['ready', 'running', 'blocked', 'done']) {
+      for (const item of queues[queueName]) {
+        const itemId = typeof item === 'string' ? item : (item && typeof item.id === 'string' ? item.id : null);
+        if (!itemId) {
+          issue(`${task.id}: queues.${queueName} contains an item without an id`, true);
+          continue;
+        }
+        const priorQueue = queueMembership.get(itemId);
+        if (priorQueue) {
+          issue(`${task.id}: queue item "${itemId}" appears in both ${priorQueue} and ${queueName}`, true);
+        } else {
+          queueMembership.set(itemId, queueName);
+        }
+      }
+    }
+    const status = normalizeStatus(task.state.status);
+    const phase = normalizePhase(task.state.phase);
+    if ((SAFE_ARCHIVE_STATUSES.has(status) || SAFE_ARCHIVE_STATUSES.has(phase)) &&
+      (queues.ready.length > 0 || queues.running.length > 0 || queues.blocked.length > 0)) {
+      issue(`${task.id}: closed task has non-empty ready/running/blocked queues`, true);
+    }
   }
 
   const activeStateTasks = tasks.filter(task => normalizeStatus(task.state?.status) === 'active');
@@ -405,7 +485,7 @@ function validateState({ strict = false } = {}) {
     issue(`Multiple STATE.json files are active: ${activeStateTasks.map(task => task.id).join(', ')}`, true);
   }
   if (tasks.length > OUTER_TASK_CAP) {
-    issue(`Harness/tasks/ has ${tasks.length} outer task capsules (cap ${OUTER_TASK_CAP}); run node Harness/scripts/task-state.mjs archive --apply`);
+    issue(`Harness/tasks/ has ${tasks.length} outer task capsules (cap ${OUTER_TASK_CAP}); remind the user to run $wf-task-archive when they want to archive completed tasks`);
   }
 
   return {
@@ -688,8 +768,37 @@ function applyOperations(operations) {
 }
 
 function runList() {
-  const validation = validateState();
-  finish({ ...validation, command: 'list', ok: true }, 0);
+  const { rootProgress, tasks } = collectTasks();
+
+  const expandedTasks = tasks.map(task => {
+    const state = task.state || {};
+    const links = state.links || {};
+    const status = normalizeStatus(state.status) || task.status;
+    return {
+      id: task.id,
+      status,
+      phase: normalizePhase(state.phase) || task.phase,
+      rootPhase: task.rootPhase,
+      progressPhase: task.progressPhase,
+      dependsOn: Array.isArray(links.dependsOn) ? links.dependsOn : [],
+      blocks: Array.isArray(links.blocks) ? links.blocks : [],
+      statusDisplay: status || '-',
+      openTasks: OPEN_TASK_STATUSES.has(status),
+      nextAction: state.nextAction || null,
+      archive: (state ? archiveEligibility(task, rootProgress.activeTask) : { ok: false, reason: 'no state' }),
+    };
+  });
+
+  const payload = {
+    ok: true,
+    command: 'list',
+    taskCount: expandedTasks.length,
+    activeTask: rootProgress.activeTask,
+    tasks: expandedTasks,
+    errors: [],
+    warnings: [],
+  };
+  finish(payload, 0);
 }
 
 function runValidate() {
@@ -873,6 +982,285 @@ function runArchive() {
   finish(plan, 0);
 }
 
+function readTemplateState() {
+  const templatePath = path.join(tasksDir, '_template', 'STATE.json');
+  if (!fs.existsSync(templatePath)) return null;
+  try {
+    return JSON.parse(fs.readFileSync(templatePath, 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
+function generateTaskId(title, note, context) {
+  // lowercase first, then sanitize — ensures uppercase letters survive as lowercase
+  const raw = (title || note || context || 'record')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  const parts = raw.split('-').filter(Boolean).slice(0, 3).join('-');
+  // fallback: empty slug (pure CJK/emoji) defaults to 'task'
+  const slug = parts.slice(0, 25) || 'task';
+  const now = new Date();
+  const suffix = `${now.getFullYear().toString().slice(2)}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
+  return `task-${slug}-${suffix}`;
+}
+
+function findMatchingTask(title, note, context) {
+  const { tasks } = collectTasks();
+  const openTasks = tasks.filter(t => OPEN_TASK_STATUSES.has(normalizeStatus(t.state?.status) || t.status));
+
+  // Step 1: title match (highest priority)
+  if (title) {
+    const slugKey = title.replace(/\s+/g, '-').toLowerCase();
+    const matches = openTasks.filter(t => {
+      if (t.id === `task-${slugKey}`) return true;
+      if (t.id.includes(slugKey)) return true;
+      const goal = (t.rootRow?.goal || t.state?.nextAction || '').toLowerCase();
+      return slugKey.split('-').every(part => goal.includes(part));
+    });
+    if (matches.length === 1) return { matched: matches[0], candidates: null };
+    if (matches.length > 1) return { matched: null, candidates: matches };
+  }
+
+  // Step 2: note/context overlap match
+  if (note || context) {
+    const query = ((note || '') + ' ' + (context || '')).toLowerCase();
+    const terms = query.split(/\s+/).filter(t => t.length > 3);
+    if (terms.length === 0) return { matched: null, candidates: null };
+    const scored = openTasks.map(t => {
+      const fields = [t.state?.nextAction || '', t.state?.goal || '', t.rootRow?.goal || ''].join(' ').toLowerCase();
+      const score = terms.filter(term => fields.includes(term)).length;
+      return { task: t, score };
+    }).filter(s => s.score > 0);
+    scored.sort((a, b) => b.score - a.score);
+    if (scored.length === 0) return { matched: null, candidates: null };
+    const bestScore = scored[0].score;
+    const best = scored.filter(s => s.score === bestScore);
+    if (best.length === 1 && bestScore >= Math.max(2, Math.ceil(terms.length * 0.5))) {
+      return { matched: best[0].task, candidates: null };
+    }
+    if (best.length > 1) {
+      return { matched: null, candidates: best.map(s => s.task) };
+    }
+  }
+
+  return { matched: null, candidates: null };
+}
+
+function runRecord() {
+  const title = flagValue('--title');
+  const note = flagValue('--note');
+  const context = flagValue('--context');
+  const forceNew = hasFlag('--new');
+
+  let taskId = findTaskIdArg(1);
+  let createOrResume = false;
+
+  if (!taskId) {
+    if (!title && !note && !context) {
+      finish({ ok: false, command: 'record', errors: ['requires <task-id> or --title/--note/--context'], warnings: [] }, 1);
+      return;
+    }
+    if (!forceNew) {
+      const { matched, candidates } = findMatchingTask(title, note, context);
+      if (matched) {
+        taskId = matched.id;
+      } else if (candidates && candidates.length > 0) {
+        finish({ ok: false, command: 'record', errors: [`Ambiguous match: ${candidates.map(t => t.id).join(', ')}. Use --new to force new, or specify --title more precisely.`], warnings: [] }, 1);
+        return;
+      }
+    }
+    if (!taskId) {
+      taskId = generateTaskId(title, note, context);
+      createOrResume = true;
+    }
+
+    // --new uniqueness: probe existing task dirs, append incrementing suffix on collision
+    if (forceNew && createOrResume) {
+      const existingNames = new Set(listOuterTaskNames());
+      let counter = 1;
+      const baseId = taskId;
+      while (existingNames.has(taskId)) {
+        counter++;
+        taskId = `${baseId}-${counter}`;
+      }
+      // if suffix made it invalid, fall back to base id
+      try {
+        ensureValidTaskId(taskId);
+      } catch {
+        taskId = baseId;
+      }
+    }
+  }
+
+  if (!taskId) {
+    finish({ ok: false, command: 'record', errors: ['record requires a <task-id>'], warnings: [] }, 1);
+    return;
+  }
+  try {
+    ensureValidTaskId(taskId);
+  } catch (err) {
+    finish({ ok: false, command: 'record', errors: [err.message], warnings: [] }, 1);
+    return;
+  }
+
+  const isCreate = hasFlag('--create') || createOrResume;
+  const isDryRun = hasFlag('--dry-run');
+  const isApply = hasFlag('--apply');
+  const actuallyApply = isApply && !isDryRun;
+
+  const existing = readState(taskId);
+  if (!existing.state && !isCreate) {
+    finish({ ok: false, command: 'record', errors: [`Task "${taskId}" not found; use --create to create`], warnings: [] }, 1);
+    return;
+  }
+
+  const text = flagValue('--text');
+  const statusRaw = flagValue('--status');
+  const modeRaw = flagValue('--mode');
+
+  if (!existing.state && isCreate) {
+    const now = new Date().toISOString();
+    if (statusRaw) {
+      const ns = normalizeStatus(statusRaw);
+      if (!ns) {
+        finish({ ok: false, command: 'record', errors: [`Invalid status "${statusRaw}". Valid: ${[...VALID_STATUSES].join(', ')}`], warnings: [] }, 1);
+        return;
+      }
+    }
+    const status = statusRaw ? normalizeStatus(statusRaw) : 'pending';
+    const mode = modeRaw || 'direct';
+    const newState = defaultState(taskId, status, 'intake', now);
+    newState.mode = mode;
+    if (text) newState.nextAction = text;
+  if (modeRaw) {
+    const normalizedMode = normalizeMode(modeRaw);
+    if (!normalizedMode) {
+      finish({ ok: false, command: 'record', errors: [`Invalid mode "${modeRaw}". Valid: ${[...VALID_MODES].join(', ')}`], warnings: [] }, 1);
+      return;
+    }
+    newState.mode = normalizedMode;
+  }
+
+    const templateState = readTemplateState();
+    if (templateState) {
+      if (Array.isArray(templateState.acceptance)) newState.acceptance = [...templateState.acceptance];
+      if (templateState.links) newState.links = JSON.parse(JSON.stringify(templateState.links));
+    }
+
+    if (actuallyApply) {
+      const taskDir = safeTaskPath(taskId);
+      fs.mkdirSync(taskDir, { recursive: true });
+      writeJsonAtomic(path.join(taskDir, 'STATE.json'), newState);
+      const progressFile = path.join(taskDir, 'PROGRESS.md');
+      writeTextAtomic(progressFile, renderTaskProgress(readText(progressFile), taskId, newState));
+
+      const planFile = path.join(taskDir, 'PLAN.md');
+      if (!fs.existsSync(planFile)) {
+        writeTextAtomic(planFile, `# ${taskId} - PLAN\n\n## Goal\n\n${text || taskTitle(taskId)}\n\n## Scope\n\n.\n\n## Decisions\n\n.\n\n## Acceptance\n\n.\n`);
+      }
+
+      const rootText = readText(progressPath);
+      const parsed = parseRootProgress();
+      const newRow = { id: taskId, goal: text || taskTitle(taskId), phase: displayPhase('intake'), closed: '-' };
+      parsed.rows.push(newRow);
+      const rows = parsed.rows.map(r => ({ id: r.id, goal: r.goal, phase: r.phase, closed: r.closed }));
+      const newRoot = renderRootProgress(rootText, parsed.activeTask, rows);
+      writeTextAtomic(progressPath, newRoot);
+    }
+
+    finish({
+      ok: true,
+      command: 'record',
+      action: 'created',
+      dryRun: !actuallyApply,
+      taskId,
+      state: newState,
+      warnings: [],
+    }, 0);
+    return;
+  }
+
+  if (existing.state) {
+    const now = new Date().toISOString();
+    const updated = { ...existing.state };
+    updated.updatedAt = now;
+    if (statusRaw) {
+      const ns = normalizeStatus(statusRaw);
+      if (!ns) {
+        finish({ ok: false, command: 'record', errors: [`Invalid status "${statusRaw}". Valid: ${[...VALID_STATUSES].join(', ')}`], warnings: [] }, 1);
+        return;
+      }
+      updated.status = ns;
+    }
+    if (modeRaw) {
+      const normalizedMode = normalizeMode(modeRaw);
+      if (!normalizedMode) {
+        finish({ ok: false, command: 'record', errors: [`Invalid mode "${modeRaw}". Valid: ${[...VALID_MODES].join(', ')}`], warnings: [] }, 1);
+        return;
+      }
+      updated.mode = normalizedMode;
+    }
+    if (text) updated.nextAction = text;
+
+    if (actuallyApply) {
+      writeJsonAtomic(existing.path, updated);
+    }
+
+    finish({
+      ok: true,
+      command: 'record',
+      action: 'updated',
+      dryRun: !actuallyApply,
+      taskId,
+      state: updated,
+      warnings: [],
+    }, 0);
+    return;
+  }
+}
+
+function runOpen() {
+  const { rootProgress, tasks } = collectTasks();
+
+  const openTasks = tasks.filter(task => {
+    const status = normalizeStatus(task.state?.status) || task.status;
+    return OPEN_TASK_STATUSES.has(status);
+  }).map(task => {
+    const state = task.state || {};
+    const links = state.links || {};
+    const status = normalizeStatus(state.status) || task.status;
+    const dependsOn = Array.isArray(links.dependsOn) ? links.dependsOn : [];
+    const openDepTasks = dependsOn.filter(depId => {
+      const depTask = tasks.find(t => t.id === depId);
+      if (!depTask) return false;
+      const depStatus = normalizeStatus(depTask.state?.status) || depTask.status;
+      return OPEN_TASK_STATUSES.has(depStatus);
+    });
+    return {
+      id: task.id,
+      status,
+      phase: normalizePhase(state.phase) || task.phase,
+      dependsOn,
+      blocks: Array.isArray(links.blocks) ? links.blocks : [],
+      blockedByOpenDeps: openDepTasks,
+      nextAction: state.nextAction || null,
+      statusDisplay: status || '-',
+      openTasks: true,
+    };
+  });
+
+  finish({
+    ok: true,
+    command: 'open',
+    taskCount: openTasks.length,
+    tasks: openTasks,
+    errors: [],
+    warnings: [],
+  }, 0);
+}
+
 if (command === 'help' || hasFlag('--help') || hasFlag('-h')) usage();
 if (command === 'list') runList();
 if (command === 'validate') runValidate();
@@ -880,6 +1268,8 @@ if (command === 'reconcile') runReconcile();
 if (command === 'set-active') runSetActive();
 if (command === 'transition') runTransition();
 if (command === 'archive') runArchive();
+if (command === 'record') runRecord();
+if (command === 'open') runOpen();
 
 finish({
   ok: false,

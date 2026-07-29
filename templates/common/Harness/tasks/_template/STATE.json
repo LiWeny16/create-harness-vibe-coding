@@ -10,12 +10,18 @@
   "activeQuestion": null,
   "nextAction": "Define goal and acceptance criteria",
   "acceptance": [],
+  "links": {
+    "dependsOn": [],
+    "blocks": [],
+    "related": []
+  },
   "queues": {
     "ready": [],
     "running": [],
     "blocked": [],
     "done": []
   },
+  "workItems": [],
   "dispatchLedger": [],
   "decisions": [],
   "risks": [],

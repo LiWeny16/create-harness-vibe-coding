@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import pc from 'picocolors';
-import { askConflictPolicy, askOptionalSelections, askProjectName, askTargetDir } from './prompts.js';
+import { askConflictPolicy, askInstallScope, askOptionalSelections, askProjectName, askTargetDir } from './prompts.js';
 import { generate, getOptionalCatalog } from './generator.js';
 
 const UPDATE_SUCCESS_STATUSES = new Set(['up-to-date', 'update-available', 'partial-update']);
@@ -45,6 +45,9 @@ if (showHelp) {
   console.log('    --without <id,id>            Remove optional workflow skills selected by --preset or --with');
   console.log('    --recommend <id,id>          Record recommendation-only external capabilities');
   console.log('    --preset <name>              Add a built-in optional workflow preset');
+  console.log('    --install-scope <scope>      project or global (default: project)');
+  console.log('    --global-dir <dir>           Global Harness runtime directory for --install-scope global');
+  console.log('    --host-global-dir <dir>      Base directory for Claude/Codex/OpenCode global copies');
   console.log('    --list-options               Print optional workflow skills and presets');
   console.log('    --json                       Output machine-readable JSON (use with --dry-run for planning)');
   console.log('');
@@ -60,6 +63,7 @@ if (showHelp) {
   console.log('    npx create-harness-vibe-coding@latest web ./web -y --with ts-react-frontend,ui-ux-review');
   console.log('    npx create-harness-vibe-coding@latest web ./web -y --preset web-app');
   console.log('    npx create-harness-vibe-coding@latest api ./api -y --preset fullstack --without github-pr-review');
+  console.log('    npx create-harness-vibe-coding@latest app ./app -y --install-scope global');
   console.log('');
   process.exit(0);
 }
@@ -80,6 +84,9 @@ const generationOptions = {
   withoutOptions: parsed.flags.without || [],
   externalOptions: parsed.flags.recommend || [],
   preset: parsed.flags.preset,
+  installScope: parsed.flags.installScope || 'project',
+  globalDir: parsed.flags.globalDir,
+  hostGlobalDir: parsed.flags.hostGlobalDir,
   json: Boolean(parsed.flags.json),
 };
 
@@ -139,7 +146,17 @@ if (argName || skipPrompts) {
   console.log(pc.dim('────────────────────────────────────────────'));
   console.log(`  Project     ${pc.green(projectName)}`);
   console.log(`  Directory   ${pc.green(targetDir)}`);
-  console.log(`  Creates     ${pc.cyan('CLAUDE.md, README.md, Harness/PROGRESS.md, Harness/, .claude/, .agents/, .opencode/, opencode.json, tests/')}`);
+  console.log(`  Scope       ${pc.green(generationOptions.installScope)}`);
+  if (generationOptions.globalDir) {
+    console.log(`  Global dir  ${pc.green(generationOptions.globalDir)}`);
+  }
+  if (generationOptions.hostGlobalDir) {
+    console.log(`  Host dir    ${pc.green(generationOptions.hostGlobalDir)}`);
+  }
+  const creates = generationOptions.installScope === 'global'
+    ? 'project bridge/state/settings + global runtime + Claude/Codex/OpenCode host copies'
+    : 'CLAUDE.md, README.md, Harness/PROGRESS.md, Harness/, .claude/, .agents/, .opencode/, opencode.json, tests/';
+  console.log(`  Creates     ${pc.cyan(creates)}`);
   if (generationOptions.dryRun) {
     console.log(`  Mode        ${pc.yellow('dry-run')}`);
   }
@@ -178,6 +195,13 @@ if (argName || skipPrompts) {
   } catch {
     targetDir = `./${projectName}`;
     console.log(pc.dim(`  Directory: ${targetDir} (default)`));
+  }
+
+  try {
+    generationOptions.installScope = await askInstallScope();
+  } catch {
+    generationOptions.installScope = 'project';
+    console.log(pc.dim('  Scope: project (default)'));
   }
 
   const scan = scanTarget(targetDir);
@@ -221,7 +245,17 @@ if (argName || skipPrompts) {
   console.log(pc.dim('────────────────────────────────────────────'));
   console.log(`  Project     ${pc.green(projectName)}`);
   console.log(`  Directory   ${pc.green(targetDir)}`);
-  console.log(`  Creates     ${pc.cyan('CLAUDE.md, README.md, Harness/PROGRESS.md, Harness/, .claude/, .agents/, .opencode/, opencode.json, tests/')}`);
+  console.log(`  Scope       ${pc.green(generationOptions.installScope)}`);
+  if (generationOptions.globalDir) {
+    console.log(`  Global dir  ${pc.green(generationOptions.globalDir)}`);
+  }
+  if (generationOptions.hostGlobalDir) {
+    console.log(`  Host dir    ${pc.green(generationOptions.hostGlobalDir)}`);
+  }
+  const creates = generationOptions.installScope === 'global'
+    ? 'project bridge/state + global runtime + Claude/Codex/OpenCode host copies'
+    : 'CLAUDE.md, README.md, Harness/PROGRESS.md, Harness/, .claude/, .agents/, .opencode/, opencode.json, tests/';
+  console.log(`  Creates     ${pc.cyan(creates)}`);
   console.log(`  Conflicts   ${pc.cyan(generationOptions.onConflict)}`);
   if (generationOptions.withOptions.length > 0) {
     console.log(`  Optional    ${pc.cyan(generationOptions.withOptions.join(','))}`);
@@ -238,8 +272,16 @@ if (argName || skipPrompts) {
   }
 
   console.log(pc.yellow('Planned changes: no files have been written yet.'));
+  console.log(pc.bold('Project plan:'));
   printSummary(preview.summary);
   printPlan(preview.plan);
+  if (preview.globalPlan) {
+    console.log(pc.bold('\nGlobal runtime plan:'));
+    console.log(`  Directory   ${pc.cyan(preview.globalDir)}`);
+    printSummary(preview.globalSummary);
+    printPlan(preview.globalPlan);
+  }
+  printHostPlans(preview.hostPlans, preview.hostSummary);
   printWarnings(preview);
   console.log('');
 
@@ -272,8 +314,16 @@ function printResult(result, targetDir) {
   if (result.success) {
     if (result.dryRun) {
       console.log(pc.yellow('\nDry run: no files or directories were written.'));
+      console.log(pc.bold('Project plan:'));
       printSummary(result.summary);
       printPlan(result.plan);
+      if (result.globalPlan) {
+        console.log(pc.bold('\nGlobal runtime plan:'));
+        console.log(`  Directory   ${pc.cyan(result.globalDir)}`);
+        printSummary(result.globalSummary);
+        printPlan(result.globalPlan);
+      }
+      printHostPlans(result.hostPlans, result.hostSummary);
       if (result.warnings.length > 0) {
         console.log(pc.yellow('\nWarning(s):'));
         for (const warning of result.warnings) {
@@ -285,7 +335,14 @@ function printResult(result, targetDir) {
     }
 
     console.log(pc.green('\nGeneration complete.\n'));
+    console.log(pc.bold('Project install:'));
     printSummary(result.summary);
+    if (result.globalSummary) {
+      console.log(pc.bold('Global runtime:'));
+      console.log(`  Directory   ${pc.cyan(result.globalDir)}`);
+      printSummary(result.globalSummary);
+    }
+    printHostPlans(result.hostPlans, result.hostSummary, { summaryOnly: true });
 
     printWarnings(result);
 
@@ -389,6 +446,24 @@ function parseArgs(args) {
       i = parsedValue.nextIndex;
     } else if (arg.startsWith('--preset=')) {
       flags.preset = readEqualsValue('--preset', arg.slice('--preset='.length));
+    } else if (arg === '--install-scope') {
+      const parsedValue = readValue('--install-scope', i);
+      flags.installScope = parsedValue.value;
+      i = parsedValue.nextIndex;
+    } else if (arg.startsWith('--install-scope=')) {
+      flags.installScope = readEqualsValue('--install-scope', arg.slice('--install-scope='.length));
+    } else if (arg === '--global-dir') {
+      const parsedValue = readValue('--global-dir', i);
+      flags.globalDir = parsedValue.value;
+      i = parsedValue.nextIndex;
+    } else if (arg.startsWith('--global-dir=')) {
+      flags.globalDir = readEqualsValue('--global-dir', arg.slice('--global-dir='.length));
+    } else if (arg === '--host-global-dir') {
+      const parsedValue = readValue('--host-global-dir', i);
+      flags.hostGlobalDir = parsedValue.value;
+      i = parsedValue.nextIndex;
+    } else if (arg.startsWith('--host-global-dir=')) {
+      flags.hostGlobalDir = readEqualsValue('--host-global-dir', arg.slice('--host-global-dir='.length));
     } else if (arg.startsWith('-')) {
       errors.push(`Unknown flag "${arg}"`);
     } else {
@@ -444,6 +519,19 @@ function printPlan(plan) {
   }
 }
 
+function printHostPlans(hostPlans = [], hostSummary = [], { summaryOnly = false } = {}) {
+  if (!hostPlans?.length) return;
+
+  const summariesByHost = new Map((hostSummary || []).map(item => [item.host, item.summary]));
+  console.log(pc.bold('\nHost-global copies:'));
+  for (const hostPlan of hostPlans) {
+    console.log(`  ${hostPlan.host}   ${pc.cyan(hostPlan.root)}`);
+    const summary = summariesByHost.get(hostPlan.host);
+    if (summary) printSummary(summary);
+    if (!summaryOnly) printPlan(hostPlan.plan);
+  }
+}
+
 function printWarnings(result) {
   if (!result.warnings.length) return;
 
@@ -455,7 +543,7 @@ function printWarnings(result) {
 
 function printJsonResult(result) {
   // Remove `created` array from output — it is already in the plan, avoid duplication
-  const { created, ...rest } = result;
+  const { created, globalCreated, hostCreated, ...rest } = result;
   console.log(JSON.stringify(rest, null, 2));
   if (!result.success) {
     process.exit(1);
@@ -703,12 +791,44 @@ function createJsonScan(scan) {
 }
 
 function createAgentGuidance(result, { projectName, targetDir, options, scan }) {
-  const attentionFiles = [...new Set([
+  const projectAttentionFiles = [...new Set([
     ...(result.plan?.conflict || []),
     ...(result.plan?.skip || []),
   ])].sort();
-  const aiMergeRequired = attentionFiles.map(file => createFileGuidance(file));
-  const hasBlockingConflicts = (result.plan?.conflict || []).length > 0;
+  const globalAttentionFiles = [...new Set([
+    ...(result.globalPlan?.conflict || []),
+    ...(result.globalPlan?.skip || []),
+  ])].sort();
+  const hostAttentionFiles = (result.hostPlans || []).flatMap(hostPlan => (
+    [...new Set([
+      ...(hostPlan.plan?.conflict || []),
+      ...(hostPlan.plan?.skip || []),
+    ])].sort().map(file => ({ host: hostPlan.host, root: hostPlan.root, file }))
+  ));
+  const aiMergeRequired = [
+    ...projectAttentionFiles.map(file => createFileGuidance(file)),
+    ...globalAttentionFiles.map(file => {
+      const guidance = createFileGuidance(file);
+      return {
+        ...guidance,
+        file: `global:${guidance.file}`,
+        scope: 'global-runtime',
+        reason: `Global runtime file in ${result.globalDir || 'the selected global directory'} needs review. ${guidance.reason}`,
+      };
+    }),
+    ...hostAttentionFiles.map(({ host, root, file }) => {
+      const guidance = createFileGuidance(file);
+      return {
+        ...guidance,
+        file: `host:${host}:${guidance.file}`,
+        scope: `host-global:${host}`,
+        reason: `Host-global ${host} file in ${root} needs review. ${guidance.reason}`,
+      };
+    }),
+  ];
+  const hasBlockingConflicts = (result.plan?.conflict || []).length > 0
+    || (result.globalPlan?.conflict || []).length > 0
+    || (result.hostPlans || []).some(hostPlan => (hostPlan.plan?.conflict || []).length > 0);
   const safeMergeCommand = commandFor(projectName, targetDir, {
     ...options,
     dryRun: false,
@@ -769,6 +889,14 @@ function createAgentGuidance(result, { projectName, targetDir, options, scan }) 
       mkdir: result.plan?.mkdir?.length || 0,
       backup: result.plan?.backup?.length || 0,
       overwrite: result.plan?.overwrite?.length || 0,
+      globalCreate: result.globalPlan?.create?.length || 0,
+      globalMkdir: result.globalPlan?.mkdir?.length || 0,
+      globalBackup: result.globalPlan?.backup?.length || 0,
+      globalOverwrite: result.globalPlan?.overwrite?.length || 0,
+      hostCreate: (result.hostPlans || []).reduce((sum, hostPlan) => sum + (hostPlan.plan?.create?.length || 0), 0),
+      hostMkdir: (result.hostPlans || []).reduce((sum, hostPlan) => sum + (hostPlan.plan?.mkdir?.length || 0), 0),
+      hostBackup: (result.hostPlans || []).reduce((sum, hostPlan) => sum + (hostPlan.plan?.backup?.length || 0), 0),
+      hostOverwrite: (result.hostPlans || []).reduce((sum, hostPlan) => sum + (hostPlan.plan?.overwrite?.length || 0), 0),
     },
     aiMergeRequired,
     next,
@@ -839,6 +967,9 @@ function commandFor(projectName, targetDir, options) {
   if (options.withoutOptions?.length) args.push('--without', options.withoutOptions.join(','));
   if (options.externalOptions?.length) args.push('--recommend', options.externalOptions.join(','));
   if (options.preset) args.push('--preset', options.preset);
+  if (options.installScope && options.installScope !== 'project') args.push('--install-scope', options.installScope);
+  if (options.globalDir) args.push('--global-dir', options.globalDir);
+  if (options.hostGlobalDir) args.push('--host-global-dir', options.hostGlobalDir);
   if (options.json) args.push('--json');
 
   return args.map(shellQuoteArg).join(' ');

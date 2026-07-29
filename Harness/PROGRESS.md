@@ -4,7 +4,7 @@ Global task index. Load at session start to see what is active and what was done
 
 ## Active Task
 
-- task-release-stable-github
+- None
 
 ## Task Index
 
@@ -12,10 +12,16 @@ Non-archived tasks only (max 5). Archived tasks are listed in `Harness/tasks/_ar
 
 | ID | Goal | Phase | Closed |
 |----|------|-------|--------|
-| task-release-stable-github | Bump version to 0.8.17, synchronize generated metadata, and run release-grade checks. | Validation | - |
+| task-add-global-install-memory | Add global-vs-project install choice with project-local Harness/tasks and split project/global memory. | Verified | - |
+| task-audit-architecture-boundaries | Dispatch read-only architecture scan and independent review. | Verified | - |
+| task-audit-wf-task-capsules | Audit WF task-capsule triggers, wf-review peer CLI reliability, and task management commands. | Verified | - |
 | task-build-state-cli | Add deterministic task-state CLI and archive reconciliation so state is managed by code, not prompt-only discipline | Verified | - |
+| task-command-create-surface-contract | Create a command-surface contract and /wf-command-create command/skill so new wf-* commands update all runtime, template, validator, ownership, remove, help, and test surfaces atomically. | Verified | - |
 | task-framework-metrics-and-entry-contract | Define slim CLAUDE entry contract and HarnessBench v0.1 methodology | Blocked | - |
+| task-global-settings-ownership | Add global install ownership classes, three-host copy surfaces, and project/global settings layering while preserving project-local task capsules. | Verified | - |
 | task-homepage-act1-flat-layout | Redesign Act 1 opening: 5 flat staggered boxes, zero tilt, no float, no singled-out openable box | Implementation | - |
+| task-release-stable-github | Bump version to 0.8.18, synchronize generated metadata, and prepare the npm package for user-owned publish. | Validation | - |
+| task-review-fix-global-record-policy | Fix global host ownership, wf-task-record semantics, status validation, host symlink validator, command policy validator | Verified | - |
 | task-run-harnessbench-results | Run full validation chain and independent review | Verified | - |
 
 ## Cross-Task Decisions

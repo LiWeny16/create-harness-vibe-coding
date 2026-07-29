@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-command-create-surface-contract",
+  "status": "verified",
+  "mode": "direct",
+  "tier": "none",
+  "phase": "verified",
+  "gate": null,
+  "updatedAt": "2026-07-28T15:30:10.046Z",
+  "activeQuestion": null,
+  "nextAction": "No implementation work remains; archive later with task-state archive when reducing outer task count.",
+  "acceptance": [
+    {
+      "id": "AC-001",
+      "status": "verified",
+      "evidence": "All command definitions are registered in Harness/specs/runtime/command-surface.json and template mirror."
+    },
+    {
+      "id": "AC-002",
+      "status": "verified",
+      "evidence": "wf-command-create command files and Claude/Codex skill shims exist across root/template surfaces."
+    },
+    {
+      "id": "AC-003",
+      "status": "verified",
+      "evidence": "validate-harness.mjs checks registry drift against routing, help, ECC, wf-remove, command, skill, and template surfaces."
+    },
+    {
+      "id": "AC-004",
+      "status": "verified",
+      "evidence": "Prior command-surface drift issues are fixed or guarded by validator/tests; remaining risk is the existing outer task count warning."
+    },
+    {
+      "id": "AC-005",
+      "status": "verified",
+      "evidence": "npm test, root/template validate, context-budget, build-version --check, check:mirrors, and git diff --check passed."
+    }
+  ],
+  "queues": {
+    "ready": [],
+    "running": [],
+    "blocked": [],
+    "done": []
+  },
+  "dispatchLedger": [],
+  "decisions": [
+    "wf-command-create is direct/compat but task-backed: it never enters WF mode and still records command-surface work in a task capsule.",
+    "command-surface.json is the registry source used by validators and tests for future wf-* command additions."
+  ],
+  "risks": [
+    "Non-archived Harness/tasks count remains above the recommended cap; validator reports this as a warning outside strict mode."
+  ],
+  "artifacts": [
+    "Harness/specs/runtime/command-surface.json",
+    ".claude/commands/wf-command-create.md",
+    ".opencode/commands/wf-command-create.md",
+    ".claude/skills/wf-command-create/SKILL.md",
+    ".agents/skills/wf-command-create/SKILL.md",
+    "Harness/scripts/validate-harness.mjs",
+    "Harness/scripts/task-state.mjs",
+    "tests/anti-drift.test.js",
+    "tests/generator.test.js",
+    "tests/task-state.test.js",
+    "tests/validate-harness.test.js"
+  ],
+  "links": {
+    "dependsOn": [],
+    "blocks": [],
+    "related": []
+  }
+}

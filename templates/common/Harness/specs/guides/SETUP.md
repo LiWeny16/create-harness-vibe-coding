@@ -55,6 +55,14 @@ Claude or Codex must follow this order during bootstrap. This sequence is broade
 
 Before writing, identify the project state:
 
+Choose the install scope before scaffold writes:
+
+- `--install-scope project` (default): full Harness scaffold is project-local.
+- `--install-scope global`: write shared runtime assets to the selected global Harness directory and copy Claude Code, Codex, and OpenCode command/skill surfaces to host-global directories while keeping `Harness/tasks/`, `Harness/PROGRESS.md`, project memory, research, architecture, and project settings under the target project.
+- Use `--global-dir <dir>` when the global runtime location must be explicit.
+- Use `--host-global-dir <dir>` only when the host-global copy base must be explicit; the installer creates `claude/`, `codex/`, and `opencode/` subdirectories under it.
+- Project settings in `Harness/settings.json` override global settings defaults. Existing user-authored files at config, command, skill, or agent paths are preserved or surfaced for review unless they carry a Harness ownership marker.
+
 | Project state | Required action |
 | --- | --- |
 | Empty or new project | Run the scaffold, then follow this file for 0-1 bootstrap |

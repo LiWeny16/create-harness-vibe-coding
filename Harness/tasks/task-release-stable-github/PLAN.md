@@ -5,23 +5,23 @@ Compact release record. Keep only facts needed to resume, verify, and audit.
 ## Goal
 
 - Outcome: Raise release confidence to 95%, commit the current stable release scope, push it to both GitHub remotes, and publish the GitHub stable tag. The user will handle npm publishing.
-- Version target: `0.8.17` / `v0.8.17`, because `v0.8.16` already exists on current `main`.
+- Version target: `0.8.18` / `v0.8.18`, because npm latest is `0.8.17` and published npm versions cannot be overwritten.
 - Remotes: `origin` = `LiWeny16/create-harness-vibe-coding`; `legacy` = `zingspark/create-harness-vibe-coding`.
 
 ## Acceptance
 
 - AC-001: Release scope is understood and staged intentionally; no unrelated files are silently omitted or added.
-- AC-002: Version metadata and generated harness version manifests are synchronized for `0.8.17`.
+- AC-002: Version metadata and generated harness version manifests are synchronized for `0.8.18`.
 - AC-003: Release-grade checks pass: full tests, strict Harness validation, task-state validation, version check, npm pack dry-run/package boundary, benchmark boundary.
 - AC-004: Commit is created on `main` and pushed to both GitHub remotes.
-- AC-005: `v0.8.17` tag is created on the release commit and pushed to both GitHub remotes.
+- AC-005: `v0.8.18` tag is created on the release commit and pushed to both GitHub remotes.
 - AC-006: Final remote state proves both GitHub repositories have the same branch commit and tag commit.
 
 ## Scope
 
 Allowed:
 - Commit current release-scope worktree changes after validation.
-- Bump package/generator version from `0.8.16` to `0.8.17`.
+- Bump package/generator version from `0.8.17` to `0.8.18`.
 - Push branch and tag to `origin` and `legacy`.
 
 Forbidden:
@@ -43,4 +43,4 @@ Forbidden:
 ## Risks
 
 - The worktree is large and mixed. Mitigation: inspect staged scope and run full validation after version bump.
-- Current `v0.8.16` already exists. Mitigation: create a new patch release tag only after commit.
+- Current npm latest `0.8.17` already exists. Mitigation: create a new patch release tag only after commit.

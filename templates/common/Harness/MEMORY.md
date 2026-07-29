@@ -44,6 +44,10 @@ Stack-specific agents can be added after the product shape is known.
 - [wf-browser](../.claude/skills/wf-browser/SKILL.md) - built-in browser automation/E2E workflow with controllable UI contracts, Browser Use, Playwright, CDP/network evidence, screenshots, traces, and validation matrix.
 - [tdd](../.claude/skills/tdd/SKILL.md) - acceptance-driven TDD: AC-linked RED tests, real UI clicks for browser-visible behavior, Playwright/CDP evidence, and configured coverage gate.
 - [wf-remove](../.claude/skills/wf-remove/SKILL.md) - safely remove Harness framework files (SAFE/MODIFIED/USER classes), auto-prune empty directories, backup option.
+- [wf-task-record](../.claude/skills/wf-task-record/SKILL.md) - Codex compatibility: use $wf-task-record or /skills wf-task-record to wrap task-state.mjs record.
+- [wf-task-list](../.claude/skills/wf-task-list/SKILL.md) - Codex compatibility: use $wf-task-list or /skills wf-task-list to wrap task-state.mjs list.
+- [wf-task-archive](../.claude/skills/wf-task-archive/SKILL.md) - Codex compatibility: use $wf-task-archive or /skills wf-task-archive to wrap task-state.mjs archive.
+- [wf-command-create](../.claude/skills/wf-command-create/SKILL.md) - Codex compatibility: use $wf-command-create or /skills wf-command-create to update command surfaces from `command-surface.json`.
 
 Codex repo-skill mirrors live under `../.agents/skills/` with the same skill names.
 
@@ -51,6 +55,10 @@ Codex repo-skill mirrors live under `../.agents/skills/` with the same skill nam
 
 - [wf-help](../.claude/commands/wf-help.md) - direct `/wf-help` command that returns a WF command table; Codex mirror skill supports `$wf-help` without entering WF.
 - [wf-update](../.claude/commands/wf-update.md) - direct `/wf-update` command for script-driven update checks, safe apply, conflict handling, and release highlights.
+- [wf-task-record](../.claude/commands/wf-task-record.md) - direct `/wf-task-record` command that wraps `node Harness/scripts/task-state.mjs record`.
+- [wf-task-list](../.claude/commands/wf-task-list.md) - direct `/wf-task-list` command that wraps `node Harness/scripts/task-state.mjs list`.
+- [wf-task-archive](../.claude/commands/wf-task-archive.md) - direct `/wf-task-archive` command that wraps `node Harness/scripts/task-state.mjs archive`.
+- [wf-command-create](../.claude/commands/wf-command-create.md) - direct `/wf-command-create` command for task-backed wf-* command surface changes.
 
 Stack-specific skills can be added after the product shape is known.
 
@@ -79,6 +87,7 @@ Located under `.claude/rules/ecc/`, auto-loaded by the CC engine:
 - [Context loading protocol](specs/runtime/context-loading.md)
 - [Dispatch protocol](specs/runtime/dispatch.md)
 - [Subagent orchestration](specs/runtime/subagents.md)
+- [Command surface registry](specs/runtime/command-surface.json)
 - [Extension contract](specs/guides/extension.md)
 - [Architecture docs](project/architecture.md)
 - [Agent workflow](specs/runtime/agent-workflow.md)

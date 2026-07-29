@@ -149,6 +149,213 @@ test('validation fails when required memory reflection files are missing', () =>
   assert.match(output, /memory\/tool-usage-reflections\.md/);
 });
 
+test('validation fails when project/global memory boundary is removed', () => {
+  const targetDir = generateProject();
+  writeRel(
+    targetDir,
+    'Harness/specs/protocols/MEMORY_PROTOCOL.md',
+    readRel(targetDir, 'Harness/specs/protocols/MEMORY_PROTOCOL.md').replace(
+      'Project/Global Memory Boundary',
+      'Memory Boundary',
+    ),
+  );
+
+  const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
+    cwd: targetDir,
+    encoding: 'utf8',
+  });
+  const output = `${result.stdout}\n${result.stderr}`;
+
+  assert.notEqual(result.status, 0);
+  assert.match(output, /project\/global memory boundary section/);
+});
+
+test('validation fails when global install task-local invariant is removed', () => {
+  const targetDir = generateProject();
+  writeRel(
+    targetDir,
+    'Harness/specs/protocols/MEMORY_PROTOCOL.md',
+    readRel(targetDir, 'Harness/specs/protocols/MEMORY_PROTOCOL.md').replace(
+      '`Harness/tasks/` and `Harness/PROGRESS.md` are always project-local',
+      '`Harness/tasks/` may be global',
+    ),
+  );
+
+  const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
+    cwd: targetDir,
+    encoding: 'utf8',
+  });
+  const output = `${result.stdout}\n${result.stderr}`;
+
+  assert.notEqual(result.status, 0);
+  assert.match(output, /global install keeps task state project-local/);
+});
+
+test('validation fails when SETUP global install flags are removed', () => {
+  const targetDir = generateProject();
+  writeRel(
+    targetDir,
+    'Harness/specs/guides/SETUP.md',
+    readRel(targetDir, 'Harness/specs/guides/SETUP.md').replace('--install-scope global', '--install global'),
+  );
+
+  const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
+    cwd: targetDir,
+    encoding: 'utf8',
+  });
+  const output = `${result.stdout}\n${result.stderr}`;
+
+  assert.notEqual(result.status, 0);
+  assert.match(output, /setup global install scope/);
+});
+
+test('validation fails when project/global settings boundary is removed', () => {
+  const targetDir = generateProject();
+  writeRel(
+    targetDir,
+    'Harness/specs/protocols/MEMORY_PROTOCOL.md',
+    readRel(targetDir, 'Harness/specs/protocols/MEMORY_PROTOCOL.md').replace(
+      'Project/Global Settings Boundary',
+      'Settings Boundary',
+    ),
+  );
+
+  const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
+    cwd: targetDir,
+    encoding: 'utf8',
+  });
+  const output = `${result.stdout}\n${result.stderr}`;
+
+  assert.notEqual(result.status, 0);
+  assert.match(output, /project\/global settings boundary section/);
+});
+
+test('validation fails when global host copy guidance is removed', () => {
+  const targetDir = generateProject();
+  writeRel(
+    targetDir,
+    'Harness/specs/guides/SETUP.md',
+    readRel(targetDir, 'Harness/specs/guides/SETUP.md').replace(
+      'copy Claude Code, Codex, and OpenCode command/skill surfaces',
+      'publish shared runtime assets',
+    ),
+  );
+
+  const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
+    cwd: targetDir,
+    encoding: 'utf8',
+  });
+  const output = `${result.stdout}\n${result.stderr}`;
+
+  assert.notEqual(result.status, 0);
+  assert.match(output, /setup three-host global copy/);
+});
+
+test('global project bridge validates from the global runtime validator', () => {
+  const root = tmpdir();
+  const targetDir = path.join(root, 'global-bridge-project');
+  const globalDir = path.join(root, 'global-runtime');
+  const hostGlobalDir = path.join(root, 'host-global');
+  const result = generate({
+    projectName: 'global-bridge-project',
+    targetDir,
+    installScope: 'global',
+    globalDir,
+    hostGlobalDir,
+  });
+
+  assert.equal(result.success, true, result.errors.join('\n'));
+  assert.equal(fs.existsSync(path.join(targetDir, 'Harness', 'scripts', 'validate-harness.mjs')), false);
+
+  const output = execFileSync(
+    process.execPath,
+    [path.join(globalDir, 'Harness', 'scripts', 'validate-harness.mjs')],
+    { cwd: targetDir, encoding: 'utf8' },
+  );
+
+  assert.match(output, /Harness validation passed/);
+});
+
+test('global runtime root validates without project-local task state', () => {
+  const root = tmpdir();
+  const targetDir = path.join(root, 'global-runtime-project');
+  const globalDir = path.join(root, 'global-runtime');
+  const hostGlobalDir = path.join(root, 'host-global');
+  const result = generate({
+    projectName: 'global-runtime-project',
+    targetDir,
+    installScope: 'global',
+    globalDir,
+    hostGlobalDir,
+  });
+
+  assert.equal(result.success, true, result.errors.join('\n'));
+  assert.equal(fs.existsSync(path.join(globalDir, 'Harness', 'PROGRESS.md')), false);
+  assert.equal(fs.existsSync(path.join(globalDir, 'Harness', 'tasks')), false);
+
+  const output = execFileSync(
+    process.execPath,
+    [path.join(globalDir, 'Harness', 'scripts', 'validate-harness.mjs')],
+    { cwd: globalDir, encoding: 'utf8' },
+  );
+
+  assert.match(output, /Harness validation passed/);
+});
+
+test('global runtime validation fails if project-local task state is moved global', () => {
+  const root = tmpdir();
+  const targetDir = path.join(root, 'global-runtime-leak-project');
+  const globalDir = path.join(root, 'global-runtime');
+  const hostGlobalDir = path.join(root, 'host-global');
+  const result = generate({
+    projectName: 'global-runtime-leak-project',
+    targetDir,
+    installScope: 'global',
+    globalDir,
+    hostGlobalDir,
+  });
+
+  assert.equal(result.success, true, result.errors.join('\n'));
+  fs.mkdirSync(path.join(globalDir, 'Harness', 'tasks'), { recursive: true });
+
+  const failed = spawnSync(
+    process.execPath,
+    [path.join(globalDir, 'Harness', 'scripts', 'validate-harness.mjs')],
+    { cwd: globalDir, encoding: 'utf8' },
+  );
+  const output = `${failed.stdout}\n${failed.stderr}`;
+
+  assert.notEqual(failed.status, 0);
+  assert.match(output, /global runtime must not contain project-local state: Harness\/tasks/);
+});
+
+test('global project bridge validation fails when host-global copy target is missing', () => {
+  const root = tmpdir();
+  const targetDir = path.join(root, 'global-bridge-host-missing');
+  const globalDir = path.join(root, 'global-runtime');
+  const hostGlobalDir = path.join(root, 'host-global');
+  const result = generate({
+    projectName: 'global-bridge-host-missing',
+    targetDir,
+    installScope: 'global',
+    globalDir,
+    hostGlobalDir,
+  });
+
+  assert.equal(result.success, true, result.errors.join('\n'));
+  fs.rmSync(path.join(hostGlobalDir, 'claude', 'commands', 'wf.md'));
+
+  const failed = spawnSync(
+    process.execPath,
+    [path.join(globalDir, 'Harness', 'scripts', 'validate-harness.mjs')],
+    { cwd: targetDir, encoding: 'utf8' },
+  );
+  const output = `${failed.stdout}\n${failed.stderr}`;
+
+  assert.notEqual(failed.status, 0);
+  assert.match(output, /missing host-global claude copied file: commands\/wf\.md/);
+});
+
 test('validation fails when durable filesystem communication invariant is removed from core docs', () => {
   const targetDir = generateProject();
   const invariant = 'project files are the only durable communication channel';
@@ -396,10 +603,7 @@ test('validation fails when ECC direct command exemption is removed', () => {
   writeRel(
     targetDir,
     '.claude/rules/ecc/common.md',
-    readRel(targetDir, '.claude/rules/ecc/common.md').replace(
-      ', excluding `/wf-help`, `$wf-help`, `/skills wf-help`, `/wf-update`, `$wf-update`, and `/skills wf-update`',
-      '',
-    ),
+    readRel(targetDir, '.claude/rules/ecc/common.md').replace(/, excluding `\/wf-help`.*?`\/skills wf-command-create`/, ''),
   );
 
   const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
@@ -409,7 +613,7 @@ test('validation fails when ECC direct command exemption is removed', () => {
   const output = `${result.stdout}\n${result.stderr}`;
 
   assert.notEqual(result.status, 0);
-  assert.match(output, /\.claude\/rules\/ecc\/common\.md missing ECC direct command exemption/);
+  assert.match(output, /\.claude\/rules\/ecc\/common\.md missing ECC direct command exemption \/wf-help/);
 });
 
 test('validation fails when a frameworkOwned manifest file is missing', () => {
@@ -833,4 +1037,5 @@ test('strict validation fails when Harness/tasks exceeds the outer task capsule 
   const output = `${result.stdout}\n${result.stderr}`;
   assert.equal(result.status, 0);
   assert.match(output, /outer task capsules \(cap 5\)/);
+  assert.match(output, /\$wf-task-archive/);
 });

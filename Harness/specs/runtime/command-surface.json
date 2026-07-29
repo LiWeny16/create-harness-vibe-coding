@@ -1,0 +1,215 @@
+{
+  "schemaVersion": 1,
+  "commands": [
+    {
+      "id": "wf-help",
+      "classification": "direct",
+      "aliases": ["/wf-help", "$wf-help", "/skills wf-help"],
+      "entersWf": false,
+      "taskCapsulePolicy": "none",
+      "surfaces": {
+        "claudeCommand": true,
+        "opencodeCommand": true,
+        "claudeSkill": true,
+        "codexSkill": true,
+        "helpRow": true
+      }
+    },
+    {
+      "id": "wf",
+      "classification": "workflow",
+      "aliases": ["/wf", "$wf", "/skills wf"],
+      "entersWf": true,
+      "taskCapsulePolicy": "required",
+      "surfaces": {
+        "claudeCommand": true,
+        "opencodeCommand": true,
+        "claudeSkill": true,
+        "codexSkill": true,
+        "helpRow": true
+      }
+    },
+    {
+      "id": "wf-max",
+      "classification": "workflow",
+      "aliases": ["/wf-max", "$wf-max", "/skills wf-max"],
+      "entersWf": true,
+      "taskCapsulePolicy": "required",
+      "surfaces": {
+        "claudeCommand": true,
+        "opencodeCommand": true,
+        "claudeSkill": true,
+        "codexSkill": true,
+        "helpRow": true
+      }
+    },
+    {
+      "id": "wf-auto",
+      "classification": "workflow",
+      "aliases": ["/wf-auto", "$wf-auto", "/skills wf-auto"],
+      "entersWf": true,
+      "taskCapsulePolicy": "auto-capsule-required",
+      "surfaces": {
+        "claudeCommand": true,
+        "opencodeCommand": true,
+        "claudeSkill": true,
+        "codexSkill": true,
+        "helpRow": true
+      }
+    },
+    {
+      "id": "wf-auto-spark",
+      "classification": "workflow",
+      "aliases": ["/wf-auto-spark", "$wf-auto-spark", "/skills wf-auto-spark"],
+      "entersWf": true,
+      "taskCapsulePolicy": "auto-capsule-required",
+      "surfaces": {
+        "claudeCommand": true,
+        "opencodeCommand": true,
+        "claudeSkill": true,
+        "codexSkill": true,
+        "helpRow": true
+      }
+    },
+    {
+      "id": "wf-review",
+      "classification": "workflow",
+      "aliases": ["/wf-review", "$wf-review", "/skills wf-review"],
+      "entersWf": true,
+      "taskCapsulePolicy": "use-current-or-create-when-needed",
+      "surfaces": {
+        "claudeCommand": true,
+        "opencodeCommand": true,
+        "claudeSkill": true,
+        "codexSkill": true,
+        "helpRow": true
+      }
+    },
+    {
+      "id": "wf-learn",
+      "classification": "workflow",
+      "aliases": ["/wf-learn", "$wf-learn", "/skills wf-learn"],
+      "entersWf": true,
+      "taskCapsulePolicy": "use-current-or-create-when-needed",
+      "surfaces": {
+        "claudeCommand": true,
+        "opencodeCommand": true,
+        "claudeSkill": true,
+        "codexSkill": true,
+        "helpRow": true
+      }
+    },
+    {
+      "id": "wf-browser",
+      "classification": "workflow",
+      "aliases": ["/wf-browser", "$wf-browser", "/skills wf-browser"],
+      "entersWf": true,
+      "taskCapsulePolicy": "required",
+      "surfaces": {
+        "claudeCommand": true,
+        "opencodeCommand": true,
+        "claudeSkill": true,
+        "codexSkill": true,
+        "helpRow": true
+      }
+    },
+    {
+      "id": "wf-readme",
+      "classification": "workflow",
+      "aliases": ["/wf-readme", "$wf-readme", "/skills wf-readme"],
+      "entersWf": true,
+      "taskCapsulePolicy": "required",
+      "surfaces": {
+        "claudeCommand": true,
+        "opencodeCommand": true,
+        "claudeSkill": true,
+        "codexSkill": true,
+        "helpRow": true
+      }
+    },
+    {
+      "id": "wf-update",
+      "classification": "direct",
+      "aliases": ["/wf-update", "$wf-update", "/skills wf-update"],
+      "entersWf": false,
+      "taskCapsulePolicy": "none",
+      "surfaces": {
+        "claudeCommand": true,
+        "opencodeCommand": true,
+        "claudeSkill": true,
+        "codexSkill": true,
+        "helpRow": true
+      }
+    },
+    {
+      "id": "wf-remove",
+      "classification": "workflow",
+      "aliases": ["/wf-remove", "$wf-remove", "/skills wf-remove"],
+      "entersWf": true,
+      "taskCapsulePolicy": "required",
+      "surfaces": {
+        "claudeCommand": true,
+        "opencodeCommand": true,
+        "claudeSkill": true,
+        "codexSkill": true,
+        "helpRow": true
+      }
+    },
+    {
+      "id": "wf-task-record",
+      "classification": "direct",
+      "aliases": ["/wf-task-record", "$wf-task-record", "/skills wf-task-record"],
+      "entersWf": false,
+      "taskCapsulePolicy": "creates-or-updates",
+      "surfaces": {
+        "claudeCommand": true,
+        "opencodeCommand": true,
+        "claudeSkill": true,
+        "codexSkill": true,
+        "helpRow": true
+      }
+    },
+    {
+      "id": "wf-task-list",
+      "classification": "direct",
+      "aliases": ["/wf-task-list", "$wf-task-list", "/skills wf-task-list"],
+      "entersWf": false,
+      "taskCapsulePolicy": "none",
+      "surfaces": {
+        "claudeCommand": true,
+        "opencodeCommand": true,
+        "claudeSkill": true,
+        "codexSkill": true,
+        "helpRow": true
+      }
+    },
+    {
+      "id": "wf-task-archive",
+      "classification": "direct",
+      "aliases": ["/wf-task-archive", "$wf-task-archive", "/skills wf-task-archive"],
+      "entersWf": false,
+      "taskCapsulePolicy": "none",
+      "surfaces": {
+        "claudeCommand": true,
+        "opencodeCommand": true,
+        "claudeSkill": true,
+        "codexSkill": true,
+        "helpRow": true
+      }
+    },
+    {
+      "id": "wf-command-create",
+      "classification": "direct",
+      "aliases": ["/wf-command-create", "$wf-command-create", "/skills wf-command-create"],
+      "entersWf": false,
+      "taskCapsulePolicy": "required",
+      "surfaces": {
+        "claudeCommand": true,
+        "opencodeCommand": true,
+        "claudeSkill": true,
+        "codexSkill": true,
+        "helpRow": true
+      }
+    }
+  ]
+}

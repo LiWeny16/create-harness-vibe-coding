@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-audit-wf-task-capsules",
+  "status": "verified",
+  "mode": "wf",
+  "tier": "standard",
+  "phase": "verified",
+  "gate": null,
+  "updatedAt": "2026-07-28T12:44:08.149Z",
+  "activeQuestion": null,
+  "nextAction": "W1-W6 complete. 14/14 tests pass, validate-harness PASS, build:version PASS, check:mirrors PASS, independent review dispatched. Preserve unrelated dirty work.",
+  "acceptance": [
+    {
+      "id": "AC-001",
+      "text": "Audit explicit WF trigger timing and mandatory task-capsule creation for wf and wf-max command or skill invocations.",
+      "status": "verified"
+    },
+    {
+      "id": "AC-002",
+      "text": "Diagnose wf-review peer CLI prompt and output reliability failure modes with current evidence.",
+      "status": "verified"
+    },
+    {
+      "id": "AC-003",
+      "text": "Design atomic task record, list, and archive commands or skills with clear create/reuse behavior.",
+      "status": "verified"
+    },
+    {
+      "id": "AC-004",
+      "text": "Define multi-open task, cross-task dependency, per-task parallel queue, and deterministic fresh-context resume semantics.",
+      "status": "verified"
+    }
+  ],
+  "queues": {
+    "ready": [],
+    "running": [],
+    "blocked": [],
+    "done": [
+      "task-capsule-created",
+      "initial-readonly-probes",
+      "multi-open-state-audit",
+      "cc-handoff-prepared",
+      "W1-state-resume-schema",
+      "W2-peer-cli-review-contract",
+      "W3-task-state-cli",
+      "W4-task-management-commands",
+      "W5-mirrors-validator-tests",
+      "W6-verify-review"
+    ]
+  },
+  "dispatchLedger": [],
+  "decisions": [
+    "Create this task capsule now because the user explicitly requested a new task.",
+    "Do not implement framework changes until the user explicitly approves starting work.",
+    "Reuse the active audit task for multi-open/dependency/resume-state gaps instead of creating a duplicate task.",
+    "Prepare a Claude Code handoff prompt and implementation package without editing framework files in this Codex turn."
+  ],
+  "risks": [
+    "Existing task index is already above the configured outer task cap.",
+    "Peer CLI behavior depends on installed CLI versions and authentication state."
+  ],
+  "artifacts": [
+    "Harness/tasks/task-audit-wf-task-capsules/PLAN.md",
+    "Harness/tasks/task-audit-wf-task-capsules/PROGRESS.md",
+    "Harness/tasks/task-audit-wf-task-capsules/STATE.json",
+    "node Harness/scripts/task-state.mjs validate --json",
+    "Get-Command claude,codex,opencode -ErrorAction SilentlyContinue",
+    "claude --help",
+    "codex exec --help",
+    "opencode run --help",
+    "minimal claude -p probe",
+    "minimal opencode run probes",
+    "rg state audit for dependency, queues, dispatchLedger, and resume routing",
+    "Harness/tasks/task-audit-wf-task-capsules/CC-PROMPT.md"
+  ]
+}

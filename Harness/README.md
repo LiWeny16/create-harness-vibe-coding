@@ -4,7 +4,7 @@ Purpose: route humans and agents to the smallest useful context. `CLAUDE.md` is 
 
 Default load: `CLAUDE.md`. For workflow commands (`/wf`, `/wf-max`, `/wf-auto`, `/wf-review`, `/wf-learn`, `/wf-readme`, `/wf-remove`, `/wf-browser`, `/wf-auto-spark`), also load `Harness/MEMORY.md` (index only per Memory Preflight), this file, and `Harness/PROGRESS.md` when work is active.
 
-`/wf-help`, `$wf-help`, `/skills wf-help`, `/wf-update`, `$wf-update`, and `/skills wf-update` are **direct/compat commands**: skip the router, do NOT load `Harness/MEMORY.md`, do NOT enter WF. Claude Code and OpenCode execute direct command files; Codex uses the matching compatibility skill shim.
+`/wf-help`, `$wf-help`, `/skills wf-help`, `/wf-update`, `$wf-update`, `/skills wf-update`, `/wf-task-record`, `$wf-task-record`, `/skills wf-task-record`, `/wf-task-list`, `$wf-task-list`, `/skills wf-task-list`, `/wf-task-archive`, `$wf-task-archive`, `/skills wf-task-archive`, `/wf-command-create`, `$wf-command-create`, and `/skills wf-command-create` are **direct/compat commands**: skip the router, do NOT load `Harness/MEMORY.md`, do NOT enter WF. Claude Code and OpenCode execute direct command files; Codex uses the matching compatibility skill shim.
 
 Do not read the whole `Harness/` tree.
 
@@ -23,9 +23,12 @@ On session start (new window, reopen, resume):
    - blocked — what's blocking?
    - nextAction — what to do next
 4. Do NOT discover context by reading all task directories. Use the active pointer.
-5. Direct simple tasks may skip STATE/PLAN/PROGRESS unless the user says "continue"/"resume".
+5. Check `links.dependsOn` and `links.blocks` in STATE.json for cross-task
+   dependency resolution — read only the listed tasks' STATE.json, not all
+   task capsules.
+6. Direct simple tasks may skip STATE/PLAN/PROGRESS unless the user says "continue"/"resume".
 
-See `Harness/specs/workflows/WF-STATE.md` for the full state machine contract and enums.
+See `Harness/specs/workflows/WF-STATE.md` for the full state machine contract and enums. `/wf-task-list` exposes dependencies and open tasks.
 
 ## Direct Mode (Degradation Path)
 
@@ -35,9 +38,9 @@ Complex work may use direct planning, task capsules, tests, and subagents withou
 
 Escalate to the router (next section) only when:
 - User explicitly invokes `/wf`, `/wf-max`, `$wf`, `$wf-max`, `/skills wf`, `/skills wf-max`, or says `wf` / `wf-max`
-- User invokes another workflow `/wf-*`, `$wf-*`, or `/skills wf-*` command, excluding `/wf-help`, `$wf-help`, `/skills wf-help`, `/wf-update`, `$wf-update`, and `/skills wf-update`
+- User invokes another workflow `/wf-*`, `$wf-*`, or `/skills wf-*` command, excluding direct/compat commands listed in `Harness/specs/runtime/command-surface.json`
 
-`/wf-help`, `$wf-help`, `/skills wf-help`, `/wf-update`, `$wf-update`, and `/skills wf-update` are direct/compat commands executed immediately without router load.
+Direct/compat commands are executed immediately without router load.
 
 ## 0-1 Flow
 
@@ -119,6 +122,10 @@ Routing priority: **direct mode is the default** when no explicit WF token is pr
 | Harness readiness check | validate, readiness, placeholder, missing file, release gate | `Harness/scripts/validate-harness.mjs`, `Harness/scripts/validate-harness.mjs --strict` | structural install check; strict bootstrap/release placeholder check |
 | Need harness update | /wf-update, $wf-update, update, check for updates, harness version | `.claude/commands/wf-update.md`, `.opencode/commands/wf-update.md`, `Harness/.harness-version`, `Harness/scripts/wf-update-check.mjs`; Codex fallback: `.claude/skills/wf-update/SKILL.md` | script-driven comparison, SAFE/CONFLICT/PRESERVE classification, changelog release highlights, user decides conflicts |
 | Need harness removal | /wf-remove, $wf-remove, wf remove, remove harness, uninstall harness | `.claude/skills/wf-remove/SKILL.md`, `.agents/skills/wf-remove/SKILL.md`, `Harness/scripts/wf-remove.mjs` | safe removal plan: auto-remove SAFE, confirm MODIFIED, never touch USER DATA |
+| Need task record | /wf-task-record, $wf-task-record, /skills wf-task-record, task record, record work, log progress | `tasks/<id>/PROGRESS.md`, `tasks/<id>/PLAN.md` | progress record, decision log, evidence pointer; direct/compat — do NOT load Harness/MEMORY.md |
+| Need task list | /wf-task-list, $wf-task-list, /skills wf-task-list, list tasks, show tasks, task table, dependency view | `Harness/PROGRESS.md`, `Harness/specs/workflows/WF-STATE.md` | task index, dependency graph, open tasks list; direct/compat — do NOT load Harness/MEMORY.md |
+| Need task archive | /wf-task-archive, $wf-task-archive, /skills wf-task-archive, archive task, cleanup tasks | `Harness/scripts/task-state.mjs`, `Harness/specs/protocols/TASK_ARCHIVE.md` | archive execution plan; direct/compat — do NOT load Harness/MEMORY.md |
+| Need command surface change | /wf-command-create, $wf-command-create, /skills wf-command-create, add command, command surface | `.claude/commands/wf-command-create.md`, `Harness/specs/runtime/command-surface.json` | task-backed command creation checklist; direct/compat — do NOT load Harness/MEMORY.md |
 
 ## Gates
 
@@ -145,43 +152,17 @@ Routing priority: **direct mode is the default** when no explicit WF token is pr
 - Run `node Harness/scripts/validate-harness.mjs` for install-complete scaffold structure; run `node Harness/scripts/validate-harness.mjs --strict` only after bootstrap resolves project-fact placeholders and before release.
 - If a doc still has `{{...}}`, treat that section as a template, not project fact.
 
-## Doc Map
-
-| Category | Files |
-|----------|-------|
-| **Router + Index** | `README.md`, `MEMORY.md`, `PROGRESS.md` |
-| **Task Capsule** | `tasks/<id>/PROGRESS.md`, `tasks/<id>/PLAN.md`, `tasks/<id>/STATE.json`, `tasks/_template/` |
-| **Workflows** | `specs/workflows/WF.md`, `specs/workflows/WF-KERNEL.md`, `specs/workflows/WF-STATE.md`, `specs/workflows/WF-MAX.md`, `specs/workflows/WF-AUTO.md`, `specs/workflows/WF-AUTO-SPARK.md` |
-| **Protocols** | `specs/protocols/ACCEPTANCE_PROTOCOL.md`, `specs/protocols/AGENT_ISOLATION.md`, `specs/protocols/HARNESS_BRIDGE.md`, `specs/protocols/DEBUG_PROTOCOL.md`, `specs/protocols/MEMORY_PROTOCOL.md` |
-| **Guides** | `specs/guides/ECC-GUIDE.md`, `specs/guides/lifecycle.md`, `specs/guides/extension.md`, `project/architecture.md`, `specs/protocols/TDD-GUIDE.md`, `specs/protocols/TASK_ARCHIVE.md` |
-| **Orchestration** | `specs/runtime/subagents.md`, `specs/runtime/context-loading.md`, `specs/runtime/dispatch.md`, `specs/runtime/agent-workflow.md`, `specs/workflows/WF-STATE.md` |
-| **Research** | `research/README.md`, `research/PRD.md`, `research/research-results.md` |
-| **Acceptance Templates** | `templates/PRD.template.md`, `templates/ACCEPTANCE.template.md`, `templates/UI_CONTRACT.template.md`, `templates/API_CONTRACT.template.md`, `templates/TEST_PLAN.template.md`, `templates/PLAYWRIGHT_SPEC.template.ts`, `templates/VALIDATION_REPORT.template.md` |
-| **Memory** | `memory/tool-usage-reflections.md`, `memory/user-corrections-preferences.md`, `memory/agent-lessons-patterns.md` |
-| **Scripts** | `scripts/validate-harness.mjs`, `scripts/context-budget.mjs`, `scripts/l2-cache-telemetry.mjs`, `scripts/wf-update-check.mjs`, `scripts/wf-remove.mjs`, `scripts/task-state.mjs`, `scripts/archive-tasks.mjs` |
-| **Runtime + Config** | `.harness-version`, `ownership.manifest.json`, `settings.json` |
-| **Agents + Skills** | `.claude/agents/*`, `.claude/skills/*`, `.agents/skills/*` |
-| **Direct Commands** | `.claude/commands/wf-help.md`, `.claude/commands/wf-update.md`, `.opencode/commands/wf-help.md`, `.opencode/commands/wf-update.md` |
-| **Workflow Command Wrappers** | `.claude/commands/wf*.md`, `.opencode/commands/wf*.md` |
-
 ## Direct Commands
 
 | Command | Purpose |
 |---|---|
 | `/wf-help`, `$wf-help` | Returns a table of all Harness WF commands, usage, and purpose. Claude Code/OpenCode use direct command files; Codex uses the minimal `wf-help` skill shim. It never starts WF. |
 | `/wf-update`, `$wf-update` | Script-driven harness update: fetch + compare + apply + report release highlights. Direct command for Claude Code and OpenCode; skill path available for Codex compatibility. |
+| `/wf-task-record`, `$wf-task-record` | Record progress, decisions, and evidence to the active task capsule. Direct/compat — no Harness/MEMORY.md load. |
+| `/wf-task-list`, `$wf-task-list` | List tasks with dependency view, open tasks filter, and archive summary. Direct/compat — no Harness/MEMORY.md load. |
+| `/wf-task-archive`, `$wf-task-archive` | Archive completed/verified task capsules. Direct/compat — no Harness/MEMORY.md load. |
+| `/wf-command-create`, `$wf-command-create` | Create or modify wf-* command surfaces from `command-surface.json`. Direct/compat — creates/resumes a task capsule, no Harness/MEMORY.md load. |
 
 ## Skill Commands
 
-| Claude Code | Codex | Purpose |
-|---|---|---|
-| `/wf <task>` | `$wf <task>` | Tiered WF: WF-Light (low-risk, planner/test/verifier), WF-Standard (multi-file, compact ACs), WF-Full (high-risk/cross-layer, full role chain) |
-| `/wf-max [task]` | `$wf-max [task]` | WF-Max-Useful default (fan-out only where independent), WF-Max-Strict override (unconditional fan-out) |
-| `/wf-auto` | `$wf-auto` | Perpetual adaptive auto-optimization: dynamic probes, risk obligations, evidence-based exhaustion |
-| `/wf-auto-spark` | `$wf-auto-spark` | Perpetual inspiration: spark search, roadmap-anchored, <=50% deviation guard, never auto-stops |
-| `/wf-review [focus]` | `$wf-review [focus]` | Peer CLI review via Claude/Codex/OpenCode, or installed reviewer subagent fallback |
-| `/wf-learn` | `$wf-learn` | Force learning cycle: context-master -> memory-master |
-| `/wf-browser [task]` | `$wf-browser [task]` | Built-in AI-driven browser automation for E2E testing |
-| `/wf-readme [task]` | `$wf-readme [task]` | README preservation, merge, and documentation improvement workflow |
-| `/wf-update` | `$wf-update` | Script-driven harness update: fetch + compare + apply + report release highlights |
-| `/wf-remove` | `$wf-remove` | Safe harness removal: auto-delete SAFE, confirm MODIFIED, preserve USER DATA |
+Workflow commands: `/wf`, `/wf-max`, `/wf-auto`, `/wf-auto-spark`, `/wf-review`, `/wf-learn`, `/wf-browser`, `/wf-readme`, `/wf-remove` with matching Codex `$...` and `/skills ...` forms. They load `Harness/MEMORY.md` and follow the registered task capsule policy. `/wf-update` remains direct.

@@ -33,6 +33,9 @@ test('--help documents existing-project flags and optional skills', () => {
   assert.match(output, /--with/);
   assert.match(output, /--without/);
   assert.match(output, /--preset/);
+  assert.match(output, /--install-scope/);
+  assert.match(output, /--global-dir/);
+  assert.match(output, /--host-global-dir/);
   assert.match(output, /--recommend/);
   assert.match(output, /--list-options/);
   assert.match(output, /interactive mode offers checkbox selection/i);
@@ -386,7 +389,7 @@ test('unknown without skill id exits with readable error', () => {
 });
 
 test('flags requiring values fail readably without creating project', () => {
-  for (const flag of ['--with', '--without', '--recommend', '--preset', '--on-conflict', '--with=', '--without=', '--recommend=', '--preset=', '--on-conflict=']) {
+  for (const flag of ['--with', '--without', '--recommend', '--preset', '--on-conflict', '--install-scope', '--global-dir', '--host-global-dir', '--with=', '--without=', '--recommend=', '--preset=', '--on-conflict=', '--install-scope=', '--global-dir=', '--host-global-dir=']) {
     const root = tmpdir();
     const target = path.join(root, 'bad');
     const result = spawnSync(process.execPath, [bin, 'bad', target, '-y', flag, '--dry-run'], { encoding: 'utf8' });
@@ -396,6 +399,86 @@ test('flags requiring values fail readably without creating project', () => {
     assert.match(`${result.stdout}\n${result.stderr}`, new RegExp(`${flagName} requires a value`));
     assert.equal(fs.existsSync(target), false);
   }
+});
+
+test('--json --dry-run reports global install plan without moving project task state', () => {
+  const root = tmpdir();
+  const target = path.join(root, 'global-json');
+  const globalDir = path.join(root, 'global-harness');
+  const hostGlobalDir = path.join(root, 'host-global');
+  const output = execFileSync(
+    process.execPath,
+    [bin, 'global-json', target, '--json', '--dry-run', '--install-scope', 'global', '--global-dir', globalDir, '--host-global-dir', hostGlobalDir],
+    { encoding: 'utf8' },
+  );
+  const data = JSON.parse(output.trim());
+
+  assert.equal(data.success, true);
+  assert.equal(data.installScope, 'global');
+  assert.equal(data.globalDir.replace(/\\/g, '/'), globalDir.replace(/\\/g, '/'));
+  assert.ok(data.plan.create.includes('Harness/PROGRESS.md'));
+  assert.ok(data.plan.create.includes('Harness/tasks/_template/PLAN.md'));
+  assert.ok(data.plan.create.includes('Harness/memory/tool-usage-reflections.md'));
+  assert.ok(data.plan.create.includes('Harness/research/PRD.md'));
+  assert.ok(data.plan.create.includes('Harness/project/architecture.md'));
+  assert.ok(data.plan.create.includes('Harness/specs/guides/SETUP.md'));
+  assert.ok(data.plan.create.includes('Harness/settings.json'));
+  assert.ok(data.globalPlan.create.includes('Harness/README.md'));
+  assert.ok(data.globalPlan.create.includes('Harness/MEMORY.md'));
+  assert.ok(!data.globalPlan.create.some(file => file.startsWith('Harness/tasks/')));
+  assert.ok(!data.globalPlan.create.some(file => file.startsWith('Harness/research/')));
+  assert.ok(!data.globalPlan.create.some(file => file.startsWith('Harness/project/')));
+  assert.ok(!data.globalPlan.create.includes('Harness/PROGRESS.md'));
+  assert.ok(data.hostPlans.some(plan => plan.host === 'claude' && plan.plan.create.includes('commands/wf.md')));
+  assert.ok(data.hostPlans.some(plan => plan.host === 'codex' && plan.plan.create.includes('skills/wf/SKILL.md')));
+  assert.ok(data.hostPlans.some(plan => plan.host === 'opencode' && plan.plan.create.includes('commands/wf.md')));
+  assert.ok(data.ownershipClasses.projectTemplateBridge.includes('Harness/settings.json'));
+  assert.ok(data.warnings.some(warning => /Claude Code, Codex, and OpenCode host-global surfaces/.test(warning)));
+});
+
+test('--json --dry-run treats global runtime conflicts as agent attention files', () => {
+  const root = tmpdir();
+  const target = path.join(root, 'global-json-conflict');
+  const globalDir = path.join(root, 'global-harness');
+  const hostGlobalDir = path.join(root, 'host-global');
+  fs.mkdirSync(globalDir, { recursive: true });
+  fs.writeFileSync(path.join(globalDir, 'CLAUDE.md'), 'existing global runtime entry\n');
+
+  const output = execFileSync(
+    process.execPath,
+    [bin, 'global-json-conflict', target, '--json', '--dry-run', '--install-scope', 'global', '--global-dir', globalDir, '--host-global-dir', hostGlobalDir],
+    { encoding: 'utf8' },
+  );
+  const data = JSON.parse(output.trim());
+
+  assert.equal(data.success, true);
+  assert.ok(data.globalPlan.conflict.includes('CLAUDE.md'));
+  assert.ok(data.agent.aiMergeRequired.some(item => item.file === 'global:CLAUDE.md' && item.scope === 'global-runtime'));
+  assert.ok(data.agent.next.some(item => item.action === 'safe-merge'));
+  assert.ok(!data.agent.next.some(item => item.action === 'install'));
+});
+
+test('--json --dry-run treats host-global user files as scoped attention files', () => {
+  const root = tmpdir();
+  const target = path.join(root, 'host-json-conflict');
+  const globalDir = path.join(root, 'global-harness');
+  const hostGlobalDir = path.join(root, 'host-global');
+  fs.mkdirSync(path.join(hostGlobalDir, 'claude', 'commands'), { recursive: true });
+  fs.writeFileSync(path.join(hostGlobalDir, 'claude', 'commands', 'wf.md'), 'my personal wf command\n');
+
+  const output = execFileSync(
+    process.execPath,
+    [bin, 'host-json-conflict', target, '--json', '--dry-run', '--install-scope', 'global', '--global-dir', globalDir, '--host-global-dir', hostGlobalDir],
+    { encoding: 'utf8' },
+  );
+  const data = JSON.parse(output.trim());
+
+  assert.equal(data.success, true);
+  const claudePlan = data.hostPlans.find(plan => plan.host === 'claude');
+  assert.ok(claudePlan.plan.conflict.includes('commands/wf.md'));
+  assert.ok(data.agent.aiMergeRequired.some(item => item.file === 'host:claude:commands/wf.md' && item.scope === 'host-global:claude'));
+  assert.ok(data.agent.next.some(item => item.action === 'safe-merge'));
+  assert.ok(!data.agent.next.some(item => item.action === 'install'));
 });
 
 test('unknown flags fail readably without creating project', () => {

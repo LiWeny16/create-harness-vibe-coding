@@ -56,6 +56,8 @@ Agent 读取本 README 后，按项目状态选择路径：
 | 已有 `Harness/` 但缺少 `Harness/scripts/wf-update-check.mjs` | `npx create-harness-vibe-coding@latest my-project . -y --on-conflict skip --json`。然后执行 `node Harness/scripts/wf-update-check.mjs --json` |
 | 安装或更新完成 | `node Harness/scripts/validate-harness.mjs --strict` |
 
+安装范围：默认是项目内安装。要写入一份机器级共享 runtime，用 `--install-scope global --global-dir <dir>`；commands/skills/agents 会以 copy 方式写入 Claude Code、Codex、OpenCode 的全局可发现目录，但每个项目自己的 `Harness/tasks/`、`Harness/PROGRESS.md`、项目 memory、项目事实和项目 settings 仍然留在项目内。
+
 用户不需要手动执行这些命令。Agent 负责安装、冲突处理、校验和汇报。
 
 安装后的入口按阶段区分：

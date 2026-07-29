@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-audit-architecture-boundaries",
+  "status": "verified",
+  "mode": "wf",
+  "tier": "standard",
+  "phase": "verified",
+  "gate": "review-synthesis",
+  "updatedAt": "2026-07-26T11:59:44.804Z",
+  "activeQuestion": null,
+  "nextAction": "Audit complete; restore prior active task.",
+  "acceptance": [
+    "AC-001: Startup routing risks are identified with file/line evidence.",
+    "AC-002: Task state/resume risks are identified with file/line evidence.",
+    "AC-003: Skill dispatch and safety-boundary risks are identified with file/line evidence and prioritized fixes."
+  ],
+  "queues": {
+    "ready": [],
+    "running": [],
+    "blocked": [],
+    "done": [
+      "memory-preflight",
+      "task-capsule-created",
+      "D1 startup/state/skill architecture scan",
+      "D2 safety-boundary independent review",
+      "review-synthesis"
+    ]
+  },
+  "dispatchLedger": [
+    {
+      "id": "D1",
+      "agent": "codebase-explorer",
+      "role": "codebase-explorer",
+      "phase": "explore",
+      "mode": "read",
+      "status": "done",
+      "writeSet": "none",
+      "evidence": "Subagent 019f9e43-f3c4-75d0-9453-7445f273db11 returned evidence map; integrated in PLAN.md#Review Synthesis."
+    },
+    {
+      "id": "D2",
+      "agent": "reviewer",
+      "role": "reviewer",
+      "phase": "review",
+      "mode": "read",
+      "status": "done",
+      "writeSet": "none",
+      "evidence": "Subagent 019f9e44-0636-7683-972e-7b5c8fc7aac2 returned safety review; integrated in PLAN.md#Review Synthesis."
+    }
+  ],
+  "decisions": [
+    "WF-Standard selected for multi-area architecture audit with one independent review lens.",
+    "Close this as an architecture audit, not a fix pass.",
+    "Restore task-release-stable-github as active after closeout."
+  ],
+  "risks": [
+    "Existing unrelated active task may need restoration after audit.",
+    "Non-archived task count may exceed Harness cap after adding this task.",
+    "STATE.json validators do not enforce all resume-critical fields.",
+    "Read-only role boundaries are not uniformly runtime-enforced."
+  ],
+  "artifacts": []
+}

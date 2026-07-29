@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
   "taskId": "task-release-stable-github",
-  "status": "active",
+  "status": "in_progress",
   "mode": "direct",
   "tier": "release",
   "phase": "verify",
   "gate": "RELEASE-GATE",
-  "updatedAt": "2026-07-26T17:31:00+08:00",
+  "updatedAt": "2026-07-29T06:38:00.000Z",
   "activeQuestion": null,
-  "nextAction": "Commit staged release scope, then push main and v0.8.17 to both GitHub remotes.",
+  "nextAction": "User may run npm publish for 0.8.18; commit, push, and v0.8.18 tag remain pending for GitHub release completion.",
   "acceptance": [
     {
       "id": "AC-001",
@@ -17,7 +17,7 @@
     },
     {
       "id": "AC-002",
-      "text": "Version metadata and generated harness version manifests are synchronized for 0.8.17.",
+      "text": "Version metadata and generated harness version manifests are synchronized for 0.8.18.",
       "status": "passed"
     },
     {
@@ -32,7 +32,7 @@
     },
     {
       "id": "AC-005",
-      "text": "v0.8.17 tag is created on the release commit and pushed to both GitHub remotes.",
+      "text": "v0.8.18 tag is created on the release commit and pushed to both GitHub remotes.",
       "status": "pending"
     },
     {
@@ -57,7 +57,7 @@
   },
   "dispatchLedger": [],
   "decisions": [
-    "Use 0.8.17 because v0.8.16 already exists on the current main commit.",
+    "Use 0.8.18 because npm latest is 0.8.17 and 0.8.17 cannot be republished.",
     "Do not npm publish; user owns npm publishing.",
     "Push to both origin and legacy GitHub remotes without force."
   ],

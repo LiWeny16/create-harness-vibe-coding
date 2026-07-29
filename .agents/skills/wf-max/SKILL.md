@@ -43,7 +43,7 @@ WF-MAX inherits the selected WF tier and the shared WF-KERNEL gates
 default; WF-Max-Strict only on explicit strict request. Execution expands
 through:
 
-- New task state directories MUST use task ids matching
+- New task capsules / state directories MUST use task ids matching
   `task-<verb>-<noun>[-detail]` under `Harness/tasks/<task-id>/`; never
   create bare `fix-*` task ids.
 1. Global mode: `wf-max`

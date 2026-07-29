@@ -53,6 +53,10 @@ function optionalSkillNames() {
   return [...names].sort();
 }
 
+function commandSurfaceCommands() {
+  return JSON.parse(read('Harness/specs/runtime/command-surface.json')).commands;
+}
+
 function extractStringArray(text, name) {
   const match = text.match(new RegExp(`const ${name} = \\[([\\s\\S]*?)\\];`));
   assert.ok(match, `${name} array should exist`);
@@ -96,12 +100,26 @@ test('wf-update direct command wrappers carry the canonical 8-step flow', () => 
 });
 
 test('ECC /wf wildcard rule keeps direct command exemptions explicit', () => {
+  const commands = commandSurfaceCommands();
+  const directAliases = commands
+    .filter(command => command.classification === 'direct')
+    .flatMap(command => command.aliases);
+  const workflowAliases = commands
+    .filter(command => command.classification === 'workflow')
+    .flatMap(command => command.aliases);
+
   for (const rel of [
     '.claude/rules/ecc/common.md',
     'templates/common/.claude/rules/ecc/common.md',
   ]) {
     const body = read(rel);
-    assert.match(body, /excluding `\/wf-help`, `\$wf-help`, `\/skills wf-help`, `\/wf-update`, `\$wf-update`, and `\/skills wf-update`/);
+    const exemptionLine = body.split(/\r?\n/).find(line => line.includes('excluding')) || '';
+    for (const alias of directAliases) {
+      assert.ok(exemptionLine.includes(`\`${alias}\``), `${rel} missing direct exemption ${alias}`);
+    }
+    for (const alias of workflowAliases) {
+      assert.equal(exemptionLine.includes(`\`${alias}\``), false, `${rel} incorrectly exempts workflow alias ${alias}`);
+    }
     assert.doesNotMatch(body, /When the user explicitly invokes a `\/wf-\*` command, load/);
     assert.match(body, /记住/);
     assert.doesNotMatch(body, /鍚|銆|绂|鈥/);
@@ -115,6 +133,7 @@ test('wf-remove built-in registries cover generated agents and skills', () => {
 
   const agentRegistry = extractStringArray(rootScript, 'BUILT_IN_AGENT_NAMES');
   const skillRegistry = extractStringArray(rootScript, 'BUILT_IN_SKILL_NAMES');
+  const commandRegistry = extractStringArray(rootScript, 'BUILT_IN_COMMAND_NAMES');
   const cleanupDirs = extractStringArray(rootScript, 'CLEANUP_DIRS');
 
   for (const name of markdownNames('templates/common/.claude/agents')) {
@@ -128,14 +147,23 @@ test('wf-remove built-in registries cover generated agents and skills', () => {
     assert.ok(cleanupDirs.includes(`.claude/skills/${name}`), `CLEANUP_DIRS missing .claude/skills/${name}`);
     assert.ok(cleanupDirs.includes(`.agents/skills/${name}`), `CLEANUP_DIRS missing .agents/skills/${name}`);
   }
+
+  for (const command of commandSurfaceCommands()) {
+    if (command.surfaces?.claudeCommand || command.surfaces?.opencodeCommand) {
+      assert.ok(commandRegistry.includes(command.id), `BUILT_IN_COMMAND_NAMES missing ${command.id}`);
+    }
+  }
 });
 
 test('route-critical template and dogfood files stay byte-identical', () => {
   const pairs = [
     ['CLAUDE.md', 'templates/common/CLAUDE.md'],
     ['.claude/rules/ecc/common.md', 'templates/common/.claude/rules/ecc/common.md'],
+    ['Harness/specs/runtime/command-surface.json', 'templates/common/Harness/specs/runtime/command-surface.json'],
     ['.claude/commands/wf-help.md', 'templates/common/.claude/commands/wf-help.md'],
     ['.opencode/commands/wf-help.md', 'templates/common/.opencode/commands/wf-help.md'],
+    ['.claude/commands/wf-command-create.md', 'templates/common/.claude/commands/wf-command-create.md'],
+    ['.opencode/commands/wf-command-create.md', 'templates/common/.opencode/commands/wf-command-create.md'],
     ['.claude/commands/wf-update.md', 'templates/common/.claude/commands/wf-update.md'],
     ['.opencode/commands/wf-update.md', 'templates/common/.opencode/commands/wf-update.md'],
     ['Harness/specs/runtime/context-loading.md', 'templates/common/Harness/specs/runtime/context-loading.md'],

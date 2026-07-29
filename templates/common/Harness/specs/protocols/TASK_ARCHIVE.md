@@ -46,15 +46,21 @@ machine state.
 - Do NOT delete historical evidence.
 - `Harness/PROGRESS.md` keeps the last 5 non-archived task entries in the Task
   Index.
-- When outer task capsules exceed 5 completed/abandoned/obsolete tasks, archive
-  the oldest safe tasks.
+- When outer task capsules exceed 5 completed/abandoned/obsolete tasks, remind
+  the user to run the task archive command. Do not auto-archive during unrelated
+  validation or closeout unless the user explicitly invokes archive apply mode.
 - The validator (`Harness/scripts/validate-harness.mjs`) warns when
   `Harness/tasks/` holds more than 5 outer task capsules (excluding `_archive`,
   `_template`, `auto`) and fails in `--strict` mode.
 
 ## Script
 
-Use `Harness/scripts/task-state.mjs archive`:
+User-facing command:
+
+- Codex: `$wf-task-archive` or `/skills wf-task-archive`.
+- Claude Code/OpenCode: `/wf-task-archive`.
+
+Underlying implementation: `Harness/scripts/task-state.mjs archive`.
 
 - Default: dry-run.
 - `--apply` to execute.

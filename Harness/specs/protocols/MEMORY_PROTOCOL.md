@@ -10,6 +10,21 @@ Memory is downstream of evidence. It records reusable patterns, not raw transcri
 - **L2 = Startup Digest**: `Harness/memory/startup-hints.md`. Lightweight hints loaded at session start. Not a replacement for full router.
 - **L3 = Detailed Durable Memory**: `Harness/memory/*.md` files. Loaded only when scenario matches via `routes.md`.
 
+## Project/Global Memory Boundary
+
+- `Harness/tasks/` and `Harness/PROGRESS.md` are always project-local, even when the Harness runtime is installed globally.
+- Project memory lives in `Harness/memory/` and records repo-specific lessons, preferences, and tool patterns.
+- Global memory may live under the selected global Harness directory for cross-project lessons and preferences.
+- Global memory must never store project task state, secrets, raw transcripts, or private project facts.
+
+## Project/Global Settings Boundary
+
+- Project settings live in `Harness/settings.json` and override global settings.
+- Global settings defaults live in the selected global Harness runtime under `Harness/settings.json`.
+- Host-global settings are copied, not symlinked, into Claude Code, Codex, and OpenCode user config directories.
+- Settings and memory must never store secrets; use external secret stores or environment variables.
+- Existing user-authored config, command, skill, or agent files are user-owned unless they carry a Harness ownership marker.
+
 ## When To Write Memory
 
 Write memory when any condition applies:

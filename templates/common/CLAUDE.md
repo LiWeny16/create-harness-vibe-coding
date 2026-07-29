@@ -14,7 +14,7 @@ In direct mode, do not load the full Harness router. Inspect only the files need
 
 Complex work may use direct planning, task capsules, tests, and subagents without entering WF. WF execution modes are explicit only: the user must type `/wf`, `$wf`, `/skills wf`, `/wf-max`, `$wf-max`, `/skills wf-max`, `/wf-auto`, `$wf-auto`, `/skills wf-auto`, `/wf-auto-spark`, `$wf-auto-spark`, or `/skills wf-auto-spark` to enter the WF kernel. No other phrasing, complexity heuristic, or inferred intent triggers WF.
 
-`/wf-help`, `$wf-help`, `/skills wf-help`, `/wf-update`, `$wf-update`, and `/skills wf-update` are **direct/compat commands** — do NOT load `Harness/MEMORY.md`, do NOT enter WF. Claude Code and OpenCode execute the direct command files; Codex may invoke the matching compatibility skill shim, which returns the static help/update instructions without entering WF.
+`/wf-help`, `$wf-help`, `/skills wf-help`, `/wf-update`, `$wf-update`, `/skills wf-update`, `/wf-task-record`, `$wf-task-record`, `/skills wf-task-record`, `/wf-task-list`, `$wf-task-list`, `/skills wf-task-list`, `/wf-task-archive`, `$wf-task-archive`, `/skills wf-task-archive`, `/wf-command-create`, `$wf-command-create`, and `/skills wf-command-create` are **direct/compat commands** — do NOT load `Harness/MEMORY.md`, do NOT enter WF. Claude Code and OpenCode execute the direct command files; Codex may invoke the matching compatibility skill shim.
 
 For non-direct workflow commands (`/wf`, `/wf-max`, `/wf-auto`, `/wf-review`, `/wf-learn`, `/wf-readme`, `/wf-remove`, `/wf-browser`, `/wf-auto-spark`, and matching `$wf-*` or `/skills wf-*` forms except the direct/compat commands above), load `Harness/MEMORY.md` first, then `Harness/README.md`.
 
@@ -24,11 +24,13 @@ If the user says "continue", "resume", "last task", "current task", "status", "w
 
 1. Read `Harness/PROGRESS.md` → find Active Task.
 2. If Active Task exists, read `Harness/tasks/<active-task>/STATE.json` first.
-3. Read `Harness/tasks/<active-task>/PROGRESS.md`.
-4. Read `Harness/tasks/<active-task>/PLAN.md` only if decisions or scope need review.
-5. From STATE.json, recover: phase, gate, tier, ready/running/blocked/done queues, activeQuestion, nextAction.
-6. Do NOT bulk-read `Harness/tasks/` to find context. Use the active pointer.
-7. Direct simple tasks may skip STATE/PLAN/PROGRESS unless the user says "continue"/"resume".
+3. From STATE.json, check `links.dependsOn` — if non-empty, check whether any dependency tasks are still open (STATE.json status is non-archived) and report blocked dependencies.
+4. From STATE.json, check `workItems[]` — if non-empty, inspect items with status `running` or `ready` for parallel dispatch candidates.
+5. Read `Harness/tasks/<active-task>/PROGRESS.md`.
+6. Read `Harness/tasks/<active-task>/PLAN.md` only if decisions or scope need review.
+7. From STATE.json, recover: phase, gate, tier, ready/running/blocked/done queues, activeQuestion, nextAction.
+8. Do NOT bulk-read `Harness/tasks/` to find context. Use the active pointer.
+9. Direct simple tasks may skip STATE/PLAN/PROGRESS unless the user says "continue"/"resume". The `continue` keyword resolves deterministically from the active pointer plus STATE.json — it always recovers the same state.
 
 See `Harness/specs/workflows/WF-STATE.md` for the full state machine contract. Completed/abandoned tasks are archived to `Harness/tasks/_archive/` per `Harness/specs/protocols/TASK_ARCHIVE.md`.
 

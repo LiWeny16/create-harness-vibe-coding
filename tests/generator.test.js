@@ -253,6 +253,7 @@ test('generated scaffold stores harness-owned payload under root Harness directo
     'Harness/project/architecture.md',
     'Harness/specs/runtime/dispatch.md',
     'Harness/specs/runtime/context-loading.md',
+    'Harness/specs/runtime/command-surface.json',
     'Harness/specs/runtime/agent-workflow.md',
     'Harness/scripts/context-budget.mjs',
     'Harness/scripts/validate-harness.mjs',
@@ -279,6 +280,10 @@ test('generated scaffold stores harness-owned payload under root Harness directo
     '.opencode/commands/wf-browser.md',
     '.opencode/commands/wf-readme.md',
     '.opencode/commands/wf-remove.md',
+    '.opencode/commands/wf-task-record.md',
+    '.opencode/commands/wf-task-list.md',
+    '.opencode/commands/wf-task-archive.md',
+    '.opencode/commands/wf-command-create.md',
     '.claude/commands/wf-help.md',
     '.claude/commands/wf-update.md',
     '.claude/commands/wf.md',
@@ -290,6 +295,10 @@ test('generated scaffold stores harness-owned payload under root Harness directo
     '.claude/commands/wf-browser.md',
     '.claude/commands/wf-readme.md',
     '.claude/commands/wf-remove.md',
+    '.claude/commands/wf-task-record.md',
+    '.claude/commands/wf-task-list.md',
+    '.claude/commands/wf-task-archive.md',
+    '.claude/commands/wf-command-create.md',
     '.opencode/agents/researcher.md',
     '.opencode/agents/planner.md',
     '.opencode/agents/implementer.md',
@@ -303,6 +312,14 @@ test('generated scaffold stores harness-owned payload under root Harness directo
     '.agents/skills/wf-max/SKILL.md',
     '.claude/skills/wf-update/SKILL.md',
     '.agents/skills/wf-update/SKILL.md',
+    '.claude/skills/wf-task-record/SKILL.md',
+    '.agents/skills/wf-task-record/SKILL.md',
+    '.claude/skills/wf-task-list/SKILL.md',
+    '.agents/skills/wf-task-list/SKILL.md',
+    '.claude/skills/wf-task-archive/SKILL.md',
+    '.agents/skills/wf-task-archive/SKILL.md',
+    '.claude/skills/wf-command-create/SKILL.md',
+    '.agents/skills/wf-command-create/SKILL.md',
     '.claude/skills/wf-readme/SKILL.md',
     '.agents/skills/wf-readme/SKILL.md',
     '.claude/skills/wf-browser/SKILL.md',
@@ -682,6 +699,98 @@ test('generated scaffold stores harness-owned payload under root Harness directo
   const plan = readRel(targetDir, 'Harness/PROGRESS.md');
   assert.match(plan, /## Active Task/);
   assert.match(plan, /## Task Index/);
+});
+
+test('global install scope writes shared runtime while keeping task state project-local', () => {
+  const root = tmpdir();
+  const targetDir = path.join(root, 'global-project');
+  const globalDir = path.join(root, 'global-runtime');
+  const hostGlobalDir = path.join(root, 'host-global');
+
+  const result = generate({
+    projectName: 'global-project',
+    targetDir,
+    installScope: 'global',
+    globalDir,
+    hostGlobalDir,
+  });
+
+  assert.equal(result.success, true, result.errors.join('\n'));
+  assert.equal(result.installScope, 'global');
+  assert.ok(fs.existsSync(path.join(targetDir, 'Harness', 'PROGRESS.md')));
+  assert.ok(fs.existsSync(path.join(targetDir, 'Harness', 'tasks', '_template', 'PLAN.md')));
+  assert.ok(fs.existsSync(path.join(targetDir, 'Harness', 'memory', 'tool-usage-reflections.md')));
+  assert.ok(fs.existsSync(path.join(targetDir, 'Harness', 'research', 'README.md')));
+  assert.ok(fs.existsSync(path.join(targetDir, 'Harness', 'research', 'PRD.md')));
+  assert.ok(fs.existsSync(path.join(targetDir, 'Harness', 'research', 'research-results.md')));
+  assert.ok(fs.existsSync(path.join(targetDir, 'Harness', 'project', 'architecture.md')));
+  assert.ok(fs.existsSync(path.join(targetDir, 'Harness', 'specs', 'guides', 'SETUP.md')));
+  assert.ok(fs.existsSync(path.join(targetDir, 'Harness', 'settings.json')));
+  assert.ok(fs.existsSync(path.join(targetDir, 'CLAUDE.md')));
+  assert.ok(fs.existsSync(path.join(targetDir, 'Harness', 'README.md')));
+  assert.equal(fs.existsSync(path.join(targetDir, '.claude')), false);
+  assert.equal(fs.existsSync(path.join(targetDir, '.agents')), false);
+  assert.equal(fs.existsSync(path.join(targetDir, '.opencode')), false);
+  assert.equal(fs.existsSync(path.join(targetDir, 'Harness', 'scripts')), false);
+  assert.equal(fs.existsSync(path.join(targetDir, 'tests')), false);
+  assert.ok(fs.existsSync(path.join(globalDir, 'Harness', 'README.md')));
+  assert.ok(fs.existsSync(path.join(globalDir, 'Harness', 'MEMORY.md')));
+  assert.ok(fs.existsSync(path.join(globalDir, '.claude', 'skills', 'wf', 'SKILL.md')));
+  assert.equal(fs.existsSync(path.join(globalDir, 'Harness', 'PROGRESS.md')), false);
+  assert.equal(fs.existsSync(path.join(globalDir, 'Harness', 'tasks')), false);
+  assert.equal(fs.existsSync(path.join(globalDir, 'Harness', 'research', 'PRD.md')), false);
+  assert.equal(fs.existsSync(path.join(globalDir, 'Harness', 'project', 'architecture.md')), false);
+  assert.ok(fs.existsSync(path.join(globalDir, 'Harness', 'settings.json')));
+  assert.ok(fs.existsSync(path.join(hostGlobalDir, 'claude', 'commands', 'wf.md')));
+  assert.ok(fs.existsSync(path.join(hostGlobalDir, 'claude', 'skills', 'wf', 'SKILL.md')));
+  assert.ok(fs.existsSync(path.join(hostGlobalDir, 'claude', 'settings.json')));
+  assert.ok(fs.existsSync(path.join(hostGlobalDir, 'codex', 'skills', 'wf', 'SKILL.md')));
+  assert.ok(fs.existsSync(path.join(hostGlobalDir, 'codex', 'config.toml')));
+  assert.ok(fs.existsSync(path.join(hostGlobalDir, 'opencode', 'commands', 'wf.md')));
+  assert.ok(fs.existsSync(path.join(hostGlobalDir, 'opencode', 'agents', 'planner.md')));
+  assert.ok(fs.existsSync(path.join(hostGlobalDir, 'opencode', 'opencode.json')));
+
+  const projectVersion = JSON.parse(readRel(targetDir, 'Harness/.harness-version'));
+  const globalVersion = JSON.parse(readRel(globalDir, 'Harness/.harness-version'));
+  assert.equal(projectVersion.installScope, 'global');
+  assert.equal(projectVersion.globalDir.replace(/\\/g, '/'), globalDir.replace(/\\/g, '/'));
+  assert.equal(projectVersion.projectState.tasks, 'Harness/tasks/');
+  assert.equal(projectVersion.projectState.settings, 'Harness/settings.json');
+  assert.equal(projectVersion.projectState.research, 'Harness/research/');
+  assert.equal(projectVersion.projectState.project, 'Harness/project/');
+  assert.equal(projectVersion.memoryScopes.project, 'Harness/memory/');
+  assert.match(projectVersion.memoryScopes.global, /global-runtime\/Harness\/memory\//);
+  assert.equal(projectVersion.settingsScopes.precedence[0], 'project');
+  assert.equal(projectVersion.settingsScopes.precedence[1], 'global');
+  assert.equal(projectVersion.hostGlobal.copyMode, 'copy');
+  assert.match(projectVersion.hostGlobal.targets.claude.root.replace(/\\/g, '/'), /host-global\/claude$/);
+  assert.ok(projectVersion.hostGlobal.targets.claude.files.includes('commands/wf.md'));
+  assert.ok(projectVersion.hostGlobal.targets.codex.files.includes('skills/wf/SKILL.md'));
+  assert.ok(projectVersion.hostGlobal.targets.opencode.files.includes('commands/wf.md'));
+  assert.ok(projectVersion.ownershipClasses.projectUserState.includes('Harness/tasks/**'));
+  assert.ok(projectVersion.ownershipClasses.projectTemplateBridge.includes('Harness/settings.json'));
+  assert.equal(globalVersion.installScope, 'global');
+  assert.equal(globalVersion.projectState.progress, 'Harness/PROGRESS.md');
+  assert.ok(!Object.keys(globalVersion.sources).some(file => file.startsWith('Harness/tasks/')));
+  assert.ok(!Object.keys(globalVersion.sources).some(file => file.startsWith('Harness/research/')));
+  assert.ok(!Object.keys(globalVersion.sources).some(file => file.startsWith('Harness/project/')));
+  assert.match(readRel(targetDir, 'Harness/specs/guides/SETUP.md'), /Read the full setup guide from/);
+});
+
+test('global install scope rejects target/global directory overlap', () => {
+  const root = tmpdir();
+  const targetDir = path.join(root, 'same-root');
+
+  const result = generate({
+    projectName: 'same-root',
+    targetDir,
+    installScope: 'global',
+    globalDir: targetDir,
+  });
+
+  assert.equal(result.success, false);
+  assert.match(result.errors.join('\n'), /Global install directory must be outside the target project/);
+  assert.equal(fs.existsSync(targetDir), false);
 });
 
 test('backup conflict policy keeps original and writes template file', () => {
@@ -1174,7 +1283,7 @@ test('build-version produces valid semver and populated checksums/sources', asyn
 
   assert.equal(harnessVersion.releaseNotes.version, pkg.version, 'release notes should match package version');
   assert.ok(
-    harnessVersion.releaseNotes.highlights.some(line => /HarnessBench|wf-browser|task-state/i.test(line)),
+    harnessVersion.releaseNotes.highlights.some(line => /task capsule|wf-command-create|global install/i.test(line)),
     'release notes should include current release highlights',
   );
 
@@ -1243,4 +1352,158 @@ test('generated project has populated .harness-version with matching version and
   const now = new Date();
   const diffMs = now - generatedDate;
   assert.ok(diffMs >= 0 && diffMs < 60000, 'generated timestamp should be recent');
+});
+
+// ============================================================================
+// Global host config ownership — reinstall should not misclassify manifest-owned
+// host configs (settings.json, config.toml, opencode.json) as user-owned.
+// ============================================================================
+
+test('reinstall with overwrite policy updates host configs declared in manifest', () => {
+  const root = tmpdir();
+  const targetDir = path.join(root, 'reinstall-host');
+  const globalDir = path.join(root, 'global-runtime');
+  const hostGlobalDir = path.join(root, 'host-global-reinstall');
+
+  // First install (creates all files)
+  const result1 = generate({
+    projectName: 'reinstall-host',
+    targetDir,
+    installScope: 'global',
+    globalDir,
+    hostGlobalDir,
+  });
+  assert.equal(result1.success, true, result1.errors.join('\n'));
+
+  // Verify host config files exist after first install
+  assert.ok(fs.existsSync(path.join(hostGlobalDir, 'claude', 'settings.json')));
+
+  // Second install with overwrite policy — host configs should NOT be
+  // misclassified as userOwnedSkip since they're declared in the manifest
+  const result2 = generate({
+    projectName: 'reinstall-host',
+    targetDir,
+    installScope: 'global',
+    globalDir,
+    hostGlobalDir,
+    onConflict: 'overwrite',
+  });
+
+  assert.equal(result2.success, true, result2.errors.join('\n'));
+
+  // The claude settings.json is a manifest-declared frameworkOwned path.
+  // On reinstall it must not be userOwnedSkip — it should be overwritten.
+  const claudePlan = result2.hostPlans.find(p => p.host === 'claude');
+  assert.ok(claudePlan, 'claude host plan should exist');
+  assert.ok(
+    !claudePlan.plan.userOwnedSkip.includes('settings.json'),
+    'claude settings.json should NOT be userOwnedSkip (manifest-declared)',
+  );
+  assert.ok(
+    claudePlan.plan.overwrite.includes('settings.json'),
+    'claude settings.json should be overwritten',
+  );
+});
+
+test('manifest-owned project-local configs rejected correctly on reinstall with fail policy', () => {
+  const root = tmpdir();
+  const targetDir = path.join(root, 'reinstall-fail-local');
+
+  // First install
+  const result1 = generate({
+    projectName: 'reinstall-fail-local',
+    targetDir,
+  });
+  assert.equal(result1.success, true, result1.errors.join('\n'));
+
+  // Create a user-authored file that shadows a manifest-owned path but has no
+  // harness marker. This is truly user-owned and should still be caught.
+  fs.mkdirSync(path.join(targetDir, '.claude', 'skills', 'wf', 'nested'), { recursive: true });
+  fs.writeFileSync(path.join(targetDir, '.claude', 'skills', 'wf', 'SKILL.md'), '# user skill\n');
+
+  const result2 = generate({
+    projectName: 'reinstall-fail-local',
+    targetDir,
+    onConflict: 'fail',
+  });
+
+  // The non-harness file at a manifest-owned path should still be a conflict
+  assert.equal(result2.success, false);
+  assert.ok(
+    result2.plan.conflict.includes('.claude/skills/wf/SKILL.md'),
+    'user file at manifest-owned path should be a conflict under fail policy',
+  );
+});
+
+test('host manifestOwnedSet maps project dest to host dest correctly', () => {
+  const root = tmpdir();
+  const targetDir = path.join(root, 'manifest-mapping');
+  const globalDir = path.join(root, 'global-runtime-mapping');
+  const hostGlobalDir = path.join(root, 'host-global-mapping');
+
+  // First install to create host files
+  const result1 = generate({
+    projectName: 'manifest-mapping',
+    targetDir,
+    installScope: 'global',
+    globalDir,
+    hostGlobalDir,
+  });
+  assert.equal(result1.success, true, result1.errors.join('\n'));
+
+  // Verify projectDest is preserved: the claude host plan's plan summary should include
+  // settings.json in its created or overwritten arrays since it's a manifest-declared path.
+  const claudePlan = result1.hostPlans.find(p => p.host === 'claude');
+  assert.ok(claudePlan, 'claude host plan should exist');
+  // hostPlan.plan is the stable external shape; settings.json is generated in first install
+  assert.ok(
+    claudePlan.plan.create.includes('settings.json') || claudePlan.plan.overwrite.includes('settings.json'),
+    'claude settings.json should be in first-install plan',
+  );
+
+  // Second install with overwrite to test reinstall behavior
+  const result2 = generate({
+    projectName: 'manifest-mapping',
+    targetDir,
+    installScope: 'global',
+    globalDir,
+    hostGlobalDir,
+    onConflict: 'overwrite',
+  });
+  assert.equal(result2.success, true, result2.errors.join('\n'));
+
+  // Verify the host plan's manifestOwnedSet includes settings.json
+  // (because .claude/settings.json is in the manifest)
+  const claudePlan2 = result2.hostPlans.find(p => p.host === 'claude');
+  assert.ok(
+    !claudePlan2.plan.userOwnedSkip.includes('settings.json'),
+    'claude settings.json should not be in userOwnedSkip',
+  );
+  assert.ok(
+    claudePlan2.plan.overwrite.includes('settings.json'),
+    'claude settings.json should be overwritten',
+  );
+
+  // Codex config.toml and opencode.json should also be overwritten
+  const codexPlan = result2.hostPlans.find(p => p.host === 'codex');
+  assert.ok(codexPlan, 'codex host plan should exist');
+  assert.ok(
+    !codexPlan.plan.userOwnedSkip.includes('config.toml'),
+    'codex config.toml should not be userOwnedSkip',
+  );
+  assert.ok(
+    codexPlan.plan.overwrite.includes('config.toml'),
+    'codex config.toml should be overwritten',
+  );
+
+  const opencodePlan = result2.hostPlans.find(p => p.host === 'opencode');
+  assert.ok(opencodePlan, 'opencode host plan should exist');
+  assert.ok(
+    !opencodePlan.plan.userOwnedSkip.includes('opencode.json'),
+    'opencode opencode.json should not be userOwnedSkip',
+  );
+  assert.ok(
+    opencodePlan.plan.overwrite.includes('opencode.json'),
+    'opencode opencode.json should be overwritten',
+  );
 });

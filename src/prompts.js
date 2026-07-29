@@ -40,6 +40,24 @@ export async function askTargetDir(projectName) {
   return dir.trim();
 }
 
+export async function askInstallScope() {
+  const scope = await p.select({
+    message: 'Harness install scope?',
+    initialValue: 'project',
+    options: [
+      { value: 'project', label: 'Project-local', hint: 'full Harness scaffold in this project' },
+      { value: 'global', label: 'Global + project state', hint: 'shared runtime plus project-local tasks/memory' },
+    ],
+  });
+
+  if (p.isCancel(scope)) {
+    p.cancel('Cancelled');
+    process.exit(0);
+  }
+
+  return scope;
+}
+
 export async function askConflictPolicy(scan) {
   const reason = scan.hasHarness
     ? 'Target already has Harness/. Choose how to handle existing files.'

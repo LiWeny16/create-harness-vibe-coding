@@ -208,6 +208,12 @@ independent same-runtime subagent context; for broad WF-MAX review, dispatch
 agents report suggestions only. The controller accepts, rejects, or escalates
 each finding and owns the final decision.
 
+### OpenCode Reviewer Caveat
+
+`opencode run --agent reviewer`: current installed `.opencode/agents/reviewer.md`
+is `mode: subagent`; OpenCode falls back to the default agent. Probe before
+claiming primary-runner review. Prefer same-runtime reviewer subagent fallback.
+
 ## Subagent Status Handling
 
 | Status | Controller Action |

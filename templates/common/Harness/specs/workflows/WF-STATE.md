@@ -82,6 +82,67 @@ Use `Harness/scripts/task-state.mjs` as the deterministic state writer:
 Do not rely on prompt instructions alone to keep active task, task `STATE.json`,
 task `PROGRESS.md`, and root `Harness/PROGRESS.md` synchronized.
 
+## Links (Cross-Task Dependencies)
+
+STATE.json `links` enables cross-task dependency resolution without reading
+every task capsule:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `links.dependsOn` | `string[]` | Task IDs this task depends on (blockers) |
+| `links.blocks` | `string[]` | Task IDs this task blocks |
+| `links.related` | `string[]` | Related task IDs (no dependency direction) |
+
+When resolving `links.dependsOn`, the controller reads only the listed tasks'
+STATE.json, not all task capsules. A task with unresolved dependsOn entries
+should stay in the blocked queue until its dependencies resolve.
+
+## Work Items (Parallel Dispatch)
+
+STATE.json `workItems[]` enables fine-grained parallel dispatch tracking with
+per-item dependencies:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `string` | Unique item identifier |
+| `status` | `string` | `pending`, `ready`, `running`, `done`, `blocked`, `skipped`, `failed` |
+| `phase` | `string` | Phase this item belongs to |
+| `dependsOn` | `string[]` | Item IDs this item depends on |
+| `parallelGroup` | `string` | Group name for concurrent dispatch (optional) |
+| `readSet` | `string[]` | Files/patterns the item may read |
+| `writeSet` | `string[]` | Files/patterns the item may write |
+| `agent` | `string` | Agent role assigned (optional) |
+| `evidence` | `string` | Evidence path or summary (optional) |
+| `next` | `string` | Next action after this item completes (optional) |
+
+`workItems` is an additive array — it supplements the dispatchLedger and queues
+for finer-grained tracking. The dispatchLedger remains the canonical record of
+subagent dispatches.
+
+## Open Tasks
+
+"Open tasks" are non-archived task capsules with status one of:
+`active`, `in_progress`, `running`, `pending`, `blocked`,
+`needs-user-decision`.
+
+The active pointer (`Harness/PROGRESS.md`) marks the single task the agent
+should resume. Other open tasks remain visible in the Task Index but are not
+automatically loaded.
+
+## Queue Entry Normalization
+
+Queues (`ready`, `running`, `blocked`, `done`) accept both plain string entries
+and object entries. The normalization rules are backward-compatible:
+
+- A plain string entry is treated as a task or dispatch item ID.
+- An object entry may contain the same fields as a work item (`id`, `status`,
+  `dependsOn`, etc.) for richer inline tracking.
+- `task-state.mjs` preserves both forms during reconcile — it does not coerce
+  objects to strings or vice versa.
+
+This enables incremental adoption: existing STATE.json files with string-only
+queues continue to work without changes.
+
 ## Resume Protocol
 
 New window / session start:
@@ -99,6 +160,11 @@ New window / session start:
    - Queues: ready (can dispatch immediately), running (awaiting results),
      blocked (needs resolution), done.
    - nextAction (what to do next).
+   - **links.dependsOn**: if non-empty, check whether any dependency tasks are
+     still open (their STATE.json has a non-archived status). Report blocked
+     dependencies to the user.
+   - **workItems[]**: if non-empty, inspect items with status `running` or
+     `ready` for parallel dispatch candidates.
 4. Do NOT bulk-read `Harness/tasks/` to find context. Use the active pointer.
 5. Direct simple tasks may skip STATE/PLAN/PROGRESS unless the user says
    "continue"/"resume".

@@ -15,6 +15,33 @@ Literal explanatory {{...}} text is allowed.`);
   process.exit(0);
 }
 
+let commandSurfaceLoadError = null;
+
+function loadCommandSurface() {
+  const rel = path.join(root, 'Harness', 'specs', 'runtime', 'command-surface.json');
+  try {
+    const parsed = JSON.parse(fs.readFileSync(rel, 'utf8'));
+    if (!parsed || parsed.schemaVersion !== 1 || !Array.isArray(parsed.commands)) {
+      commandSurfaceLoadError = 'Harness/specs/runtime/command-surface.json must have schemaVersion 1 and commands[]';
+      return { commands: [] };
+    }
+    return parsed;
+  } catch (err) {
+    commandSurfaceLoadError = `Harness/specs/runtime/command-surface.json is not valid JSON: ${err.message}`;
+    return { commands: [] };
+  }
+}
+
+function uniqueSorted(values) {
+  return [...new Set(values)].sort();
+}
+
+const commandSurface = loadCommandSurface();
+const commandDefinitions = commandSurface.commands;
+const commandSkillNames = commandDefinitions
+  .filter(command => command.surfaces?.claudeSkill || command.surfaces?.codexSkill)
+  .map(command => command.id);
+
 const commonAgents = [
   'task-scribe',
   'codebase-explorer',
@@ -37,38 +64,26 @@ const commonAgents = [
 ];
 
 const commonSkills = [
-  'wf',
-  'wf-help',
   'tdd',
-  'wf-update',
-  'wf-max',
-  'wf-review',
-  'wf-learn',
-  'wf-browser',
   'subagent-orchestrator',
-  'wf-readme',
   'wf-agents-docs',
-  'wf-remove',
-  'wf-auto',
-  'wf-auto-spark',
+  ...commandSkillNames,
 ];
 
-const workflowCommands = [
-  'wf',
-  'wf-max',
-  'wf-auto',
-  'wf-auto-spark',
-  'wf-learn',
-  'wf-review',
-  'wf-browser',
-  'wf-readme',
-  'wf-remove',
-];
+const workflowCommands = commandDefinitions
+  .filter(command => command.classification === 'workflow' && command.surfaces?.claudeCommand)
+  .map(command => command.id);
 
-const opencodeWorkflowCommands = workflowCommands;
+const directCommands = commandDefinitions
+  .filter(command => command.classification === 'direct')
+  .map(command => command.id);
+
+const opencodeWorkflowCommands = commandDefinitions
+  .filter(command => command.classification === 'workflow' && command.surfaces?.opencodeCommand)
+  .map(command => command.id);
 
 const cacheDisciplinedSkills = commonSkills.filter(skill => (
-  skill === 'subagent-orchestrator' || (skill.startsWith('wf') && skill !== 'wf-help')
+  skill === 'subagent-orchestrator' || skill === 'wf-agents-docs' || workflowCommands.includes(skill)
 ));
 
 const memoryFiles = [
@@ -103,12 +118,12 @@ const required = [
   '.codex/hooks.json',
   'opencode.json',
   '.claude/settings.json',
-  '.claude/commands/wf-help.md',
-  '.claude/commands/wf-update.md',
-  ...workflowCommands.map(command => `.claude/commands/${command}.md`),
-  '.opencode/commands/wf-help.md',
-  '.opencode/commands/wf-update.md',
-  ...opencodeWorkflowCommands.map(command => `.opencode/commands/${command}.md`),
+  ...commandDefinitions
+    .filter(command => command.surfaces?.claudeCommand)
+    .map(command => `.claude/commands/${command.id}.md`),
+  ...commandDefinitions
+    .filter(command => command.surfaces?.opencodeCommand)
+    .map(command => `.opencode/commands/${command.id}.md`),
   '.opencode/plugins/harness-wf-status.mjs',
   '.claude/rules/ecc/common.md',
   ...commonAgents.map(agent => `.claude/agents/${agent}.md`),
@@ -124,6 +139,7 @@ const required = [
   'Harness/specs/runtime/dispatch.md',
   'Harness/specs/guides/extension.md',
   'Harness/specs/runtime/context-loading.md',
+  'Harness/specs/runtime/command-surface.json',
   'Harness/ownership.manifest.json',
   'Harness/specs/workflows/WF-KERNEL.md',
   'Harness/specs/runtime/agent-workflow.md',
@@ -204,6 +220,48 @@ function read(rel) {
   return fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '';
 }
 
+function readJson(rel) {
+  const body = read(rel);
+  if (!body) return null;
+  try {
+    return JSON.parse(body);
+  } catch {
+    return null;
+  }
+}
+
+function sameResolvedPath(a, b) {
+  if (!a || !b) return false;
+  const resolvedA = path.resolve(a);
+  const resolvedB = path.resolve(b);
+  return process.platform === 'win32'
+    ? resolvedA.toLowerCase() === resolvedB.toLowerCase()
+    : resolvedA === resolvedB;
+}
+
+function isGlobalRuntimeProjectStatePath(rel) {
+  return rel === 'Harness/PROGRESS.md'
+    || rel === 'Harness/tasks'
+    || rel.startsWith('Harness/tasks/')
+    || rel === 'Harness/research'
+    || rel.startsWith('Harness/research/')
+    || rel === 'Harness/project'
+    || rel.startsWith('Harness/project/');
+}
+
+function validateRequiredFiles(files, label = 'file') {
+  for (const rel of files) {
+    if (!fs.existsSync(path.join(root, rel))) {
+      errors.push(`missing required ${label}: ${rel}`);
+    }
+  }
+}
+
+function resolveMetadataPath(value) {
+  if (!value || typeof value !== 'string') return '';
+  return path.isAbsolute(value) ? value : path.resolve(root, value);
+}
+
 function requireText(rel, text, label = text) {
   const body = read(rel);
   if (body && !body.includes(text)) errors.push(`${rel} missing ${label}`);
@@ -212,6 +270,160 @@ function requireText(rel, text, label = text) {
 function forbidText(rel, text, label = text) {
   const body = read(rel);
   if (body && body.includes(text)) errors.push(`${rel} contains forbidden ${label}`);
+}
+
+const installMetadata = readJson('Harness/.harness-version');
+const isGlobalInstall = installMetadata?.installScope === 'global';
+const isGlobalRuntimeRoot = isGlobalInstall && sameResolvedPath(root, installMetadata.globalDir);
+const isGlobalProjectBridge = isGlobalInstall && !isGlobalRuntimeRoot;
+
+function finishValidation() {
+  if (errors.length) {
+    console.error(`Harness validation failed${strict ? ' (strict)' : ''}:`);
+    for (const error of errors) console.error(`- ${error}`);
+    process.exit(1);
+  }
+
+  console.log(`Harness validation passed${strict ? ' (strict)' : ''}.`);
+  if (!strict) {
+    console.log('Tip: run `node Harness/scripts/validate-harness.mjs --strict` after bootstrap to check unresolved project placeholders.');
+  }
+}
+
+function validateHostGlobalTargets() {
+  if (!isGlobalInstall) return;
+
+  if (installMetadata?.copyMode !== 'copy') {
+    errors.push('Harness/.harness-version global install metadata must use copyMode "copy"');
+  }
+
+  const hostGlobal = installMetadata?.hostGlobal;
+  if (!hostGlobal || hostGlobal.copyMode !== 'copy' || !hostGlobal.targets || typeof hostGlobal.targets !== 'object') {
+    errors.push('Harness/.harness-version missing hostGlobal copy targets');
+    return;
+  }
+
+  const minimumFiles = {
+    claude: ['commands/wf.md', 'skills/wf/SKILL.md'],
+    codex: ['skills/wf/SKILL.md'],
+    opencode: ['commands/wf.md'],
+  };
+
+  for (const [host, requiredFiles] of Object.entries(minimumFiles)) {
+    const target = hostGlobal.targets[host];
+    if (!target || typeof target !== 'object') {
+      errors.push(`Harness/.harness-version missing hostGlobal target: ${host}`);
+      continue;
+    }
+
+    const hostRoot = resolveMetadataPath(target.root);
+    if (!hostRoot) {
+      errors.push(`Harness/.harness-version hostGlobal ${host} missing root`);
+      continue;
+    }
+
+    const files = Array.isArray(target.files) ? target.files : [];
+    for (const requiredFile of requiredFiles) {
+      if (!files.includes(requiredFile)) {
+        errors.push(`Harness/.harness-version hostGlobal ${host} missing required file target: ${requiredFile}`);
+      }
+    }
+
+    for (const file of files) {
+      if (typeof file !== 'string' || path.isAbsolute(file) || file.split('/').includes('..')) {
+        errors.push(`Harness/.harness-version hostGlobal ${host} has invalid relative file target: ${String(file)}`);
+        continue;
+      }
+      const filePath = path.join(hostRoot, ...file.split('/'));
+      let stat;
+      try {
+        stat = fs.lstatSync(filePath);
+        if (stat.isSymbolicLink()) {
+          errors.push(`host-global ${host} copied file is a symlink, not a real copy: ${file}`);
+          continue;
+        }
+        if (!stat.isFile()) {
+          errors.push(`host-global ${host} copied file is not a regular file: ${file}`);
+          continue;
+        }
+      } catch {
+        errors.push(`missing host-global ${host} copied file: ${file}`);
+        continue;
+      }
+    }
+  }
+}
+
+function validateGlobalRuntimeRoot() {
+  validateCommandSurface();
+  validateRequiredFiles(required.filter(rel => !isGlobalRuntimeProjectStatePath(rel)), 'global-runtime file');
+
+  for (const rel of ['Harness/PROGRESS.md', 'Harness/tasks', 'Harness/research', 'Harness/project']) {
+    if (fs.existsSync(path.join(root, rel))) {
+      errors.push(`global runtime must not contain project-local state: ${rel}`);
+    }
+  }
+
+  if (installMetadata?.projectState?.tasks !== 'Harness/tasks/') {
+    errors.push('Harness/.harness-version global runtime metadata must keep projectState.tasks project-local');
+  }
+  if (installMetadata?.projectState?.progress !== 'Harness/PROGRESS.md') {
+    errors.push('Harness/.harness-version global runtime metadata must keep projectState.progress project-local');
+  }
+  if (installMetadata?.settingsScopes?.precedence?.join('>') !== 'project>global') {
+    errors.push('Harness/.harness-version global runtime metadata must define project>global settings precedence');
+  }
+
+  validateHostGlobalTargets();
+  requireText('Harness/specs/protocols/MEMORY_PROTOCOL.md', 'Project/Global Settings Boundary', 'project/global settings boundary section');
+  requireText('Harness/specs/guides/SETUP.md', 'copy Claude Code, Codex, and OpenCode command/skill surfaces', 'setup three-host global copy');
+
+  finishValidation();
+  process.exit(0);
+}
+
+function validateGlobalProjectBridge() {
+  const bridgeRequired = [
+    'AGENTS.md',
+    'CLAUDE.md',
+    'Harness/README.md',
+    'Harness/MEMORY.md',
+    'Harness/settings.json',
+    'Harness/specs/guides/SETUP.md',
+    'Harness/.harness-version',
+    'Harness/PROGRESS.md',
+    'Harness/research/README.md',
+    'Harness/research/PRD.md',
+    'Harness/research/research-results.md',
+    'Harness/project/architecture.md',
+    ...memoryFiles,
+  ];
+
+  for (const rel of bridgeRequired) {
+    if (!fs.existsSync(path.join(root, rel))) {
+      errors.push(`missing required global-project-bridge file: ${rel}`);
+    }
+  }
+
+  const taskTemplateDir = path.join(root, 'Harness', 'tasks', '_template');
+  if (!fs.existsSync(taskTemplateDir)) {
+    errors.push('missing directory: Harness/tasks/_template/');
+  } else {
+    for (const f of ['PROGRESS.md', 'PLAN.md']) {
+      if (!fs.existsSync(path.join(taskTemplateDir, f))) {
+        errors.push(`missing task template file: Harness/tasks/_template/${f}`);
+      }
+    }
+  }
+
+  requireText('CLAUDE.md', 'global Harness runtime', 'global runtime bridge pointer');
+  requireText('Harness/README.md', 'Never discover task context from the global runtime', 'project-local task authority');
+  requireText('Harness/specs/guides/SETUP.md', 'Read the full setup guide from', 'global setup bridge pointer');
+  requireText('Harness/MEMORY.md', 'Global memory lives under', 'global memory bridge pointer');
+  validateHostGlobalTargets();
+
+  finishValidation();
+  process.exit(0);
 }
 
 function activeToml(rel) {
@@ -277,6 +489,13 @@ const TASK_VALID_PHASES = new Set([
   'archived', 'verified',
 ]);
 const TASK_VALID_STATUSES = new Set([...TASK_SAFE_ARCHIVE_STATUSES, ...TASK_NEVER_ARCHIVE_STATUSES, 'skipped', 'failed']);
+const VALID_TASK_CAPSULE_POLICIES = new Set([
+  'none',
+  'required',
+  'auto-capsule-required',
+  'use-current-or-create-when-needed',
+  'creates-or-updates',
+]);
 
 function validateTaskName(name, strict) {
   if (TASK_RESERVED.has(name)) return null;
@@ -385,7 +604,7 @@ function registeredWorkflowFiles(...texts) {
 
 function listedWorkflowCommands(...texts) {
   const commands = new Set();
-  const pattern = /`\/(wf(?:-[a-z0-9]+)?)(?:\s+[^`]*)?`/g;
+  const pattern = /`\/(wf(?:-[a-z0-9]+)*)(?:\s+[^`]*)?`/g;
 
   for (const text of texts) {
     for (const match of text.matchAll(pattern)) {
@@ -398,11 +617,152 @@ function listedWorkflowCommands(...texts) {
   return [...commands].sort();
 }
 
-for (const rel of required) {
-  if (!fs.existsSync(path.join(root, rel))) {
-    errors.push(`missing required file: ${rel}`);
+function extractStringArray(text, name) {
+  const match = text.match(new RegExp(`const ${name} = \\[([\\s\\S]*?)\\];`));
+  if (!match) return null;
+  return new Set([...match[1].matchAll(/'([^']+)'/g)].map(item => item[1]));
+}
+
+function expectedCommandAliases(id) {
+  return [`/${id}`, `$${id}`, `/skills ${id}`];
+}
+
+function validateCommandSurface() {
+  if (commandSurfaceLoadError) {
+    errors.push(commandSurfaceLoadError);
+    return;
+  }
+
+  const seen = new Set();
+  const claudeRouter = read('CLAUDE.md');
+  const readmeRouter = read('Harness/README.md');
+  const ecc = read('.claude/rules/ecc/common.md');
+  const eccExemptionLine = ecc.split(/\r?\n/).find(line => line.includes('excluding')) || '';
+  const claudeHelp = read('.claude/commands/wf-help.md');
+  const opencodeHelp = read('.opencode/commands/wf-help.md');
+  const removeScript = read('Harness/scripts/wf-remove.mjs');
+  const removeSkillRegistry = extractStringArray(removeScript, 'BUILT_IN_SKILL_NAMES');
+  const removeCommandRegistry = extractStringArray(removeScript, 'BUILT_IN_COMMAND_NAMES');
+  const cleanupDirs = extractStringArray(removeScript, 'CLEANUP_DIRS');
+
+  if (!removeSkillRegistry) errors.push('Harness/scripts/wf-remove.mjs missing BUILT_IN_SKILL_NAMES registry');
+  if (!removeCommandRegistry) errors.push('Harness/scripts/wf-remove.mjs missing BUILT_IN_COMMAND_NAMES registry');
+  if (!cleanupDirs) errors.push('Harness/scripts/wf-remove.mjs missing CLEANUP_DIRS registry');
+
+  for (const command of commandDefinitions) {
+    const id = command?.id;
+    const surfaces = command?.surfaces || {};
+    if (!id || !/^wf(?:-[a-z0-9]+)*$/.test(id)) {
+      errors.push(`command-surface has invalid command id: ${JSON.stringify(id)}`);
+      continue;
+    }
+    if (seen.has(id)) errors.push(`command-surface duplicate command id: ${id}`);
+    seen.add(id);
+
+    if (!['direct', 'workflow'].includes(command.classification)) {
+      errors.push(`command-surface ${id} has invalid classification: ${JSON.stringify(command.classification)}`);
+    }
+    if (command.entersWf !== (command.classification === 'workflow')) {
+      errors.push(`command-surface ${id} entersWf must match classification`);
+    }
+
+    for (const alias of expectedCommandAliases(id)) {
+      if (!Array.isArray(command.aliases) || !command.aliases.includes(alias)) {
+        errors.push(`command-surface ${id} missing alias ${alias}`);
+      }
+    }
+
+    const claudeCommand = `.claude/commands/${id}.md`;
+    const opencodeCommand = `.opencode/commands/${id}.md`;
+    const claudeSkill = `.claude/skills/${id}/SKILL.md`;
+    const codexSkill = `.agents/skills/${id}/SKILL.md`;
+
+    if (surfaces.claudeCommand && !fs.existsSync(path.join(root, claudeCommand))) {
+      errors.push(`command-surface ${id} missing Claude command: ${claudeCommand}`);
+    }
+    if (surfaces.opencodeCommand && !fs.existsSync(path.join(root, opencodeCommand))) {
+      errors.push(`command-surface ${id} missing OpenCode command: ${opencodeCommand}`);
+    }
+    if (surfaces.claudeSkill && !fs.existsSync(path.join(root, claudeSkill))) {
+      errors.push(`command-surface ${id} missing Claude skill: ${claudeSkill}`);
+    }
+    if (surfaces.codexSkill && !fs.existsSync(path.join(root, codexSkill))) {
+      errors.push(`command-surface ${id} missing Codex skill: ${codexSkill}`);
+    }
+    if (surfaces.helpRow) {
+      const rowMarker = `| \`/${id}`;
+      if (!claudeHelp.includes(rowMarker)) errors.push(`.claude/commands/wf-help.md missing command-surface help row for /${id}`);
+      if (!opencodeHelp.includes(rowMarker)) errors.push(`.opencode/commands/wf-help.md missing command-surface help row for /${id}`);
+    }
+
+    if (command.classification === 'direct') {
+      for (const alias of command.aliases || []) {
+        if (!claudeRouter.includes(`\`${alias}\``)) errors.push(`CLAUDE.md missing direct/compat alias ${alias}`);
+        if (!readmeRouter.includes(alias)) errors.push(`Harness/README.md missing direct/compat alias ${alias}`);
+        if (!eccExemptionLine.includes(`\`${alias}\``)) errors.push(`.claude/rules/ecc/common.md missing ECC direct command exemption ${alias}`);
+      }
+      for (const rel of [claudeCommand, opencodeCommand]) {
+        const text = read(rel);
+        if (text && id !== 'wf-help') {
+          if (!/direct command/i.test(text)) errors.push(`${rel} missing DIRECT command classification`);
+          if (!text.includes('Do not invoke a skill')) errors.push(`${rel} missing direct no-skill boundary`);
+        }
+      }
+    }
+
+    if (command.classification === 'workflow') {
+      for (const alias of command.aliases || []) {
+        if (eccExemptionLine.includes(`\`${alias}\``)) {
+          errors.push(`.claude/rules/ecc/common.md incorrectly exempts workflow command ${alias}`);
+        }
+      }
+      for (const rel of [claudeCommand, opencodeCommand]) {
+        const text = read(rel);
+        if (!text) continue;
+        if (!text.includes('workflow command')) errors.push(`${rel} missing workflow command classification`);
+        if (!text.includes('Harness/MEMORY.md')) errors.push(`${rel} missing workflow router load`);
+      }
+    }
+
+    if (['wf', 'wf-max', 'wf-command-create'].includes(id)) {
+      const text = `${read(claudeCommand)}\n${read(claudeSkill)}`;
+      if (!text.includes('task capsule')) errors.push(`${id} missing required task capsule instruction`);
+      if (!text.includes('task-<verb>-<noun>')) errors.push(`${id} missing task id convention`);
+    }
+
+    if (surfaces.claudeSkill || surfaces.codexSkill) {
+      if (removeSkillRegistry && !removeSkillRegistry.has(id)) {
+        errors.push(`Harness/scripts/wf-remove.mjs BUILT_IN_SKILL_NAMES missing ${id}`);
+      }
+      if (cleanupDirs) {
+        if (!cleanupDirs.has(`.claude/skills/${id}`)) errors.push(`Harness/scripts/wf-remove.mjs CLEANUP_DIRS missing .claude/skills/${id}`);
+        if (!cleanupDirs.has(`.agents/skills/${id}`)) errors.push(`Harness/scripts/wf-remove.mjs CLEANUP_DIRS missing .agents/skills/${id}`);
+      }
+    }
+    if ((surfaces.claudeCommand || surfaces.opencodeCommand) && removeCommandRegistry && !removeCommandRegistry.has(id)) {
+      errors.push(`Harness/scripts/wf-remove.mjs BUILT_IN_COMMAND_NAMES missing ${id}`);
+    }
+  }
+
+  // Validate taskCapsulePolicy enum
+  for (const cmd of commandDefinitions) {
+    if (!cmd.taskCapsulePolicy || !VALID_TASK_CAPSULE_POLICIES.has(cmd.taskCapsulePolicy)) {
+      errors.push(`command-surface ${cmd.id}: invalid taskCapsulePolicy "${cmd.taskCapsulePolicy}". Valid: ${[...VALID_TASK_CAPSULE_POLICIES].join(', ')}`);
+    }
   }
 }
+
+if (isGlobalRuntimeRoot) {
+  validateGlobalRuntimeRoot();
+}
+
+if (isGlobalProjectBridge) {
+  validateGlobalProjectBridge();
+}
+
+validateCommandSurface();
+
+validateRequiredFiles(required);
 
 for (const rel of legacyRootSpecDocs) {
   if (fs.existsSync(path.join(root, rel))) {
@@ -526,6 +886,14 @@ requireText('Harness/specs/protocols/MEMORY_PROTOCOL.md', 'Memory Candidate Dete
 requireText('Harness/specs/protocols/MEMORY_PROTOCOL.md', 'explicit user preference', 'explicit user preference immediate write rule');
 requireText('Harness/specs/protocols/MEMORY_PROTOCOL.md', 'Memory Routing (L3)', 'memory routing section');
 requireText('Harness/specs/protocols/MEMORY_PROTOCOL.md', 'Scenario pack', 'route scoring scenario pack');
+requireText('Harness/specs/protocols/MEMORY_PROTOCOL.md', 'Project/Global Memory Boundary', 'project/global memory boundary section');
+requireText('Harness/specs/protocols/MEMORY_PROTOCOL.md', 'Harness/tasks/` and `Harness/PROGRESS.md` are always project-local', 'global install keeps task state project-local');
+requireText('Harness/specs/protocols/MEMORY_PROTOCOL.md', 'Project memory lives in `Harness/memory/`', 'project memory scope rule');
+requireText('Harness/specs/protocols/MEMORY_PROTOCOL.md', 'Global memory must never store project task state', 'global memory task-state exclusion');
+requireText('Harness/specs/protocols/MEMORY_PROTOCOL.md', 'Project/Global Settings Boundary', 'project/global settings boundary section');
+requireText('Harness/specs/protocols/MEMORY_PROTOCOL.md', 'Project settings live in `Harness/settings.json` and override global settings', 'project settings override global settings');
+requireText('Harness/specs/protocols/MEMORY_PROTOCOL.md', 'copied, not symlinked, into Claude Code, Codex, and OpenCode', 'host-global copy mode');
+requireText('Harness/specs/protocols/MEMORY_PROTOCOL.md', 'Existing user-authored config, command, skill, or agent files are user-owned', 'user-owned host file rule');
 requireText('Harness/specs/protocols/MEMORY_PROTOCOL.md', 'same tool or command pattern fails 3+ times', 'tool reflection trigger');
 requireText('Harness/specs/protocols/MEMORY_PROTOCOL.md', 'user corrects the same assumption or preference 2+ times', 'user correction reflection trigger');
 requireText('CLAUDE.md', 'startup-hints.md', 'CLAUDE startup-hints routing');
@@ -556,7 +924,7 @@ requireText('CLAUDE.md', 'Keep intermediate user updates to 1-2 short sentences'
 requireText('.claude/rules/ecc/common.md', '## Low-Noise Progress', 'ECC low-noise progress section');
 requireText('.claude/rules/ecc/common.md', "Match the user's language for user-facing prose", 'ECC user-facing language match rule');
 requireText('.claude/rules/ecc/common.md', 'Do not recap plans, paste logs, or narrate obvious file reads', 'ECC low-noise no-recap rule');
-requireText('.claude/rules/ecc/common.md', 'excluding `/wf-help`, `$wf-help`, `/skills wf-help`, `/wf-update`, `$wf-update`, and `/skills wf-update`', 'ECC direct command exemption');
+requireText('Harness/specs/runtime/command-surface.json', '"wf-command-create"', 'command surface registry wf-command-create entry');
 requireText('Harness/README.md', 'Load By Task', 'Harness task router');
 requireText('Harness/README.md', 'Need context/cache/token efficiency', 'cache/token router row');
 requireText('Harness/specs/runtime/context-loading.md', 'Context Tiers', 'context tier load budget section');
@@ -578,6 +946,12 @@ requireText('Harness/specs/runtime/subagents.md', 'Cache-first discipline', 'sub
 forbidText('CLAUDE.md', 'Harness/specs/guides/SETUP.md', 'CLAUDE.md SETUP reference');
 forbidText('CLAUDE.md', 'follow it before normal project work', 'installed-project SETUP hot-path routing');
 requireText('Harness/specs/guides/SETUP.md', 'Harness/specs/protocols/MEMORY_PROTOCOL.md', 'setup memory protocol reference');
+requireText('Harness/specs/guides/SETUP.md', '--install-scope project', 'setup project install scope');
+requireText('Harness/specs/guides/SETUP.md', '--install-scope global', 'setup global install scope');
+requireText('Harness/specs/guides/SETUP.md', '--global-dir <dir>', 'setup global dir flag');
+requireText('Harness/specs/guides/SETUP.md', '--host-global-dir <dir>', 'setup host-global dir flag');
+requireText('Harness/specs/guides/SETUP.md', 'copy Claude Code, Codex, and OpenCode command/skill surfaces', 'setup three-host global copy');
+requireText('Harness/specs/guides/SETUP.md', 'Project settings in `Harness/settings.json` override global settings defaults', 'setup settings precedence');
 requireText('Harness/specs/guides/SETUP.md', 'no startup dependency on this setup reference', 'SETUP startup boundary');
 forbidText('Harness/specs/guides/SETUP.md', 'bootstrap contract line', 'stale SETUP-to-CLAUDE bootstrap contract');
 forbidText('Harness/specs/runtime/context-loading.md', 'Always keep:', 'ambiguous always-load context rule');
@@ -1290,18 +1664,9 @@ if (activeStateTasks.length > 1) {
 const OUTER_TASK_CAP = 5;
 const outerTasks = taskDirs.filter(name => !TASK_RESERVED.has(name) && !name.startsWith('_'));
 if (outerTasks.length > OUTER_TASK_CAP) {
-  const capMsg = `Harness/tasks/ has ${outerTasks.length} outer task capsules (cap ${OUTER_TASK_CAP}); archive completed tasks with node Harness/scripts/task-state.mjs archive --apply (compat: node Harness/scripts/archive-tasks.mjs --apply; see Harness/specs/protocols/TASK_ARCHIVE.md)`;
+  const capMsg = `Harness/tasks/ has ${outerTasks.length} outer task capsules (cap ${OUTER_TASK_CAP}); remind the user to run $wf-task-archive when they want to archive completed tasks (apply mode maps to node Harness/scripts/task-state.mjs archive --apply)`;
   if (strict) errors.push(capMsg);
   else console.warn(`Warning: ${capMsg}`);
 }
 
-if (errors.length) {
-  console.error(`Harness validation failed${strict ? ' (strict)' : ''}:`);
-  for (const error of errors) console.error(`- ${error}`);
-  process.exit(1);
-}
-
-console.log(`Harness validation passed${strict ? ' (strict)' : ''}.`);
-if (!strict) {
-  console.log('Tip: run `node Harness/scripts/validate-harness.mjs --strict` after bootstrap to check unresolved project placeholders.');
-}
+finishValidation();

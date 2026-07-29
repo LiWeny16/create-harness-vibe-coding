@@ -55,12 +55,39 @@ the review prompt.
 
 OpenCode note: `opencode run [message..]` is the non-interactive CLI path and
 `--agent reviewer` selects the installed `.opencode/agents/reviewer.md` role.
+However, the installed agent is `mode: subagent`; OpenCode falls back to the
+default agent. Prefer same-runtime reviewer subagent over `opencode run --agent reviewer`.
+
+For `opencode run --format json`, parse JSONL events; the stream is not a single
+review result.
+
+## Evidence-Packet Peer Review Contract
+
+When invoking a peer CLI, use stdin prompt transport for PowerShell automation.
+Return the raw evidence packet to the controller for formal acceptance.
+
+### JSON/JSONL Validation
+
+For `claude -p` with `--output-format json`:
+- Fail if stdout is empty, non-JSON, `is_error: true`, `subtype` starts with `error_`, or no final model `text`/`result` is present.
+- Do NOT use tiny `--max-budget-usd` values in real reviews; if budget is set and exhausted, record BLOCKED rather than treating it as reviewer output.
+
+For `opencode run --format json`:
+- Parse JSONL events, extract final `text` parts.
+- Do NOT treat the whole JSONL stream as the review result.
+- Do NOT claim `opencode run --agent reviewer` used the reviewer role unless a probe confirms the agent is a primary runnable agent. Current evidence: `.opencode/agents/reviewer.md` is `mode: subagent` and OpenCode falls back to the default agent.
+- Prefer native reviewer subagent fallback inside the current runtime when OpenCode cannot run reviewer as a primary CLI agent.
+
+General parsing rules: parse JSON/JSONL and fail on empty output, non-JSON output, explicit error events, budget errors, fallback warnings, or missing final model text.
+
+### Controller Adjudication
+
+The controller accepts, rejects, or escalates each finding after parsing the evidence packet. Do not pass raw output through as accepted findings without controller review.
 
 ## Review Dimensions
 
 Cover correctness, security, architecture, performance, and tests. Classify
-findings as Critical, High, Medium, or Low. Return raw peer or subagent output
-first, then the controller's severity-classified synthesis.
+findings as Critical, High, Medium, or Low.
 
 ## Reviewer Role Fallback
 

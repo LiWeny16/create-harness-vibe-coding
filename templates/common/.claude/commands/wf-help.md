@@ -19,6 +19,10 @@ which returns this same table without loading `Harness/MEMORY.md` or entering WF
 | `/wf-readme <task>` | workflow skill | `/wf-readme polish quickstart` | Preserve, merge, or improve README docs without trampling existing project documentation. |
 | `/wf-update` | direct command | `/wf-update` | Check/apply Harness scaffold updates with safe file classification and conflict handling. |
 | `/wf-remove` | workflow skill | `/wf-remove` | Safely remove Harness files while preserving project/user data unless explicitly purged. |
+| `/wf-task-record <task-id>` | direct command | `/wf-task-record my-feature --create` | Record user intent into a task capsule (wraps task-state.mjs). |
+| `/wf-task-list` | direct command | `/wf-task-list` | List all task capsules with status, phase, and dependencies. |
+| `/wf-task-archive [--apply]` | direct command | `/wf-task-archive --apply` | Archive completed task capsules (dry-run by default). |
+| `/wf-command-create <wf-command-id>` | direct command | `/wf-command-create wf-report --direct` | Create or modify wf-* command surfaces atomically from the command registry. |
 
 Source of truth: `Harness/README.md#Skill Commands` plus installed skills under
 `.claude/skills/` (Claude Code and OpenCode adapters) or `.agents/skills/`
