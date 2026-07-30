@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "skillId": "terminal-control",
+  "name": "Terminal Control",
+  "source": "Harness/a2a/skills/terminal-control.json",
+  "description": "Bounded A2A tools for listing terminal sessions, reading output ranges, globbing terminal events, and attach-gated input forwarding.",
+  "tools": [
+    { "name": "list-sessions", "reads": ["Harness/tasks/**/sessions/**/STATE.json"] },
+    { "name": "read-range", "reads": ["Harness/tasks/**/sessions/**/terminal.jsonl"], "args": ["session", "from", "to", "tail"] },
+    { "name": "glob-events", "reads": ["Harness/tasks/**/sessions/**/events.jsonl"], "args": ["pattern", "since", "limit"] },
+    { "name": "send-input", "writes": ["Harness/tasks/**/sessions/**/input-requests.jsonl"], "args": ["session", "text"] }
+  ],
+  "defaultMode": "watch",
+  "inputPolicy": "attach-mode-required"
+}

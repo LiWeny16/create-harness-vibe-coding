@@ -1,0 +1,32 @@
+# npm publish ignore rules.
+#
+# This file intentionally overrides .gitignore so built UI assets under
+# src/ui/dist are included in the package.
+
+node_modules/
+src/ui/node_modules/
+src/ui/pnpm-lock.yaml
+
+*.tgz
+coverage/
+.cache/
+.npm/
+.pnpm-store/
+tmp/
+temp/
+tests/.tmp-*/
+
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+Harness/.runtime/
+.opencode-data*/
+.opencode-state*/

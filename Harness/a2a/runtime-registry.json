@@ -1,0 +1,5 @@
+{
+  "schemaVersion": 1,
+  "source": "backend-runtime-detector",
+  "runtimes": ["claude", "cc", "codex", "opencode", "openclaw", "pi"]
+}

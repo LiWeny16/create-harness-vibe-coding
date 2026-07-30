@@ -34,6 +34,17 @@ tests/batch/.tmp/
 
 # Runtime mode state
 Harness/.runtime/
+Harness/a2a/workflows.json
+Harness/a2a/sessions/
+Harness/a2a/ui-runs/
+Harness/tasks/*/sessions/
+
+# Harness UI local launcher and API smoke artifacts
+.wf-ui-*.err
+.wf-ui-*.out
+.wf-ui-start.mjs
+.wf-ui-url.txt
+_test_api_*.ps1
 
 # OpenCode runtime state/log/database artifacts
 .opencode-data*/
@@ -47,6 +58,7 @@ CLAUDE.local.md
 
 # In-situ experiment / temporary repos
 caveman/
+/wf-ui/
 
 # OS files
 .DS_Store

@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "rootAgentId": "ceo",
+  "agents": [
+    {
+      "agentId": "ceo",
+      "role": "CEO Leader",
+      "level": 0,
+      "kind": "controller",
+      "skills": ["wf", "subagent-orchestrator", "terminal-control"],
+      "permissions": ["plan", "dispatch", "read-terminals", "send-terminal-input"]
+    },
+    {
+      "agentId": "product-manager",
+      "role": "Product Manager",
+      "level": 1,
+      "kind": "planner",
+      "skills": ["product-shape", "acceptance"],
+      "permissions": ["read-state", "define-ac"]
+    },
+    {
+      "agentId": "architect",
+      "role": "Architect",
+      "level": 1,
+      "kind": "architecture",
+      "skills": ["architecture", "contracts"],
+      "permissions": ["read-code", "define-contracts"]
+    },
+    {
+      "agentId": "backend-expert",
+      "role": "Backend Expert",
+      "level": 1,
+      "kind": "implementer",
+      "skills": ["runtime-detection", "terminal-control", "a2a-files"],
+      "permissions": ["read-code", "write-backend", "terminal-io"]
+    },
+    {
+      "agentId": "frontend-expert",
+      "role": "Frontend Expert",
+      "level": 1,
+      "kind": "implementer",
+      "skills": ["ui-control-plane"],
+      "permissions": ["read-code", "write-ui"]
+    },
+    {
+      "agentId": "reviewer",
+      "role": "Reviewer",
+      "level": 1,
+      "kind": "review",
+      "skills": ["wf-review"],
+      "permissions": ["read-code", "read-evidence"]
+    },
+    {
+      "agentId": "verifier",
+      "role": "Verifier",
+      "level": 1,
+      "kind": "validation",
+      "skills": ["wf-browser", "test-runner"],
+      "permissions": ["run-tests", "read-evidence"]
+    },
+    {
+      "agentId": "terminal-controller",
+      "role": "Terminal Controller",
+      "level": 1,
+      "kind": "runtime",
+      "skills": ["terminal-control"],
+      "permissions": ["read-terminals", "send-terminal-input"]
+    }
+  ],
+  "edges": [
+    { "from": "ceo", "to": "product-manager", "relation": "defines" },
+    { "from": "ceo", "to": "architect", "relation": "routes" },
+    { "from": "ceo", "to": "backend-expert", "relation": "dispatches" },
+    { "from": "ceo", "to": "frontend-expert", "relation": "dispatches" },
+    { "from": "ceo", "to": "reviewer", "relation": "requests-review" },
+    { "from": "ceo", "to": "verifier", "relation": "requests-evidence" },
+    { "from": "ceo", "to": "terminal-controller", "relation": "controls" }
+  ]
+}
