@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-add-global-install-memory",
+  "status": "archived",
+  "mode": "wf",
+  "tier": "none",
+  "phase": "archived",
+  "gate": null,
+  "updatedAt": "2026-07-30T02:05:36.489Z",
+  "activeQuestion": null,
+  "nextAction": "Add global-vs-project install choice with project-local Harness/tasks and split project/global memory.",
+  "acceptance": [],
+  "queues": {
+    "ready": [],
+    "running": [],
+    "blocked": [],
+    "done": []
+  },
+  "dispatchLedger": [],
+  "decisions": [],
+  "risks": [],
+  "artifacts": [],
+  "links": {
+    "dependsOn": [],
+    "blocks": [],
+    "related": []
+  }
+}

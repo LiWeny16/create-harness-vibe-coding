@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-harden-ota-manifest-validation",
+  "status": "archived",
+  "mode": "direct",
+  "tier": "none",
+  "phase": "archived",
+  "gate": null,
+  "updatedAt": "2026-07-30T14:59:22.010Z",
+  "activeQuestion": null,
+  "nextAction": "0.8.19 OTA hardening is complete locally; publish npm/GitHub mirrors, then rerun check:mirrors.",
+  "acceptance": [],
+  "queues": {
+    "ready": [],
+    "running": [],
+    "blocked": [],
+    "done": []
+  },
+  "dispatchLedger": [],
+  "decisions": [],
+  "risks": [],
+  "artifacts": [],
+  "links": {
+    "dependsOn": [],
+    "blocks": [],
+    "related": []
+  }
+}

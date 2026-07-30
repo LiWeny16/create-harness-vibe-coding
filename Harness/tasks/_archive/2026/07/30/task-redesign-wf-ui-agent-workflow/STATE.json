@@ -1,0 +1,163 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-redesign-wf-ui-agent-workflow",
+  "status": "archived",
+  "mode": "wf",
+  "tier": "WF-Standard",
+  "phase": "archived",
+  "gate": "AC-PASSED",
+  "updatedAt": "2026-07-30T14:59:22.006Z",
+  "activeQuestion": null,
+  "nextAction": "Ship wf-ui route redesign and continue deep terminal emulation work in a follow-up if needed",
+  "acceptance": [
+    "AC-001",
+    "AC-002",
+    "AC-003"
+  ],
+  "links": {
+    "dependsOn": [],
+    "blocks": [],
+    "related": [
+      "task-wf-ui-control-0729"
+    ]
+  },
+  "queues": {
+    "ready": [],
+    "running": [],
+    "blocked": [],
+    "done": [
+      "explore-ui",
+      "research-cli-configs",
+      "plan-implementation",
+      "backend-session-chain",
+      "frontend-route-redesign",
+      "verification"
+    ]
+  },
+  "workItems": [
+    {
+      "id": "explore-ui",
+      "agent": "codebase-explorer",
+      "status": "done",
+      "readSet": [
+        "src/ui",
+        "src/wf-ui-server",
+        "Harness/a2a"
+      ],
+      "writeSet": []
+    },
+    {
+      "id": "research-cli-configs",
+      "agent": "docs-researcher",
+      "status": "done",
+      "readSet": [
+        "external CLI docs"
+      ],
+      "writeSet": []
+    },
+    {
+      "id": "plan-implementation",
+      "agent": "planner",
+      "status": "done",
+      "readSet": [
+        "user request",
+        "current UI/server structure"
+      ],
+      "writeSet": []
+    },
+    {
+      "id": "backend-session-chain",
+      "agent": "backend-expert",
+      "status": "done",
+      "readSet": [
+        "src/wf-ui-server"
+      ],
+      "writeSet": [
+        "src/wf-ui-server"
+      ]
+    },
+    {
+      "id": "frontend-route-redesign",
+      "agent": "frontend-expert",
+      "status": "done",
+      "readSet": [
+        "src/ui/src"
+      ],
+      "writeSet": [
+        "src/ui/src"
+      ]
+    },
+    {
+      "id": "verification",
+      "agent": "verifier",
+      "status": "done",
+      "readSet": [
+        "src/wf-ui-server/__tests__",
+        "src/ui"
+      ],
+      "writeSet": []
+    }
+  ],
+  "dispatchLedger": [
+    {
+      "ts": "2026-07-30T17:09:47.9074721+08:00",
+      "event": "verified",
+      "evidence": [
+        "node --test src/wf-ui-server/__tests__/*.mjs",
+        "pnpm build in src/ui",
+        "Playwright route smoke for /agents, /workflow, /roles"
+      ]
+    },
+    {
+      "ts": "2026-07-30T18:09:50.4551776+08:00",
+      "event": "verified",
+      "evidence": [
+        "node --test src/wf-ui-server/__tests__/*.mjs: 119 passed",
+        "pnpm build in src/ui",
+        "Playwright smoke: /workflow full-height pan translate(0px, 0px) -> translate(55px, 40px)",
+        "Playwright smoke: Agents floating terminal opened/minimized for real Codex PTY session with @homebridge/node-pty-prebuilt-multiarch",
+        "Static cache smoke: index no-cache, Vite asset immutable"
+      ]
+    }
+  ],
+  "decisions": [
+    {
+      "id": "D-001",
+      "decision": "Agents route launches detected terminal CLIs directly instead of asking for runtime/task.",
+      "reason": "User confirmed startup should be platform selection plus terminal session creation."
+    },
+    {
+      "id": "D-002",
+      "decision": "Workflow route is a React Flow-style agent terminal canvas with optional task binding.",
+      "reason": "User wants workflow observation and creation centered on terminal agent nodes."
+    },
+    {
+      "id": "D-003",
+      "decision": "Harness-created worktrees and workflow state must live under Harness.",
+      "reason": "User explicitly required isolation artifacts to stay under the Harness folder."
+    }
+  ],
+  "risks": [
+    {
+      "id": "R-001",
+      "risk": "True PTY support may depend on optional native dependencies and platform behavior.",
+      "mitigation": "Use existing server terminal adapter if present; otherwise keep API contract explicit and testable."
+    },
+    {
+      "id": "R-002",
+      "risk": "Editing third-party CLI global config can be destructive if paths or schemas are guessed.",
+      "mitigation": "First expose detected config paths and editable metadata; write config mutation only for documented or already-known schema."
+    }
+  ],
+  "artifacts": [
+    "src/ui/src/components/AgentsRoute.tsx",
+    "src/ui/src/components/WorkflowRoute.tsx",
+    "src/ui/src/components/RolesRoute.tsx",
+    "src/wf-ui-server/runtime-detector.mjs",
+    "src/wf-ui-server/runtime-config.mjs",
+    "src/wf-ui-server/server.mjs",
+    "src/wf-ui-server/terminal-store.mjs",
+    "src/wf-ui-server/pty-adapter.mjs",
+    "src/ui/src/components/TerminalDrawer.tsx"
+  ]
+}

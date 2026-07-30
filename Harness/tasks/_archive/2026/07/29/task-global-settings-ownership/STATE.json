@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-global-settings-ownership",
+  "status": "archived",
+  "mode": "wf",
+  "tier": "none",
+  "phase": "archived",
+  "gate": null,
+  "updatedAt": "2026-07-30T14:59:21.994Z",
+  "activeQuestion": null,
+  "nextAction": "Add global install ownership classes, three-host copy surfaces, and project/global settings layering while preserving project-local task capsules.",
+  "acceptance": [],
+  "queues": {
+    "ready": [],
+    "running": [],
+    "blocked": [],
+    "done": []
+  },
+  "dispatchLedger": [],
+  "decisions": [],
+  "risks": [],
+  "artifacts": [],
+  "links": {
+    "dependsOn": [],
+    "blocks": [],
+    "related": []
+  }
+}

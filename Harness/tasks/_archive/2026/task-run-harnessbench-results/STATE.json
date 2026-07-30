@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-run-harnessbench-results",
+  "status": "archived",
+  "mode": "wf",
+  "tier": "standard",
+  "phase": "archived",
+  "gate": "final-validation",
+  "updatedAt": "2026-07-30T02:05:36.485Z",
+  "activeQuestion": null,
+  "nextAction": "Final task-state validation, then mark task complete",
+  "acceptance": [
+    "AC-001: External benchmark assets exist outside Harness/ and templates/, with a documented scoring contract.",
+    "AC-002: A local benchmark scorer can compute task success, quality, boundary stability, verification, and efficiency summaries from raw result JSON.",
+    "AC-003: README and README-CN show clear measured value, current boundaries, and a comparison table against direct-run and adjacent frameworks.",
+    "AC-004: Generated user installs contain no benchmark suite files.",
+    "AC-005: Verification commands and one independent review pass complete with evidence recorded."
+  ],
+  "queues": {
+    "ready": [],
+    "running": [],
+    "blocked": [],
+    "done": [
+      "Define goal and scope",
+      "Add external benchmark scorer/results",
+      "Run benchmark scorer and validation tests",
+      "Update README/README-CN",
+      "Independent review",
+      "Fix reviewer low findings"
+    ]
+  },
+  "dispatchLedger": [],
+  "decisions": [
+    {
+      "date": "2026-07-26",
+      "decision": "Benchmark assets stay outside Harness/ and templates/; generated users receive results only.",
+      "reason": "User explicitly requested no dogfood/internal benchmark sync into distributed framework files."
+    }
+  ],
+  "risks": [
+    "Do not present local deterministic proof as real LLM direct-vs-Harness A/B unless raw model runs exist."
+  ],
+  "artifacts": [
+    "benchmarks/results/harnessbench-local-v0.1.json",
+    "docs/benchmarks/HarnessBench.md",
+    "scripts/harness-bench.mjs",
+    "tests/harness-bench.test.js"
+  ]
+}

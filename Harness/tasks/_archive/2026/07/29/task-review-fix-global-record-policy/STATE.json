@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-review-fix-global-record-policy",
+  "status": "archived",
+  "mode": "direct",
+  "tier": "none",
+  "phase": "archived",
+  "gate": null,
+  "updatedAt": "2026-07-30T14:59:22.001Z",
+  "activeQuestion": null,
+  "nextAction": "Round 2 closeout. 259/259 tests pass (1 skipped). Review A+B both PASS. Fixed: ownership (content-marker + template match, no manifest bypass), failing test (plan.create/.overwrite), task-record slug (lowercase-first), --new uniqueness (probe + suffix). record.md ignored throughout.",
+  "acceptance": [],
+  "queues": {
+    "ready": [],
+    "running": [],
+    "blocked": [],
+    "done": []
+  },
+  "dispatchLedger": [],
+  "decisions": [],
+  "risks": [],
+  "artifacts": [],
+  "links": {
+    "dependsOn": [],
+    "blocks": [],
+    "related": []
+  }
+}
