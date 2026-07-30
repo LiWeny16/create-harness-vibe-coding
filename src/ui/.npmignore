@@ -1,0 +1,5 @@
+# Override src/ui/.gitignore for npm packaging.
+# The built dist directory is required by the installed wf-ui server.
+
+node_modules/
+*.tsbuildinfo

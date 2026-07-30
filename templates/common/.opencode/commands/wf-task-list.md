@@ -24,4 +24,6 @@ Run: `node Harness/scripts/task-state.mjs list --json`
 ## Return
 
 - JSON output of all task capsules with status, phase, dependencies, and archive eligibility.
+- Includes a `graph` section: roots, dependency edges, block edges, and orphaned dependency warnings.
+- Human-readable mode renders the graph with ASCII arrows: `from ──▶ to` (depends) and `from ▸▸ to` (blocks).
 - If the command fails, report the error and do not retry.

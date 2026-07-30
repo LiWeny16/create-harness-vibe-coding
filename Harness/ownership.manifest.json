@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "generator": "0.8.18",
+  "generator": "0.8.19",
   "source": "https://raw.githubusercontent.com/LiWeny16/create-harness-vibe-coding/main/templates/common/",
-  "generated": "2026-07-29T06:33:44.000Z",
+  "generated": "2026-07-30T14:08:04.117Z",
   "preserve": [
     "Harness/PROGRESS.md",
     "Harness/tasks/**",
@@ -247,6 +247,11 @@
       "overwrite": "safe"
     },
     {
+      "path": ".agents/skills/wf-ui/SKILL.md",
+      "kind": "skill",
+      "overwrite": "safe"
+    },
+    {
       "path": ".agents/skills/wf-update/SKILL.md",
       "kind": "skill",
       "overwrite": "safe"
@@ -417,6 +422,11 @@
       "overwrite": "safe"
     },
     {
+      "path": ".claude/commands/wf-ui.md",
+      "kind": "command",
+      "overwrite": "safe"
+    },
+    {
       "path": ".claude/commands/wf-update.md",
       "kind": "command",
       "overwrite": "safe"
@@ -513,6 +523,11 @@
     },
     {
       "path": ".claude/skills/wf-task-record/SKILL.md",
+      "kind": "skill",
+      "overwrite": "safe"
+    },
+    {
+      "path": ".claude/skills/wf-ui/SKILL.md",
       "kind": "skill",
       "overwrite": "safe"
     },
@@ -697,6 +712,11 @@
       "overwrite": "safe"
     },
     {
+      "path": ".opencode/commands/wf-ui.md",
+      "kind": "command",
+      "overwrite": "safe"
+    },
+    {
       "path": ".opencode/commands/wf-update.md",
       "kind": "command",
       "overwrite": "safe"
@@ -712,6 +732,21 @@
       "overwrite": "safe"
     },
     {
+      "path": "Harness/a2a/role-graph.json",
+      "kind": "config",
+      "overwrite": "safe"
+    },
+    {
+      "path": "Harness/a2a/runtime-registry.json",
+      "kind": "config",
+      "overwrite": "safe"
+    },
+    {
+      "path": "Harness/a2a/skills/terminal-control.json",
+      "kind": "config",
+      "overwrite": "safe"
+    },
+    {
       "path": "Harness/ownership.manifest.json",
       "kind": "config",
       "overwrite": "safe"
@@ -719,6 +754,16 @@
     {
       "path": "Harness/research/README.md",
       "kind": "config",
+      "overwrite": "safe"
+    },
+    {
+      "path": "Harness/scripts/README.md",
+      "kind": "script",
+      "overwrite": "safe"
+    },
+    {
+      "path": "Harness/scripts/a2a-terminal.mjs",
+      "kind": "script",
       "overwrite": "safe"
     },
     {
@@ -738,6 +783,11 @@
     },
     {
       "path": "Harness/scripts/scan-clean.mjs",
+      "kind": "script",
+      "overwrite": "safe"
+    },
+    {
+      "path": "Harness/scripts/sync-host-global.mjs",
       "kind": "script",
       "overwrite": "safe"
     },
@@ -763,6 +813,11 @@
     },
     {
       "path": "Harness/scripts/wf-update-check.mjs",
+      "kind": "script",
+      "overwrite": "safe"
+    },
+    {
+      "path": "Harness/scripts/wf-update-runner.mjs",
       "kind": "script",
       "overwrite": "safe"
     },

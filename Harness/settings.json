@@ -39,5 +39,40 @@
       "claimMinReadRatioPercent": 95,
       "claimMinUpliftPoints": 2
     }
+  },
+  "server": {
+    "host": "127.0.0.1",
+    "port": 0
+  },
+  "terminal": {
+    "enabled": false,
+    "attachMode": false,
+    "defaultRuntime": "codex"
+  },
+  "peers": {
+    "allowlist": [
+      "claude",
+      "cc",
+      "codex",
+      "opencode",
+      "gemini",
+      "qwen",
+      "deepseek",
+      "pi",
+      "aider",
+      "goose",
+      "amp",
+      "crush",
+      "cline",
+      "plandex",
+      "openclaw",
+      "chatgpt",
+      "openai"
+    ]
+  },
+  "ui": {
+    "theme": "auto",
+    "language": "zh",
+    "reducedMotion": false
   }
 }

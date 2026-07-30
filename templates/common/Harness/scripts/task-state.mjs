@@ -11,7 +11,7 @@ const args = process.argv.slice(2);
 const command = args[0] && !args[0].startsWith('--') ? args[0] : 'help';
 
 const OUTER_TASK_CAP = 5;
-const RESERVED = new Set(['_template', '_archive', 'auto']);
+const RESERVED = new Set(['_template', '_archive', 'continuous']);
 const TASK_ID_RE = /^task-[a-z]+(-[a-z0-9]+){1,4}$/;
 const NEVER_ARCHIVE_STATUSES = new Set([
   'active',
@@ -108,7 +108,41 @@ function print(payload) {
     return;
   }
 
-  if (payload.command === 'list' || payload.command === 'validate') {
+  if (payload.command === 'list') {
+    console.log(`Active Task: ${payload.activeTask || 'None'}`);
+    console.log(`Tasks: ${payload.taskCount}`);
+    for (const task of payload.tasks || []) {
+      const deps = task.dependsOn?.length ? `  dependsOn: [${task.dependsOn.join(', ')}]` : '';
+      const blocks = task.blocks?.length ? `  blocks: [${task.blocks.join(', ')}]` : '';
+      console.log(`- ${task.id}: status=${task.status || '-'} phase=${task.phase || '-'}${deps}${blocks}`);
+    }
+
+    // Render graph
+    const g = payload.graph;
+    if (g) {
+      console.log('');
+      console.log('=== Task Graph ===');
+      if (g.roots.length > 0) {
+        console.log(`\nRoots (${g.roots.length} tasks, no internal dependencies):`);
+        for (const id of g.roots) console.log(`  → ${id}`);
+      }
+      if (g.depEdges.length > 0) {
+        console.log(`\nDependency chains (${g.depEdges.length} edges):`);
+        for (const e of g.depEdges) console.log(`  ${e.from}  ──▶  ${e.to}`);
+      }
+      if (g.blockEdges.length > 0) {
+        console.log(`\nBlocks (${g.blockEdges.length} edges):`);
+        for (const e of g.blockEdges) console.log(`  ${e.from}  ▸▸  ${e.to}`);
+      }
+      if (g.orphanedDeps.length > 0) {
+        console.log(`\nOrphaned dependencies (${g.orphanedDeps.length}, target not in active tasks):`);
+        for (const o of g.orphanedDeps) console.log(`  ${o.task}  ──▶  ${o.missingDep}  (missing)`);
+      }
+      if (g.roots.length === 0 && g.depEdges.length === 0 && g.blockEdges.length === 0) {
+        console.log('  (no relationships — all tasks are independent)');
+      }
+    }
+  } else if (payload.command === 'validate') {
     console.log(`Active Task: ${payload.activeTask || 'None'}`);
     console.log(`Tasks: ${payload.taskCount}`);
     for (const task of payload.tasks || []) {
@@ -122,7 +156,7 @@ function print(payload) {
     if (payload.dryRun) console.log('[DRY RUN] No files moved. Use --apply to execute.');
     console.log(`Scanned: ${payload.scanned}, Archiveable: ${payload.archiveable}, To archive: ${payload.toArchive}, Kept: ${payload.kept}, Skipped: ${payload.skipped}`);
     for (const r of payload.results) {
-      const suffix = r.year ? ` -> _archive/${r.year}` : '';
+      const suffix = r.path ? ` -> _archive/${r.path}` : '';
       console.log(`- ${r.action}: ${r.dir} (${r.status})${suffix}`);
     }
   } else {
@@ -151,6 +185,14 @@ Commands:
   set-active <task-id> [--dry-run]       Set the single active task.
   transition <task-id> --status <s> --phase <p> [--dry-run]
   archive [--dry-run|--apply] [--keep n] [--task id] [--json]
+                                        Archive eligible tasks to _archive/YYYY/MM/DD/.
+                                        Explicit --apply (no --task filter) archives ALL.
+  history list [--year YYYY] [--month MM] [--json]
+                                        List archived tasks, optional year/month filter.
+  history search <keyword> [--json]      Full-text search archived PLAN/PROGRESS/PROBLEM/REFERENCES.
+  history load <task-id> [--json]        Load one archived task's full record.
+  history delete <task-id> [--dry-run|--apply] [--json]
+                                        Delete an archived task (audit trail written).
   record <task-id> [--create] [--text "description"] [--status <s>] [--mode <m>] [--dry-run|--apply] [--json]
                                         Create or update a task record.
   open [--json]                         List open (non-archived, active-status) tasks.
@@ -245,6 +287,18 @@ function defaultQueues() {
     blocked: [],
     done: [],
   };
+}
+
+function defaultTaskRuntime() {
+  if (process.env.HARNESS_DEFAULT_RUNTIME) return process.env.HARNESS_DEFAULT_RUNTIME;
+  const settingsPath = path.join(harnessDir, 'settings.json');
+  try {
+    if (!fs.existsSync(settingsPath)) return 'codex';
+    const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+    return settings?.terminal?.defaultRuntime || 'codex';
+  } catch {
+    return 'codex';
+  }
 }
 
 const VALID_MODES = new Set([
@@ -535,11 +589,14 @@ function desiredStatusForTask(task, activeTask, desiredPhase) {
 }
 
 function defaultState(taskId, status, phase, now) {
+  const runtime = defaultTaskRuntime();
   return {
     schemaVersion: 1,
     taskId,
     status,
     mode: 'direct',
+    defaultRuntime: runtime,
+    defaultAgentRuntime: runtime,
     tier: 'none',
     phase,
     gate: null,
@@ -568,6 +625,8 @@ function normalizeState(task, activeTask, now) {
   state.status = status;
   state.phase = phase;
   if (!state.mode) state.mode = 'direct';
+  if (!state.defaultRuntime) state.defaultRuntime = defaultTaskRuntime();
+  if (!state.defaultAgentRuntime) state.defaultAgentRuntime = state.defaultRuntime;
   if (!state.tier) state.tier = 'none';
   if (!Object.prototype.hasOwnProperty.call(state, 'gate')) state.gate = null;
   if (!Object.prototype.hasOwnProperty.call(state, 'activeQuestion')) state.activeQuestion = null;
@@ -767,6 +826,38 @@ function applyOperations(operations) {
   }
 }
 
+function buildListGraph(expandedTasks) {
+  const byId = new Map(expandedTasks.map(t => [t.id, t]));
+  const graph = { roots: [], depEdges: [], blockEdges: [], orphanedDeps: [] };
+
+  // Roots: tasks with no dependsOn pointing to other active tasks (or empty dependsOn)
+  // Non-roots: tasks whose dependsOn includes at least one other active task
+  const hasInternalDep = new Set();
+  const incomingBlocks = new Map(); // taskId → who blocks it (for reverse lookup)
+
+  for (const task of expandedTasks) {
+    for (const depId of task.dependsOn) {
+      if (byId.has(depId)) {
+        hasInternalDep.add(task.id);
+        graph.depEdges.push({ from: depId, to: task.id });
+      } else if (depId) {
+        graph.orphanedDeps.push({ task: task.id, missingDep: depId });
+      }
+    }
+    for (const blockId of task.blocks) {
+      if (byId.has(blockId)) {
+        graph.blockEdges.push({ from: task.id, to: blockId });
+      }
+      if (!incomingBlocks.has(blockId)) incomingBlocks.set(blockId, []);
+      incomingBlocks.get(blockId).push(task.id);
+    }
+  }
+
+  graph.roots = expandedTasks.filter(t => !hasInternalDep.has(t.id));
+
+  return graph;
+}
+
 function runList() {
   const { rootProgress, tasks } = collectTasks();
 
@@ -789,12 +880,20 @@ function runList() {
     };
   });
 
+  const graph = buildListGraph(expandedTasks);
+
   const payload = {
     ok: true,
     command: 'list',
     taskCount: expandedTasks.length,
     activeTask: rootProgress.activeTask,
     tasks: expandedTasks,
+    graph: {
+      roots: graph.roots.map(t => t.id),
+      depEdges: graph.depEdges,
+      blockEdges: graph.blockEdges,
+      orphanedDeps: graph.orphanedDeps,
+    },
     errors: [],
     warnings: [],
   };
@@ -874,38 +973,67 @@ function buildArchivePlan() {
     else skipped.push({ task, reason: eligibility.reason });
   }
 
+  const dryRun = !hasFlag('--apply');
+  const explicitTrigger = dryRun === false && !taskFilter;
   archiveable.sort((a, b) => a.mtimeMs - b.mtimeMs || a.id.localeCompare(b.id));
-  const toArchiveCount = taskFilter ? archiveable.length : Math.max(0, tasks.length - keepValue);
+
+  // Explicit user trigger (no --task filter, with --apply): archive ALL eligible tasks.
+  // Explicit --task targets the selected eligible task in both dry-run and apply.
+  // Auto/scheduled/dry-run: only archive tasks exceeding --keep cap.
+  const toArchiveCount = taskFilter
+    ? archiveable.length
+    : explicitTrigger
+    ? archiveable.length
+    : Math.max(0, tasks.length - keepValue);
   const toArchive = archiveable.slice(0, toArchiveCount);
   const toArchiveIds = new Set(toArchive.map(task => task.id));
   const keptArchiveable = archiveable.filter(task => !toArchiveIds.has(task.id));
 
   const errors = [];
   for (const task of toArchive) {
-    const year = new Date(task.mtimeMs).getFullYear().toString();
-    const dest = safeTaskPath('_archive', year, task.id);
-    if (fs.existsSync(dest)) errors.push(`Archive destination already exists: Harness/tasks/_archive/${year}/${task.id}`);
+    const mtime = new Date(task.mtimeMs);
+    const year = mtime.getFullYear().toString();
+    const month = String(mtime.getMonth() + 1).padStart(2, '0');
+    const day = String(mtime.getDate()).padStart(2, '0');
+    const dest = safeTaskPath('_archive', year, month, day, task.id);
+    const relPath = `_archive/${year}/${month}/${day}/${task.id}`;
+    if (fs.existsSync(dest)) errors.push(`Archive destination already exists: Harness/tasks/${relPath}`);
   }
   if (errors.length) {
     return { ok: false, command: 'archive', errors, warnings: [], results: [] };
   }
 
+  function dateParts(ts) {
+    const d = new Date(ts);
+    return {
+      year: d.getFullYear().toString(),
+      month: String(d.getMonth() + 1).padStart(2, '0'),
+      day: String(d.getDate()).padStart(2, '0'),
+      path: `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`,
+    };
+  }
+
   const results = [
     ...toArchive.map(task => ({
       dir: task.id,
-      year: new Date(task.mtimeMs).getFullYear().toString(),
+      ...dateParts(task.mtimeMs),
       action: hasFlag('--apply') ? 'archived' : 'would-archive',
-      status: hasFlag('--apply') ? 'moved' : 'dry-run',
+      status: hasFlag('--apply')
+        ? (explicitTrigger ? 'explicit --apply: all eligible' : 'moved')
+        : (taskFilter ? 'dry-run' : `dry-run (${toArchiveCount} of ${archiveable.length} eligible)`),
     })),
     ...keptArchiveable.map(task => ({
       dir: task.id,
-      year: new Date(task.mtimeMs).getFullYear().toString(),
+      ...dateParts(task.mtimeMs),
       action: 'kept',
       status: `kept by --keep ${keepValue}`,
     })),
     ...skipped.map(({ task, reason }) => ({
       dir: task.id,
       year: null,
+      month: null,
+      day: null,
+      path: null,
       action: 'skipped',
       status: reason,
     })),
@@ -927,18 +1055,195 @@ function buildArchivePlan() {
     toArchiveIds,
     tasks,
     rootProgress,
+    graphGenerated: hasFlag('--apply') && archiveable.length > 0,
   };
 }
 
-function appendArchiveIndex(entries) {
-  if (entries.length === 0) return;
+function buildArchiveGraphIndex() {
+  // Walk _archive/YYYY/MM/DD/task-id/ for all archived tasks
+  const allArchived = [];
+  if (fs.existsSync(archiveDir)) {
+    const yearDirs = fs.readdirSync(archiveDir, { withFileTypes: true })
+      .filter(e => e.isDirectory() && /^\d{4}$/.test(e.name))
+      .map(e => e.name).sort();
+    for (const year of yearDirs) {
+      const yearPath = path.join(archiveDir, year);
+      const monthDirs = fs.readdirSync(yearPath, { withFileTypes: true })
+        .filter(e => e.isDirectory() && /^\d{2}$/.test(e.name))
+        .map(e => e.name).sort();
+      for (const month of monthDirs) {
+        const monthPath = path.join(yearPath, month);
+        const dayDirs = fs.readdirSync(monthPath, { withFileTypes: true })
+          .filter(e => e.isDirectory() && /^\d{2}$/.test(e.name))
+          .map(e => e.name).sort();
+        for (const day of dayDirs) {
+          const dayPath = path.join(monthPath, day);
+          const taskDirs = fs.readdirSync(dayPath, { withFileTypes: true })
+            .filter(e => e.isDirectory()).map(e => e.name);
+          for (const taskId of taskDirs) {
+            const statePath = path.join(dayPath, taskId, 'STATE.json');
+            const state = fs.existsSync(statePath) ? JSON.parse(fs.readFileSync(statePath, 'utf8')) : null;
+            const planPath = path.join(dayPath, taskId, 'PLAN.md');
+            const planText = fs.existsSync(planPath) ? fs.readFileSync(planPath, 'utf8') : '';
+            const progressPath2 = path.join(dayPath, taskId, 'PROGRESS.md');
+            const progressText = fs.existsSync(progressPath2) ? fs.readFileSync(progressPath2, 'utf8') : '';
+            allArchived.push({ id: taskId, year, month, day, state, planText, progressText });
+          }
+        }
+      }
+    }
+  }
+
+  if (allArchived.length === 0) return null;
+
+  const byId = new Map(allArchived.map(t => [t.id, t]));
+  const graphLines = [];
+  graphLines.push('## Task Graph\n');
+
+  // Identify root tasks (no dependsOn, or all dependsOn are archived but not in this set)
+  const hasDep = new Set();
+  for (const task of allArchived) {
+    const deps = task.state?.links?.dependsOn || [];
+    for (const depId of deps) {
+      if (byId.has(depId)) hasDep.add(task.id);
+    }
+  }
+
+  // Root tasks
+  const roots = allArchived.filter(t => !hasDep.has(t.id));
+  if (roots.length > 0) {
+    graphLines.push('### Roots (no dependencies)');
+    for (const task of roots) {
+      const deps = (task.state?.links?.dependsOn || []).map(id => `\`${id}\``).join(', ') || 'none';
+      const blocks = (task.state?.links?.blocks || []).map(id => `\`${id}\``).join(', ') || 'none';
+      graphLines.push(`- \`${task.id}\` → blocks: ${blocks}`);
+    }
+  }
+
+  // Build dependency chains
+  const visited = new Set();
+  function chainLines(taskId, indent) {
+    if (visited.has(taskId)) return [];
+    visited.add(taskId);
+    const task = byId.get(taskId);
+    if (!task) return [];
+    const deps = task.state?.links?.dependsOn || [];
+    const lines = [];
+    if (deps.length > 0) {
+      const depList = deps.map(depId => {
+        const depTask = byId.get(depId);
+        return depTask
+          ? `[\`${depId}\`](#${depId.toLowerCase().replace(/-/g, '')})`
+          : `\`${depId}\``;
+      }).join(' → ');
+      lines.push(`${indent}- \`${taskId}\` ← depends on: ${depList}`);
+    } else {
+      lines.push(`${indent}- \`${taskId}\``);
+    }
+    for (const depId of deps) {
+      lines.push(...chainLines(depId, indent + '  '));
+    }
+    return lines;
+  }
+
+  // Show dependency relationships
+  const depGraph = [];
+  for (const task of allArchived) {
+    const deps = task.state?.links?.dependsOn || [];
+    for (const depId of deps) {
+      if (byId.has(depId)) {
+        depGraph.push({ from: depId, to: task.id });
+      }
+    }
+  }
+
+  if (depGraph.length > 0) {
+    graphLines.push('\n### Dependencies');
+    graphLines.push('```\n' + depGraph.map(e => `  ${e.from}  ──▶  ${e.to}`).join('\n') + '\n```\n');
+    graphLines.push('| From | To |');
+    graphLines.push('|------|----|');
+    for (const e of depGraph) {
+      graphLines.push(`| \`${e.from}\` | \`${e.to}\` |`);
+    }
+  }
+
+  // Blocks relationships
+  const blocksGraph = [];
+  for (const task of allArchived) {
+    const blocks = task.state?.links?.blocks || [];
+    for (const blockId of blocks) {
+      if (byId.has(blockId)) {
+        blocksGraph.push({ from: task.id, to: blockId });
+      }
+    }
+  }
+  if (blocksGraph.length > 0) {
+    graphLines.push('\n### Blocks (completion triggers)');
+    graphLines.push('| Task | Unblocks |');
+    graphLines.push('|------|----------|');
+    for (const e of blocksGraph) {
+      graphLines.push(`| \`${e.from}\` | \`${e.to}\` |`);
+    }
+  }
+
+  // Per-task detail section
+  graphLines.push('\n## Task Details\n');
+  const detailOrder = allArchived.slice().sort((a, b) => {
+    if (a.year !== b.year) return b.year.localeCompare(a.year);
+    if (a.month !== b.month) return b.month.localeCompare(a.month);
+    if (a.day !== b.day) return b.day.localeCompare(a.day);
+    return a.id.localeCompare(b.id);
+  });
+  for (const task of detailOrder) {
+    const anchor = task.id.toLowerCase().replace(/-/g, '');
+    const phase = task.state?.phase || '-';
+    const status = task.state?.status || '-';
+    const goal = (task.planText.match(/^## Goal\s*\n+([\s\S]*?)(?=\n## |$)/mi) || ['', ''])[1].trim().slice(0, 120) || (task.state?.nextAction || '-');
+    const deps = (task.state?.links?.dependsOn || []).join(', ') || '-';
+    const blocks = (task.state?.links?.blocks || []).join(', ') || '-';
+    graphLines.push(`### \`${task.id}\` {#${anchor}}`);
+    graphLines.push(`- **Archived:** ${task.year}/${task.month}/${task.day}`);
+    graphLines.push(`- **Status:** ${status}  **Phase:** ${phase}`);
+    graphLines.push(`- **Goal:** ${goal.slice(0, 120)}${goal !== '-' && goal.length >= 120 ? '...' : ''}`);
+    graphLines.push(`- **Depends on:** ${deps}  **Blocks:** ${blocks}`);
+  }
+
+  return graphLines.join('\n');
+}
+
+function appendArchiveIndex(entries, graphContent) {
+  if (entries.length === 0 && !graphContent) return;
   const indexPath = path.join(archiveDir, 'INDEX.md');
-  const existing = fs.existsSync(indexPath)
-    ? fs.readFileSync(indexPath, 'utf8').trimEnd() + '\n'
-    : '| Task | Year | Archived |\n|------|------|----------|\n';
   const date = new Date().toISOString().slice(0, 10);
-  const lines = entries.map(entry => `| ${entry.id} | ${entry.year} | ${date} |`).join('\n');
-  writeTextAtomic(indexPath, `${existing}${lines}\n`);
+
+  let existing = '';
+  if (fs.existsSync(indexPath)) {
+    const raw = fs.readFileSync(indexPath, 'utf8');
+    // Strip old graph section if present so we regenerate fresh
+    const graphStart = raw.indexOf('\n## Task Graph\n');
+    existing = graphStart >= 0 ? raw.slice(0, graphStart).trimEnd() : raw.trimEnd();
+  }
+  if (existing && !existing.endsWith('\n')) existing += '\n';
+
+  const lines = [];
+  lines.push(existing);
+  if (entries.length > 0) {
+    if (!existing || !existing.includes('| Task | Path | Archived |')) {
+      lines.push('| Task | Path | Archived |');
+      lines.push('|------|------|----------|');
+    }
+    for (const entry of entries) {
+      const entryPath = `${entry.year}/${entry.month}/${entry.day}`;
+      lines.push(`| \`${entry.id}\` | ${entryPath} | ${date} |`);
+    }
+  }
+
+  if (graphContent) {
+    lines.push('');
+    lines.push(graphContent);
+  }
+
+  writeTextAtomic(indexPath, lines.join('\n') + '\n');
 }
 
 function runArchive() {
@@ -949,8 +1254,8 @@ function runArchive() {
     const indexEntries = [];
     for (const result of plan.results.filter(result => result.action === 'archived')) {
       const src = safeTaskPath(result.dir);
-      const destDir = safeTaskPath('_archive', result.year);
-      const dest = safeTaskPath('_archive', result.year, result.dir);
+      const destDir = safeTaskPath('_archive', result.year, result.month, result.day);
+      const dest = safeTaskPath('_archive', result.year, result.month, result.day, result.dir);
       fs.mkdirSync(destDir, { recursive: true });
       fs.renameSync(src, dest);
       const movedStatePath = path.join(dest, 'STATE.json');
@@ -963,9 +1268,10 @@ function runArchive() {
       writeJsonAtomic(movedStatePath, movedState);
       const movedProgressPath = path.join(dest, 'PROGRESS.md');
       writeTextAtomic(movedProgressPath, renderTaskProgress(readText(movedProgressPath), result.dir, movedState));
-      indexEntries.push({ id: result.dir, year: result.year });
+      indexEntries.push({ id: result.dir, year: result.year, month: result.month, day: result.day });
     }
-    appendArchiveIndex(indexEntries);
+    const graphContent = buildArchiveGraphIndex();
+    appendArchiveIndex(indexEntries, graphContent);
 
     for (const task of plan.tasks) {
       task.desiredState = task.state || defaultState(task.id, task.status, task.phase || 'intake', new Date().toISOString());
@@ -1002,7 +1308,7 @@ function generateTaskId(title, note, context) {
   // fallback: empty slug (pure CJK/emoji) defaults to 'task'
   const slug = parts.slice(0, 25) || 'task';
   const now = new Date();
-  const suffix = `${now.getFullYear().toString().slice(2)}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
+  const suffix = `${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
   return `task-${slug}-${suffix}`;
 }
 
@@ -1158,7 +1464,15 @@ function runRecord() {
 
       const planFile = path.join(taskDir, 'PLAN.md');
       if (!fs.existsSync(planFile)) {
-        writeTextAtomic(planFile, `# ${taskId} - PLAN\n\n## Goal\n\n${text || taskTitle(taskId)}\n\n## Scope\n\n.\n\n## Decisions\n\n.\n\n## Acceptance\n\n.\n`);
+        writeTextAtomic(planFile, `# ${taskId} - PLAN\n\n## Goal\n\n${text || taskTitle(taskId)}\n\n## Scope\n\nWrite set:\n-\n\nForbidden:\n-\n\n## Decisions\n\n| # | Decision | Reason | Date |\n|---|----------|--------|------|\n\n## Acceptance\n\n| ID | Criterion | Evidence | Status |\n|----|-----------|----------|--------|\n| AC-001 | | | pending |\n\n## Risks\n\n| Risk | Mitigation | Status |\n|------|------------|--------|\n`);
+      }
+      const problemFile = path.join(taskDir, 'PROBLEM.md');
+      if (!fs.existsSync(problemFile)) {
+        writeTextAtomic(problemFile, `# ${taskId} - PROBLEM\n\n## Active\n\n| ID | Problem | Root cause | Fix | Status |\n|----|---------|------------|-----|--------|\n\n## Resolved\n\n| ID | Problem | Root cause | Fix | Resolved |\n|----|---------|------------|-----|----------|\n`);
+      }
+      const refFile = path.join(taskDir, 'REFERENCES.md');
+      if (!fs.existsSync(refFile)) {
+        writeTextAtomic(refFile, `# ${taskId} - REFERENCES\n\n## Logs\n\n| Description | File / Command | Date |\n|-------------|---------------|------|\n\n## Evidence\n\n| What | Pointer | Verified |\n|------|---------|----------|\n\n## Links\n\n| Description | URL / Path |\n|-------------|------------|\n\n## Notes\n\n-\n`);
       }
 
       const rootText = readText(progressPath);
@@ -1186,6 +1500,8 @@ function runRecord() {
     const now = new Date().toISOString();
     const updated = { ...existing.state };
     updated.updatedAt = now;
+    if (!updated.defaultRuntime) updated.defaultRuntime = defaultTaskRuntime();
+    if (!updated.defaultAgentRuntime) updated.defaultAgentRuntime = updated.defaultRuntime;
     if (statusRaw) {
       const ns = normalizeStatus(statusRaw);
       if (!ns) {
@@ -1261,6 +1577,211 @@ function runOpen() {
   }, 0);
 }
 
+// ---- history ----
+function walkArchived(filter = {}) {
+  const results = [];
+  if (!fs.existsSync(archiveDir)) return results;
+
+  function addTask(taskPath, year, month, day) {
+    const taskId = path.basename(taskPath);
+    if (taskId.startsWith('_') || taskId.startsWith('.')) return;
+    if (filter.taskId && taskId !== filter.taskId) return;
+    const statePath = path.join(taskPath, 'STATE.json');
+    const state = fs.existsSync(statePath) ? JSON.parse(fs.readFileSync(statePath, 'utf8')) : null;
+    results.push({
+      id: taskId,
+      year, month, day,
+      archivePath: `${year}/${month}/${day}`,
+      fullPath: taskPath,
+      mtime: fs.statSync(taskPath).mtime.toISOString(),
+      state,
+    });
+  }
+
+  // Walk new layout: _archive/YYYY/MM/DD/task-id/
+  // Walk old layout: _archive/YYYY/task-id/ (legacy, auto-assign month=01, day=01)
+  const entries = fs.readdirSync(archiveDir, { withFileTypes: true });
+  const yearDirs = entries
+    .filter(e => e.isDirectory() && /^\d{4}$/.test(e.name) && (!filter.year || e.name === filter.year))
+    .map(e => e.name).sort();
+
+  for (const year of yearDirs) {
+    const yearPath = path.join(archiveDir, year);
+    const yearEntries = fs.readdirSync(yearPath, { withFileTypes: true });
+
+    // New layout: month dirs (two-digit)
+    const monthDirs = yearEntries
+      .filter(e => e.isDirectory() && /^\d{2}$/.test(e.name) && (!filter.month || e.name === filter.month));
+    const hasMonthDirs = monthDirs.length > 0;
+
+    if (hasMonthDirs) {
+      for (const month of monthDirs.map(e => e.name).sort()) {
+        const monthPath = path.join(yearPath, month);
+        const dayDirs = fs.readdirSync(monthPath, { withFileTypes: true })
+          .filter(e => e.isDirectory() && /^\d{2}$/.test(e.name))
+          .map(e => e.name).sort();
+        for (const day of dayDirs) {
+          const dayPath = path.join(monthPath, day);
+          const taskDirs = fs.readdirSync(dayPath, { withFileTypes: true })
+            .filter(e => e.isDirectory());
+          for (const taskDir of taskDirs) {
+            addTask(path.join(dayPath, taskDir.name), year, month, day);
+          }
+        }
+      }
+    }
+
+    // Legacy layout: task dirs directly under year
+    const legacyTasks = yearEntries
+      .filter(e => e.isDirectory() && !/^\d{2}$/.test(e.name) && e.name !== '_deleted.jsonl');
+    for (const taskDir of legacyTasks) {
+      addTask(path.join(yearPath, taskDir.name), year, '01', '01');
+    }
+  }
+  return results;
+}
+
+function searchArchivedText(keyword) {
+  const results = [];
+  const archived = walkArchived();
+  const kw = keyword.toLowerCase();
+  for (const task of archived) {
+    const files = ['PLAN.md', 'PROGRESS.md', 'PROBLEM.md', 'REFERENCES.md', 'STATE.json'];
+    const hits = [];
+    for (const f of files) {
+      const fp = path.join(task.fullPath, f);
+      if (!fs.existsSync(fp)) continue;
+      const content = fs.readFileSync(fp, 'utf8');
+      const lines = content.split('\n');
+      for (let i = 0; i < lines.length; i++) {
+        if (lines[i].toLowerCase().includes(kw)) {
+          hits.push({ file: f, line: i + 1, snippet: lines[i].trim().slice(0, 120) });
+        }
+      }
+    }
+    if (hits.length > 0) {
+      results.push({ id: task.id, archivePath: task.archivePath, hits });
+    }
+  }
+  return results;
+}
+
+function runHistoryList() {
+  const year = flagValue('--year');
+  const month = flagValue('--month');
+  const tasks = walkArchived({ year, month });
+  const payload = {
+    ok: true,
+    command: 'history/list',
+    count: tasks.length,
+    tasks: tasks.map(t => ({
+      id: t.id,
+      archivePath: t.archivePath,
+      mtime: t.mtime,
+      status: t.state?.status || '-',
+      phase: t.state?.phase || '-',
+    })),
+  };
+  finish(payload, 0);
+}
+
+function runHistorySearch() {
+  const keyword = args[2] || flagValue('--keyword');
+  if (!keyword) {
+    finish({ ok: false, command: 'history/search', errors: ['history search requires <keyword>'], warnings: [], count: 0, results: [] }, 1);
+    return;
+  }
+  const results = searchArchivedText(keyword);
+  finish({
+    ok: true,
+    command: 'history/search',
+    keyword,
+    count: results.length,
+    results,
+  }, 0);
+}
+
+function runHistoryLoad() {
+  const taskId = args[2];
+  if (!taskId) {
+    finish({ ok: false, command: 'history/load', errors: ['history load requires <task-id>'], warnings: [] }, 1);
+    return;
+  }
+  const tasks = walkArchived({ taskId });
+  if (tasks.length === 0) {
+    finish({ ok: false, command: 'history/load', errors: [`Task "${taskId}" not found in archive`], warnings: [] }, 1);
+    return;
+  }
+  const task = tasks[0];
+  const result = {
+    id: task.id,
+    archivePath: task.archivePath,
+    mtime: task.mtime,
+    state: task.state,
+    files: {},
+  };
+  for (const f of ['PLAN.md', 'PROGRESS.md', 'PROBLEM.md', 'REFERENCES.md']) {
+    const fp = path.join(task.fullPath, f);
+    if (fs.existsSync(fp)) {
+      result.files[f] = fs.readFileSync(fp, 'utf8');
+    }
+  }
+  finish({ ok: true, command: 'history/load', task: result }, 0);
+}
+
+function runHistoryDelete() {
+  const taskId = args[2];
+  if (!taskId) {
+    finish({ ok: false, command: 'history/delete', errors: ['history delete requires <task-id>'], warnings: [] }, 1);
+    return;
+  }
+  const tasks = walkArchived({ taskId });
+  if (tasks.length === 0) {
+    finish({ ok: false, command: 'history/delete', errors: [`Task "${taskId}" not found in archive`], warnings: [] }, 1);
+    return;
+  }
+  const task = tasks[0];
+  if (hasFlag('--apply')) {
+    // Audit: write a deletion record before removing
+    const auditPath = path.join(archiveDir, '_deleted.jsonl');
+    const auditEntry = JSON.stringify({
+      id: task.id,
+      archivePath: task.archivePath,
+      deletedAt: new Date().toISOString(),
+      deletedBy: process.env.USER || process.env.USERNAME || 'unknown',
+    });
+    fs.appendFileSync(auditPath, auditEntry + '\n');
+    fs.rmSync(task.fullPath, { recursive: true, force: true });
+    // Clean up empty day/month/year dirs
+    const dayPath = path.dirname(task.fullPath);
+    const monthPath = path.dirname(dayPath);
+    const yearPath = path.dirname(monthPath);
+    for (const dir of [dayPath, monthPath, yearPath]) {
+      try {
+        if (fs.readdirSync(dir).length === 0) fs.rmdirSync(dir);
+      } catch {}
+    }
+    finish({
+      ok: true,
+      command: 'history/delete',
+      action: 'deleted',
+      taskId: task.id,
+      archivePath: task.archivePath,
+      auditSaved: true,
+    }, 0);
+  } else {
+    finish({
+      ok: true,
+      command: 'history/delete',
+      dryRun: true,
+      taskId: task.id,
+      archivePath: task.archivePath,
+      message: 'Dry run. Use --apply to delete.',
+    }, 0);
+  }
+}
+
+// ---- dispatch ----
 if (command === 'help' || hasFlag('--help') || hasFlag('-h')) usage();
 if (command === 'list') runList();
 if (command === 'validate') runValidate();
@@ -1270,6 +1791,18 @@ if (command === 'transition') runTransition();
 if (command === 'archive') runArchive();
 if (command === 'record') runRecord();
 if (command === 'open') runOpen();
+if (command === 'history') {
+  const sub = args[1];
+  if (sub === 'list') runHistoryList();
+  else if (sub === 'search') runHistorySearch();
+  else if (sub === 'load') runHistoryLoad();
+  else if (sub === 'delete') runHistoryDelete();
+  else finish({
+    ok: false, command: 'history',
+    errors: [`Unknown history subcommand "${sub}". Try: list, search <kw>, load <id>, delete <id>`],
+    warnings: [],
+  }, 1);
+}
 
 finish({
   ok: false,

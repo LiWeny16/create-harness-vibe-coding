@@ -2,7 +2,7 @@
 import * as p from '@clack/prompts';
 import fs from 'node:fs';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import pc from 'picocolors';
 import { askConflictPolicy, askInstallScope, askOptionalSelections, askProjectName, askTargetDir } from './prompts.js';
 import { generate, getOptionalCatalog } from './generator.js';
@@ -13,12 +13,30 @@ const CANONICAL_UPDATE_SOURCE_BASE = 'https://raw.githubusercontent.com/LiWeny16
 
 // ── CLI flags ──────────────────────────────────────────────
 const raw = process.argv.slice(2);
+function extractFlag(args, flag) {
+  const idx = args.indexOf(flag);
+  if (idx !== -1 && idx + 1 < args.length) return args[idx + 1];
+  const withEquals = args.find(arg => arg.startsWith(`${flag}=`));
+  if (withEquals) return withEquals.slice(flag.length + 1);
+  return null;
+}
+function hasFlag(args, flag) {
+  return args.includes(flag);
+}
+
+// wf-ui subcommand: handle before parseArgs so --project/--port/--open flags
+// never fall through to the scaffold installer.
+if (raw[0] === 'wf-ui') {
+  await runWfUi(raw.slice(1));
+  process.exit(0);
+}
+
 const parsed = parseArgs(raw);
 const showHelp = parsed.flags.help || parsed.flags.h;
 const skipPrompts = parsed.flags.yes || parsed.flags.y;
 const conflictPolicyProvided = parsed.flags.onConflict !== undefined;
 
-if (parsed.errors.length > 0) {
+if (parsed.errors.length > 0 && raw[0] !== 'wf-ui') {
   for (const err of parsed.errors) {
     console.error(pc.red(`Error: ${err}`));
   }
@@ -129,6 +147,8 @@ console.log('');
 
 let projectName, targetDir;
 
+// wf-ui: server already running, skip the scaffold/update flow
+if (raw[0] !== 'wf-ui') {
 // Non-interactive: positionals provided OR -y/--yes flag set
 if (argName || skipPrompts) {
   projectName = argName || DEFAULT_NAME;
@@ -362,6 +382,102 @@ function printResult(result, targetDir) {
       console.log(pc.red(`  - ${err}`));
     }
     process.exit(1);
+  }
+}
+} // wf-ui skip block end — functions below are module-scoped
+
+async function runWfUi(args) {
+  const projectRoot = extractFlag(args, '--project') || process.cwd();
+  const host = extractFlag(args, '--host') || '127.0.0.1';
+  const rawPort = extractFlag(args, '--port') || '0';
+  const port = Number.parseInt(rawPort, 10);
+  const openBrowser = !hasFlag(args, '--no-open');
+
+  if (host !== '127.0.0.1') {
+    console.error('[wf-ui] host must be 127.0.0.1');
+    process.exit(1);
+  }
+  if (!Number.isInteger(port) || port < 0 || port > 65535) {
+    console.error('[wf-ui] port must be an integer from 0 to 65535');
+    process.exit(1);
+  }
+
+  try {
+    const serverModule = await import('./wf-ui-server/server.mjs');
+    const { SessionRegistry } = await import('./wf-ui-server/session-registry.mjs');
+    const { attachEventsWs } = await import('./wf-ui-server/ws-events.mjs');
+    const { attachTerminalWs } = await import('./wf-ui-server/ws-terminal.mjs');
+    const { warmRuntimeCache } = await import('./wf-ui-server/runtime-detector.mjs');
+    const { appendSessionEvent, appendTerminalData, persistSession, recordInputRequest } =
+      await import('./wf-ui-server/terminal-store.mjs');
+    const registry = new SessionRegistry();
+    const terminalHub = {};
+    const started = await serverModule.startServer({
+      projectRoot,
+      host,
+      port,
+      sessionRegistry: registry,
+      terminalHub,
+    });
+    attachEventsWs(started.server, started.token, projectRoot);
+    Object.assign(terminalHub, attachTerminalWs(started.server, started.token, registry, {
+      onTerminalInput(session, data) {
+        try {
+          recordInputRequest(projectRoot, session.sessionId, data);
+        } catch {
+          // The session may not have been persisted yet; stdout/stderr capture still remains authoritative.
+        }
+        appendTerminalData(projectRoot, session, data, 'stdin');
+      },
+      onAttachModeChange(session, attachMode) {
+        persistSession(projectRoot, session);
+        appendSessionEvent(projectRoot, session, { type: 'session.attach-mode', attachMode });
+      },
+      onSessionState(session, state) {
+        persistSession(projectRoot, session);
+        appendSessionEvent(projectRoot, session, { type: 'session.state', state });
+      },
+    }));
+    warmRuntimeCache();
+    console.log(`[wf-ui] ${started.url}`);
+    if (openBrowser) openLocalUrl(started.url);
+    await waitForWfUiShutdown(started.server);
+  } catch (err) {
+    console.error(`[wf-ui] ${err.message}`);
+    process.exit(1);
+  }
+}
+
+function waitForWfUiShutdown(server) {
+  return new Promise((resolve) => {
+    let closing = false;
+    const shutdown = () => {
+      if (closing) return;
+      closing = true;
+      server.close(() => resolve());
+    };
+    process.once('SIGINT', shutdown);
+    process.once('SIGTERM', shutdown);
+    server.once('close', resolve);
+  });
+}
+
+function openLocalUrl(url) {
+  const command = process.platform === 'win32'
+    ? { file: 'cmd', args: ['/c', 'start', '', url] }
+    : process.platform === 'darwin'
+      ? { file: 'open', args: [url] }
+      : { file: 'xdg-open', args: [url] };
+
+  try {
+    const child = spawn(command.file, command.args, {
+      detached: true,
+      stdio: 'ignore',
+      windowsHide: true,
+    });
+    child.unref();
+  } catch (err) {
+    console.error(`[wf-ui] could not open browser automatically: ${err.message}`);
   }
 }
 
