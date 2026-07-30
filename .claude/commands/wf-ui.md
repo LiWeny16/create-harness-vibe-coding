@@ -16,7 +16,7 @@ create-harness-vibe-coding wf-ui --project . --host 127.0.0.1 --port 0 --open
 If the global binary is not available, use the package fallback:
 
 ```bash
-npx create-harness-vibe-coding@latest wf-ui --project . --host 127.0.0.1 --port 0 --open
+npx create-harness-vibe-coding@0.8.19 wf-ui --project . --host 127.0.0.1 --port 0 --open
 ```
 
 Rules:
