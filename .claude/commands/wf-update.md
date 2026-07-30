@@ -22,7 +22,23 @@ targeted inspection.
 
 ## Flow
 
-1. Run `node Harness/scripts/wf-update-check.mjs --json` first and use the
+Scope resolution is deterministic:
+
+- Current project has `Harness/scripts/wf-update-check.mjs`: update the project
+  install from that script.
+- A global runtime is discoverable from `Harness/.harness-version.globalDir`,
+  `HARNESS_GLOBAL_HOME`, or the default `~/.harness/create-harness-vibe-coding`:
+  update that runtime too, then sync its Claude/Codex/OpenCode host-global
+  copies.
+- Current project has no Harness install: update only the global runtime and
+  host-global copies. Do not scaffold or modify the project unless the user
+  explicitly asks to install Harness there.
+`Harness/scripts/wf-update-runner.mjs` implements this multi-scope routing.
+Older installs that do not have the runner fall back to
+`Harness/scripts/wf-update-check.mjs`.
+
+1. Run `node Harness/scripts/wf-update-runner.mjs --json` first when present;
+   otherwise run `node Harness/scripts/wf-update-check.mjs --json`. Use the
    `agent` block as the action plan. Preserve `agent.releaseHighlights` for the
    user-facing update summary. Current updaters try npm
    `create-harness-vibe-coding@latest` first, then the canonical GitHub source
@@ -33,9 +49,11 @@ targeted inspection.
    starter files may be created, and checksum-matching legacy architecture can
    move to `Harness/project/architecture.md`. Harness/README.md is merge-tier,
    not PRESERVE.
-3. If `agent.safeApplyCommand` is present, run it to apply SAFE, NEW, and
-   adopted metadata-only files before spending AI time on conflicts. Default
-   command: `node Harness/scripts/wf-update-check.mjs --apply-safe`.
+3. If `agent.safeApplyCommand` is present, run the runner apply path to apply
+   SAFE, NEW, and adopted metadata-only files across every discovered scope
+   before spending AI time on conflicts. Default multi-scope command:
+   `node Harness/scripts/wf-update-runner.mjs --apply-safe --json`. Single-scope
+   fallback command: `node Harness/scripts/wf-update-check.mjs --apply-safe`.
    Framework-owned templates, commands, skills, agents, and scripts are
    script-owned and should be overwritten by the updater after checksum
    validation.
@@ -53,11 +71,38 @@ targeted inspection.
    `--accept-local <file>`, `--accept-merged <file>`, or
    `--accept-template <file>`; do not hand-edit `Harness/.harness-version`.
    Ask the user only when the intent is ambiguous.
-7. Run `node Harness/scripts/wf-update-check.mjs --finalize` after all
-   conflicts have script-recorded decisions. Use strict `--apply` only when the
-   JSON plan has zero conflicts.
-8. After update, run `node Harness/scripts/validate-harness.mjs` and then
-   `node Harness/scripts/scan-clean.mjs`.
+7. Run `node Harness/scripts/wf-update-runner.mjs --finalize --json` after all
+   conflicts have script-recorded decisions. Single-scope fallback:
+   `node Harness/scripts/wf-update-check.mjs --finalize`. Use strict `--apply` only when
+   the JSON plan has zero conflicts.
+8. After update, sync and validate all machine surfaces:
+   ```
+   node Harness/scripts/sync-host-global.mjs --json
+   node Harness/scripts/sync-host-global.mjs --apply --json
+   node Harness/scripts/validate-harness.mjs
+   node Harness/scripts/validate-harness.mjs --manifest-audit
+   node Harness/scripts/scan-clean.mjs --json
+   ```
+   `sync-host-global.mjs` is a no-op for project-only installs. For global
+   installs it compares host-global files against the runtime sources listed in
+   `.harness-version.hostGlobal.targets`; missing or Harness-marked stale copies
+   are repaired by script, while user-looking files stay conflicts.
+9. If the update reports "Already up to date" but files are missing (e.g.,
+   new commands not showing up on a platform), run:
+   ```
+   node Harness/scripts/wf-update-runner.mjs --repair --json
+   node Harness/scripts/wf-update-runner.mjs --repair --apply-safe --json
+   node Harness/scripts/wf-update-runner.mjs --repair --finalize --json
+   node Harness/scripts/wf-update-check.mjs --repair --json
+   node Harness/scripts/wf-update-check.mjs --repair --apply-safe
+   node Harness/scripts/wf-update-check.mjs --repair --finalize
+   node Harness/scripts/sync-host-global.mjs --apply --json
+   node Harness/scripts/validate-harness.mjs --manifest-audit
+   ```
+   `--repair` bypasses the version check and forces a full file diff against
+   the latest remote template. This catches files that were missed during a
+   previous partial update where the version was bumped but not all files
+   were written.
 
 Codex users without a direct command surface: use `$wf-update` (skill path) or
 `node Harness/scripts/wf-update-check.mjs`.

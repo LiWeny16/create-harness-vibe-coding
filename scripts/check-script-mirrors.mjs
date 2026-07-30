@@ -26,7 +26,9 @@ const ROOT = join(__dirname, '..');
 const MIRROR_PAIRS = [
   'wf-update-check.mjs',
   'scan-clean.mjs',
+  'sync-host-global.mjs',
   'validate-harness.mjs',
+  'wf-update-runner.mjs',
 ];
 
 function readNormalized(rel) {

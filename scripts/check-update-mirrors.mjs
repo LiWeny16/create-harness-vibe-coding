@@ -104,7 +104,8 @@ async function main() {
 
   if (failed > 0) {
     console.error(`\n${failed} mirror check(s) failed. Sync https://github.com/zingspark/create-harness-vibe-coding before marking the release done.`);
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
 
   console.log('\nUpdate mirrors are synced.');
@@ -112,5 +113,5 @@ async function main() {
 
 main().catch(e => {
   console.error(e);
-  process.exit(1);
+  process.exitCode = 1;
 });

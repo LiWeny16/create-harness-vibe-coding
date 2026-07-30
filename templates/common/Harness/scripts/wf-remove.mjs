@@ -83,6 +83,7 @@ const PURGEABLE_HARNESS_DATA_PATTERNS = [
 const FRAMEWORK_TASK_PATTERNS = [
   /^Harness\/tasks\/_template\//,
   /^Harness\/tasks\/auto\//,
+  /^Harness\/tasks\/continuous\//,
 ];
 
 function isUserData(file) {
@@ -151,6 +152,7 @@ const BUILT_IN_SKILL_NAMES = [
   'wf-task-archive',
   'wf-task-list',
   'wf-task-record',
+  'wf-ui',
   'wf-update',
 ];
 
@@ -169,6 +171,7 @@ const BUILT_IN_COMMAND_NAMES = [
   'wf-task-archive',
   'wf-task-list',
   'wf-task-record',
+  'wf-ui',
   'wf-update',
 ];
 
@@ -216,6 +219,7 @@ const CLEANUP_DIRS = [
   '.claude/skills/wf-task-list',
   '.claude/skills/wf-task-record',
   '.claude/skills/wf-update',
+  '.claude/skills/wf-ui',
   '.claude/skills/wf-remove',
   '.claude/skills/subagent-orchestrator',
   '.claude/skills',
@@ -239,6 +243,7 @@ const CLEANUP_DIRS = [
   '.agents/skills/wf-task-list',
   '.agents/skills/wf-task-record',
   '.agents/skills/wf-update',
+  '.agents/skills/wf-ui',
   '.agents/skills/wf-remove',
   '.agents/skills/subagent-orchestrator',
   '.agents/skills',
@@ -263,7 +268,7 @@ const CLEANUP_DIRS = [
   'Harness/features',
   'Harness/memory',
   'Harness/tasks/_template',
-  'Harness/tasks/auto',
+  'Harness/tasks/continuous',
   'Harness/tasks',
   'Harness',
 ];
@@ -434,8 +439,8 @@ async function main() {
     '.claude/skills/wf-auto/SKILL.md',
     '.agents/skills/wf-auto/SKILL.md',
     'Harness/specs/workflows/WF-AUTO.md',
-    'Harness/tasks/auto/PROGRESS.md',
-    'Harness/tasks/auto/PLAN.md',
+    'Harness/tasks/continuous/PROGRESS.md',
+    'Harness/tasks/continuous/PLAN.md',
     'Harness/tasks/_template/ARTIFACTS.md',
     'Harness/tasks/_template/NOTES.md',
     'Harness/tasks/_template/PLAN.md',

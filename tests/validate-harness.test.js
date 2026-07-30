@@ -356,6 +356,101 @@ test('global project bridge validation fails when host-global copy target is mis
   assert.match(output, /missing host-global claude copied file: commands\/wf\.md/);
 });
 
+test('global project bridge validation fails when host-global copy is stale', () => {
+  const root = tmpdir();
+  const targetDir = path.join(root, 'global-bridge-host-stale');
+  const globalDir = path.join(root, 'global-runtime');
+  const hostGlobalDir = path.join(root, 'host-global');
+  const result = generate({
+    projectName: 'global-bridge-host-stale',
+    targetDir,
+    installScope: 'global',
+    globalDir,
+    hostGlobalDir,
+  });
+
+  assert.equal(result.success, true, result.errors.join('\n'));
+  fs.writeFileSync(
+    path.join(hostGlobalDir, 'claude', 'commands', 'wf.md'),
+    '# stale wf\n\nharness: wf-agent\n',
+    'utf8',
+  );
+
+  const failed = spawnSync(
+    process.execPath,
+    [path.join(globalDir, 'Harness', 'scripts', 'validate-harness.mjs')],
+    { cwd: targetDir, encoding: 'utf8' },
+  );
+  const output = `${failed.stdout}\n${failed.stderr}`;
+
+  assert.notEqual(failed.status, 0);
+  assert.match(output, /host-global claude copied file is stale: commands\/wf\.md/);
+});
+
+test('sync-host-global repairs missing and Harness-marked stale host copies', () => {
+  const root = tmpdir();
+  const targetDir = path.join(root, 'global-sync-project');
+  const globalDir = path.join(root, 'global-runtime');
+  const hostGlobalDir = path.join(root, 'host-global');
+  const result = generate({
+    projectName: 'global-sync-project',
+    targetDir,
+    installScope: 'global',
+    globalDir,
+    hostGlobalDir,
+  });
+
+  assert.equal(result.success, true, result.errors.join('\n'));
+  const claudeWf = path.join(hostGlobalDir, 'claude', 'commands', 'wf.md');
+  const codexSkill = path.join(hostGlobalDir, 'codex', 'skills', 'wf', 'SKILL.md');
+  fs.writeFileSync(claudeWf, '# stale wf\n\nharness: wf-agent\n', 'utf8');
+  fs.rmSync(codexSkill);
+
+  const synced = spawnSync(
+    process.execPath,
+    [path.join(globalDir, 'Harness', 'scripts', 'sync-host-global.mjs'), '--apply', '--json'],
+    { cwd: targetDir, encoding: 'utf8' },
+  );
+  const output = `${synced.stdout}\n${synced.stderr}`;
+
+  assert.equal(synced.status, 0, output);
+  const payload = JSON.parse(synced.stdout.trim());
+  assert.equal(payload.status, 'synced');
+  assert.equal(fs.readFileSync(claudeWf, 'utf8'), fs.readFileSync(path.join(globalDir, '.claude', 'commands', 'wf.md'), 'utf8'));
+  assert.equal(fs.readFileSync(codexSkill, 'utf8'), fs.readFileSync(path.join(globalDir, '.agents', 'skills', 'wf', 'SKILL.md'), 'utf8'));
+});
+
+test('sync-host-global refuses to overwrite user-looking host files', () => {
+  const root = tmpdir();
+  const targetDir = path.join(root, 'global-sync-conflict-project');
+  const globalDir = path.join(root, 'global-runtime');
+  const hostGlobalDir = path.join(root, 'host-global');
+  const result = generate({
+    projectName: 'global-sync-conflict-project',
+    targetDir,
+    installScope: 'global',
+    globalDir,
+    hostGlobalDir,
+  });
+
+  assert.equal(result.success, true, result.errors.join('\n'));
+  const opencodeWf = path.join(hostGlobalDir, 'opencode', 'commands', 'wf.md');
+  fs.writeFileSync(opencodeWf, 'my personal wf command\n', 'utf8');
+
+  const refused = spawnSync(
+    process.execPath,
+    [path.join(globalDir, 'Harness', 'scripts', 'sync-host-global.mjs'), '--apply', '--json'],
+    { cwd: targetDir, encoding: 'utf8' },
+  );
+  const output = `${refused.stdout}\n${refused.stderr}`;
+
+  assert.notEqual(refused.status, 0, output);
+  const payload = JSON.parse(refused.stdout.trim());
+  assert.equal(payload.status, 'conflict');
+  assert.ok(payload.plan.conflict.some(entry => entry.host === 'opencode' && entry.file === 'commands/wf.md'));
+  assert.equal(fs.readFileSync(opencodeWf, 'utf8'), 'my personal wf command\n');
+});
+
 test('validation fails when durable filesystem communication invariant is removed from core docs', () => {
   const targetDir = generateProject();
   const invariant = 'project files are the only durable communication channel';
@@ -567,7 +662,12 @@ test('validation fails when wf-update direct command loses safe-apply flow', () 
   writeRel(
     targetDir,
     '.claude/commands/wf-update.md',
-    readRel(targetDir, '.claude/commands/wf-update.md').replace('--apply-safe', '--legacy-apply'),
+    readRel(targetDir, '.claude/commands/wf-update.md').replaceAll('--apply-safe', '--legacy-apply'),
+  );
+  writeRel(
+    targetDir,
+    '.opencode/commands/wf-update.md',
+    readRel(targetDir, '.opencode/commands/wf-update.md').replaceAll('--apply-safe', '--legacy-apply'),
   );
 
   const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
@@ -596,6 +696,46 @@ test('validation fails when wf-update direct command loses release highlights re
 
   assert.notEqual(result.status, 0);
   assert.match(output, /\.claude\/commands\/wf-update\.md missing .*release highlights summary/);
+});
+
+test('validation fails when wf-ui direct command loses CLI launch', () => {
+  const targetDir = generateProject();
+  for (const rel of ['.claude/commands/wf-ui.md', '.opencode/commands/wf-ui.md']) {
+    writeRel(
+      targetDir,
+      rel,
+      readRel(targetDir, rel).replaceAll('create-harness-vibe-coding wf-ui', 'create-harness-vibe-coding ui'),
+    );
+  }
+
+  const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
+    cwd: targetDir,
+    encoding: 'utf8',
+  });
+  const output = `${result.stdout}\n${result.stderr}`;
+
+  assert.notEqual(result.status, 0);
+  assert.match(output, /\.claude\/commands\/wf-ui\.md missing .*wf-ui direct CLI launch/);
+});
+
+test('validation fails when wf-ui direct command restores workflow router preload', () => {
+  const targetDir = generateProject();
+  for (const rel of ['.claude/commands/wf-ui.md', '.opencode/commands/wf-ui.md']) {
+    writeRel(
+      targetDir,
+      rel,
+      `${readRel(targetDir, rel)}\nLoad \`CLAUDE.md\`, then load the old router.\n`,
+    );
+  }
+
+  const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
+    cwd: targetDir,
+    encoding: 'utf8',
+  });
+  const output = `${result.stdout}\n${result.stderr}`;
+
+  assert.notEqual(result.status, 0);
+  assert.match(output, /\.claude\/commands\/wf-ui\.md contains forbidden .*old router preload/);
 });
 
 test('validation fails when ECC direct command exemption is removed', () => {

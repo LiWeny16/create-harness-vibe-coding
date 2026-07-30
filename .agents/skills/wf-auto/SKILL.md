@@ -48,7 +48,7 @@ that auto scanning costs more than it helps.
    obligations are covered, two different confirmation strategies are empty,
    and unresolved uncertainty is recorded.
 2. CEO never edits production source. CEO may write only
-   `Harness/tasks/auto/PLAN.md` and `Harness/tasks/auto/PROGRESS.md`.
+   `Harness/tasks/continuous/PLAN.md` and `Harness/tasks/continuous/PROGRESS.md`.
 3. Build a project profile each W0 cycle and dispatch only the selected probes;
    invoke oracle and spark searchers when evidence justifies them.
 4. One accepted finding per cycle: <=3 files and <=50 changed lines. Larger
@@ -61,8 +61,8 @@ that auto scanning costs more than it helps.
    below 3.
 8. Intent Checkpoint is adaptive: 2 -> 5 -> 10 cycles, exactly two questions.
 9. Record compact evidence per cycle; do not paste full logs or transcripts.
-10. A bounded test tick still creates or updates `Harness/tasks/auto/PLAN.md`
-    and `Harness/tasks/auto/PROGRESS.md`; missing auto capsule evidence is a
+10. A bounded test tick still creates or updates `Harness/tasks/continuous/PLAN.md`
+    and `Harness/tasks/continuous/PROGRESS.md`; missing auto capsule evidence is a
     failed cycle record.
 
 ## Loop

@@ -44,5 +44,5 @@ replaying search transcripts.
 6. Value reflection is required every cycle: source, why it matters, deviation,
    evidence, and milestone progress.
 
-Active roadmap: `Harness/tasks/auto/SPARK-ROADMAP.md`.
-Per-cycle evidence: `Harness/tasks/auto/PROGRESS.md`.
+Active roadmap: `Harness/tasks/continuous/SPARK-ROADMAP.md`.
+Per-cycle evidence: `Harness/tasks/continuous/PROGRESS.md`.

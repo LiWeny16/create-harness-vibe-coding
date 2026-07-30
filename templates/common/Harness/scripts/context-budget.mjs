@@ -20,7 +20,7 @@ const routes = [
   },
   {
     id: 'wf-router-prefix',
-    maxBytes: 42000,
+    maxBytes: 43000,
     paths: [
       'CLAUDE.md',
       'Harness/MEMORY.md',

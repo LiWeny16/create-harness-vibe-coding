@@ -1,26 +1,21 @@
 # {{TASK_ID}} - PROGRESS
 
-Compact heartbeat. Update on phase changes, blockers, failures, and closeout.
-Do not paste logs; record the command/file that proves the state.
+Compact heartbeat.
 
-## Status
+Phase heartbeat. Update on transitions, blockers, verification. Keep under 20 lines.
+
+## Current
 
 - Phase: Intake
 - Next:
 - Blocker: none
 
-## Tasks
-
-- [ ] Define goal and scope
-
-## Changes
-
--
-
 ## Verification
 
--
+- [ ] verification command
 
-## Notes
+## Log
 
--
+| Date | Phase | Note |
+|------|-------|------|
+|      |       |      |

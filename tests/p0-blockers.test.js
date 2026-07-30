@@ -747,6 +747,14 @@ test('update-check: prereleases are ignored and explicit older sources still ref
   assert.equal(downgrade.status, 1, 'explicit older source should fail');
   const downgradeJson = JSON.parse(downgrade.stdout.trim());
   assert.equal(downgradeJson.status, 'downgrade-refused');
+
+  const repairDowngrade = runNode(path.join(proj, 'Harness', 'scripts', 'wf-update-check.mjs'), ['--repair', '--json'], {
+    cwd: proj,
+    env: { WF_SOURCE_BASE: fileSourceBase(remote) },
+  });
+  assert.equal(repairDowngrade.status, 1, '--repair must not bypass downgrade protection');
+  const repairDowngradeJson = JSON.parse(repairDowngrade.stdout.trim());
+  assert.equal(repairDowngradeJson.status, 'downgrade-refused');
   fs.rmSync(root, { recursive: true, force: true });
 });
 

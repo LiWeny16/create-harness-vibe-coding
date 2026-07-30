@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.8.19] - 2026-07-30
+
+- Publish `$wf-ui` as the Harness control panel with task capsule observability, agent workflow hierarchy, runtime detection, real PTY-backed detected CLI launches, and multi-terminal peer sessions.
+- Bundle built `wf-ui` assets in the npm package and guard them with pack smoke coverage so installed `wf-ui` can serve the browser UI without a local frontend build.
+- Harden OTA updates with `--repair` mode so an already-version-bumped install can still diff and restore missing framework files such as `/wf-task-list`, `/wf-help`, and platform mirrors.
+- Add post-update manifest validation: `/wf-update` now requires `validate-harness.mjs --manifest-audit` after apply/finalize to catch missing framework files, stale Harness-owned files, and manifest coverage gaps.
+- Add multi-scope `/wf-update` routing: project installs update project + discovered global runtime, while uninstalled projects using global command surfaces update only the global runtime and host copies.
+- Add `sync-host-global.mjs` so global Claude/Codex/OpenCode command and skill copies are audited and repaired after runtime updates.
+- Keep `--repair` safe by refusing older remote sources and prerelease sources by default; repair can restore missing files but cannot silently downgrade a newer install.
+- Regenerate ownership manifests from the template source so `.claude`, `.codex`, `.agents`, `.opencode`, and Harness script/spec files are tracked as updateable framework files while tasks, memory, progress, and project user files remain preserved.
+- Keep `/wf-remove` aligned with manifest safety: framework-owned files can be removed safely, but user data paths such as `Harness/tasks/**`, `Harness/memory/**`, and project memory/progress files are never auto-deleted.
+- Make `check:mirrors` fail cleanly on unpublished 0.8.19 mirrors without forcing a Windows process abort.
+
 ## [0.8.18] - 2026-07-29
 
 - Add explicit task capsule management with list, archive, record/open state recovery, create-or-resume matching, task dependency metadata, and validator coverage.

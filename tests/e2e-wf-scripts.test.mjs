@@ -140,7 +140,7 @@ for (const [file, content] of Object.entries(mockFiles)) {
 const untrackedResidualFiles = {
   'Harness/research/research-results.md': 'my research results',
   'Harness/tasks/_template/PLAN.md': 'framework task template',
-  'Harness/tasks/auto/PLAN.md': 'auto task framework plan',
+  'Harness/tasks/continuous/PLAN.md': 'auto task framework plan',
   '.claude/agents/reviewer.md': 'legacy reviewer agent',
   '.claude/commands/wf-help.md': 'legacy wf-help command',
   '.claude/skills/wf-max/SKILL.md': 'legacy wf-max skill',
@@ -209,7 +209,7 @@ const expectedUser = [
   'Harness/PROGRESS.md',
   'Harness/tasks/my-task/PROGRESS.md',
   'Harness/tasks/_template/PLAN.md',
-  'Harness/tasks/auto/PLAN.md',
+  'Harness/tasks/continuous/PLAN.md',
   'Harness/memory/my-notes.md',
   'Harness/memory/tool-usage-reflections.md',
   'Harness/research/PRD.md',
@@ -262,7 +262,7 @@ assert(purgeFiles.includes('Harness/research/PRD.md'), 'purge includes PRD');
 assert(purgeFiles.includes('Harness/research/research-results.md'), 'purge includes untracked research results');
 assert(purgeFiles.includes('Harness/project/architecture.md'), 'purge includes architecture');
 assert(purgeFiles.includes('Harness/tasks/_template/PLAN.md'), 'purge includes framework task template');
-assert(purgeFiles.includes('Harness/tasks/auto/PLAN.md'), 'purge includes auto task framework file');
+assert(purgeFiles.includes('Harness/tasks/continuous/PLAN.md'), 'purge includes auto task framework file');
 assert(purgePreserved.includes('Harness/tasks/my-task/PROGRESS.md'), 'purge keeps real task record with --keep-tasks');
 assert(!purgeFiles.includes('README.md'), 'purge never removes root README');
 assert(!purgeFiles.includes('.gitignore'), 'purge never removes root .gitignore');
@@ -625,7 +625,7 @@ assert(!existsSync(join(TMP, 'Harness', 'research', 'PRD.md')), 'purge removed P
 assert(!existsSync(join(TMP, 'Harness', 'research', 'research-results.md')), 'purge removed untracked research results');
 assert(!existsSync(join(TMP, 'Harness', 'architecture.md')), 'purge removed architecture');
 assert(!existsSync(join(TMP, 'Harness', 'tasks', '_template', 'PLAN.md')), 'purge removed task template');
-assert(!existsSync(join(TMP, 'Harness', 'tasks', 'auto', 'PLAN.md')), 'purge removed auto task file');
+assert(!existsSync(join(TMP, 'Harness', 'tasks', 'continuous', 'PLAN.md')), 'purge removed continuous task file');
 assert(existsSync(join(TMP, 'Harness', 'tasks', 'my-task', 'PROGRESS.md')), 'purge kept real task record');
 assert(!existsSync(join(TMP, 'Harness', '.harness-version')), 'purge removed .harness-version');
 assert(!existsSync(join(TMP, 'Harness', 'README.md')), 'delete-modified removed Harness/README.md');

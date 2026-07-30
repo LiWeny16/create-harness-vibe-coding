@@ -42,6 +42,7 @@ Stack-specific agents can be added after the product shape is known.
 - [wf-auto](../.claude/skills/wf-auto/SKILL.md) - perpetual adaptive auto-optimization: evidence-selected probes, dynamic obligations, intent checkpoints, evidence ledger.
 - [wf-auto-spark](../.claude/skills/wf-auto-spark/SKILL.md) - perpetual inspiration mode: external spark search, long-term roadmap with staged milestones, <=50% deviation guard.
 - [wf-browser](../.claude/skills/wf-browser/SKILL.md) - built-in browser automation/E2E workflow with controllable UI contracts, Browser Use, Playwright, CDP/network evidence, screenshots, traces, and validation matrix.
+- [wf-ui](../.claude/skills/wf-ui/SKILL.md) - Codex compatibility shim for `$wf-ui` / `/skills wf-ui`; direct command starts the local browser control panel without entering WF.
 - [tdd](../.claude/skills/tdd/SKILL.md) - acceptance-driven TDD: AC-linked RED tests, real UI clicks for browser-visible behavior, Playwright/CDP evidence, and configured coverage gate.
 - [wf-remove](../.claude/skills/wf-remove/SKILL.md) - safely remove Harness framework files (SAFE/MODIFIED/USER classes), auto-prune empty directories, backup option.
 - [wf-task-record](../.claude/skills/wf-task-record/SKILL.md) - Codex compatibility: use $wf-task-record or /skills wf-task-record to wrap task-state.mjs record.
@@ -59,6 +60,7 @@ Codex repo-skill mirrors live under `../.agents/skills/` with the same skill nam
 - [wf-task-list](../.claude/commands/wf-task-list.md) - direct `/wf-task-list` command that wraps `node Harness/scripts/task-state.mjs list`.
 - [wf-task-archive](../.claude/commands/wf-task-archive.md) - direct `/wf-task-archive` command that wraps `node Harness/scripts/task-state.mjs archive`.
 - [wf-command-create](../.claude/commands/wf-command-create.md) - direct `/wf-command-create` command for task-backed wf-* command surface changes.
+- [wf-ui](../.claude/commands/wf-ui.md) - direct `/wf-ui` command that starts the local Harness backend and browser control panel.
 
 Stack-specific skills can be added after the product shape is known.
 

@@ -60,6 +60,7 @@ test('package README stays English and links to Chinese README', () => {
   assert.match(readme, /Which WF command should you use\?/);
   assert.match(readme, /\/wf-auto-spark/);
   assert.match(readme, /\/wf-browser/);
+  assert.match(readme, /\/wf-ui/);
   assert.match(readme, /\/wf-update/);
   assert.match(readme, /Harness\/specs\/workflows\/WF-AUTO-ANGLES\.md/);
   assert.match(readme, /direct-run/);
@@ -258,9 +259,11 @@ test('generated scaffold stores harness-owned payload under root Harness directo
     'Harness/scripts/context-budget.mjs',
     'Harness/scripts/validate-harness.mjs',
     'Harness/scripts/wf-update-check.mjs',
+    'Harness/scripts/wf-update-runner.mjs',
     'Harness/scripts/wf-auto-update-prompt.mjs',
     'Harness/scripts/wf-remove.mjs',
     'Harness/scripts/scan-clean.mjs',
+    'Harness/scripts/sync-host-global.mjs',
     'Harness/scripts/task-state.mjs',
     'Harness/memory/tool-usage-reflections.md',
     'Harness/memory/user-corrections-preferences.md',
@@ -284,6 +287,7 @@ test('generated scaffold stores harness-owned payload under root Harness directo
     '.opencode/commands/wf-task-list.md',
     '.opencode/commands/wf-task-archive.md',
     '.opencode/commands/wf-command-create.md',
+    '.opencode/commands/wf-ui.md',
     '.claude/commands/wf-help.md',
     '.claude/commands/wf-update.md',
     '.claude/commands/wf.md',
@@ -299,6 +303,7 @@ test('generated scaffold stores harness-owned payload under root Harness directo
     '.claude/commands/wf-task-list.md',
     '.claude/commands/wf-task-archive.md',
     '.claude/commands/wf-command-create.md',
+    '.claude/commands/wf-ui.md',
     '.opencode/agents/researcher.md',
     '.opencode/agents/planner.md',
     '.opencode/agents/implementer.md',
@@ -324,6 +329,8 @@ test('generated scaffold stores harness-owned payload under root Harness directo
     '.agents/skills/wf-readme/SKILL.md',
     '.claude/skills/wf-browser/SKILL.md',
     '.agents/skills/wf-browser/SKILL.md',
+    '.claude/skills/wf-ui/SKILL.md',
+    '.agents/skills/wf-ui/SKILL.md',
     '.claude/skills/wf-agents-docs/SKILL.md',
     '.agents/skills/wf-agents-docs/SKILL.md',
     '.claude/skills/subagent-orchestrator/SKILL.md',
@@ -407,10 +414,17 @@ test('generated scaffold stores harness-owned payload under root Harness directo
   assert.match(wfHelp, /\| `\/wf-auto` \|/);
   assert.match(wfHelp, /\| `\/wf-readme <task>` \|/);
   assert.match(wfHelp, /\/wf-browser/);
+  assert.match(wfHelp, /\| `\/wf-ui` \| direct command \|/);
 
   const docsReadme = readRel(targetDir, 'Harness/README.md');
   // wf-browser is built in and always listed in the Skill Commands table
   assert.match(docsReadme, /\/wf-browser/);
+  // wf-ui is a built-in direct command and always listed in Direct Commands.
+  assert.match(docsReadme, /\/wf-ui/);
+  assert.match(docsReadme, /\| `\/wf-ui`, `\$wf-ui` \|/);
+  const workflowSummary = docsReadme.split(/\r?\n/).find(line => line.startsWith('Workflow commands:')) || '';
+  assert.doesNotMatch(workflowSummary.split(' with matching ')[0], /\/wf-ui/);
+  assert.match(workflowSummary, /\/wf-update` and `\/wf-ui` remain direct/);
   assert.match(docsReadme, /Need context\/cache\/token efficiency/);
   assert.match(docsReadme, /cache-first context layout/);
   assert.match(docsReadme, /scripts\/l2-cache-telemetry\.mjs/);
@@ -443,6 +457,7 @@ test('generated scaffold stores harness-owned payload under root Harness directo
 
   const memoryIndex = readRel(targetDir, 'Harness/MEMORY.md');
   assert.match(memoryIndex, /wf-browser/);
+  assert.match(memoryIndex, /wf-ui/);
   assert.match(memoryIndex, /wf-help/);
   assert.doesNotMatch(memoryIndex, /browser-e2e/);
   assert.match(memoryIndex, /wf-agents-docs/);
@@ -498,7 +513,7 @@ test('generated scaffold stores harness-owned payload under root Harness directo
   const wfAutoSkill = readRel(targetDir, '.claude/skills/wf-auto/SKILL.md');
   assert.match(wfAutoSkill, /Memory Preflight/);
   assert.match(wfAutoSkill, /bounded test tick/);
-  assert.match(wfAutoSkill, /Harness\/tasks\/auto\/PLAN\.md/);
+  assert.match(wfAutoSkill, /Harness\/tasks\/continuous\/PLAN\.md/);
   assert.match(wfAutoSkill, /evidence ledger path\/summary/);
 
   const codexConfig = readRel(targetDir, '.codex/config.toml');
@@ -742,11 +757,15 @@ test('global install scope writes shared runtime while keeping task state projec
   assert.equal(fs.existsSync(path.join(globalDir, 'Harness', 'project', 'architecture.md')), false);
   assert.ok(fs.existsSync(path.join(globalDir, 'Harness', 'settings.json')));
   assert.ok(fs.existsSync(path.join(hostGlobalDir, 'claude', 'commands', 'wf.md')));
+  assert.ok(fs.existsSync(path.join(hostGlobalDir, 'claude', 'commands', 'wf-ui.md')));
   assert.ok(fs.existsSync(path.join(hostGlobalDir, 'claude', 'skills', 'wf', 'SKILL.md')));
+  assert.ok(fs.existsSync(path.join(hostGlobalDir, 'claude', 'skills', 'wf-ui', 'SKILL.md')));
   assert.ok(fs.existsSync(path.join(hostGlobalDir, 'claude', 'settings.json')));
   assert.ok(fs.existsSync(path.join(hostGlobalDir, 'codex', 'skills', 'wf', 'SKILL.md')));
+  assert.ok(fs.existsSync(path.join(hostGlobalDir, 'codex', 'skills', 'wf-ui', 'SKILL.md')));
   assert.ok(fs.existsSync(path.join(hostGlobalDir, 'codex', 'config.toml')));
   assert.ok(fs.existsSync(path.join(hostGlobalDir, 'opencode', 'commands', 'wf.md')));
+  assert.ok(fs.existsSync(path.join(hostGlobalDir, 'opencode', 'commands', 'wf-ui.md')));
   assert.ok(fs.existsSync(path.join(hostGlobalDir, 'opencode', 'agents', 'planner.md')));
   assert.ok(fs.existsSync(path.join(hostGlobalDir, 'opencode', 'opencode.json')));
 
@@ -765,8 +784,12 @@ test('global install scope writes shared runtime while keeping task state projec
   assert.equal(projectVersion.hostGlobal.copyMode, 'copy');
   assert.match(projectVersion.hostGlobal.targets.claude.root.replace(/\\/g, '/'), /host-global\/claude$/);
   assert.ok(projectVersion.hostGlobal.targets.claude.files.includes('commands/wf.md'));
+  assert.ok(projectVersion.hostGlobal.targets.claude.files.includes('commands/wf-ui.md'));
+  assert.ok(projectVersion.hostGlobal.targets.claude.files.includes('skills/wf-ui/SKILL.md'));
   assert.ok(projectVersion.hostGlobal.targets.codex.files.includes('skills/wf/SKILL.md'));
+  assert.ok(projectVersion.hostGlobal.targets.codex.files.includes('skills/wf-ui/SKILL.md'));
   assert.ok(projectVersion.hostGlobal.targets.opencode.files.includes('commands/wf.md'));
+  assert.ok(projectVersion.hostGlobal.targets.opencode.files.includes('commands/wf-ui.md'));
   assert.ok(projectVersion.ownershipClasses.projectUserState.includes('Harness/tasks/**'));
   assert.ok(projectVersion.ownershipClasses.projectTemplateBridge.includes('Harness/settings.json'));
   assert.equal(globalVersion.installScope, 'global');
@@ -908,6 +931,8 @@ test('without options subtract from preset and explicit optional skills', () => 
   assert.ok(fs.existsSync(path.join(targetDir, '.agents', 'skills', 'ts-react-frontend', 'SKILL.md')));
   assert.ok(fs.existsSync(path.join(targetDir, '.claude', 'skills', 'wf-browser', 'SKILL.md')));
   assert.ok(fs.existsSync(path.join(targetDir, '.agents', 'skills', 'wf-browser', 'SKILL.md')));
+  assert.ok(fs.existsSync(path.join(targetDir, '.claude', 'skills', 'wf-ui', 'SKILL.md')));
+  assert.ok(fs.existsSync(path.join(targetDir, '.agents', 'skills', 'wf-ui', 'SKILL.md')));
   assert.equal(fs.existsSync(path.join(targetDir, '.claude', 'skills', 'browser-e2e', 'SKILL.md')), false);
   assert.equal(fs.existsSync(path.join(targetDir, '.agents', 'skills', 'browser-e2e', 'SKILL.md')), false);
   assert.ok(fs.existsSync(path.join(targetDir, '.claude', 'skills', 'ui-ux-review', 'SKILL.md')));
@@ -1198,6 +1223,7 @@ test('generated optional workflows are registered under Harness workflows and wf
 
   assert.match(harnessReadme, /\/wf-browser/);
   assert.match(wfHelp, /\/wf-browser/);
+  assert.match(wfHelp, /\/wf-ui/);
   const opencodeWfBrowser = readRel(targetDir, '.opencode/commands/wf-browser.md');
   assert.match(opencodeWfBrowser, /workflow command/);
   assert.match(opencodeWfBrowser, /\.claude\/skills\/wf-browser\/SKILL\.md/);

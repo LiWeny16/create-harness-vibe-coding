@@ -113,7 +113,7 @@ WF-AUTO operates in explicit states. Without a state machine, "auto-degrade", "s
 | `auto.exhausted` | A-GATE passed permanently | Two different confirmation strategies return no actionable finding |
 | `paused` | User interrupted, waiting for direction | User says "stop" or interrupts at any point |
 
-**State transitions are CEO-owned.** The CEO decides which state to enter based on W0 results and checkpoint responses. The state machine is recorded in `Harness/tasks/auto/PROGRESS.md` at each transition.
+**State transitions are CEO-owned.** The CEO decides which state to enter based on W0 results and checkpoint responses. The state machine is recorded in `Harness/tasks/continuous/PROGRESS.md` at each transition.
 
 ## Adaptive coverage instead of a magic angle count
 
@@ -271,7 +271,7 @@ CEO NEVER writes production code (per WF-KERNEL State Ownership). Implementer wr
 
 ### RECORD
 
-Every cycle writes one entry to `Harness/tasks/auto/PROGRESS.md`:
+Every cycle writes one entry to `Harness/tasks/continuous/PROGRESS.md`:
 
 ```text
 ## Cycle N (timestamp) — State: auto.internal | auto.spark | auto.checkpoint
@@ -304,18 +304,18 @@ enabled `/wf-auto` tick hook may drive long-running auto-optimization.
 
 Manual or benchmark-driven single-cycle `/wf-auto` runs use the same bounded
 tick contract: they may stop because the caller explicitly requested one tick,
-but they still MUST create or update `Harness/tasks/auto/PLAN.md` and
-`Harness/tasks/auto/PROGRESS.md` before returning.
+but they still MUST create or update `Harness/tasks/continuous/PLAN.md` and
+`Harness/tasks/continuous/PROGRESS.md` before returning.
 
 The hook is not a role-enforcement mechanism, not a memory injection mechanism,
 and not WF-MAX state. It is only a bounded tick trigger:
 
 ```text
 wf-auto hook event
--> confirm /wf-auto is active in Harness/tasks/auto/
+-> confirm /wf-auto is active in Harness/tasks/continuous/
 -> check STOP/paused/user-interrupt state
 -> request exactly one W0-W5 tick or one Intent Checkpoint
--> append heartbeat/evidence to Harness/tasks/auto/PROGRESS.md
+-> append heartbeat/evidence to Harness/tasks/continuous/PROGRESS.md
 -> exit
 ```
 
@@ -324,7 +324,7 @@ Hard boundaries:
 - no execution-control hook is installed or registered by default
 - only `/wf-auto` may use a runtime hook to drive auto-optimization
 - the hook must run one bounded tick, not an unbounded process
-- the hook must respect `Harness/tasks/auto/STOP`, `state=paused`, user stop,
+- the hook must respect `Harness/tasks/continuous/STOP`, `state=paused`, user stop,
   and the Adaptive Coverage Exhaustion Gate
 - the hook must not enforce WF-MAX roles, writeSet, or agent identity
 - the hook must not inject memory directly; use `MEMORY_PROTOCOL.md` scenario
@@ -449,7 +449,7 @@ If a spark cycle's measured result is NEGLIGIBLE or REVERTED, increment `weakSpa
 
 ## CEO Constraints
 
-CEO tool boundaries follow [WF-KERNEL.md](WF-KERNEL.md) State Ownership: CEO plans, dispatches, synthesizes, and writes ONLY the auto task capsule (`Harness/tasks/auto/PROGRESS.md`, `Harness/tasks/auto/PLAN.md`). CEO never writes production source code — all implementation is delegated to Workers.
+CEO tool boundaries follow [WF-KERNEL.md](WF-KERNEL.md) State Ownership: CEO plans, dispatches, synthesizes, and writes ONLY the auto task capsule (`Harness/tasks/continuous/PROGRESS.md`, `Harness/tasks/continuous/PLAN.md`). CEO never writes production source code — all implementation is delegated to Workers.
 
 ## Anti-Pattern Catalog
 
@@ -509,10 +509,10 @@ Mini PRD-derived AC IDs in `/wf-auto`.
 
 ## Task Capsule
 
-WF-AUTO uses a dedicated task capsule at `Harness/tasks/auto/`:
+WF-AUTO uses a dedicated task capsule at `Harness/tasks/continuous/`:
 
-- `Harness/tasks/auto/PROGRESS.md` — cycle log, exhaustion evidence, cumulative stats
-- `Harness/tasks/auto/PLAN.md` — current cycle's change spec
+- `Harness/tasks/continuous/PROGRESS.md` — cycle log, exhaustion evidence, cumulative stats
+- `Harness/tasks/continuous/PLAN.md` — current cycle's change spec
 
 Unlike normal task capsules, this one is never archived — it's the permanent home of the auto-optimization state.
 
@@ -522,6 +522,6 @@ Closeout happens exactly once, when A-GATE passes permanently:
 
 1. CEO records final exhaustion evidence: dynamic obligations, selected and skipped probes, coverage, confidence, and two different confirmation strategies
 2. CEO writes summary: total cycles, files changed, findings addressed, findings rejected, residual risk
-3. CEO marks `Harness/tasks/auto/PROGRESS.md` as "WF-AUTO EXHAUSTED" with timestamp
+3. CEO marks `Harness/tasks/continuous/PROGRESS.md` as "WF-AUTO EXHAUSTED" with timestamp
 4. `Harness/PROGRESS.md` is updated with the auto session outcome
 5. No further automatic action is taken

@@ -205,9 +205,9 @@ test('archive apply moves safe tasks and rewrites root Task Index', () => {
   assert.equal(payload.toArchive, 2);
 
   assert.equal(fs.existsSync(relPath(root, 'Harness/tasks/task-finish-one')), false);
-  assert.equal(fs.existsSync(relPath(root, 'Harness/tasks/_archive/2024/task-finish-one')), true);
-  assert.equal(fs.existsSync(relPath(root, 'Harness/tasks/_archive/2025/task-finish-two')), true);
-  const archivedState = JSON.parse(readRel(root, 'Harness/tasks/_archive/2024/task-finish-one/STATE.json'));
+  assert.equal(fs.existsSync(relPath(root, 'Harness/tasks/_archive/2024/01/01/task-finish-one')), true);
+  assert.equal(fs.existsSync(relPath(root, 'Harness/tasks/_archive/2025/01/01/task-finish-two')), true);
+  const archivedState = JSON.parse(readRel(root, 'Harness/tasks/_archive/2024/01/01/task-finish-one/STATE.json'));
   assert.equal(archivedState.status, 'archived');
   assert.equal(archivedState.phase, 'archived');
   assert.doesNotMatch(readRel(root, 'Harness/PROGRESS.md'), /task-finish-one/);
@@ -699,8 +699,8 @@ test('--new with unique title creates task without numeric suffix', () => {
   const payload = jsonResult(result);
   assert.equal(result.status, 0);
   assert.equal(payload.action, 'created');
-  // Must end with 6-digit date suffix (no extra -N)
-  assert.match(payload.taskId, /^task-totally-fresh-\d{6}$/);
+  // Must end with MMDD date suffix (no extra -N)
+  assert.match(payload.taskId, /^task-totally-fresh-\d{4}$/);
 });
 
 test('record with no args exits non-zero with requires message', () => {

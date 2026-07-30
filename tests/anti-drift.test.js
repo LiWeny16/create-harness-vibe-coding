@@ -67,7 +67,7 @@ function numberedStepCount(text) {
   return [...text.matchAll(/^\d+\. /gm)].length;
 }
 
-test('wf-update direct command wrappers carry the canonical 8-step flow', () => {
+test('wf-update direct command wrappers carry the canonical 9-step flow', () => {
   const files = [
     '.claude/commands/wf-update.md',
     '.opencode/commands/wf-update.md',
@@ -77,7 +77,7 @@ test('wf-update direct command wrappers carry the canonical 8-step flow', () => 
   const bodies = files.map(read);
 
   for (const [idx, body] of bodies.entries()) {
-    assert.equal(numberedStepCount(body), 8, `${files[idx]} should have 8 numbered update steps`);
+    assert.equal(numberedStepCount(body), 9, `${files[idx]} should have 9 numbered update steps`);
     for (const marker of [
       '## Cache Discipline',
       'agent.safeApplyCommand',
@@ -87,6 +87,8 @@ test('wf-update direct command wrappers carry the canonical 8-step flow', () => 
       '--accept-merged',
       '--accept-template',
       '--finalize',
+      '--manifest-audit',
+      '--repair',
       'strict `--apply` only when',
       '## Return',
     ]) {
@@ -97,6 +99,32 @@ test('wf-update direct command wrappers carry the canonical 8-step flow', () => 
   for (const body of bodies.slice(1)) {
     assert.equal(body, bodies[0], 'wf-update command wrappers should be byte-identical');
   }
+});
+
+test('wf-ui direct command wrappers launch CLI without router load', () => {
+  const files = [
+    '.claude/commands/wf-ui.md',
+    '.opencode/commands/wf-ui.md',
+    'templates/common/.claude/commands/wf-ui.md',
+    'templates/common/.opencode/commands/wf-ui.md',
+  ];
+  const bodies = files.map(read);
+
+  for (const [idx, body] of bodies.entries()) {
+    assert.match(body, /direct command/i, `${files[idx]} should be direct`);
+    assert.match(body, /Do not invoke a skill/, `${files[idx]} should not invoke a skill`);
+    assert.match(body, /create-harness-vibe-coding wf-ui/, `${files[idx]} should launch the CLI`);
+    assert.match(body, /--host 127\.0\.0\.1/, `${files[idx]} should bind loopback`);
+    assert.match(body, /--open/, `${files[idx]} should request browser open`);
+    assert.doesNotMatch(body, /workflow command/i, `${files[idx]} should not be workflow-routed`);
+    assert.doesNotMatch(body, /Load `CLAUDE\.md`/, `${files[idx]} should not preload the router`);
+  }
+
+  for (const body of bodies.slice(1)) {
+    assert.equal(body, bodies[0], 'wf-ui command wrappers should be byte-identical');
+  }
+
+  assert.equal(read('.agents/skills/wf-ui/SKILL.md'), read('.claude/skills/wf-ui/SKILL.md'));
 });
 
 test('ECC /wf wildcard rule keeps direct command exemptions explicit', () => {
@@ -166,11 +194,16 @@ test('route-critical template and dogfood files stay byte-identical', () => {
     ['.opencode/commands/wf-command-create.md', 'templates/common/.opencode/commands/wf-command-create.md'],
     ['.claude/commands/wf-update.md', 'templates/common/.claude/commands/wf-update.md'],
     ['.opencode/commands/wf-update.md', 'templates/common/.opencode/commands/wf-update.md'],
+    ['.claude/commands/wf-ui.md', 'templates/common/.claude/commands/wf-ui.md'],
+    ['.opencode/commands/wf-ui.md', 'templates/common/.opencode/commands/wf-ui.md'],
+    ['.claude/skills/wf-ui/SKILL.md', 'templates/common/.claude/skills/wf-ui/SKILL.md'],
     ['Harness/specs/runtime/context-loading.md', 'templates/common/Harness/specs/runtime/context-loading.md'],
     ['Harness/scripts/context-budget.mjs', 'templates/common/Harness/scripts/context-budget.mjs'],
     ['Harness/scripts/l2-cache-telemetry.mjs', 'templates/common/Harness/scripts/l2-cache-telemetry.mjs'],
     ['Harness/scripts/wf-remove.mjs', 'templates/common/Harness/scripts/wf-remove.mjs'],
+    ['Harness/scripts/sync-host-global.mjs', 'templates/common/Harness/scripts/sync-host-global.mjs'],
     ['Harness/scripts/validate-harness.mjs', 'templates/common/Harness/scripts/validate-harness.mjs'],
+    ['Harness/scripts/wf-update-runner.mjs', 'templates/common/Harness/scripts/wf-update-runner.mjs'],
   ];
 
   for (const [rootRel, templateRel] of pairs) {

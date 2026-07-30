@@ -11,7 +11,7 @@ Archived tasks move to `Harness/tasks/_archive/YYYY/<task-id>/`.
 ## What Is Never Archived
 
 - `Harness/tasks/_template/` - scaffold template, never moved.
-- `Harness/tasks/auto/` - WF-AUTO permanent state capsule, never moved unless
+- `Harness/tasks/continuous/` - WF-AUTO/WF-AUTO-SPARK permanent state capsule, never moved unless
   explicitly allowed by WF-AUTO docs.
 - `Harness/tasks/_archive/` - the archive directory itself.
 - Active, blocked, in-progress, running, pending, or needs-user-decision tasks.
@@ -62,11 +62,16 @@ User-facing command:
 
 Underlying implementation: `Harness/scripts/task-state.mjs archive`.
 
-- Default: dry-run.
+- Default: dry-run (respects `--keep` cap, archives oldest-eligible up to cap).
 - `--apply` to execute.
+- Explicit `--apply` with no `--task` filter: archives **ALL** eligible tasks, bypassing `--keep`.
 - `--keep 5` to set the non-archived task threshold.
 - `--task <task-id>` to archive a specific task.
 - `--json` for machine-readable output.
+- After archiving, `Harness/tasks/_archive/INDEX.md` is regenerated with a full
+  task graph: roots, dependency chains, blocks relationships, and per-task details
+  (status, phase, goal, depends-on, blocks). The graph covers **all** archived tasks
+  across all years, so it stays accurate as tasks accumulate.
 - Run `node Harness/scripts/task-state.mjs archive --dry-run --json` before
   applying a risky cleanup.
 

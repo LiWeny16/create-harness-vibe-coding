@@ -4,7 +4,7 @@ Purpose: route humans and agents to the smallest useful context. `CLAUDE.md` is 
 
 Default load: `CLAUDE.md`. For workflow commands (`/wf`, `/wf-max`, `/wf-auto`, `/wf-review`, `/wf-learn`, `/wf-readme`, `/wf-remove`, `/wf-browser`, `/wf-auto-spark`), also load `Harness/MEMORY.md` (index only per Memory Preflight), this file, and `Harness/PROGRESS.md` when work is active.
 
-`/wf-help`, `$wf-help`, `/skills wf-help`, `/wf-update`, `$wf-update`, `/skills wf-update`, `/wf-task-record`, `$wf-task-record`, `/skills wf-task-record`, `/wf-task-list`, `$wf-task-list`, `/skills wf-task-list`, `/wf-task-archive`, `$wf-task-archive`, `/skills wf-task-archive`, `/wf-command-create`, `$wf-command-create`, and `/skills wf-command-create` are **direct/compat commands**: skip the router, do NOT load `Harness/MEMORY.md`, do NOT enter WF. Claude Code and OpenCode execute direct command files; Codex uses the matching compatibility skill shim.
+`/wf-help` `$wf-help` `/skills wf-help`, `/wf-update` `$wf-update` `/skills wf-update`, `/wf-task-record` `$wf-task-record` `/skills wf-task-record`, `/wf-task-list` `$wf-task-list` `/skills wf-task-list`, `/wf-task-archive` `$wf-task-archive` `/skills wf-task-archive`, `/wf-command-create` `$wf-command-create` `/skills wf-command-create`, `/wf-ui` `$wf-ui` `/skills wf-ui` are **direct/compat commands**: skip router, skip `Harness/MEMORY.md`, never enter WF. Claude/OpenCode use command files; Codex uses shims.
 
 Do not read the whole `Harness/` tree.
 
@@ -55,8 +55,8 @@ For the full phase contract, load [lifecycle.md](specs/guides/lifecycle.md).
 - This file is a router, not a full spec.
 - If the task does not clearly match a row below, search by keywords before loading more docs.
 - project files are the only durable communication channel; chat/subagent transcript state is non-authoritative.
-- Important assumptions, decisions, blockers, evidence, and handoffs must be written to the current task's `tasks/<id>/PROGRESS.md` and `tasks/<id>/PLAN.md`, the current feature doc, `Harness/MEMORY.md`, or `Harness/memory/*` as appropriate.
-- Task records are compact by default: PLAN holds goal, decisions, scope, risks; PROGRESS holds status/next, changes, verification. Do not paste command logs, full transcripts, or broad PRDs when a link or one-line evidence entry is enough.
+- Write assumptions, decisions, blockers, evidence, and handoffs to the current task docs, feature doc, `Harness/MEMORY.md`, or `Harness/memory/*`.
+- Task records are compact by default: PLAN holds goal, decisions, scope, risks; PROGRESS holds status/next, changes, verification. Link logs/transcripts instead of pasting them.
 - Build commands, git conventions, and release notes belong in root `README.md`, not `CLAUDE.md`.
 - README rewrites are optional project-doc work. Use `wf-readme` and preserve existing public docs unless the user approves a broader restructure.
 - Code architecture belongs in [architecture.md](project/architecture.md) or the current feature doc, not `CLAUDE.md`.
@@ -107,6 +107,7 @@ Routing priority: **direct mode is the default** when no explicit WF token is pr
 | Need perpetual auto-optimization | /wf-auto, $wf-auto, /skills wf-auto (explicit user token only) | [WF-AUTO.md](specs/workflows/WF-AUTO.md), [WF-AUTO-ANGLES.md](specs/workflows/WF-AUTO-ANGLES.md), [subagents.md](specs/runtime/subagents.md), [dispatch.md](specs/runtime/dispatch.md) | perpetual loop, adaptive probe selection, dynamic risk obligations, spark search, intent checkpoint, evidence ledger; CEO never writes code |
 | Need perpetual inspiration mode | /wf-auto-spark, $wf-auto-spark, /skills wf-auto-spark (explicit user token only) | [WF-AUTO-SPARK.md](specs/workflows/WF-AUTO-SPARK.md), [WF-AUTO.md](specs/workflows/WF-AUTO.md), [subagents.md](specs/runtime/subagents.md), [dispatch.md](specs/runtime/dispatch.md) | roadmap-anchored: North Star + milestones; external spark search; <=50% deviation guard; never auto-stops |
 | Need WF-MAX mode (explicit only) | /wf-max, $wf-max, /skills wf-max (explicit user token only) | [WF-MAX.md](specs/workflows/WF-MAX.md), [WF-KERNEL.md](specs/workflows/WF-KERNEL.md), [subagents.md](specs/runtime/subagents.md), [dispatch.md](specs/runtime/dispatch.md) | /wf kernel + max safe fan-out (WF-Max-Useful default, WF-Max-Strict override) |
+| Need Harness control panel | /wf-ui, $wf-ui, /skills wf-ui (direct command) | `.claude/commands/wf-ui.md`, `.opencode/commands/wf-ui.md`; Codex shim: `.claude/skills/wf-ui/SKILL.md` | start local backend + browser UI directly; no WF/router load |
 | Need peer review | /wf-review, $wf-review, peer review, second opinion, cross-check, stuck | `.claude/skills/wf-review/SKILL.md`, `.agents/skills/wf-review/SKILL.md`, `Harness/README.md`, `.opencode/commands/wf-review.md` | peer CLI when available; otherwise installed `reviewer` role subagent; controller decides |
 | Adding harness to existing project | existing project, onboarding, migrate, bootstrap, preserve, conflict | [extension.md](specs/guides/extension.md), [PROGRESS.md](PROGRESS.md), root `README.md` and package/CI files | discovered project facts, preserved config, manual registration plan |
 | README optimization | README, docs, quickstart, install docs, architecture diagram, command table, documentation polish | root `README.md`, `.claude/skills/wf-readme/SKILL.md`, [PROGRESS.md](PROGRESS.md), [architecture.md](project/architecture.md) as needed | approved README mode, preserved sections, proposed diff plan |
@@ -162,7 +163,8 @@ Routing priority: **direct mode is the default** when no explicit WF token is pr
 | `/wf-task-list`, `$wf-task-list` | List tasks with dependency view, open tasks filter, and archive summary. Direct/compat — no Harness/MEMORY.md load. |
 | `/wf-task-archive`, `$wf-task-archive` | Archive completed/verified task capsules. Direct/compat — no Harness/MEMORY.md load. |
 | `/wf-command-create`, `$wf-command-create` | Create or modify wf-* command surfaces from `command-surface.json`. Direct/compat — creates/resumes a task capsule, no Harness/MEMORY.md load. |
+| `/wf-ui`, `$wf-ui` | Start the local Harness backend and browser control panel. Direct/compat — no Harness/MEMORY.md load. |
 
 ## Skill Commands
 
-Workflow commands: `/wf`, `/wf-max`, `/wf-auto`, `/wf-auto-spark`, `/wf-review`, `/wf-learn`, `/wf-browser`, `/wf-readme`, `/wf-remove` with matching Codex `$...` and `/skills ...` forms. They load `Harness/MEMORY.md` and follow the registered task capsule policy. `/wf-update` remains direct.
+Workflow commands: `/wf`, `/wf-max`, `/wf-auto`, `/wf-auto-spark`, `/wf-review`, `/wf-learn`, `/wf-browser`, `/wf-readme`, `/wf-remove` with matching Codex `$...` and `/skills ...` forms. They load `Harness/MEMORY.md` and follow the registered task capsule policy. `/wf-update` and `/wf-ui` remain direct.

@@ -541,6 +541,10 @@ async function main() {
   const acceptMerged = readRepeatedFlagValues(args, '--accept-merged');
   const acceptTemplate = readRepeatedFlagValues(args, '--accept-template');
   const ignoreVersion = args.includes('--ignore-version') || args.includes('--force-check');
+  const repairMode = args.includes('--repair');
+  const effectiveIgnoreVersion = ignoreVersion || repairMode;
+  const allowDowngrade = args.includes('--allow-downgrade');
+  const allowPrerelease = args.includes('--include-prerelease');
   const explicitSource = readFlagValue(args, '--source-base') || process.env.WF_SOURCE_BASE;
   let source;
   let sourceBase;
@@ -632,7 +636,7 @@ async function main() {
   const localGen = localVersion.generator || '0.0.0';
   const remoteGen = remoteVersion.generator || '0.0.0';
 
-  if (!ignoreVersion && isPrerelease(remoteGen)) {
+  if (!allowPrerelease && isPrerelease(remoteGen)) {
     if (jsonOut) {
       console.log(JSON.stringify({ status: 'up-to-date', version: localGen, remote: remoteGen, sourceBase }));
     } else {
@@ -642,27 +646,41 @@ async function main() {
   }
 
   const versionCmp = cmpSemver(remoteGen, localGen);
+  const reportDowngrade = !sourceStable;
 
-  if (!ignoreVersion && versionCmp <= 0) {
-    const reportDowngrade = !sourceStable;
+  if (versionCmp < 0 && !allowDowngrade) {
     if (jsonOut) {
       console.log(JSON.stringify({
-        status: (versionCmp < 0 && reportDowngrade) ? 'downgrade-refused' : 'up-to-date',
+        status: reportDowngrade ? 'downgrade-refused' : 'up-to-date',
         version: localGen,
         remote: remoteGen,
         sourceBase,
       }));
-    } else if (versionCmp < 0 && reportDowngrade) {
+    } else if (reportDowngrade) {
       console.log(`WARN: Remote (v${remoteGen}) is OLDER than local (v${localGen}). Downgrade refused.`);
     } else {
-      console.log(`Already up to date (v${localGen})`);
+      console.log(`Already up to date (v${localGen}). Remote ${remoteGen} is older and ignored.`);
     }
-    if (versionCmp < 0 && reportDowngrade) process.exitCode = 1;
+    if (reportDowngrade) process.exitCode = 1;
     return;
   }
 
-  if (ignoreVersion) {
-    if (!jsonOut) console.log('Version check bypassed (--ignore-version). Comparing files anyway.');
+  if (!effectiveIgnoreVersion && versionCmp <= 0) {
+    if (jsonOut) {
+      console.log(JSON.stringify({
+        status: 'up-to-date',
+        version: localGen,
+        remote: remoteGen,
+        sourceBase,
+      }));
+    } else {
+      console.log(`Already up to date (v${localGen})`);
+    }
+    return;
+  }
+
+  if (effectiveIgnoreVersion) {
+    if (!jsonOut) console.log(`Version check bypassed (${repairMode ? '--repair' : '--ignore-version'}). Comparing files anyway.`);
   }
 
   const remoteChecksums = remoteVersion.checksums || {};
@@ -760,6 +778,9 @@ async function main() {
       : 0;
     return {
       mode: 'script-first-ai-conflicts',
+      multiScopeDryRunCommand: 'node Harness/scripts/wf-update-runner.mjs --json',
+      multiScopeSafeApplyCommand: 'node Harness/scripts/wf-update-runner.mjs --apply-safe --json',
+      multiScopeFinalizeCommand: 'node Harness/scripts/wf-update-runner.mjs --finalize --json',
       dryRunJsonCommand: 'node Harness/scripts/wf-update-check.mjs --json',
       safeApplyCommand: 'node Harness/scripts/wf-update-check.mjs --apply-safe',
       strictApplyCommand: 'node Harness/scripts/wf-update-check.mjs --apply',
@@ -776,7 +797,10 @@ async function main() {
       aiMergeRequiredTruncated: truncated > 0 ? truncated : undefined,
       conflictPolicy: 'Use the script for SAFE/NEW/adopted files. For each CONFLICT file, compare local content with templateHint/remoteUrl, then record the decision with --accept-local, --accept-merged, or --accept-template. Do not hand-edit Harness/.harness-version.',
       postUpdateCommands: [
+        'node Harness/scripts/sync-host-global.mjs --json',
+        'node Harness/scripts/sync-host-global.mjs --apply --json',
         'node Harness/scripts/validate-harness.mjs',
+        'node Harness/scripts/validate-harness.mjs --manifest-audit',
         'node Harness/scripts/scan-clean.mjs --json',
       ],
       bootstrapDebtCommand: 'node Harness/scripts/validate-harness.mjs --strict',
@@ -1010,8 +1034,11 @@ async function main() {
   if (jsonOut) {
     const verbose = args.includes('--verbose') || args.includes('--full-plan');
     const jsonPlan = buildJsonPlan();
+    const effectiveStatus = repairMode && versionCmp <= 0 && !localVersion.partialUpdate
+      ? 'repair-check'
+      : (localVersion.partialUpdate ? 'partial-update' : 'update-available');
     console.log(JSON.stringify({
-      status: localVersion.partialUpdate ? 'partial-update' : 'update-available',
+      status: effectiveStatus,
       from: localGen,
       to: remoteGen,
       sourceBase,
@@ -1026,6 +1053,7 @@ async function main() {
       skipped: plan.skipped.length,
       // Token-safe by default: attach the full plan only when --verbose / --full-plan is passed.
       ...(verbose ? { plan: jsonPlan } : {}),
+      repair: repairMode || undefined,
       agent: buildAgentHints(jsonPlan),
     }, null, 2));
     return;

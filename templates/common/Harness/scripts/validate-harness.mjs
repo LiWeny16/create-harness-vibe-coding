@@ -1,17 +1,19 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
 
 const root = process.cwd();
 const args = new Set(process.argv.slice(2));
 const strict = args.has('--strict') || args.has('--post-bootstrap');
+const manifestAudit = args.has('--manifest-audit');
 
 if (args.has('--help') || args.has('-h')) {
-  console.log(`Usage: node Harness/scripts/validate-harness.mjs [--strict]
+  console.log(`Usage: node Harness/scripts/validate-harness.mjs [--strict] [--manifest-audit]
 
 Default mode checks scaffold structure, links, agents, and skills.
 --strict also fails when project fact docs still contain unresolved {{TOKEN}} placeholders.
-Literal explanatory {{...}} text is allowed.`);
+--manifest-audit cross-references ownership.manifest.json against disk: flags missing framework files (manifest-to-disk) and extra files in harness directories (disk-to-manifest).`);
   process.exit(0);
 }
 
@@ -150,8 +152,10 @@ const required = [
   'Harness/scripts/context-budget.mjs',
   'Harness/scripts/l2-cache-telemetry.mjs',
   'Harness/scripts/wf-update-check.mjs',
+  'Harness/scripts/wf-update-runner.mjs',
   'Harness/scripts/wf-remove.mjs',
   'Harness/scripts/scan-clean.mjs',
+  'Harness/scripts/sync-host-global.mjs',
   'Harness/scripts/task-state.mjs',
   'Harness/scripts/archive-tasks.mjs',
   'Harness/specs/workflows/WF-STATE.md',
@@ -262,6 +266,48 @@ function resolveMetadataPath(value) {
   return path.isAbsolute(value) ? value : path.resolve(root, value);
 }
 
+function containsPath(parent, child) {
+  const resolvedParent = path.resolve(parent);
+  const resolvedChild = path.resolve(child);
+  const rel = path.relative(resolvedParent, resolvedChild);
+  return rel === '' || (rel && !rel.startsWith('..') && !path.isAbsolute(rel));
+}
+
+function resolveUnder(base, rel) {
+  if (!rel || typeof rel !== 'string' || path.isAbsolute(rel)) return null;
+  const parts = rel.replace(/\\/g, '/').split('/').filter(Boolean);
+  if (parts.some(part => part === '..')) return null;
+  const resolved = path.resolve(base, ...parts);
+  return containsPath(base, resolved) ? resolved : null;
+}
+
+function sha256Content(content) {
+  return 'sha256-' + createHash('sha256').update(content.replace(/\r\n/g, '\n')).digest('hex');
+}
+
+function sha256File(filePath) {
+  if (!fs.existsSync(filePath)) return null;
+  return sha256Content(fs.readFileSync(filePath, 'utf8'));
+}
+
+function sourceDestForHostFile(host, file) {
+  const normalized = String(file || '').replace(/\\/g, '/');
+  if (host === 'claude') {
+    if (normalized === 'settings.json') return '.claude/settings.json';
+    if (/^(commands|skills|agents|rules)\//.test(normalized)) return `.claude/${normalized}`;
+  }
+  if (host === 'codex') {
+    if (normalized === 'config.toml') return '.codex/config.toml';
+    if (normalized === 'hooks.json') return '.codex/hooks.json';
+    if (normalized.startsWith('skills/')) return `.agents/${normalized}`;
+  }
+  if (host === 'opencode') {
+    if (normalized === 'opencode.json') return 'opencode.json';
+    if (/^(commands|agents|plugins)\//.test(normalized)) return `.opencode/${normalized}`;
+  }
+  return null;
+}
+
 function requireText(rel, text, label = text) {
   const body = read(rel);
   if (body && !body.includes(text)) errors.push(`${rel} missing ${label}`);
@@ -304,10 +350,11 @@ function validateHostGlobalTargets() {
   }
 
   const minimumFiles = {
-    claude: ['commands/wf.md', 'skills/wf/SKILL.md'],
-    codex: ['skills/wf/SKILL.md'],
-    opencode: ['commands/wf.md'],
+    claude: ['commands/wf.md', 'commands/wf-ui.md', 'skills/wf/SKILL.md', 'skills/wf-ui/SKILL.md'],
+    codex: ['skills/wf/SKILL.md', 'skills/wf-ui/SKILL.md'],
+    opencode: ['commands/wf.md', 'commands/wf-ui.md'],
   };
+  const runtimeRoot = isGlobalRuntimeRoot ? root : resolveMetadataPath(installMetadata.globalDir);
 
   for (const [host, requiredFiles] of Object.entries(minimumFiles)) {
     const target = hostGlobal.targets[host];
@@ -349,6 +396,22 @@ function validateHostGlobalTargets() {
       } catch {
         errors.push(`missing host-global ${host} copied file: ${file}`);
         continue;
+      }
+
+      const sourceDest = sourceDestForHostFile(host, file);
+      const sourcePath = sourceDest && runtimeRoot ? resolveUnder(runtimeRoot, sourceDest) : null;
+      if (!sourceDest || !sourcePath) {
+        errors.push(`host-global ${host} copied file has no runtime source mapping: ${file}`);
+        continue;
+      }
+      if (!fs.existsSync(sourcePath)) {
+        errors.push(`host-global ${host} copied file source is missing: ${file} -> ${sourceDest}`);
+        continue;
+      }
+      const sourceHash = sha256File(sourcePath);
+      const targetHash = sha256File(filePath);
+      if (sourceHash && targetHash && sourceHash !== targetHash) {
+        errors.push(`host-global ${host} copied file is stale: ${file} (source ${sourceDest})`);
       }
     }
   }
@@ -466,7 +529,7 @@ function listMarkdownFiles(rel) {
 // Reserved: _template (system), auto (auto-mode capsule)
 const TASK_NAME_RE = /^task-[a-z]+(-[a-z0-9]+){1,4}$/;
 const TASK_NAME_MAX = 46; // "task-" (5) + ≤40 chars body + 1 safety = 46
-const TASK_RESERVED = new Set(['_template', 'auto', '_archive']);
+const TASK_RESERVED = new Set(['_template', 'auto', '_archive', 'continuous']);
 const TASK_SAFE_ARCHIVE_STATUSES = new Set(['complete', 'verified', 'archived', 'abandoned', 'obsolete', 'done', 'closed', 'closeout']);
 const TASK_NEVER_ARCHIVE_STATUSES = new Set(['active', 'blocked', 'in_progress', 'running', 'pending', 'needs-user-decision']);
 const TASK_PHASE_ALIASES = new Map([
@@ -770,20 +833,146 @@ for (const rel of legacyRootSpecDocs) {
   }
 }
 
-const manifestText = read('Harness/ownership.manifest.json');
-if (manifestText) {
+function auditManifestCoverage() {
+  const manifestText = read('Harness/ownership.manifest.json');
+  if (!manifestText) {
+    errors.push('Harness/ownership.manifest.json not found — cannot run manifest audit');
+    return;
+  }
+
+  let manifest;
   try {
-    const manifest = JSON.parse(manifestText);
-    for (const entry of manifest.frameworkOwned || []) {
-      if (!entry || typeof entry.path !== 'string') continue;
-      if (!fs.existsSync(path.join(root, ...entry.path.split('/')))) {
-        errors.push(`ownership manifest frameworkOwned file missing: ${entry.path}`);
-      }
-    }
+    manifest = JSON.parse(manifestText);
   } catch (err) {
     errors.push(`Harness/ownership.manifest.json is not valid JSON: ${err.message}`);
+    return;
+  }
+
+  const frameworkOwned = manifest.frameworkOwned || [];
+  const manifestFileSet = new Set(frameworkOwned.map(e => e && e.path).filter(Boolean));
+  const preserveGlobs = manifest.preserve || [];
+  const mergeSet = new Set(manifest.merge || []);
+
+  // 1. Manifest → Disk: frameworkOwned files must exist (always checked)
+  for (const entry of frameworkOwned) {
+    if (!entry || typeof entry.path !== 'string') continue;
+    if (!fs.existsSync(path.join(root, ...entry.path.split('/')))) {
+      errors.push(`ownership manifest frameworkOwned file missing: ${entry.path}`);
+    }
+  }
+
+  // 2. Only run Disk → Manifest scan when --manifest-audit is passed
+  if (!manifestAudit) return;
+
+  // Directories that Harness framework owns (for disk→manifest scan)
+  const harnessOwnedDirs = [
+    '.claude/agents/',
+    '.claude/commands/',
+    '.claude/skills/',
+    '.claude/rules/ecc/',
+    '.opencode/agents/',
+    '.opencode/commands/',
+    '.opencode/plugins/',
+    '.agents/skills/',
+    '.codex/',
+    'Harness/scripts/',
+    'Harness/specs/',
+    'Harness/templates/',
+    'Harness/research/',
+  ];
+
+  // Root-level harness-owned files (not in subdirectories)
+  const harnessRootFiles = [
+    'opencode.json',
+    'AGENTS.md',
+    'CLAUDE.md',
+    '.claude/settings.json',
+  ];
+
+  const extraFiles = [];
+
+  // Scan harness-owned directories
+  for (const dir of harnessOwnedDirs) {
+    const dirPath = path.join(root, dir);
+    if (!fs.existsSync(dirPath)) continue;
+    scanDir(dirPath, dir, extraFiles);
+  }
+
+  // Scan root-level harness files
+  for (const rel of harnessRootFiles) {
+    const filePath = path.join(root, rel);
+    if (!fs.existsSync(filePath)) continue;
+    if (!manifestFileSet.has(rel) && !mergeSet.has(rel)) {
+      extraFiles.push(rel);
+    }
+  }
+
+  // Also scan for top-level files like .harness-version, ownership.manifest.json
+  const versionFile = 'Harness/.harness-version';
+  if (fs.existsSync(path.join(root, versionFile)) && !manifestFileSet.has(versionFile)) {
+    // .harness-version is special — always framework-owned
+  }
+  const manifestFile = 'Harness/ownership.manifest.json';
+  if (fs.existsSync(path.join(root, manifestFile)) && !manifestFileSet.has(manifestFile)) {
+    // ownership.manifest.json is special — always framework-owned
+  }
+
+  // Check if extra files are user-owned (preserve/merge) or already in manifest
+  for (const file of extraFiles) {
+    // Skip files already registered in the manifest (correctly tracked)
+    if (manifestFileSet.has(file)) continue;
+
+    const isPreserve = preserveGlobs.some(g => {
+      const re = new RegExp('^' + g.replace(/\*\*/g, '.*').replace(/\*/g, '[^/]*') + '$');
+      return re.test(file);
+    });
+    if (isPreserve || mergeSet.has(file)) continue; // User file, skip
+
+    // Check if it's in the .harness-version checksums (tracked but maybe not in manifest)
+    const checksums = (() => {
+      try { return JSON.parse(fs.readFileSync(path.join(root, 'Harness', '.harness-version'), 'utf8')).checksums || {}; }
+      catch { return {}; }
+    })();
+    const isTracked = Object.prototype.hasOwnProperty.call(checksums, file);
+
+    if (isTracked) {
+      // File is in .harness-version but NOT in ownership manifest → manifest coverage gap
+      errors.push(`manifest coverage gap: ${file} is in .harness-version checksums but NOT in ownership.manifest.json frameworkOwned`);
+    } else {
+      // File is NOT tracked at all → truly extra/stale
+      const content = (() => { try { return fs.readFileSync(path.join(root, file), 'utf8'); } catch { return ''; } })();
+      const hasHarnessMarker = /harness:|Harness\/|create-harness-vibe-coding/i.test(content);
+      if (hasHarnessMarker) {
+        errors.push(`extra harness-owned file not in manifest: ${file} (has Harness content marker — likely stale framework file)`);
+      } else {
+        // File in harness directory but no harness marker → could be user file, warn only
+        console.warn(`Warning: untracked file in harness directory: ${file} (no Harness content marker — may be user file)`);
+      }
+    }
   }
 }
+
+function scanDir(dirPath, prefix, results) {
+  let entries;
+  try { entries = fs.readdirSync(dirPath, { withFileTypes: true }); }
+  catch { return; }
+
+  for (const entry of entries) {
+    const relPath = `${prefix}${entry.name}`;
+    const fullPath = path.join(dirPath, entry.name);
+
+    if (entry.isDirectory()) {
+      scanDir(fullPath, `${relPath}/`, results);
+    } else if (entry.isFile()) {
+      // Normalize path separator
+      const normalized = relPath.replace(/\\/g, '/');
+      results.push(normalized);
+    }
+  }
+}
+
+// Run manifest audit (basic manifest→disk always; --manifest-audit adds disk→manifest)
+auditManifestCoverage();
 
 const removedHookArtifacts = [
   'Harness/HOOK_PROTOCOL.md',
@@ -1331,8 +1520,8 @@ requireText('Harness/specs/workflows/WF-AUTO.md', 'Inherited WF/WF-MAX Constrain
 requireText('Harness/specs/workflows/WF-AUTO.md', 'Mini PRD -> AC IDs -> test/validation plan -> implementer -> verifier', 'wf-auto per-cycle WF chain');
 requireText('Harness/specs/workflows/WF-AUTO.md', 'reflector PASS', 'wf-auto reflector gate');
 requireText('Harness/specs/workflows/WF-AUTO.md', 'Manual or benchmark-driven single-cycle', 'wf-auto bounded single-cycle tick contract');
-requireText('Harness/specs/workflows/WF-AUTO.md', 'Harness/tasks/auto/PLAN.md', 'wf-auto bounded tick PLAN record');
-requireText('Harness/specs/workflows/WF-AUTO.md', 'Harness/tasks/auto/PROGRESS.md', 'wf-auto bounded tick PROGRESS record');
+requireText('Harness/specs/workflows/WF-AUTO.md', 'Harness/tasks/continuous/PLAN.md', 'wf-auto bounded tick PLAN record');
+requireText('Harness/specs/workflows/WF-AUTO.md', 'Harness/tasks/continuous/PROGRESS.md', 'wf-auto bounded tick PROGRESS record');
 requireText('Harness/specs/workflows/WF-AUTO-SPARK.md', 'Inherited Execution Chain', 'wf-auto-spark inherited execution chain');
 requireText('Harness/specs/workflows/WF-AUTO-SPARK.md', 'External spark search replaces discovery only', 'wf-auto-spark discovery-only inheritance');
 requireText('Harness/specs/workflows/WF-AUTO-SPARK.md', 'reflector PASS', 'wf-auto-spark reflector gate');
@@ -1464,8 +1653,8 @@ for (const skill of cacheDisciplinedSkills) {
 }
 requireText('.claude/skills/wf-auto/SKILL.md', 'bounded test tick', 'wf-auto skill bounded tick auto capsule rule');
 requireText('.claude/skills/wf-auto/SKILL.md', 'missing auto capsule evidence', 'wf-auto skill missing auto capsule failure rule');
-requireText('.claude/skills/wf-auto/SKILL.md', 'Harness/tasks/auto/PLAN.md', 'wf-auto skill PLAN record');
-requireText('.claude/skills/wf-auto/SKILL.md', 'Harness/tasks/auto/PROGRESS.md', 'wf-auto skill PROGRESS record');
+requireText('.claude/skills/wf-auto/SKILL.md', 'Harness/tasks/continuous/PLAN.md', 'wf-auto skill PLAN record');
+requireText('.claude/skills/wf-auto/SKILL.md', 'Harness/tasks/continuous/PROGRESS.md', 'wf-auto skill PROGRESS record');
 requireText('.claude/skills/wf-auto/SKILL.md', 'evidence ledger path/summary', 'wf-auto skill return evidence ledger path');
 if (fs.existsSync(path.join(root, '.claude/skills/wf-browser/SKILL.md'))) {
   requireText('.claude/skills/wf-browser/SKILL.md', 'Cache Discipline', 'wf-browser skill cache discipline');
@@ -1485,9 +1674,11 @@ if (fs.existsSync(path.join(root, '.claude/skills/wf-browser/SKILL.md'))) {
 // Direct command checks
 requireText('Harness/README.md', '/wf-update', 'wf-update direct command reference');
 requireText('.claude/commands/wf-update.md', 'Do not invoke a skill', 'wf-update direct command boundary');
+requireText('Harness/README.md', '| `/wf-ui`, `$wf-ui` |', 'wf-ui direct command row');
 for (const rel of ['.claude/commands/wf-update.md', '.opencode/commands/wf-update.md']) {
   requireText(rel, '## Cache Discipline', `${rel} cache discipline`);
   requireText(rel, 'agent.safeApplyCommand', `${rel} safe apply step`);
+  requireText(rel, 'wf-update-runner.mjs', `${rel} multi-scope update runner`);
   requireText(rel, '--apply-safe', `${rel} apply-safe command`);
   requireText(rel, 'agent.aiMergeRequired', `${rel} AI merge step`);
   requireText(rel, '--accept-local', `${rel} accept-local decision`);
@@ -1495,16 +1686,35 @@ for (const rel of ['.claude/commands/wf-update.md', '.opencode/commands/wf-updat
   requireText(rel, '--accept-template', `${rel} accept-template decision`);
   requireText(rel, '--finalize', `${rel} finalize command`);
   requireText(rel, 'strict `--apply` only when', `${rel} strict apply boundary`);
+  requireText(rel, 'sync-host-global.mjs', `${rel} host-global sync step`);
   requireText(rel, '## Return', `${rel} return contract`);
   requireText(rel, 'agent.releaseHighlights', `${rel} release highlights summary`);
   requireText(rel, 'releaseNotes.highlights', `${rel} release notes fallback`);
+}
+for (const rel of ['.claude/commands/wf-ui.md', '.opencode/commands/wf-ui.md']) {
+  requireText(rel, 'direct command', `${rel} wf-ui direct command classification`);
+  requireText(rel, 'Do not invoke a skill', `${rel} wf-ui direct no-skill boundary`);
+  requireText(rel, 'create-harness-vibe-coding wf-ui', `${rel} wf-ui direct CLI launch`);
+  requireText(rel, '--host 127.0.0.1', `${rel} wf-ui loopback host`);
+  requireText(rel, '--open', `${rel} wf-ui browser open flag`);
+  forbidText(rel, 'workflow command', `${rel} wf-ui workflow routing`);
+  forbidText(rel, 'Load `CLAUDE.md`', `${rel} wf-ui old router preload`);
+  forbidText(rel, 'Harness/tasks/task-wf-ui-control-0729/STATE.json', `${rel} wf-ui old task-state preload`);
+}
+for (const rel of ['.claude/skills/wf-ui/SKILL.md', '.agents/skills/wf-ui/SKILL.md']) {
+  requireText(rel, 'Codex compatibility shim', `${rel} wf-ui Codex compatibility shim`);
+  requireText(rel, 'direct command', `${rel} wf-ui direct command statement`);
+  requireText(rel, 'create-harness-vibe-coding wf-ui', `${rel} wf-ui direct CLI launch`);
+  forbidText(rel, 'Harness/tasks/task-wf-ui-control-0729/STATE.json', `${rel} wf-ui old task-state preload`);
 }
 requireText('Harness/scripts/wf-update-check.mjs', 'releaseHighlights', 'wf-update-check release highlights metadata');
 requireText('Harness/scripts/wf-update-check.mjs', 'updateReportRequired', 'wf-update-check user update report requirement');
 requireText('.claude/commands/wf-help.md', 'direct command', 'wf-help wf-update direct command classification');
 requireText('.claude/commands/wf-help.md', '$wf-help', 'wf-help Codex compatibility usage');
 requireText('.claude/commands/wf-help.md', '/wf-browser', 'wf-help built-in browser workflow row');
+requireText('.claude/commands/wf-help.md', '| `/wf-ui` | direct command |', 'wf-help wf-ui direct command row');
 requireText('.opencode/commands/wf-help.md', '/wf-browser', 'OpenCode wf-help built-in browser workflow row');
+requireText('.opencode/commands/wf-help.md', '| `/wf-ui` | direct command |', 'OpenCode wf-help wf-ui direct command row');
 
 // wf-update skill must NOT claim Claude Code /wf-update as a skill invocation
 // (allow mentions in the description/body that say "direct command" — those are correct)

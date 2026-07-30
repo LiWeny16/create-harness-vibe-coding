@@ -21,7 +21,7 @@ test('npm pack includes core and optional templates', () => {
   assert.match(output, /CHANGELOG\.md/);
   assert.doesNotMatch(output, /templates\/common\/docs\/README\.md|templates\\common\\docs\\README\.md/);
   assert.match(output, /templates\/common\/\.claude\/commands\/wf-help\.md|templates\\common\\.claude\\commands\\wf-help\.md/);
-  for (const command of ['wf', 'wf-max', 'wf-auto', 'wf-auto-spark', 'wf-review', 'wf-learn', 'wf-browser', 'wf-readme', 'wf-remove']) {
+  for (const command of ['wf', 'wf-max', 'wf-auto', 'wf-auto-spark', 'wf-review', 'wf-learn', 'wf-browser', 'wf-readme', 'wf-remove', 'wf-ui']) {
     const escaped = command.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     assert.match(output, new RegExp(`templates/common/\\.claude/commands/${escaped}\\.md|templates\\\\common\\\\.claude\\\\commands\\\\${escaped}\\.md`));
     assert.match(output, new RegExp(`templates/common/\\.opencode/commands/${escaped}\\.md|templates\\\\common\\\\.opencode\\\\commands\\\\${escaped}\\.md`));
@@ -30,6 +30,11 @@ test('npm pack includes core and optional templates', () => {
   assert.doesNotMatch(output, /templates\/optional\/skills\/[^/\\]+\/\.claude\/commands|templates\\optional\\skills\\[^/\\]+\\.claude\\commands/);
   assert.doesNotMatch(output, /commands\/wf\.toml|commands\\wf\.toml/);
   assert.match(output, /src\/generator\.js|src\\generator\.js/);
+  assert.match(output, /src\/wf-ui-server\/server\.mjs|src\\wf-ui-server\\server\.mjs/);
+  assert.match(output, /src\/wf-ui-server\/pty-adapter\.mjs|src\\wf-ui-server\\pty-adapter\.mjs/);
+  assert.match(output, /src\/ui\/dist\/index\.html|src\\ui\\dist\\index\.html/);
+  assert.match(output, /src\/ui\/dist\/assets\/index-[^/\\]+\.js|src\\ui\\dist\\assets\\index-[^/\\]+\.js/);
+  assert.match(output, /src\/ui\/dist\/assets\/index-[^/\\]+\.css|src\\ui\\dist\\assets\\index-[^/\\]+\.css/);
   assert.match(output, /README-CN\.md/);
   assert.doesNotMatch(output, /\.agents\.bak|\\agents\.bak/);
 });

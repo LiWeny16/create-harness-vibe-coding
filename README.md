@@ -86,6 +86,7 @@ When in doubt, use `/wf-help` (or `$wf-help` in Codex). It returns the full comm
 | `/wf-review [focus]` | You need a second opinion, peer review, or a pre-release check | Uses a peer CLI when available, otherwise an independent reviewer role, and classifies findings by severity | `/wf-review focus on security and data loss` |
 | `/wf-learn` | The same mistakes keep recurring or a completed task needs to become reusable knowledge | Consolidates context, memory, and project lessons | `/wf-learn summarize why this task needed rework` |
 | `/wf-browser <task>` | Browser smoke tests, E2E, screenshots, forms, or UI verification | Uses a real browser and returns screenshots, traces, and evidence | `/wf-browser verify login and checkout` |
+| `/wf-ui` | Open the Harness control panel for task management, workflow graphs, agents, and settings | Directly starts the local backend and browser UI on 127.0.0.1 | `/wf-ui` |
 | `/wf-readme <task>` | README, install docs, architecture diagrams, or project docs need work | Preserves facts while improving structure, setup, and usage guidance | `/wf-readme improve the Chinese README` |
 | `/wf-update` | Harness is already installed and needs an update | Compares versions, applies safe changes, leaves semantic conflicts to the agent, and reports release highlights from the changelog metadata | `/wf-update` |
 | `/wf-remove` | You need to uninstall Harness | Removes safe files, preserves user data, and asks before touching conflicts | `/wf-remove` |

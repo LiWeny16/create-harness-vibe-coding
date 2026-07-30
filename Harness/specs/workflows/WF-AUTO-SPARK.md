@@ -28,7 +28,7 @@ For task-state writes, CEO provides concise bullets and decisions; task-scribe f
 
 ## Startup: Roadmap Declaration
 
-Before first spark cycle, CEO MUST declare a roadmap. This is written to `Harness/tasks/auto/SPARK-ROADMAP.md`.
+Before first spark cycle, CEO MUST declare a roadmap. This is written to `Harness/tasks/continuous/SPARK-ROADMAP.md`.
 
 ### Roadmap Format
 
@@ -239,15 +239,15 @@ Re-Anchor Gate (every preset interval)
 
 ## Task Capsule & Recording
 
-WF-AUTO-SPARK uses a dedicated task capsule at `Harness/tasks/auto/`. Shared with `/wf-auto` — same capsule, different operational mode.
+WF-AUTO-SPARK uses a dedicated task capsule at `Harness/tasks/continuous/`. Shared with `/wf-auto` — same capsule, different operational mode.
 
 ### Capsule Structure
 
 | File | Purpose | Updated |
 |------|---------|---------|
-| `Harness/tasks/auto/SPARK-ROADMAP.md` | North Star + milestones + deviation log | At startup + every milestone change |
-| `Harness/tasks/auto/PLAN.md` | Current cycle's change spec (write set, acceptance criteria) | Before each implementation |
-| `Harness/tasks/auto/PROGRESS.md` | Cycle log, value reflections, cumulative stats, evidence | After each cycle |
+| `Harness/tasks/continuous/SPARK-ROADMAP.md` | North Star + milestones + deviation log | At startup + every milestone change |
+| `Harness/tasks/continuous/PLAN.md` | Current cycle's change spec (write set, acceptance criteria) | Before each implementation |
+| `Harness/tasks/continuous/PROGRESS.md` | Cycle log, value reflections, cumulative stats, evidence | After each cycle |
 | `Harness/PROGRESS.md` | Global task index — active spark session status | At session start, milestone, and stop |
 
 ### Heartbeat Protocol (per cycle, in `PROGRESS.md`)
@@ -314,9 +314,9 @@ This replaces the broken `/wf-auto` auto-continue. No silent drift across sessio
 | File | Purpose |
 |------|---------|
 | `Harness/specs/workflows/WF-AUTO-SPARK.md` | This spec |
-| `Harness/tasks/auto/SPARK-ROADMAP.md` | Active roadmap (created at startup) |
-| `Harness/tasks/auto/PLAN.md` | Per-cycle change spec |
-| `Harness/tasks/auto/PROGRESS.md` | Cycle log, heartbeat, evidence ledger |
+| `Harness/tasks/continuous/SPARK-ROADMAP.md` | Active roadmap (created at startup) |
+| `Harness/tasks/continuous/PLAN.md` | Per-cycle change spec |
+| `Harness/tasks/continuous/PROGRESS.md` | Cycle log, heartbeat, evidence ledger |
 | `Harness/PROGRESS.md` | Global task index linkage |
 | `.claude/skills/wf-auto-spark/SKILL.md` | Claude Code skill loader |
 | `.agents/skills/wf-auto-spark/SKILL.md` | Codex skill loader (mirror) |
