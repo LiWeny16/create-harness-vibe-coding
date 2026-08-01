@@ -1,0 +1,18 @@
+{
+  "sessionId": "61425c25-c1c6-4bde-b708-fbf46a3f6358",
+  "peerId": "claude-3c253229",
+  "runtime": "claude",
+  "agentKind": "main",
+  "role": "Main Agent",
+  "objective": "Workflow agent",
+  "taskId": null,
+  "workflowMode": "wf",
+  "parentAgentId": null,
+  "parentNodeId": null,
+  "cwd": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding",
+  "projectRoot": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding",
+  "nodeHomeRel": "Harness/a2a/nodes/61425c25-c1c6-4bde-b708-fbf46a3f6358",
+  "graphContextPath": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding\\Harness\\a2a\\workflow-map.json",
+  "createdAt": "2026-07-31T17:28:24.445Z",
+  "updatedAt": "2026-07-31T17:28:24.446Z"
+}

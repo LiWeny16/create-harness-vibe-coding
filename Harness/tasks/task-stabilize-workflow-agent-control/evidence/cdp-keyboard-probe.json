@@ -1,0 +1,297 @@
+{
+  "url": "redacted",
+  "apiSnapshot": {
+    "nodes": [
+      {
+        "id": "session-00ed70b9-7953-4388-84cc-873cc9e70491",
+        "status": "saved",
+        "runtime": "claude",
+        "canOpenTerminal": false,
+        "canSendInput": false,
+        "canOpenTranscript": true
+      },
+      {
+        "id": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+        "status": "saved",
+        "runtime": "codex",
+        "canOpenTerminal": false,
+        "canSendInput": false,
+        "canOpenTranscript": true
+      }
+    ],
+    "liveSessions": []
+  },
+  "openCount": 2,
+  "terminalProbe": {
+    "activeElement": "<textarea class=\"xterm-helper-textarea\" aria-label=\"Terminal input\" aria-multiline=\"false\" autocorrect=\"off\" autocapitalize=\"off\" spellcheck=\"false\" tabindex=\"0\" readonly=\"\" style=\"left: 13.1951px; top: 256px; width: 6.59756px; height: 16px; line-height: 16px; z-index: -5;\"></textarea>",
+    "rows": "-communicate）\n  - Subagent：0\n\n  ┌───────────────────┬────────┬────────────┬─────────┐\n  │       节点        │ 运行时 │    角色    │  状态   │\n  ├───────────────────┼────────┼────────────┼─────────┤\n  │ 00ed70b9 (本节点) │ claude │ Main Agent │ running │\n  ├───────────────────┼────────┼────────────┼─────────┤\n  │ 0bc880b0          │ codex  │ Main Agent │ running │\n  └───────────────────┴────────┴────────────┴─────────┘\n\n  两个节点之间是双向互通通道，刚才的打招呼消息也已成功投递。目前没有子 agent。\n\n✻ Crunched for 7s\n\n\n❯ 看看 codex agent 有没有回复\n\n",
+    "events": [
+      {
+        "phase": "capture",
+        "targetName": "window",
+        "type": "keydown",
+        "key": "F12",
+        "code": "F12",
+        "defaultPrevented": false,
+        "cancelBubble": false,
+        "target": "xterm-helper-textarea",
+        "active": "xterm-helper-textarea"
+      },
+      {
+        "phase": "capture",
+        "targetName": "document",
+        "type": "keydown",
+        "key": "F12",
+        "code": "F12",
+        "defaultPrevented": false,
+        "cancelBubble": false,
+        "target": "xterm-helper-textarea",
+        "active": "xterm-helper-textarea"
+      },
+      {
+        "phase": "capture",
+        "targetName": "window",
+        "type": "keyup",
+        "key": "F12",
+        "code": "F12",
+        "defaultPrevented": false,
+        "cancelBubble": false,
+        "target": "xterm-helper-textarea",
+        "active": "xterm-helper-textarea"
+      },
+      {
+        "phase": "capture",
+        "targetName": "document",
+        "type": "keyup",
+        "key": "F12",
+        "code": "F12",
+        "defaultPrevented": false,
+        "cancelBubble": false,
+        "target": "xterm-helper-textarea",
+        "active": "xterm-helper-textarea"
+      },
+      {
+        "phase": "bubble",
+        "targetName": "document",
+        "type": "keyup",
+        "key": "F12",
+        "code": "F12",
+        "defaultPrevented": false,
+        "cancelBubble": false,
+        "target": "xterm-helper-textarea",
+        "active": "xterm-helper-textarea"
+      },
+      {
+        "phase": "bubble",
+        "targetName": "window",
+        "type": "keyup",
+        "key": "F12",
+        "code": "F12",
+        "defaultPrevented": false,
+        "cancelBubble": false,
+        "target": "xterm-helper-textarea",
+        "active": "xterm-helper-textarea"
+      },
+      {
+        "phase": "capture",
+        "targetName": "window",
+        "type": "keydown",
+        "key": "a",
+        "code": "KeyA",
+        "defaultPrevented": false,
+        "cancelBubble": false,
+        "target": "xterm-helper-textarea",
+        "active": "xterm-helper-textarea"
+      },
+      {
+        "phase": "capture",
+        "targetName": "document",
+        "type": "keydown",
+        "key": "a",
+        "code": "KeyA",
+        "defaultPrevented": false,
+        "cancelBubble": false,
+        "target": "xterm-helper-textarea",
+        "active": "xterm-helper-textarea"
+      },
+      {
+        "phase": "capture",
+        "targetName": "window",
+        "type": "keyup",
+        "key": "a",
+        "code": "KeyA",
+        "defaultPrevented": false,
+        "cancelBubble": false,
+        "target": "xterm-helper-textarea",
+        "active": "xterm-helper-textarea"
+      },
+      {
+        "phase": "capture",
+        "targetName": "document",
+        "type": "keyup",
+        "key": "a",
+        "code": "KeyA",
+        "defaultPrevented": false,
+        "cancelBubble": false,
+        "target": "xterm-helper-textarea",
+        "active": "xterm-helper-textarea"
+      },
+      {
+        "phase": "bubble",
+        "targetName": "document",
+        "type": "keyup",
+        "key": "a",
+        "code": "KeyA",
+        "defaultPrevented": false,
+        "cancelBubble": false,
+        "target": "xterm-helper-textarea",
+        "active": "xterm-helper-textarea"
+      },
+      {
+        "phase": "bubble",
+        "targetName": "window",
+        "type": "keyup",
+        "key": "a",
+        "code": "KeyA",
+        "defaultPrevented": false,
+        "cancelBubble": false,
+        "target": "xterm-helper-textarea",
+        "active": "xterm-helper-textarea"
+      },
+      {
+        "phase": "capture",
+        "targetName": "window",
+        "type": "keydown",
+        "key": "b",
+        "code": "KeyB",
+        "defaultPrevented": false,
+        "cancelBubble": false,
+        "target": "xterm-helper-textarea",
+        "active": "xterm-helper-textarea"
+      },
+      {
+        "phase": "capture",
+        "targetName": "document",
+        "type": "keydown",
+        "key": "b",
+        "code": "KeyB",
+        "defaultPrevented": false,
+        "cancelBubble": false,
+        "target": "xterm-helper-textarea",
+        "active": "xterm-helper-textarea"
+      },
+      {
+        "phase": "capture",
+        "targetName": "window",
+        "type": "keyup",
+        "key": "b",
+        "code": "KeyB",
+        "defaultPrevented": false,
+        "cancelBubble": false,
+        "target": "xterm-helper-textarea",
+        "active": "xterm-helper-textarea"
+      },
+      {
+        "phase": "capture",
+        "targetName": "document",
+        "type": "keyup",
+        "key": "b",
+        "code": "KeyB",
+        "defaultPrevented": false,
+        "cancelBubble": false,
+        "target": "xterm-helper-textarea",
+        "active": "xterm-helper-textarea"
+      },
+      {
+        "phase": "bubble",
+        "targetName": "document",
+        "type": "keyup",
+        "key": "b",
+        "code": "KeyB",
+        "defaultPrevented": false,
+        "cancelBubble": false,
+        "target": "xterm-helper-textarea",
+        "active": "xterm-helper-textarea"
+      },
+      {
+        "phase": "bubble",
+        "targetName": "window",
+        "type": "keyup",
+        "key": "b",
+        "code": "KeyB",
+        "defaultPrevented": false,
+        "cancelBubble": false,
+        "target": "xterm-helper-textarea",
+        "active": "xterm-helper-textarea"
+      },
+      {
+        "phase": "capture",
+        "targetName": "window",
+        "type": "keydown",
+        "key": "c",
+        "code": "KeyC",
+        "defaultPrevented": false,
+        "cancelBubble": false,
+        "target": "xterm-helper-textarea",
+        "active": "xterm-helper-textarea"
+      },
+      {
+        "phase": "capture",
+        "targetName": "document",
+        "type": "keydown",
+        "key": "c",
+        "code": "KeyC",
+        "defaultPrevented": false,
+        "cancelBubble": false,
+        "target": "xterm-helper-textarea",
+        "active": "xterm-helper-textarea"
+      },
+      {
+        "phase": "capture",
+        "targetName": "window",
+        "type": "keyup",
+        "key": "c",
+        "code": "KeyC",
+        "defaultPrevented": false,
+        "cancelBubble": false,
+        "target": "xterm-helper-textarea",
+        "active": "xterm-helper-textarea"
+      },
+      {
+        "phase": "capture",
+        "targetName": "document",
+        "type": "keyup",
+        "key": "c",
+        "code": "KeyC",
+        "defaultPrevented": false,
+        "cancelBubble": false,
+        "target": "xterm-helper-textarea",
+        "active": "xterm-helper-textarea"
+      },
+      {
+        "phase": "bubble",
+        "targetName": "document",
+        "type": "keyup",
+        "key": "c",
+        "code": "KeyC",
+        "defaultPrevented": false,
+        "cancelBubble": false,
+        "target": "xterm-helper-textarea",
+        "active": "xterm-helper-textarea"
+      },
+      {
+        "phase": "bubble",
+        "targetName": "window",
+        "type": "keyup",
+        "key": "c",
+        "code": "KeyC",
+        "defaultPrevented": false,
+        "cancelBubble": false,
+        "target": "xterm-helper-textarea",
+        "active": "xterm-helper-textarea"
+      }
+    ],
+    "xtermClasses": "terminal xterm xterm-dom-renderer-owner-1 enable-mouse-events focus",
+    "textareaDisabled": false
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-terminal-input-control",
+  "status": "active",
+  "mode": "wf",
+  "tier": "WF-Standard",
+  "phase": "test-red",
+  "gate": "AC-GATE passed",
+  "updatedAt": "2026-08-01T00:00:00.000Z",
+  "activeQuestion": null,
+  "nextAction": "Add AC-linked regression tests for terminal input control, then implement controlled terminal input/drop behavior.",
+  "acceptance": [
+    {
+      "id": "AC-001",
+      "status": "pending",
+      "text": "Terminal-generated OSC color query responses do not leak into Codex/user input while normal typed input still reaches the PTY."
+    },
+    {
+      "id": "AC-002",
+      "status": "pending",
+      "text": "Terminal copy/paste shortcuts and toolbar actions are owned by WF UI, including Ctrl+Shift+C copying terminal selection instead of opening browser developer tools."
+    },
+    {
+      "id": "AC-003",
+      "status": "pending",
+      "text": "Dragging files onto a terminal uploads them into a session drop directory and inserts usable server-side paths into terminal input."
+    }
+  ],
+  "links": {
+    "dependsOn": [],
+    "blocks": [],
+    "related": [
+      "task-stabilize-workflow-agent-control"
+    ]
+  },
+  "queues": {
+    "ready": [],
+    "running": [],
+    "blocked": [],
+    "done": []
+  },
+  "workItems": [],
+  "dispatchLedger": [],
+  "decisions": [
+    "Keep xterm.js as the terminal renderer; make WF UI own input routing, clipboard, file drops, and read-only embedded terminal behavior."
+  ],
+  "risks": [
+    "Browser drag/drop cannot expose original local absolute paths; dropped files must be uploaded to a session-local drop directory."
+  ],
+  "artifacts": []
+}

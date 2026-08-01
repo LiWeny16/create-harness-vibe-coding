@@ -1,0 +1,72 @@
+{
+  "url": "http://127.0.0.1:64890/workflow?token=<redacted>",
+  "browser": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+  "viewport": {
+    "width": 1440,
+    "height": 1000
+  },
+  "evidenceDir": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding\\Harness\\tasks\\task-standardize-workflow-nodes\\evidence\\cdp-final-20260801-193244",
+  "startedAt": "2026-08-01T11:32:44.711Z",
+  "checks": {
+    "plusButton": {
+      "box": {
+        "x": 705,
+        "y": 64.25,
+        "left": 705,
+        "top": 64.25,
+        "right": 735,
+        "bottom": 94.25,
+        "width": 30,
+        "height": 30,
+        "cx": 720,
+        "cy": 79.25
+      },
+      "topElement": {
+        "tag": "SPAN",
+        "testId": "workflow-toast",
+        "path": "",
+        "text": "Workflow ready",
+        "className": ""
+      }
+    }
+  },
+  "ac": {},
+  "selectors": {},
+  "timings": {
+    "readyMs": 2015
+  },
+  "networkErrors": [],
+  "runtimeExceptions": [],
+  "consoleMessages": [],
+  "graphPuts": [],
+  "longTasks": [],
+  "createdNodeIds": [],
+  "cleanup": [],
+  "notes": [],
+  "failedAt": "2026-08-01T11:32:47.224Z",
+  "error": {
+    "message": "Create node button is not topmost at its center",
+    "stack": "Error: Create node button is not topmost at its center\n    at assert (D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding\\Harness\\tasks\\task-standardize-workflow-nodes\\evidence\\cdp-final-workflow-check.cjs:59:17)\n    at run (D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding\\Harness\\tasks\\task-standardize-workflow-nodes\\evidence\\cdp-final-workflow-check.cjs:435:5)",
+    "extra": {
+      "box": {
+        "x": 705,
+        "y": 64.25,
+        "left": 705,
+        "top": 64.25,
+        "right": 735,
+        "bottom": 94.25,
+        "width": 30,
+        "height": 30,
+        "cx": 720,
+        "cy": 79.25
+      },
+      "topElement": {
+        "tag": "SPAN",
+        "testId": "workflow-toast",
+        "path": "",
+        "text": "Workflow ready",
+        "className": ""
+      }
+    }
+  }
+}

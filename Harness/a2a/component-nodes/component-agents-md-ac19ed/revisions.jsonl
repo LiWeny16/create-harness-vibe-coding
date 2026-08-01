@@ -1,0 +1,2 @@
+{"action":"create","nodeId":"component-agents-md-ac19ed","type":"file","revision":1,"previousRevision":null,"statePath":"Harness/a2a/component-nodes/component-agents-md-ac19ed/state.json","recoverable":true,"createdAt":"2026-08-01T10:31:26.994Z"}
+{"action":"delete","nodeId":"component-agents-md-ac19ed","type":"file","revision":1,"previousRevision":1,"statePath":"Harness/a2a/component-nodes/component-agents-md-ac19ed/state.json","recoverable":true,"createdAt":"2026-08-01T10:32:39.708Z"}

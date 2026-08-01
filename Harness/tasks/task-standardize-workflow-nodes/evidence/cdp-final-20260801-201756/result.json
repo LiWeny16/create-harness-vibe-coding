@@ -1,0 +1,120 @@
+{
+  "url": "http://127.0.0.1:50407/workflow?token=<redacted>",
+  "browser": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+  "viewport": {
+    "width": 1440,
+    "height": 1000
+  },
+  "evidenceDir": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding\\Harness\\tasks\\task-standardize-workflow-nodes\\evidence\\cdp-final-20260801-201756",
+  "startedAt": "2026-08-01T12:17:56.738Z",
+  "checks": {
+    "plusButton": {
+      "box": {
+        "x": 1242,
+        "y": 64.25,
+        "left": 1242,
+        "top": 64.25,
+        "right": 1272,
+        "bottom": 94.25,
+        "width": 30,
+        "height": 30,
+        "cx": 1257,
+        "cy": 79.25
+      },
+      "topElement": {
+        "tag": "path",
+        "testId": "workflow-create-node",
+        "path": "",
+        "text": "",
+        "className": "[object SVGAnimatedString]"
+      }
+    },
+    "plusMenuKinds": [
+      "agent",
+      "diagram",
+      "file",
+      "markdown"
+    ],
+    "canvasContextPoint": {
+      "point": {
+        "x": 1180,
+        "y": 760,
+        "topTestId": "workflow-canvas",
+        "tag": "DIV"
+      },
+      "topElement": {
+        "tag": "DIV",
+        "testId": "workflow-canvas",
+        "path": "",
+        "text": "context -> contextcontent -> contextcontent -> contextCodexMAIN AGENTrunningCodexWorkflow agent Open TerminalClaude Code",
+        "className": "react-flow__pane draggable"
+      }
+    },
+    "canvasContextSyntheticDispatch": {
+      "targetTag": "DIV",
+      "targetTestId": "workflow-canvas",
+      "defaultPrevented": true
+    },
+    "canvasContextMode": "synthetic-dom-contextmenu-fallback",
+    "canvasContextActions": [
+      "create-node",
+      "canvas-config",
+      "fit-view"
+    ],
+    "explorerRowDrift": {
+      "topDelta": 0,
+      "before": {
+        "x": 17,
+        "y": 478,
+        "left": 17,
+        "top": 478,
+        "right": 297,
+        "bottom": 506,
+        "width": 280,
+        "height": 28,
+        "cx": 157,
+        "cy": 492
+      },
+      "after": {
+        "x": 17,
+        "y": 478,
+        "left": 17,
+        "top": 478,
+        "right": 297,
+        "bottom": 506,
+        "width": 280,
+        "height": 28,
+        "cx": 157,
+        "cy": 492
+      },
+      "topElement": {
+        "tag": "SPAN",
+        "testId": "workspace-tree-item",
+        "path": "package.json",
+        "text": "package.json",
+        "className": "workspace-tree-name"
+      }
+    },
+    "packagePreview": "package.jsonpackage.jsonLoading preview...file1.4 KBInsert to canvas"
+  },
+  "ac": {},
+  "selectors": {},
+  "timings": {
+    "readyMs": 2829
+  },
+  "networkErrors": [],
+  "runtimeExceptions": [],
+  "consoleMessages": [],
+  "graphPuts": [],
+  "longTasks": [],
+  "createdNodeIds": [],
+  "cleanup": [],
+  "notes": [
+    "Native CDP right-click did not open canvas menu: Timed out waiting for canvas context menu native right-click"
+  ],
+  "failedAt": "2026-08-01T12:18:30.750Z",
+  "error": {
+    "message": "Timed out waiting for preview insert node",
+    "stack": "Error: Timed out waiting for preview insert node\n    at waitFor (D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding\\Harness\\tasks\\task-standardize-workflow-nodes\\evidence\\cdp-final-workflow-check.cjs:174:9)\n    at async run (D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding\\Harness\\tasks\\task-standardize-workflow-nodes\\evidence\\cdp-final-workflow-check.cjs:577:25)"
+  }
+}

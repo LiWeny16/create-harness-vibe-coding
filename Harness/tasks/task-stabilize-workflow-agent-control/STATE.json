@@ -1,0 +1,143 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-stabilize-workflow-agent-control",
+  "status": "active",
+  "mode": "wf",
+  "tier": "WF-Full",
+  "phase": "verified",
+  "gate": "AC-GATE passed",
+  "updatedAt": "2026-07-31T12:42:00.000Z",
+  "activeQuestion": null,
+  "nextAction": "Ready for user review; restart existing wf-ui server to pick up backend/UI changes and re-test the live project",
+  "acceptance": [
+    {
+      "id": "AC-001",
+      "status": "passed",
+      "text": "Snapshot/control-plane graph reads are authoritative, fresh, and not overwritten by stale browser-local graph state."
+    },
+    {
+      "id": "AC-002",
+      "status": "passed",
+      "text": "wf-ui-control create/describe path is covered through Harness control APIs; subagents get read-only snapshot tokens instead of stale local fallback."
+    },
+    {
+      "id": "AC-003",
+      "status": "passed",
+      "text": "Stopping a live session removes it from live registry, persists saved state, updates graph state, and disables stop via snapshot control."
+    },
+    {
+      "id": "AC-004",
+      "status": "passed",
+      "text": "Saved/not-managed graph nodes can be deleted from the workflow graph while transcript/session history is preserved."
+    },
+    {
+      "id": "AC-005",
+      "status": "passed",
+      "text": "Browser/API verification covers Workflow and Agents consistency, delete affordance, icons, and live-resource unknown values."
+    },
+    {
+      "id": "AC-006",
+      "status": "passed",
+      "text": "Runtime identity uses Harness environment variables and node init files instead of injected terminal bootstrap prompts."
+    },
+    {
+      "id": "AC-007",
+      "status": "passed",
+      "text": "PTY resource usage distinguishes unknown values from zero and avoids runtime detection stalls in session listing."
+    },
+    {
+      "id": "AC-008",
+      "status": "passed",
+      "text": "Runtime brand icons and colors render across workflow, agents, settings, and task surfaces."
+    },
+    {
+      "id": "AC-009",
+      "status": "passed",
+      "text": "Workflow nodes expose usable top/right/bottom/left source and target handles that remain clickable after canvas zoom."
+    },
+    {
+      "id": "AC-010",
+      "status": "passed",
+      "text": "wf-bridge records bidirectional session input and opens a transcript panel from the edge label."
+    },
+    {
+      "id": "AC-011",
+      "status": "passed",
+      "text": "Edge closed-loop verification covers bidirectional bridge messages, all-select delete, stop, icons, settings picker, and screenshots."
+    }
+  ],
+  "links": {
+    "dependsOn": [],
+    "blocks": [],
+    "related": [
+      "task-upgrade-workflow-agent-canvas"
+    ]
+  },
+  "queues": {
+    "ready": [],
+    "running": [],
+    "blocked": [],
+    "done": [
+      "D1",
+      "D2",
+      "D3"
+    ]
+  },
+  "workItems": [
+    {
+      "id": "D1",
+      "agent": "codebase-explorer",
+      "status": "done",
+      "writeSet": []
+    },
+    {
+      "id": "D2",
+      "agent": "architect",
+      "status": "done",
+      "writeSet": []
+    },
+    {
+      "id": "D3",
+      "agent": "test-writer",
+      "status": "done",
+      "writeSet": [
+        "tests/anti-drift.test.js",
+        "src/wf-ui-server/__tests__/*.test.mjs"
+      ]
+    }
+  ],
+  "dispatchLedger": [],
+  "decisions": [
+    "Treat live/saved/stopped/deleted workflow nodes as one backend-owned state model instead of independent UI guesses",
+    "Managed Main Agent -> Subagent control must be tested through Harness wf-ui-control/session APIs, not built-in model subagents",
+    "Subagents receive a read-only graph token for fresh snapshot/describe access; only Main Agents receive full control tokens",
+    "Node bootstrap identity must come from Harness env/node init, not from a UI-sent first prompt",
+    "Bridge messages are durable JSONL records keyed by session pair and displayed through a shared wf-bridge panel"
+  ],
+  "risks": [
+    "Live PTY stop/delete can leave durable saved nodes and graph nodes disagreeing",
+    "A2A graph snapshot may be cached or not invalidated fast enough for agents to perceive edge updates",
+    "E2E control tests must avoid launching expensive real CLIs unless explicitly isolated"
+  ],
+  "artifacts": [
+    "src/wf-ui-server/control-plane-token.mjs",
+    "src/wf-ui-server/a2a-store.mjs",
+    "src/wf-ui-server/server.mjs",
+    "src/wf-ui-server/bridge-store.mjs",
+    "src/wf-ui-server/pty-adapter.mjs",
+    "Harness/scripts/wf-ui-control.mjs",
+    "templates/common/Harness/scripts/wf-ui-control.mjs",
+    "src/ui/src/components/WorkflowRoute.tsx",
+    "src/ui/src/components/AgentsRoute.tsx",
+    "src/ui/src/components/SettingsRoute.tsx",
+    "src/ui/src/components/RuntimePicker.tsx",
+    "src/ui/src/runtimeBrand.tsx",
+    "src/ui/src/index.css",
+    "src/wf-ui-server/__tests__/server.integration.test.mjs",
+    "src/wf-ui-server/__tests__/a2a-store.test.mjs",
+    "tests/anti-drift.test.js",
+    "Harness/tasks/task-stabilize-workflow-agent-control/evidence/browser-closed-loop-result.json",
+    "Harness/tasks/task-stabilize-workflow-agent-control/evidence/browser-closed-loop-workflow.png",
+    "Harness/tasks/task-stabilize-workflow-agent-control/evidence/browser-settings-runtime-icon.png"
+  ]
+}

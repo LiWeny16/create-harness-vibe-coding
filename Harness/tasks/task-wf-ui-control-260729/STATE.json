@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-wf-ui-control-260729",
+  "status": "blocked",
+  "mode": "wf",
+  "tier": "none",
+  "phase": "blocked",
+  "gate": "SUPERSEDED",
+  "updatedAt": "2026-07-31T11:27:00.000Z",
+  "activeQuestion": null,
+  "nextAction": "Superseded by task-upgrade-workflow-agent-canvas and task-stabilize-workflow-agent-control.",
+  "acceptance": [
+    {
+      "id": "AC-001",
+      "text": "Produce an architecture plan for $wf-ui covering backend server, frontend app, task capsule API, PTY terminal bridge, settings, and security boundaries.",
+      "status": "pending"
+    },
+    {
+      "id": "AC-002",
+      "text": "Define the first implementable MVP slice with file locations, dependency strategy, validation commands, and rollback boundaries.",
+      "status": "pending"
+    },
+    {
+      "id": "AC-003",
+      "text": "Decide whether $wf-ui is a command, skill, script, or combined command+skill surface, and list all mirrors/templates/tests that must be updated.",
+      "status": "pending"
+    },
+    {
+      "id": "AC-004",
+      "text": "Keep task capsule file state as the durable source of truth; UI state must be derived or explicitly synchronized.",
+      "status": "pending"
+    },
+    {
+      "id": "AC-005",
+      "text": "Record observability limits for cross-runtime peer agents and their nested subagents.",
+      "status": "pending"
+    }
+  ],
+  "queues": {
+    "ready": [
+      "control-plane-architecture",
+      "command-surface-decision"
+    ],
+    "running": [],
+    "blocked": [],
+    "done": []
+  },
+  "dispatchLedger": [],
+  "decisions": [],
+  "risks": [],
+  "artifacts": [],
+  "links": {
+    "dependsOn": [],
+    "blocks": [],
+    "related": [
+      "task-upgrade-workflow-agent-canvas",
+      "task-stabilize-workflow-agent-control"
+    ]
+  }
+}

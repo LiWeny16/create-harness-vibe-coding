@@ -1,0 +1,418 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-define-workflow-context-surface",
+  "status": "complete",
+  "mode": "wf-max",
+  "tier": "WF-Full",
+  "phase": "final-cdp-complete",
+  "gate": "COMPLETE",
+  "updatedAt": "2026-08-01T04:56:00.000+08:00",
+  "activeQuestion": null,
+  "nextAction": "Done. Final Chrome/CDP evidence is in verification-screenshots/wf-ui-final-cdp-1785531092323.",
+  "acceptance": [
+    {
+      "id": "AC-001",
+      "status": "passed",
+      "text": "WF UI shows a default-left workspace Explorer that can collapse/float and supports lazy tree browsing, multi-select, keyboard shortcuts, right-click actions, drag/drop, and immediate disk-backed file operations."
+    },
+    {
+      "id": "AC-002",
+      "status": "passed",
+      "text": "Workspace file operations are root-bounded, recorded in a backend operation log, and reversible through the global undo stack with fast delete/restore behavior."
+    },
+    {
+      "id": "AC-003",
+      "status": "passed",
+      "text": "Dragging workspace files/folders, external files, or pasted images into any terminal inserts usable references and stores uploaded files under categorized Harness/user-files directories."
+    },
+    {
+      "id": "AC-004",
+      "status": "passed",
+      "text": "One agent session maps to one PTY; multiple terminal views can observe it, and the active terminal view owns input/resize without breaking existing terminal output, copy/paste, stop/start, or graph controls."
+    },
+    {
+      "id": "AC-005",
+      "status": "passed",
+      "text": "Double-click node settings allow hot editing of role, custom role, prompt/objective, model, provider placeholder, cwd, env, permissions, and launch policy, with restart-required status and restart action for launch-affecting changes."
+    },
+    {
+      "id": "AC-006",
+      "status": "passed",
+      "text": "Trusted built-in component nodes include editable Markdown and Excalidraw-style diagram nodes with backend-owned state, observable inputs/outputs, and agent-readable workflow map context."
+    },
+    {
+      "id": "AC-007",
+      "status": "passed",
+      "text": "CDP/Chrome full-regression validation proves original WF UI functions still work and new flows pass happy-path, edge-case, and UI-display checks with no unexpected console or network failures."
+    }
+  ],
+  "links": {
+    "dependsOn": [],
+    "blocks": [],
+    "related": [
+      "task-terminal-input-control",
+      "task-upgrade-workflow-agent-canvas",
+      "task-stabilize-workflow-agent-control"
+    ]
+  },
+  "queues": {
+    "ready": [],
+    "running": [],
+    "blocked": [],
+    "done": [
+      "m1-red-backend-tests",
+      "m1-red-frontend-cdp-tests",
+      "m1-backend-hardening-red",
+      "m1-frontend-implementation",
+      "m1-backend-hardening-implementation",
+      "m1-implementation",
+      "m2-red-backend-tests",
+      "m2-red-frontend-tests",
+      "m2-backend-implementation",
+      "m2-frontend-implementation",
+      "m2-node-settings-skills",
+      "m3-red-backend-tests",
+      "m3-red-frontend-tests",
+      "m3-backend-implementation",
+      "m3-frontend-implementation",
+      "m3-component-nodes",
+      "final-cdp-regression"
+    ]
+  },
+  "workItems": [
+    {
+      "id": "m1-red-backend-tests",
+      "status": "done",
+      "milestone": "M1",
+      "ownerRole": "test-writer-backend",
+      "goal": "Write failing backend/API/session tests for workspace tree, file operations, undo, user-file uploads, terminal context insertion, and input ownership."
+    },
+    {
+      "id": "m1-red-frontend-cdp-tests",
+      "status": "done",
+      "milestone": "M1",
+      "ownerRole": "test-writer-frontend",
+      "goal": "Write failing UI/CDP acceptance tests for Explorer display, file operations, terminal drag/paste insertion, Shift-drag absolute paths, and regression coverage."
+    },
+    {
+      "id": "m1-implementation",
+      "status": "done",
+      "milestone": "M1",
+      "ownerRole": "backend-workspace-worker, backend-session-worker, frontend-explorer-worker, frontend-terminal-worker",
+      "goal": "Implement Explorer, recoverable file operations, user-file storage, terminal context insertion, and active PTY input owner after RED tests exist."
+    },
+    {
+      "id": "m1-frontend-implementation",
+      "status": "done",
+      "milestone": "M1",
+      "ownerRole": "frontend-explorer-worker, frontend-terminal-worker",
+      "goal": "Implement /workflow Explorer, terminal drag/drop/paste/copy helpers, and visible input-owner switching against M1 frontend/CDP RED tests."
+    },
+    {
+      "id": "m1-backend-hardening-red",
+      "status": "done",
+      "milestone": "M1",
+      "ownerRole": "test-writer-backend",
+      "goal": "Add RED regression tests for backend reviewer findings: malformed base64, upload limits, symlink/junction escape, stale undo conflicts, corrupted trash source, concurrent revision uniqueness, Windows reserved names, and context-input persistence ordering."
+    },
+    {
+      "id": "m1-backend-hardening-implementation",
+      "status": "done",
+      "milestone": "M1",
+      "ownerRole": "backend-workspace-worker, backend-session-worker",
+      "goal": "Harden backend workspace/user-files/context-input implementation until all hardening RED tests pass without regressing existing backend tests."
+    },
+    {
+      "id": "m2-node-settings-skills",
+      "status": "done",
+      "milestone": "M2",
+      "ownerRole": "frontend-node-settings-worker, backend-session-worker",
+      "goal": "Implement richer agent node settings, restart-required workflow, and manual/automatic skill equipment."
+    },
+    {
+      "id": "m2-red-backend-tests",
+      "status": "done",
+      "milestone": "M2",
+      "ownerRole": "test-writer-backend",
+      "goal": "Write RED backend/API tests for node config persistence, restart-required state, skills policy, snapshot exposure, and restart endpoint."
+    },
+    {
+      "id": "m2-red-frontend-tests",
+      "status": "done",
+      "milestone": "M2",
+      "ownerRole": "test-writer-frontend",
+      "goal": "Write RED Playwright tests for workflow-node-settings UI, editable config, skills controls, restart workflow, and responsive layout."
+    },
+    {
+      "id": "m2-backend-implementation",
+      "status": "done",
+      "milestone": "M2",
+      "ownerRole": "backend-session-worker",
+      "goal": "Implement node config persistence, restart-required state, skills policy, snapshot exposure, restart endpoint, and start-path config reuse."
+    },
+    {
+      "id": "m2-frontend-implementation",
+      "status": "done",
+      "milestone": "M2",
+      "ownerRole": "frontend-node-settings-worker",
+      "goal": "Implement workflow-node-settings panel with editable config, skill chips/policies, save/restart flow, tooltips, and responsive layout."
+    },
+    {
+      "id": "m3-component-nodes",
+      "status": "done",
+      "milestone": "M3",
+      "ownerRole": "component-node-worker",
+      "goal": "Implement trusted Markdown and Excalidraw-style component nodes with backend-owned state and agent-readable workflow context."
+    },
+    {
+      "id": "m3-red-backend-tests",
+      "status": "done",
+      "milestone": "M3",
+      "ownerRole": "test-writer-backend",
+      "goal": "Write RED backend/API tests for component-node creation, state revisioning, stale rejection, snapshot exposure, and backend state refs."
+    },
+    {
+      "id": "m3-red-frontend-tests",
+      "status": "done",
+      "milestone": "M3",
+      "ownerRole": "test-writer-frontend",
+      "goal": "Write RED Playwright tests for Markdown/Excalidraw component node creation, editing, persistence, stale error handling, and UI layout."
+    },
+    {
+      "id": "m3-backend-implementation",
+      "status": "done",
+      "milestone": "M3",
+      "ownerRole": "component-node-worker",
+      "goal": "Implement component-node backend store, APIs, revisioned state, snapshot refs, graph refs, stale rejection, and state-path hardening."
+    },
+    {
+      "id": "m3-frontend-implementation",
+      "status": "done",
+      "milestone": "M3",
+      "ownerRole": "component-node-worker",
+      "goal": "Implement component-node toolbar, Markdown node, Excalidraw-compatible node, save/error flows, ReactFlow handles, layout, and dependency wiring."
+    },
+    {
+      "id": "final-cdp-regression",
+      "status": "done",
+      "milestone": "Final",
+      "ownerRole": "cdp-verifier",
+      "goal": "Run Chrome/CDP full-regression matrix for existing and new WF UI flows."
+    }
+  ],
+  "dispatchLedger": [
+    {
+      "id": "m1-red-backend-tests",
+      "agentId": "019fb98f-758d-7822-9ebd-d24f7332cfd5",
+      "nickname": "Ohm",
+      "status": "running",
+      "writeSet": [
+        "src/wf-ui-server/__tests__/workspace-store.test.mjs",
+        "src/wf-ui-server/__tests__/workspace-api.test.mjs",
+        "src/wf-ui-server/__tests__/terminal-context.test.mjs",
+        "src/wf-ui-server/__tests__/node-config.test.mjs"
+      ],
+      "forbidden": "No implementation, frontend, dependency, or task-state edits."
+    },
+    {
+      "id": "m1-backend-implementation",
+      "agentId": "019fb996-c9ab-7521-8404-40fd29431f5a",
+      "nickname": "Bernoulli",
+      "status": "done",
+      "writeSet": [
+        "src/wf-ui-server/workspace-store.mjs",
+        "src/wf-ui-server/server.mjs",
+        "src/wf-ui-server/session-registry.mjs",
+        "src/wf-ui-server/terminal-store.mjs"
+      ],
+      "forbidden": "No frontend, dependency, task-state, or unrelated backend edits."
+    },
+    {
+      "id": "m1-red-frontend-cdp-tests",
+      "agentId": "019fb98f-b52b-7fc2-a494-41d7fde22b5e",
+      "nickname": "Pascal",
+      "status": "done",
+      "writeSet": [
+        "src/ui/e2e/**",
+        "src/ui/playwright.config.ts",
+        "tests/e2e-wf-ui-m1.test.mjs",
+        "scripts/cdp/**"
+      ],
+      "forbidden": "No implementation, backend source/test, dependency, or task-state edits."
+    },
+    {
+      "id": "m1-frontend-implementation",
+      "agentId": "019fb999-437d-7662-8fcc-53704a6ba375",
+      "nickname": "Socrates",
+      "status": "running",
+      "writeSet": [
+        "src/ui/package.json",
+        "src/ui/pnpm-lock.yaml",
+        "src/ui/src/components/WorkflowRoute.tsx",
+        "src/ui/src/components/TerminalDrawer.tsx",
+        "src/ui/src/components/WorkspaceExplorerPanel.tsx",
+        "src/ui/src/terminalControl.ts",
+        "src/ui/src/types.ts",
+        "src/ui/src/index.css",
+        "src/ui/src/i18n/translations.ts"
+      ],
+      "forbidden": "No backend, task-state, unrelated frontend, M2 node settings, or M3 component-node edits."
+    },
+    {
+      "id": "m1-backend-hardening-red",
+      "agentId": "019fb9a3-3b6d-7d41-9279-4e4e48a5e852",
+      "nickname": "Harvey",
+      "status": "done",
+      "writeSet": [
+        "src/wf-ui-server/__tests__/workspace-store-hardening.test.mjs",
+        "src/wf-ui-server/__tests__/workspace-api-hardening.test.mjs",
+        "src/wf-ui-server/__tests__/terminal-context-hardening.test.mjs"
+      ],
+      "forbidden": "No implementation, frontend, dependency, or task-state edits."
+    },
+    {
+      "id": "m1-backend-hardening-implementation",
+      "agentId": "019fb9a9-6dab-7613-b180-052deee9f7e7",
+      "nickname": "Leibniz",
+      "status": "done",
+      "writeSet": [
+        "src/wf-ui-server/workspace-store.mjs",
+        "src/wf-ui-server/server.mjs",
+        "src/wf-ui-server/session-registry.mjs"
+      ],
+      "forbidden": "No frontend, tests, dependency, task-state, or unrelated backend edits unless a hardening test has a clear impossible expectation."
+    },
+    {
+      "id": "m2-red-backend-tests",
+      "agentId": "019fb9b0-95e4-74c0-b0b4-e1ff7caf1db1",
+      "nickname": "Russell",
+      "status": "done",
+      "writeSet": [
+        "src/wf-ui-server/__tests__/node-config-api.test.mjs",
+        "src/wf-ui-server/__tests__/session-config.test.mjs"
+      ],
+      "forbidden": "No implementation, frontend, dependency, or task-state edits."
+    },
+    {
+      "id": "m2-red-frontend-tests",
+      "agentId": "019fb9b0-d9b0-7e43-994f-a6e9dcac2c74",
+      "nickname": "Pasteur",
+      "status": "done",
+      "writeSet": [
+        "src/ui/e2e/wf-ui-m2-node-settings.spec.ts",
+        "src/ui/e2e/**"
+      ],
+      "forbidden": "No implementation, backend, package, dependency, or task-state edits."
+    },
+    {
+      "id": "m2-backend-implementation",
+      "agentId": "019fb9b9-a43a-75d1-a40b-4d55140e7c0f",
+      "nickname": "Descartes",
+      "status": "done",
+      "writeSet": [
+        "src/wf-ui-server/server.mjs",
+        "src/wf-ui-server/session-registry.mjs",
+        "src/wf-ui-server/a2a-store.mjs",
+        "src/wf-ui-server/node-config-store.mjs"
+      ],
+      "forbidden": "No frontend, tests, dependency, task-state, or unrelated backend edits."
+    },
+    {
+      "id": "m2-frontend-implementation",
+      "agentId": "019fb9b9-f2d2-7fc2-8a10-87e2cc548bec",
+      "nickname": "Meitner",
+      "status": "done",
+      "writeSet": [
+        "src/ui/src/components/WorkflowRoute.tsx",
+        "src/ui/src/components/WorkflowNodeSettingsPanel.tsx",
+        "src/ui/src/types.ts",
+        "src/ui/src/index.css",
+        "src/ui/src/i18n/translations.ts"
+      ],
+      "forbidden": "No backend, package, dependency, task-state, or M3 component-node edits."
+    },
+    {
+      "id": "m3-red-backend-tests",
+      "agentId": "019fb9c5-f377-7572-ab7d-4a90996c3ac9",
+      "nickname": "Pauli",
+      "status": "done",
+      "writeSet": [
+        "src/wf-ui-server/__tests__/component-node-api.test.mjs",
+        "src/wf-ui-server/__tests__/component-node-store.test.mjs"
+      ],
+      "forbidden": "No implementation, frontend, package, dependency, or task-state edits."
+    },
+    {
+      "id": "m3-red-frontend-tests",
+      "agentId": "019fb9c6-31d0-7290-b42b-9044175f6a52",
+      "nickname": "Nietzsche",
+      "status": "done",
+      "writeSet": [
+        "src/ui/e2e/wf-ui-m3-component-nodes.spec.ts",
+        "src/ui/e2e/**"
+      ],
+      "forbidden": "No implementation, backend, package, dependency, or task-state edits."
+    },
+    {
+      "id": "m3-backend-implementation",
+      "agentId": "019fb9cb-a795-72b3-93da-ae15d8f2e4d6",
+      "nickname": "Bacon",
+      "status": "done",
+      "writeSet": [
+        "src/wf-ui-server/component-node-store.mjs",
+        "src/wf-ui-server/server.mjs",
+        "src/wf-ui-server/a2a-store.mjs",
+        "src/wf-ui-server/session-registry.mjs"
+      ],
+      "forbidden": "No frontend, package, dependency, tests, task-state, or unrelated backend edits."
+    },
+    {
+      "id": "m3-frontend-implementation",
+      "agentId": "019fb9cc-0fae-74a0-9ba4-fd63afd8ceb0",
+      "nickname": "Chandrasekhar",
+      "status": "done",
+      "writeSet": [
+        "src/ui/package.json",
+        "src/ui/pnpm-lock.yaml",
+        "src/ui/src/components/WorkflowRoute.tsx",
+        "src/ui/src/components/WorkflowComponentNode.tsx",
+        "src/ui/src/components/MarkdownComponentNode.tsx",
+        "src/ui/src/components/ExcalidrawComponentNode.tsx",
+        "src/ui/src/types.ts",
+        "src/ui/src/index.css",
+        "src/ui/src/i18n/translations.ts"
+      ],
+      "forbidden": "No backend, tests, task-state, arbitrary component loading, or unrelated frontend edits."
+    }
+  ],
+  "decisions": [
+    "Pause terminal-input implementation while the broader WF UI product direction is clarified.",
+    "Use a fixed-left workspace explorer surface by default, with collapse/floating behavior.",
+    "File references and uploads should be accepted by any terminal surface, not only the drawer terminal.",
+    "Agent node settings may be edited while a node is live, but changes that affect runtime launch must show restart-required state and provide a restart action.",
+    "Explore generic React component nodes and an Excalidraw-like diagram node as first-class workflow map node types, with backend-owned state as the only source of truth.",
+    "Workspace Explorer file operations should write to disk immediately and support fast compensating undo via backend event records.",
+    "Terminal drop insertion supports both tag and path formats; Shift-drag inserts an absolute path.",
+    "Folder references default to @folder(path), with a later context bundle action.",
+    "Component nodes start with trusted built-ins, including editable Markdown nodes with WYSIWYG and source modes.",
+    "Global undo includes filesystem operations through backend compensating actions.",
+    "Terminal input uses one active input owner per PTY session; any terminal can acquire ownership on focus, drag/drop, or paste.",
+    "Excalidraw ships first as a dedicated trusted built-in component node before generic third-party component loading.",
+    "Markdown nodes initially store backend-owned content under Harness/a2a/component-nodes/.",
+    "Use react-complex-tree for the M1 Explorer because it already covers controlled tree behavior, keyboard navigation, multi-select, drag/drop, rename, and accessibility.",
+    "Use @mdxeditor/editor for the M3 Markdown node because backend state can remain plain Markdown while the UI supports WYSIWYG and source-oriented editing.",
+    "Use @excalidraw/excalidraw for the M3 diagram node as a trusted built-in component backed by backend scene JSON.",
+    "Agent nodes gain skill equipment fields: skills, skillPolicy, contextSources, capabilities, role, customRole, prompt, provider, model, cwd, env, permissions, and launchPolicy.",
+    "Default node skill assignment is auto-managed by the main agent/control plane from role/task, with user-visible manual override.",
+    "Implementation is split into M1 Explorer/terminal context, M2 node settings/skills, M3 trusted component nodes, then final CDP stabilization."
+  ],
+  "risks": [
+    "Workspace file references, external file uploads, pasted images, and terminal input are different data paths and should not be collapsed into one mechanism.",
+    "Adding file/folder nodes directly to the ReactFlow graph changes the workflow graph model; a fixed explorer panel may satisfy the default-left requirement with lower graph risk.",
+    "Custom provider support affects runtime detection, launch arguments, settings persistence, and security boundaries.",
+    "Markdown and Excalidraw dependencies add bundle weight and editor integration risk, so they are deferred to M3 after the Explorer/terminal foundation is green.",
+    "Recoverable filesystem undo is data-loss sensitive and must be proven with traversal denial, overwrite conflict, stale revision, and large delete tests before UI polish.",
+    "M1 backend reviewer found high/medium stability issues in base64 validation, upload bounds, symlink/junction escape protection, arbitrary opId undo safety, trash-source trust, concurrent revisions, Windows reserved filenames, and context-input write ordering; M1 backend is not stable until hardening tests and fixes pass."
+  ],
+  "artifacts": []
+}

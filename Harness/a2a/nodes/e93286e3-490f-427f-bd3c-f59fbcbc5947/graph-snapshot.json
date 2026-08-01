@@ -1,0 +1,2135 @@
+{
+  "schemaVersion": 1,
+  "version": 214,
+  "nodes": [
+    {
+      "nodeId": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+      "sessionId": "993f290b-64ab-432c-86ab-895036fe87de",
+      "kind": "terminal-session",
+      "agentKind": "main",
+      "runtime": "claude",
+      "taskId": null,
+      "cwd": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding",
+      "status": "stopped",
+      "label": "claude main agent",
+      "position": {
+        "x": 500,
+        "y": 170
+      },
+      "width": 238,
+      "height": 118
+    },
+    {
+      "nodeId": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+      "sessionId": "c11ff9dc-2c1d-4d7c-9246-7e9af3a785c5",
+      "kind": "terminal-session",
+      "agentKind": "main",
+      "runtime": "codex",
+      "taskId": null,
+      "cwd": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding",
+      "status": "stopped",
+      "label": "codex main agent",
+      "position": {
+        "x": 935.8252572898798,
+        "y": 201.477487135506
+      },
+      "width": 238,
+      "height": 118
+    },
+    {
+      "id": "component-m3-diagram-32557d",
+      "nodeId": "component-m3-diagram-32557d",
+      "kind": "component-node",
+      "type": "excalidraw",
+      "title": "M3 Diagram",
+      "position": {
+        "x": 860.3442734589757,
+        "y": -195.67166582750633
+      },
+      "revision": 1,
+      "statePath": "Harness/a2a/component-nodes/component-m3-diagram-32557d/state.json",
+      "stateRef": {
+        "path": "Harness/a2a/component-nodes/component-m3-diagram-32557d/state.json",
+        "revision": 1
+      },
+      "config": {
+        "componentType": "excalidraw",
+        "editable": true,
+        "backendSourceOfTruth": true
+      }
+    },
+    {
+      "id": "component-m3-notes-754d0d",
+      "nodeId": "component-m3-notes-754d0d",
+      "kind": "component-node",
+      "type": "markdown",
+      "title": "M3 Notes",
+      "position": {
+        "x": 549.7272727272727,
+        "y": 391.8181818181818
+      },
+      "revision": 1,
+      "statePath": "Harness/a2a/component-nodes/component-m3-notes-754d0d/state.json",
+      "stateRef": {
+        "path": "Harness/a2a/component-nodes/component-m3-notes-754d0d/state.json",
+        "revision": 1
+      },
+      "config": {
+        "componentType": "markdown",
+        "editable": true,
+        "backendSourceOfTruth": true
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-1785562732091",
+      "from": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+      "to": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+      "source": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+      "target": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+      "relation": "context -> context",
+      "offset": 0
+    },
+    {
+      "id": "manual-component-m3-diagram-32557d-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-1785578516691",
+      "from": "component-m3-diagram-32557d",
+      "to": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+      "source": "component-m3-diagram-32557d",
+      "target": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+      "relation": "content -> context",
+      "sourceHandle": "content",
+      "targetHandle": "context",
+      "offset": 0
+    }
+  ],
+  "positions": {
+    "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+      "x": 935.8252572898798,
+      "y": 201.477487135506
+    },
+    "session-61425c25-c1c6-4bde-b708-fbf46a3f6358": {
+      "x": 500,
+      "y": 170
+    },
+    "session-a1b0a9a3-4a50-49e6-9718-52bbb6841c71": {
+      "x": 495.32930137919516,
+      "y": 214.03801556758853
+    },
+    "session-3d0ab2ff-84b8-43c4-b991-edc4fc20a96d": {
+      "x": -86.6717850287908,
+      "y": 167.93857965451056
+    },
+    "session-12d0640d-7720-4984-850a-a31e9f3637c6": {
+      "x": 534.3570057581574,
+      "y": 175.4971209213052
+    },
+    "component-m3-diagram-32557d": {
+      "x": 860.3442734589757,
+      "y": -195.67166582750633
+    },
+    "component-m3-notes-754d0d": {
+      "x": 549.7272727272727,
+      "y": 391.8181818181818
+    }
+  },
+  "undoStack": [
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 444.4158267727512,
+          "y": 204.51446941790073
+        },
+        "session-61425c25-c1c6-4bde-b708-fbf46a3f6358": {
+          "x": 677.0019193857966,
+          "y": 258.6410748560461
+        },
+        "session-a1b0a9a3-4a50-49e6-9718-52bbb6841c71": {
+          "x": 507.3396692612647,
+          "y": 187.3483091629894
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-1785518923948",
+          "source": "session-a1b0a9a3-4a50-49e6-9718-52bbb6841c71",
+          "target": "session-56b534c0-9c68-4bab-b32d-1a4bb97cfea5",
+          "label": "wf-bridge",
+          "offset": -59.202615925848036
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 444.4158267727512,
+          "y": 204.51446941790073
+        },
+        "session-61425c25-c1c6-4bde-b708-fbf46a3f6358": {
+          "x": 677.0019193857966,
+          "y": 258.6410748560461
+        },
+        "session-a1b0a9a3-4a50-49e6-9718-52bbb6841c71": {
+          "x": 517.3483091629894,
+          "y": 125.96198443241147
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-1785518923948",
+          "source": "session-a1b0a9a3-4a50-49e6-9718-52bbb6841c71",
+          "target": "session-56b534c0-9c68-4bab-b32d-1a4bb97cfea5",
+          "label": "wf-bridge",
+          "offset": -59.202615925848036
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 444.4158267727512,
+          "y": 204.51446941790073
+        },
+        "session-61425c25-c1c6-4bde-b708-fbf46a3f6358": {
+          "x": 677.0019193857966,
+          "y": 258.6410748560461
+        },
+        "session-a1b0a9a3-4a50-49e6-9718-52bbb6841c71": {
+          "x": 512.0103678820695,
+          "y": 168.66551467977004
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-1785518923948",
+          "source": "session-a1b0a9a3-4a50-49e6-9718-52bbb6841c71",
+          "target": "session-56b534c0-9c68-4bab-b32d-1a4bb97cfea5",
+          "label": "wf-bridge",
+          "offset": -59.202615925848036
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 444.4158267727512,
+          "y": 204.51446941790073
+        },
+        "session-61425c25-c1c6-4bde-b708-fbf46a3f6358": {
+          "x": 677.0019193857966,
+          "y": 258.6410748560461
+        },
+        "session-a1b0a9a3-4a50-49e6-9718-52bbb6841c71": {
+          "x": 516.0138238427595,
+          "y": 192.01900778379428
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-1785518923948",
+          "source": "session-a1b0a9a3-4a50-49e6-9718-52bbb6841c71",
+          "target": "session-56b534c0-9c68-4bab-b32d-1a4bb97cfea5",
+          "label": "wf-bridge",
+          "offset": -59.202615925848036
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 444.4158267727512,
+          "y": 204.51446941790073
+        },
+        "session-61425c25-c1c6-4bde-b708-fbf46a3f6358": {
+          "x": 677.0019193857966,
+          "y": 258.6410748560461
+        },
+        "session-a1b0a9a3-4a50-49e6-9718-52bbb6841c71": {
+          "x": 495.32930137919516,
+          "y": 214.03801556758853
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-1785518923948",
+          "source": "session-3d0ab2ff-84b8-43c4-b991-edc4fc20a96d",
+          "target": "session-12d0640d-7720-4984-850a-a31e9f3637c6",
+          "label": "wf-bridge",
+          "offset": -59.202615925848036
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 444.4158267727512,
+          "y": 204.51446941790073
+        },
+        "session-61425c25-c1c6-4bde-b708-fbf46a3f6358": {
+          "x": 677.0019193857966,
+          "y": 258.6410748560461
+        },
+        "session-a1b0a9a3-4a50-49e6-9718-52bbb6841c71": {
+          "x": 495.32930137919516,
+          "y": 214.03801556758853
+        },
+        "session-3d0ab2ff-84b8-43c4-b991-edc4fc20a96d": {
+          "x": -86.6717850287908,
+          "y": 167.93857965451056
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-1785518923948",
+          "source": "session-3d0ab2ff-84b8-43c4-b991-edc4fc20a96d",
+          "target": "session-12d0640d-7720-4984-850a-a31e9f3637c6",
+          "label": "wf-bridge",
+          "offset": -59.202615925848036
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 444.4158267727512,
+          "y": 204.51446941790073
+        },
+        "session-61425c25-c1c6-4bde-b708-fbf46a3f6358": {
+          "x": 677.0019193857966,
+          "y": 258.6410748560461
+        },
+        "session-a1b0a9a3-4a50-49e6-9718-52bbb6841c71": {
+          "x": 495.32930137919516,
+          "y": 214.03801556758853
+        },
+        "session-3d0ab2ff-84b8-43c4-b991-edc4fc20a96d": {
+          "x": -86.6717850287908,
+          "y": 167.93857965451056
+        },
+        "session-12d0640d-7720-4984-850a-a31e9f3637c6": {
+          "x": 534.3570057581574,
+          "y": 175.4971209213052
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-1785518923948",
+          "source": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+          "target": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "label": "wf-bridge",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": -59.202615925848036
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 444.4158267727512,
+          "y": 204.51446941790073
+        },
+        "session-61425c25-c1c6-4bde-b708-fbf46a3f6358": {
+          "x": 677.0019193857966,
+          "y": 258.6410748560461
+        },
+        "session-a1b0a9a3-4a50-49e6-9718-52bbb6841c71": {
+          "x": 495.32930137919516,
+          "y": 214.03801556758853
+        },
+        "session-3d0ab2ff-84b8-43c4-b991-edc4fc20a96d": {
+          "x": -86.6717850287908,
+          "y": 167.93857965451056
+        },
+        "session-12d0640d-7720-4984-850a-a31e9f3637c6": {
+          "x": 534.3570057581574,
+          "y": 175.4971209213052
+        }
+      },
+      "edges": []
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 444.4158267727512,
+          "y": 204.51446941790073
+        },
+        "session-61425c25-c1c6-4bde-b708-fbf46a3f6358": {
+          "x": 677.0019193857966,
+          "y": 258.6410748560461
+        },
+        "session-a1b0a9a3-4a50-49e6-9718-52bbb6841c71": {
+          "x": 495.32930137919516,
+          "y": 214.03801556758853
+        },
+        "session-3d0ab2ff-84b8-43c4-b991-edc4fc20a96d": {
+          "x": -86.6717850287908,
+          "y": 167.93857965451056
+        },
+        "session-12d0640d-7720-4984-850a-a31e9f3637c6": {
+          "x": 534.3570057581574,
+          "y": 175.4971209213052
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-1785562732091",
+          "source": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+          "target": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "label": "context -> context",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 0
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 444.4158267727512,
+          "y": 204.51446941790073
+        },
+        "session-61425c25-c1c6-4bde-b708-fbf46a3f6358": {
+          "x": 677.0019193857966,
+          "y": 258.6410748560461
+        },
+        "session-a1b0a9a3-4a50-49e6-9718-52bbb6841c71": {
+          "x": 495.32930137919516,
+          "y": 214.03801556758853
+        },
+        "session-3d0ab2ff-84b8-43c4-b991-edc4fc20a96d": {
+          "x": -86.6717850287908,
+          "y": 167.93857965451056
+        },
+        "session-12d0640d-7720-4984-850a-a31e9f3637c6": {
+          "x": 534.3570057581574,
+          "y": 175.4971209213052
+        },
+        "component-m3-diagram-32557d": {
+          "x": 260,
+          "y": 420
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-1785562732091",
+          "source": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+          "target": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "label": "context -> context",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 0
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 444.4158267727512,
+          "y": 204.51446941790073
+        },
+        "session-61425c25-c1c6-4bde-b708-fbf46a3f6358": {
+          "x": 677.0019193857966,
+          "y": 258.6410748560461
+        },
+        "session-a1b0a9a3-4a50-49e6-9718-52bbb6841c71": {
+          "x": 495.32930137919516,
+          "y": 214.03801556758853
+        },
+        "session-3d0ab2ff-84b8-43c4-b991-edc4fc20a96d": {
+          "x": -86.6717850287908,
+          "y": 167.93857965451056
+        },
+        "session-12d0640d-7720-4984-850a-a31e9f3637c6": {
+          "x": 534.3570057581574,
+          "y": 175.4971209213052
+        },
+        "component-m3-diagram-32557d": {
+          "x": 260,
+          "y": 420
+        },
+        "component-m3-notes-754d0d": {
+          "x": 620,
+          "y": 420
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-1785562732091",
+          "source": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+          "target": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "label": "context -> context",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 0
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 444.4158267727512,
+          "y": 204.51446941790073
+        },
+        "session-61425c25-c1c6-4bde-b708-fbf46a3f6358": {
+          "x": 677.0019193857966,
+          "y": 258.6410748560461
+        },
+        "session-a1b0a9a3-4a50-49e6-9718-52bbb6841c71": {
+          "x": 495.32930137919516,
+          "y": 214.03801556758853
+        },
+        "session-3d0ab2ff-84b8-43c4-b991-edc4fc20a96d": {
+          "x": -86.6717850287908,
+          "y": 167.93857965451056
+        },
+        "session-12d0640d-7720-4984-850a-a31e9f3637c6": {
+          "x": 534.3570057581574,
+          "y": 175.4971209213052
+        },
+        "component-m3-diagram-32557d": {
+          "x": 260,
+          "y": 420
+        },
+        "component-m3-notes-754d0d": {
+          "x": 620,
+          "y": 420
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-1785562732091",
+          "source": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+          "target": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "label": "context -> context",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 0
+        },
+        {
+          "id": "manual-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-component-m3-diagram-32557d-1785562977040",
+          "source": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "target": "component-m3-diagram-32557d",
+          "label": "bottom -> selection",
+          "sourceHandle": "bottom",
+          "targetHandle": "selection",
+          "offset": 0
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 444.4158267727512,
+          "y": 204.51446941790073
+        },
+        "session-61425c25-c1c6-4bde-b708-fbf46a3f6358": {
+          "x": 677.0019193857966,
+          "y": 258.6410748560461
+        },
+        "session-a1b0a9a3-4a50-49e6-9718-52bbb6841c71": {
+          "x": 495.32930137919516,
+          "y": 214.03801556758853
+        },
+        "session-3d0ab2ff-84b8-43c4-b991-edc4fc20a96d": {
+          "x": -86.6717850287908,
+          "y": 167.93857965451056
+        },
+        "session-12d0640d-7720-4984-850a-a31e9f3637c6": {
+          "x": 534.3570057581574,
+          "y": 175.4971209213052
+        },
+        "component-m3-diagram-32557d": {
+          "x": 370.42700319973085,
+          "y": 422.9578661571357
+        },
+        "component-m3-notes-754d0d": {
+          "x": 620,
+          "y": 420
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-1785562732091",
+          "source": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+          "target": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "label": "context -> context",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 0
+        },
+        {
+          "id": "manual-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-component-m3-diagram-32557d-1785562977040",
+          "source": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "target": "component-m3-diagram-32557d",
+          "label": "bottom -> selection",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 0
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 444.4158267727512,
+          "y": 204.51446941790073
+        },
+        "session-61425c25-c1c6-4bde-b708-fbf46a3f6358": {
+          "x": 677.0019193857966,
+          "y": 258.6410748560461
+        },
+        "session-a1b0a9a3-4a50-49e6-9718-52bbb6841c71": {
+          "x": 495.32930137919516,
+          "y": 214.03801556758853
+        },
+        "session-3d0ab2ff-84b8-43c4-b991-edc4fc20a96d": {
+          "x": -86.6717850287908,
+          "y": 167.93857965451056
+        },
+        "session-12d0640d-7720-4984-850a-a31e9f3637c6": {
+          "x": 534.3570057581574,
+          "y": 175.4971209213052
+        },
+        "component-m3-diagram-32557d": {
+          "x": 370.42700319973085,
+          "y": 422.9578661571357
+        },
+        "component-m3-notes-754d0d": {
+          "x": 620,
+          "y": 420
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-1785562732091",
+          "source": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+          "target": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "label": "context -> context",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 0
+        },
+        {
+          "id": "manual-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-component-m3-diagram-32557d-1785562977040",
+          "source": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "target": "component-m3-diagram-32557d",
+          "label": "bottom -> selection",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": -0.686144232380343
+        },
+        {
+          "id": "manual-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-component-m3-notes-754d0d-1785563491304",
+          "source": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "target": "component-m3-notes-754d0d",
+          "label": "bottom -> selection",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 0
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 444.4158267727512,
+          "y": 204.51446941790073
+        },
+        "session-61425c25-c1c6-4bde-b708-fbf46a3f6358": {
+          "x": 677.0019193857966,
+          "y": 258.6410748560461
+        },
+        "session-a1b0a9a3-4a50-49e6-9718-52bbb6841c71": {
+          "x": 495.32930137919516,
+          "y": 214.03801556758853
+        },
+        "session-3d0ab2ff-84b8-43c4-b991-edc4fc20a96d": {
+          "x": -86.6717850287908,
+          "y": 167.93857965451056
+        },
+        "session-12d0640d-7720-4984-850a-a31e9f3637c6": {
+          "x": 534.3570057581574,
+          "y": 175.4971209213052
+        },
+        "component-m3-diagram-32557d": {
+          "x": 370.42700319973085,
+          "y": 422.9578661571357
+        },
+        "component-m3-notes-754d0d": {
+          "x": 620,
+          "y": 420
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-1785562732091",
+          "source": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+          "target": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "label": "context -> context",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 0
+        },
+        {
+          "id": "manual-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-component-m3-diagram-32557d-1785562977040",
+          "source": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "target": "component-m3-diagram-32557d",
+          "label": "bottom -> selection",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": -0.686144232380343
+        },
+        {
+          "id": "manual-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-component-m3-notes-754d0d-1785563491304",
+          "source": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "target": "component-m3-notes-754d0d",
+          "label": "bottom -> selection",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 36.470588235294144
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 444.4158267727512,
+          "y": 204.51446941790073
+        },
+        "session-61425c25-c1c6-4bde-b708-fbf46a3f6358": {
+          "x": 677.0019193857966,
+          "y": 258.6410748560461
+        },
+        "session-a1b0a9a3-4a50-49e6-9718-52bbb6841c71": {
+          "x": 495.32930137919516,
+          "y": 214.03801556758853
+        },
+        "session-3d0ab2ff-84b8-43c4-b991-edc4fc20a96d": {
+          "x": -86.6717850287908,
+          "y": 167.93857965451056
+        },
+        "session-12d0640d-7720-4984-850a-a31e9f3637c6": {
+          "x": 534.3570057581574,
+          "y": 175.4971209213052
+        },
+        "component-m3-diagram-32557d": {
+          "x": 370.42700319973085,
+          "y": 422.9578661571357
+        },
+        "component-m3-notes-754d0d": {
+          "x": 620,
+          "y": 420
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-1785562732091",
+          "source": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+          "target": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "label": "context -> context",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 0
+        },
+        {
+          "id": "manual-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-component-m3-diagram-32557d-1785562977040",
+          "source": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "target": "component-m3-diagram-32557d",
+          "label": "bottom -> selection",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": -0.686144232380343
+        },
+        {
+          "id": "manual-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-component-m3-notes-754d0d-1785563491304",
+          "source": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "target": "component-m3-notes-754d0d",
+          "label": "bottom -> selection",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 36.470588235294144
+        },
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-component-m3-notes-754d0d-1785563511372",
+          "source": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+          "target": "component-m3-notes-754d0d",
+          "label": "right -> content",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 0
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 525.4240898317281,
+          "y": 145.01398717490125
+        },
+        "session-61425c25-c1c6-4bde-b708-fbf46a3f6358": {
+          "x": 677.0019193857966,
+          "y": 258.6410748560461
+        },
+        "session-a1b0a9a3-4a50-49e6-9718-52bbb6841c71": {
+          "x": 495.32930137919516,
+          "y": 214.03801556758853
+        },
+        "session-3d0ab2ff-84b8-43c4-b991-edc4fc20a96d": {
+          "x": -86.6717850287908,
+          "y": 167.93857965451056
+        },
+        "session-12d0640d-7720-4984-850a-a31e9f3637c6": {
+          "x": 534.3570057581574,
+          "y": 175.4971209213052
+        },
+        "component-m3-diagram-32557d": {
+          "x": 370.42700319973085,
+          "y": 422.9578661571357
+        },
+        "component-m3-notes-754d0d": {
+          "x": 620,
+          "y": 420
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-1785562732091",
+          "source": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+          "target": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "label": "context -> context",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 0
+        },
+        {
+          "id": "manual-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-component-m3-diagram-32557d-1785562977040",
+          "source": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "target": "component-m3-diagram-32557d",
+          "label": "bottom -> selection",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": -0.686144232380343
+        },
+        {
+          "id": "manual-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-component-m3-notes-754d0d-1785563491304",
+          "source": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "target": "component-m3-notes-754d0d",
+          "label": "bottom -> selection",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 36.470588235294144
+        },
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-component-m3-notes-754d0d-1785563511372",
+          "source": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+          "target": "component-m3-notes-754d0d",
+          "label": "right -> content",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 0
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 600.1890205618658,
+          "y": 103.02272471002937
+        },
+        "session-61425c25-c1c6-4bde-b708-fbf46a3f6358": {
+          "x": 677.0019193857966,
+          "y": 258.6410748560461
+        },
+        "session-a1b0a9a3-4a50-49e6-9718-52bbb6841c71": {
+          "x": 495.32930137919516,
+          "y": 214.03801556758853
+        },
+        "session-3d0ab2ff-84b8-43c4-b991-edc4fc20a96d": {
+          "x": -86.6717850287908,
+          "y": 167.93857965451056
+        },
+        "session-12d0640d-7720-4984-850a-a31e9f3637c6": {
+          "x": 534.3570057581574,
+          "y": 175.4971209213052
+        },
+        "component-m3-diagram-32557d": {
+          "x": 370.42700319973085,
+          "y": 422.9578661571357
+        },
+        "component-m3-notes-754d0d": {
+          "x": 620,
+          "y": 420
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-1785562732091",
+          "source": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+          "target": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "label": "context -> context",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 0
+        },
+        {
+          "id": "manual-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-component-m3-diagram-32557d-1785562977040",
+          "source": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "target": "component-m3-diagram-32557d",
+          "label": "bottom -> selection",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": -0.686144232380343
+        },
+        {
+          "id": "manual-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-component-m3-notes-754d0d-1785563491304",
+          "source": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "target": "component-m3-notes-754d0d",
+          "label": "bottom -> selection",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 36.470588235294144
+        },
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-component-m3-notes-754d0d-1785563511372",
+          "source": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+          "target": "component-m3-notes-754d0d",
+          "label": "right -> content",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 0
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 629.890157427263,
+          "y": 112.24031890963539
+        },
+        "session-61425c25-c1c6-4bde-b708-fbf46a3f6358": {
+          "x": 677.0019193857966,
+          "y": 258.6410748560461
+        },
+        "session-a1b0a9a3-4a50-49e6-9718-52bbb6841c71": {
+          "x": 495.32930137919516,
+          "y": 214.03801556758853
+        },
+        "session-3d0ab2ff-84b8-43c4-b991-edc4fc20a96d": {
+          "x": -86.6717850287908,
+          "y": 167.93857965451056
+        },
+        "session-12d0640d-7720-4984-850a-a31e9f3637c6": {
+          "x": 534.3570057581574,
+          "y": 175.4971209213052
+        },
+        "component-m3-diagram-32557d": {
+          "x": 370.42700319973085,
+          "y": 422.9578661571357
+        },
+        "component-m3-notes-754d0d": {
+          "x": 620,
+          "y": 420
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-1785562732091",
+          "source": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+          "target": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "label": "context -> context",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 0
+        },
+        {
+          "id": "manual-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-component-m3-diagram-32557d-1785562977040",
+          "source": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "target": "component-m3-diagram-32557d",
+          "label": "bottom -> selection",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": -0.686144232380343
+        },
+        {
+          "id": "manual-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-component-m3-notes-754d0d-1785563491304",
+          "source": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "target": "component-m3-notes-754d0d",
+          "label": "bottom -> selection",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 36.470588235294144
+        },
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-component-m3-notes-754d0d-1785563511372",
+          "source": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+          "target": "component-m3-notes-754d0d",
+          "label": "right -> content",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 0
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 629.890157427263,
+          "y": 112.24031890963539
+        },
+        "session-61425c25-c1c6-4bde-b708-fbf46a3f6358": {
+          "x": 677.0019193857966,
+          "y": 258.6410748560461
+        },
+        "session-a1b0a9a3-4a50-49e6-9718-52bbb6841c71": {
+          "x": 495.32930137919516,
+          "y": 214.03801556758853
+        },
+        "session-3d0ab2ff-84b8-43c4-b991-edc4fc20a96d": {
+          "x": -86.6717850287908,
+          "y": 167.93857965451056
+        },
+        "session-12d0640d-7720-4984-850a-a31e9f3637c6": {
+          "x": 534.3570057581574,
+          "y": 175.4971209213052
+        },
+        "component-m3-diagram-32557d": {
+          "x": 370.42700319973085,
+          "y": 422.9578661571357
+        },
+        "component-m3-notes-754d0d": {
+          "x": 542.090909090909,
+          "y": 415.6818181818182
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-1785562732091",
+          "source": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+          "target": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "label": "context -> context",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 0
+        },
+        {
+          "id": "manual-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-component-m3-diagram-32557d-1785562977040",
+          "source": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "target": "component-m3-diagram-32557d",
+          "label": "bottom -> selection",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": -0.686144232380343
+        },
+        {
+          "id": "manual-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-component-m3-notes-754d0d-1785563491304",
+          "source": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "target": "component-m3-notes-754d0d",
+          "label": "bottom -> selection",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 36.470588235294144
+        },
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-component-m3-notes-754d0d-1785563511372",
+          "source": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+          "target": "component-m3-notes-754d0d",
+          "label": "right -> content",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 0
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 629.890157427263,
+          "y": 112.24031890963539
+        },
+        "session-61425c25-c1c6-4bde-b708-fbf46a3f6358": {
+          "x": 677.0019193857966,
+          "y": 258.6410748560461
+        },
+        "session-a1b0a9a3-4a50-49e6-9718-52bbb6841c71": {
+          "x": 495.32930137919516,
+          "y": 214.03801556758853
+        },
+        "session-3d0ab2ff-84b8-43c4-b991-edc4fc20a96d": {
+          "x": -86.6717850287908,
+          "y": 167.93857965451056
+        },
+        "session-12d0640d-7720-4984-850a-a31e9f3637c6": {
+          "x": 534.3570057581574,
+          "y": 175.4971209213052
+        },
+        "component-m3-diagram-32557d": {
+          "x": 370.42700319973085,
+          "y": 422.9578661571357
+        },
+        "component-m3-notes-754d0d": {
+          "x": 538.2727272727273,
+          "y": 415.6818181818182
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-1785562732091",
+          "source": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+          "target": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "label": "context -> context",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 0
+        },
+        {
+          "id": "manual-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-component-m3-diagram-32557d-1785562977040",
+          "source": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "target": "component-m3-diagram-32557d",
+          "label": "bottom -> selection",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": -0.686144232380343
+        },
+        {
+          "id": "manual-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-component-m3-notes-754d0d-1785563491304",
+          "source": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "target": "component-m3-notes-754d0d",
+          "label": "bottom -> selection",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 36.470588235294144
+        },
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-component-m3-notes-754d0d-1785563511372",
+          "source": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+          "target": "component-m3-notes-754d0d",
+          "label": "right -> content",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 0
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 716.6818181818181,
+          "y": 163.31818181818184
+        },
+        "session-61425c25-c1c6-4bde-b708-fbf46a3f6358": {
+          "x": 677.0019193857966,
+          "y": 258.6410748560461
+        },
+        "session-a1b0a9a3-4a50-49e6-9718-52bbb6841c71": {
+          "x": 495.32930137919516,
+          "y": 214.03801556758853
+        },
+        "session-3d0ab2ff-84b8-43c4-b991-edc4fc20a96d": {
+          "x": -86.6717850287908,
+          "y": 167.93857965451056
+        },
+        "session-12d0640d-7720-4984-850a-a31e9f3637c6": {
+          "x": 534.3570057581574,
+          "y": 175.4971209213052
+        },
+        "component-m3-diagram-32557d": {
+          "x": 370.42700319973085,
+          "y": 422.9578661571357
+        },
+        "component-m3-notes-754d0d": {
+          "x": 538.2727272727273,
+          "y": 415.6818181818182
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-1785562732091",
+          "source": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+          "target": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "label": "context -> context",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 0
+        },
+        {
+          "id": "manual-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-component-m3-diagram-32557d-1785562977040",
+          "source": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "target": "component-m3-diagram-32557d",
+          "label": "bottom -> selection",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": -0.686144232380343
+        },
+        {
+          "id": "manual-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-component-m3-notes-754d0d-1785563491304",
+          "source": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "target": "component-m3-notes-754d0d",
+          "label": "bottom -> selection",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 36.470588235294144
+        },
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-component-m3-notes-754d0d-1785563511372",
+          "source": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+          "target": "component-m3-notes-754d0d",
+          "label": "right -> content",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 0
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 935.8252572898798,
+          "y": 201.477487135506
+        },
+        "session-61425c25-c1c6-4bde-b708-fbf46a3f6358": {
+          "x": 677.0019193857966,
+          "y": 258.6410748560461
+        },
+        "session-a1b0a9a3-4a50-49e6-9718-52bbb6841c71": {
+          "x": 495.32930137919516,
+          "y": 214.03801556758853
+        },
+        "session-3d0ab2ff-84b8-43c4-b991-edc4fc20a96d": {
+          "x": -86.6717850287908,
+          "y": 167.93857965451056
+        },
+        "session-12d0640d-7720-4984-850a-a31e9f3637c6": {
+          "x": 534.3570057581574,
+          "y": 175.4971209213052
+        },
+        "component-m3-diagram-32557d": {
+          "x": 370.42700319973085,
+          "y": 422.9578661571357
+        },
+        "component-m3-notes-754d0d": {
+          "x": 538.2727272727273,
+          "y": 415.6818181818182
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-1785562732091",
+          "source": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+          "target": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "label": "context -> context",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 0
+        },
+        {
+          "id": "manual-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-component-m3-diagram-32557d-1785562977040",
+          "source": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "target": "component-m3-diagram-32557d",
+          "label": "bottom -> selection",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": -0.686144232380343
+        },
+        {
+          "id": "manual-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-component-m3-notes-754d0d-1785563491304",
+          "source": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "target": "component-m3-notes-754d0d",
+          "label": "bottom -> selection",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 36.470588235294144
+        },
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-component-m3-notes-754d0d-1785563511372",
+          "source": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+          "target": "component-m3-notes-754d0d",
+          "label": "right -> content",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 0
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 935.8252572898798,
+          "y": 201.477487135506
+        },
+        "session-61425c25-c1c6-4bde-b708-fbf46a3f6358": {
+          "x": 677.0019193857966,
+          "y": 258.6410748560461
+        },
+        "session-a1b0a9a3-4a50-49e6-9718-52bbb6841c71": {
+          "x": 495.32930137919516,
+          "y": 214.03801556758853
+        },
+        "session-3d0ab2ff-84b8-43c4-b991-edc4fc20a96d": {
+          "x": -86.6717850287908,
+          "y": 167.93857965451056
+        },
+        "session-12d0640d-7720-4984-850a-a31e9f3637c6": {
+          "x": 534.3570057581574,
+          "y": 175.4971209213052
+        },
+        "component-m3-diagram-32557d": {
+          "x": 370.42700319973085,
+          "y": 422.9578661571357
+        },
+        "component-m3-notes-754d0d": {
+          "x": 538.2727272727273,
+          "y": 415.6818181818182
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-1785562732091",
+          "source": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+          "target": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "label": "context -> context",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 0
+        },
+        {
+          "id": "manual-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-component-m3-diagram-32557d-1785562977040",
+          "source": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "target": "component-m3-diagram-32557d",
+          "label": "bottom -> selection",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": -0.686144232380343
+        },
+        {
+          "id": "manual-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-component-m3-notes-754d0d-1785563491304",
+          "source": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "target": "component-m3-notes-754d0d",
+          "label": "bottom -> selection",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 36.470588235294144
+        },
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-component-m3-notes-754d0d-1785563511372",
+          "source": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+          "target": "component-m3-notes-754d0d",
+          "label": "right -> content",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 40.72723388671875
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 935.8252572898798,
+          "y": 201.477487135506
+        },
+        "session-61425c25-c1c6-4bde-b708-fbf46a3f6358": {
+          "x": 677.0019193857966,
+          "y": 258.6410748560461
+        },
+        "session-a1b0a9a3-4a50-49e6-9718-52bbb6841c71": {
+          "x": 495.32930137919516,
+          "y": 214.03801556758853
+        },
+        "session-3d0ab2ff-84b8-43c4-b991-edc4fc20a96d": {
+          "x": -86.6717850287908,
+          "y": 167.93857965451056
+        },
+        "session-12d0640d-7720-4984-850a-a31e9f3637c6": {
+          "x": 534.3570057581574,
+          "y": 175.4971209213052
+        },
+        "component-m3-diagram-32557d": {
+          "x": 370.42700319973085,
+          "y": 422.9578661571357
+        },
+        "component-m3-notes-754d0d": {
+          "x": 538.2727272727273,
+          "y": 415.6818181818182
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-1785562732091",
+          "source": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+          "target": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "label": "context -> context",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 0
+        },
+        {
+          "id": "manual-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-component-m3-diagram-32557d-1785562977040",
+          "source": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "target": "component-m3-diagram-32557d",
+          "label": "bottom -> selection",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": -19.14072852747978
+        },
+        {
+          "id": "manual-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-component-m3-notes-754d0d-1785563491304",
+          "source": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "target": "component-m3-notes-754d0d",
+          "label": "bottom -> selection",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 36.470588235294144
+        },
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-component-m3-notes-754d0d-1785563511372",
+          "source": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+          "target": "component-m3-notes-754d0d",
+          "label": "right -> content",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 40.72723388671875
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 935.8252572898798,
+          "y": 201.477487135506
+        },
+        "session-61425c25-c1c6-4bde-b708-fbf46a3f6358": {
+          "x": 677.0019193857966,
+          "y": 258.6410748560461
+        },
+        "session-a1b0a9a3-4a50-49e6-9718-52bbb6841c71": {
+          "x": 495.32930137919516,
+          "y": 214.03801556758853
+        },
+        "session-3d0ab2ff-84b8-43c4-b991-edc4fc20a96d": {
+          "x": -86.6717850287908,
+          "y": 167.93857965451056
+        },
+        "session-12d0640d-7720-4984-850a-a31e9f3637c6": {
+          "x": 534.3570057581574,
+          "y": 175.4971209213052
+        },
+        "component-m3-diagram-32557d": {
+          "x": 370.42700319973085,
+          "y": 422.9578661571357
+        },
+        "component-m3-notes-754d0d": {
+          "x": 784.5454545454546,
+          "y": 409
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-1785562732091",
+          "source": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+          "target": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "label": "context -> context",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 0
+        },
+        {
+          "id": "manual-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-component-m3-diagram-32557d-1785562977040",
+          "source": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "target": "component-m3-diagram-32557d",
+          "label": "bottom -> selection",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": -19.14072852747978
+        },
+        {
+          "id": "manual-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-component-m3-notes-754d0d-1785563491304",
+          "source": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "target": "component-m3-notes-754d0d",
+          "label": "bottom -> selection",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 36.470588235294144
+        },
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-component-m3-notes-754d0d-1785563511372",
+          "source": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+          "target": "component-m3-notes-754d0d",
+          "label": "right -> content",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 40.72723388671875
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 935.8252572898798,
+          "y": 201.477487135506
+        },
+        "session-61425c25-c1c6-4bde-b708-fbf46a3f6358": {
+          "x": 677.0019193857966,
+          "y": 258.6410748560461
+        },
+        "session-a1b0a9a3-4a50-49e6-9718-52bbb6841c71": {
+          "x": 495.32930137919516,
+          "y": 214.03801556758853
+        },
+        "session-3d0ab2ff-84b8-43c4-b991-edc4fc20a96d": {
+          "x": -86.6717850287908,
+          "y": 167.93857965451056
+        },
+        "session-12d0640d-7720-4984-850a-a31e9f3637c6": {
+          "x": 534.3570057581574,
+          "y": 175.4971209213052
+        },
+        "component-m3-diagram-32557d": {
+          "x": 370.42700319973085,
+          "y": 422.9578661571357
+        },
+        "component-m3-notes-754d0d": {
+          "x": 581.1079545454546,
+          "y": 460.54545454545456
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-1785562732091",
+          "source": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+          "target": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "label": "context -> context",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 0
+        },
+        {
+          "id": "manual-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-component-m3-diagram-32557d-1785562977040",
+          "source": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "target": "component-m3-diagram-32557d",
+          "label": "bottom -> selection",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": -19.14072852747978
+        },
+        {
+          "id": "manual-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-component-m3-notes-754d0d-1785563491304",
+          "source": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "target": "component-m3-notes-754d0d",
+          "label": "bottom -> selection",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 36.470588235294144
+        },
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-component-m3-notes-754d0d-1785563511372",
+          "source": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+          "target": "component-m3-notes-754d0d",
+          "label": "right -> content",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 40.72723388671875
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 935.8252572898798,
+          "y": 201.477487135506
+        },
+        "session-61425c25-c1c6-4bde-b708-fbf46a3f6358": {
+          "x": 677.0019193857966,
+          "y": 258.6410748560461
+        },
+        "session-a1b0a9a3-4a50-49e6-9718-52bbb6841c71": {
+          "x": 495.32930137919516,
+          "y": 214.03801556758853
+        },
+        "session-3d0ab2ff-84b8-43c4-b991-edc4fc20a96d": {
+          "x": -86.6717850287908,
+          "y": 167.93857965451056
+        },
+        "session-12d0640d-7720-4984-850a-a31e9f3637c6": {
+          "x": 534.3570057581574,
+          "y": 175.4971209213052
+        },
+        "component-m3-diagram-32557d": {
+          "x": 860.3442734589757,
+          "y": -195.67166582750633
+        },
+        "component-m3-notes-754d0d": {
+          "x": 581.1079545454546,
+          "y": 460.54545454545456
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-1785562732091",
+          "source": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+          "target": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "label": "context -> context",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 0
+        },
+        {
+          "id": "manual-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-component-m3-diagram-32557d-1785562977040",
+          "source": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "target": "component-m3-diagram-32557d",
+          "label": "bottom -> selection",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": -19.14072852747978
+        },
+        {
+          "id": "manual-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-component-m3-notes-754d0d-1785563491304",
+          "source": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "target": "component-m3-notes-754d0d",
+          "label": "bottom -> selection",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 36.470588235294144
+        },
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-component-m3-notes-754d0d-1785563511372",
+          "source": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+          "target": "component-m3-notes-754d0d",
+          "label": "right -> content",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 40.72723388671875
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 935.8252572898798,
+          "y": 201.477487135506
+        },
+        "session-61425c25-c1c6-4bde-b708-fbf46a3f6358": {
+          "x": 677.0019193857966,
+          "y": 258.6410748560461
+        },
+        "session-a1b0a9a3-4a50-49e6-9718-52bbb6841c71": {
+          "x": 495.32930137919516,
+          "y": 214.03801556758853
+        },
+        "session-3d0ab2ff-84b8-43c4-b991-edc4fc20a96d": {
+          "x": -86.6717850287908,
+          "y": 167.93857965451056
+        },
+        "session-12d0640d-7720-4984-850a-a31e9f3637c6": {
+          "x": 534.3570057581574,
+          "y": 175.4971209213052
+        },
+        "component-m3-diagram-32557d": {
+          "x": 860.3442734589757,
+          "y": -195.67166582750633
+        },
+        "component-m3-notes-754d0d": {
+          "x": 597.4818481655001,
+          "y": 514.705256519451
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-1785562732091",
+          "source": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+          "target": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "label": "context -> context",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 0
+        },
+        {
+          "id": "manual-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-component-m3-diagram-32557d-1785562977040",
+          "source": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "target": "component-m3-diagram-32557d",
+          "label": "bottom -> selection",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": -19.14072852747978
+        },
+        {
+          "id": "manual-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-component-m3-notes-754d0d-1785563491304",
+          "source": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "target": "component-m3-notes-754d0d",
+          "label": "bottom -> selection",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 36.470588235294144
+        },
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-component-m3-notes-754d0d-1785563511372",
+          "source": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+          "target": "component-m3-notes-754d0d",
+          "label": "right -> content",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 40.72723388671875
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 935.8252572898798,
+          "y": 201.477487135506
+        },
+        "session-61425c25-c1c6-4bde-b708-fbf46a3f6358": {
+          "x": 677.0019193857966,
+          "y": 258.6410748560461
+        },
+        "session-a1b0a9a3-4a50-49e6-9718-52bbb6841c71": {
+          "x": 495.32930137919516,
+          "y": 214.03801556758853
+        },
+        "session-3d0ab2ff-84b8-43c4-b991-edc4fc20a96d": {
+          "x": -86.6717850287908,
+          "y": 167.93857965451056
+        },
+        "session-12d0640d-7720-4984-850a-a31e9f3637c6": {
+          "x": 534.3570057581574,
+          "y": 175.4971209213052
+        },
+        "component-m3-diagram-32557d": {
+          "x": 860.3442734589757,
+          "y": -195.67166582750633
+        },
+        "component-m3-notes-754d0d": {
+          "x": 597.4818481655001,
+          "y": 514.705256519451
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-1785562732091",
+          "source": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+          "target": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "label": "context -> context",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 0
+        },
+        {
+          "id": "manual-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-component-m3-diagram-32557d-1785562977040",
+          "source": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "target": "component-m3-diagram-32557d",
+          "label": "bottom -> selection",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": -19.14072852747978
+        },
+        {
+          "id": "manual-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-component-m3-notes-754d0d-1785563491304",
+          "source": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "target": "component-m3-notes-754d0d",
+          "label": "bottom -> selection",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": -2.9946681980678136
+        },
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-component-m3-notes-754d0d-1785563511372",
+          "source": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+          "target": "component-m3-notes-754d0d",
+          "label": "right -> content",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 112.10064195827982
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 935.8252572898798,
+          "y": 201.477487135506
+        },
+        "session-61425c25-c1c6-4bde-b708-fbf46a3f6358": {
+          "x": 500,
+          "y": 170
+        },
+        "session-a1b0a9a3-4a50-49e6-9718-52bbb6841c71": {
+          "x": 495.32930137919516,
+          "y": 214.03801556758853
+        },
+        "session-3d0ab2ff-84b8-43c4-b991-edc4fc20a96d": {
+          "x": -86.6717850287908,
+          "y": 167.93857965451056
+        },
+        "session-12d0640d-7720-4984-850a-a31e9f3637c6": {
+          "x": 534.3570057581574,
+          "y": 175.4971209213052
+        },
+        "component-m3-diagram-32557d": {
+          "x": 860.3442734589757,
+          "y": -195.67166582750633
+        },
+        "component-m3-notes-754d0d": {
+          "x": 597.4818481655001,
+          "y": 514.705256519451
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-1785562732091",
+          "source": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+          "target": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "label": "context -> context",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 0
+        },
+        {
+          "id": "manual-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-component-m3-diagram-32557d-1785562977040",
+          "source": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "target": "component-m3-diagram-32557d",
+          "label": "bottom -> selection",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": -19.14072852747978
+        },
+        {
+          "id": "manual-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-component-m3-notes-754d0d-1785563491304",
+          "source": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "target": "component-m3-notes-754d0d",
+          "label": "bottom -> selection",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": -2.9946681980678136
+        },
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-component-m3-notes-754d0d-1785563511372",
+          "source": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+          "target": "component-m3-notes-754d0d",
+          "label": "right -> content",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 112.10064195827982
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 935.8252572898798,
+          "y": 201.477487135506
+        },
+        "session-61425c25-c1c6-4bde-b708-fbf46a3f6358": {
+          "x": 500,
+          "y": 170
+        },
+        "session-a1b0a9a3-4a50-49e6-9718-52bbb6841c71": {
+          "x": 495.32930137919516,
+          "y": 214.03801556758853
+        },
+        "session-3d0ab2ff-84b8-43c4-b991-edc4fc20a96d": {
+          "x": -86.6717850287908,
+          "y": 167.93857965451056
+        },
+        "session-12d0640d-7720-4984-850a-a31e9f3637c6": {
+          "x": 534.3570057581574,
+          "y": 175.4971209213052
+        },
+        "component-m3-diagram-32557d": {
+          "x": 860.3442734589757,
+          "y": -195.67166582750633
+        },
+        "component-m3-notes-754d0d": {
+          "x": 549.7272727272727,
+          "y": 391.8181818181818
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-1785562732091",
+          "source": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+          "target": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "label": "context -> context",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 0
+        },
+        {
+          "id": "manual-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-component-m3-diagram-32557d-1785562977040",
+          "source": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "target": "component-m3-diagram-32557d",
+          "label": "bottom -> selection",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": -19.14072852747978
+        },
+        {
+          "id": "manual-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-component-m3-notes-754d0d-1785563491304",
+          "source": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "target": "component-m3-notes-754d0d",
+          "label": "bottom -> selection",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": -2.9946681980678136
+        },
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-component-m3-notes-754d0d-1785563511372",
+          "source": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+          "target": "component-m3-notes-754d0d",
+          "label": "right -> content",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 112.10064195827982
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 935.8252572898798,
+          "y": 201.477487135506
+        },
+        "session-61425c25-c1c6-4bde-b708-fbf46a3f6358": {
+          "x": 500,
+          "y": 170
+        },
+        "session-a1b0a9a3-4a50-49e6-9718-52bbb6841c71": {
+          "x": 495.32930137919516,
+          "y": 214.03801556758853
+        },
+        "session-3d0ab2ff-84b8-43c4-b991-edc4fc20a96d": {
+          "x": -86.6717850287908,
+          "y": 167.93857965451056
+        },
+        "session-12d0640d-7720-4984-850a-a31e9f3637c6": {
+          "x": 534.3570057581574,
+          "y": 175.4971209213052
+        },
+        "component-m3-diagram-32557d": {
+          "x": 860.3442734589757,
+          "y": -195.67166582750633
+        },
+        "component-m3-notes-754d0d": {
+          "x": 549.7272727272727,
+          "y": 391.8181818181818
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-1785562732091",
+          "source": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+          "target": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "label": "context -> context",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 0
+        },
+        {
+          "id": "manual-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-component-m3-notes-754d0d-1785563491304",
+          "source": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "target": "component-m3-notes-754d0d",
+          "label": "bottom -> selection",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": -2.9946681980678136
+        },
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-component-m3-notes-754d0d-1785563511372",
+          "source": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+          "target": "component-m3-notes-754d0d",
+          "label": "right -> content",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 112.10064195827982
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 935.8252572898798,
+          "y": 201.477487135506
+        },
+        "session-61425c25-c1c6-4bde-b708-fbf46a3f6358": {
+          "x": 500,
+          "y": 170
+        },
+        "session-a1b0a9a3-4a50-49e6-9718-52bbb6841c71": {
+          "x": 495.32930137919516,
+          "y": 214.03801556758853
+        },
+        "session-3d0ab2ff-84b8-43c4-b991-edc4fc20a96d": {
+          "x": -86.6717850287908,
+          "y": 167.93857965451056
+        },
+        "session-12d0640d-7720-4984-850a-a31e9f3637c6": {
+          "x": 534.3570057581574,
+          "y": 175.4971209213052
+        },
+        "component-m3-diagram-32557d": {
+          "x": 860.3442734589757,
+          "y": -195.67166582750633
+        },
+        "component-m3-notes-754d0d": {
+          "x": 549.7272727272727,
+          "y": 391.8181818181818
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-1785562732091",
+          "source": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+          "target": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "label": "context -> context",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 0
+        },
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-component-m3-notes-754d0d-1785563511372",
+          "source": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+          "target": "component-m3-notes-754d0d",
+          "label": "right -> content",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 112.10064195827982
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 935.8252572898798,
+          "y": 201.477487135506
+        },
+        "session-61425c25-c1c6-4bde-b708-fbf46a3f6358": {
+          "x": 500,
+          "y": 170
+        },
+        "session-a1b0a9a3-4a50-49e6-9718-52bbb6841c71": {
+          "x": 495.32930137919516,
+          "y": 214.03801556758853
+        },
+        "session-3d0ab2ff-84b8-43c4-b991-edc4fc20a96d": {
+          "x": -86.6717850287908,
+          "y": 167.93857965451056
+        },
+        "session-12d0640d-7720-4984-850a-a31e9f3637c6": {
+          "x": 534.3570057581574,
+          "y": 175.4971209213052
+        },
+        "component-m3-diagram-32557d": {
+          "x": 860.3442734589757,
+          "y": -195.67166582750633
+        },
+        "component-m3-notes-754d0d": {
+          "x": 549.7272727272727,
+          "y": 391.8181818181818
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-1785562732091",
+          "source": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+          "target": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "label": "context -> context",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 0
+        },
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-component-m3-notes-754d0d-1785563511372",
+          "source": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+          "target": "component-m3-notes-754d0d",
+          "label": "right -> content",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 116.55517770268688
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 935.8252572898798,
+          "y": 201.477487135506
+        },
+        "session-61425c25-c1c6-4bde-b708-fbf46a3f6358": {
+          "x": 500,
+          "y": 170
+        },
+        "session-a1b0a9a3-4a50-49e6-9718-52bbb6841c71": {
+          "x": 495.32930137919516,
+          "y": 214.03801556758853
+        },
+        "session-3d0ab2ff-84b8-43c4-b991-edc4fc20a96d": {
+          "x": -86.6717850287908,
+          "y": 167.93857965451056
+        },
+        "session-12d0640d-7720-4984-850a-a31e9f3637c6": {
+          "x": 534.3570057581574,
+          "y": 175.4971209213052
+        },
+        "component-m3-diagram-32557d": {
+          "x": 860.3442734589757,
+          "y": -195.67166582750633
+        },
+        "component-m3-notes-754d0d": {
+          "x": 549.7272727272727,
+          "y": 391.8181818181818
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-1785562732091",
+          "source": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+          "target": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+          "label": "context -> context",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "offset": 0
+        }
+      ]
+    }
+  ],
+  "redoStack": [],
+  "deletedNodes": [
+    {
+      "nodeId": "session-178fa9e2-52b4-43ea-8570-782088cfe978",
+      "sessionId": "178fa9e2-52b4-43ea-8570-782088cfe978",
+      "deletedAt": "2026-07-31T11:14:08.621Z"
+    },
+    {
+      "nodeId": "session-e77df9f9-51a6-4888-b595-21222b36cd57",
+      "sessionId": "e77df9f9-51a6-4888-b595-21222b36cd57",
+      "deletedAt": "2026-07-31T11:14:12.538Z"
+    },
+    {
+      "nodeId": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+      "sessionId": "e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+      "deletedAt": "2026-07-31T11:14:16.571Z"
+    },
+    {
+      "nodeId": "session-fc1c0445-650d-452a-af80-e6c04f08e990",
+      "sessionId": "fc1c0445-650d-452a-af80-e6c04f08e990",
+      "deletedAt": "2026-07-31T11:14:19.944Z"
+    },
+    {
+      "nodeId": "session-87e54b53-b00c-4168-83d7-b13f9fa7e809",
+      "sessionId": "87e54b53-b00c-4168-83d7-b13f9fa7e809",
+      "deletedAt": "2026-07-31T11:14:21.637Z"
+    },
+    {
+      "nodeId": "session-54eb4005-d249-42e0-936d-579ee084ffe1",
+      "sessionId": "54eb4005-d249-42e0-936d-579ee084ffe1",
+      "deletedAt": "2026-07-31T11:14:23.300Z"
+    },
+    {
+      "nodeId": "session-00ed70b9-7953-4388-84cc-873cc9e70491",
+      "sessionId": "00ed70b9-7953-4388-84cc-873cc9e70491",
+      "deletedAt": "2026-07-31T17:12:41.984Z"
+    }
+  ],
+  "graphContextPath": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding\\Harness\\a2a\\workflow-map.json",
+  "updatedAt": "2026-08-01T10:01:56.698Z",
+  "sourceOfTruth": "backend",
+  "componentStatePath": "Harness/a2a/component-nodes"
+}

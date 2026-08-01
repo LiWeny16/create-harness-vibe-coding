@@ -1,0 +1,27 @@
+{
+  "url": "http://127.0.0.1:63534/workflow?token=<redacted>",
+  "browser": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+  "viewport": {
+    "width": 1440,
+    "height": 1000
+  },
+  "evidenceDir": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding\\Harness\\tasks\\task-standardize-workflow-nodes\\evidence\\cdp-final-20260801-192638",
+  "startedAt": "2026-08-01T11:26:38.105Z",
+  "checks": {},
+  "ac": {},
+  "selectors": {},
+  "timings": {},
+  "networkErrors": [],
+  "runtimeExceptions": [],
+  "consoleMessages": [],
+  "graphPuts": [],
+  "longTasks": [],
+  "createdNodeIds": [],
+  "cleanup": [],
+  "notes": [],
+  "failedAt": "2026-08-01T11:26:38.575Z",
+  "error": {
+    "message": "Target.createTarget: Target position can only be set for new windows",
+    "stack": "Error: Target.createTarget: Target position can only be set for new windows\n    at ws.onmessage (D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding\\Harness\\tasks\\task-standardize-workflow-nodes\\evidence\\cdp-final-workflow-check.cjs:137:36)\n    at [nodejs.internal.kHybridDispatch] (node:internal/event_target:843:20)\n    at WebSocket.dispatchEvent (node:internal/event_target:776:26)\n    at fireEvent (node:internal/deps/undici/undici:14387:14)\n    at #onMessage (node:internal/deps/undici/undici:15710:9)\n    at Object.onMessage (node:internal/deps/undici/undici:15417:76)\n    at websocketMessageReceived (node:internal/deps/undici/undici:14391:15)\n    at node:internal/deps/undici/undici:15119:21\n    at node:internal/deps/undici/undici:14899:11\n    at afterWrite (node:internal/streams/writable:708:5)"
+  }
+}

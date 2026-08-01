@@ -1,0 +1,30 @@
+{
+  "status": "passed",
+  "baseUrl": "http://127.0.0.1:58673",
+  "nodeCountAfterDelete": 2,
+  "handleBox": {
+    "x": 410.6000061035156,
+    "y": 191.40000915527344,
+    "width": 34,
+    "height": 34
+  },
+  "writes": [
+    {
+      "to": "9a49df73-8ce2-4380-99d1-ae8b79efc26e",
+      "text": "Claude -> Codex: ping through wf-bridge"
+    },
+    {
+      "to": "3f8e1f51-cd31-423d-bde4-7dc3c59dfbd2",
+      "text": "Codex -> Claude: pong recorded on wf-bridge"
+    },
+    {
+      "to": "3f8e1f51-cd31-423d-bde4-7dc3c59dfbd2",
+      "text": "__KILL__"
+    }
+  ],
+  "screenshots": [
+    "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding\\Harness\\tasks\\task-stabilize-workflow-agent-control\\evidence\\browser-closed-loop-workflow.png",
+    "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding\\Harness\\tasks\\task-stabilize-workflow-agent-control\\evidence\\browser-settings-runtime-icon.png"
+  ],
+  "checkedAt": "2026-07-31T12:41:34.493Z"
+}

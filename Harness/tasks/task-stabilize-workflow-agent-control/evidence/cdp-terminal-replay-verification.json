@@ -1,0 +1,10 @@
+{
+  "url": "http://127.0.0.1:53834/workflow?<redacted-token>",
+  "beforeVisibilityLength": 511,
+  "afterVisibilityLength": 511,
+  "sameAfterRestore": true,
+  "beforeSample": "- 边数：2（双向 can-communicate）\n  - Subagent：0\n\n  ┌───────────────────┬────────┬────────────┬─────────┐\n  │       节点        │ 运行时 │    角色    │  状态   │\n  ├───────────────────┼────────┼────────────┼─────────┤\n  │ 00ed70b9 (本节点)",
+  "afterSample": "- 边数：2（双向 can-communicate）\n  - Subagent：0\n\n  ┌───────────────────┬────────┬────────────┬─────────┐\n  │       节点        │ 运行时 │    角色    │  状态   │\n  ├───────────────────┼────────┼────────────┼─────────┤\n  │ 00ed70b9 (本节点)",
+  "consoleErrors": [],
+  "requestFailures": []
+}

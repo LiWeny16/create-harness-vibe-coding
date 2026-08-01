@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "nodes": [
+    {
+      "id": "component-m3-diagram-32557d",
+      "nodeId": "component-m3-diagram-32557d",
+      "kind": "component-node",
+      "type": "excalidraw",
+      "title": "M3 Diagram",
+      "position": {
+        "x": 260,
+        "y": 420
+      },
+      "revision": 2,
+      "statePath": "Harness/a2a/component-nodes/component-m3-diagram-32557d/state.json",
+      "stateRef": {
+        "path": "Harness/a2a/component-nodes/component-m3-diagram-32557d/state.json",
+        "revision": 2
+      },
+      "config": {
+        "componentType": "excalidraw",
+        "editable": true,
+        "backendSourceOfTruth": true
+      }
+    }
+  ],
+  "updatedAt": "2026-08-01T13:19:35.494Z"
+}

@@ -1,0 +1,79 @@
+{
+  "url": "http://127.0.0.1:50407/workflow?token=<redacted>",
+  "browser": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+  "viewport": {
+    "width": 1440,
+    "height": 1000
+  },
+  "evidenceDir": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding\\Harness\\tasks\\task-standardize-workflow-nodes\\evidence\\cdp-final-20260801-201641",
+  "startedAt": "2026-08-01T12:16:42.046Z",
+  "checks": {
+    "plusButton": {
+      "box": {
+        "x": 1242,
+        "y": 64.25,
+        "left": 1242,
+        "top": 64.25,
+        "right": 1272,
+        "bottom": 94.25,
+        "width": 30,
+        "height": 30,
+        "cx": 1257,
+        "cy": 79.25
+      },
+      "topElement": {
+        "tag": "path",
+        "testId": "workflow-create-node",
+        "path": "",
+        "text": "",
+        "className": "[object SVGAnimatedString]"
+      }
+    },
+    "plusMenuKinds": [
+      "agent",
+      "diagram",
+      "file",
+      "markdown"
+    ],
+    "canvasContextPoint": {
+      "point": {
+        "x": 1036.8,
+        "y": 790.5600000000001,
+        "topTestId": "workflow-markdown-node-editor",
+        "tag": "DIV"
+      },
+      "topElement": {
+        "tag": "DIV",
+        "testId": "workflow-markdown-node-editor",
+        "path": "",
+        "text": "",
+        "className": "workflow-markdown-node-editor"
+      }
+    },
+    "canvasContextSyntheticDispatch": {
+      "targetTag": "DIV",
+      "targetTestId": "workflow-node-context-menu",
+      "defaultPrevented": false
+    }
+  },
+  "ac": {},
+  "selectors": {},
+  "timings": {
+    "readyMs": 2094
+  },
+  "networkErrors": [],
+  "runtimeExceptions": [],
+  "consoleMessages": [],
+  "graphPuts": [],
+  "longTasks": [],
+  "createdNodeIds": [],
+  "cleanup": [],
+  "notes": [
+    "Native CDP right-click did not open canvas menu: Timed out waiting for canvas context menu native right-click"
+  ],
+  "failedAt": "2026-08-01T12:16:52.916Z",
+  "error": {
+    "message": "Timed out waiting for canvas context menu synthetic fallback",
+    "stack": "Error: Timed out waiting for canvas context menu synthetic fallback\n    at waitFor (D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding\\Harness\\tasks\\task-standardize-workflow-nodes\\evidence\\cdp-final-workflow-check.cjs:174:9)\n    at async run (D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding\\Harness\\tasks\\task-standardize-workflow-nodes\\evidence\\cdp-final-workflow-check.cjs:496:7)"
+  }
+}

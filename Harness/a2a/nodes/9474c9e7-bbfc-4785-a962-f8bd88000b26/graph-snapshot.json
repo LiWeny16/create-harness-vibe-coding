@@ -1,0 +1,207 @@
+{
+  "schemaVersion": 1,
+  "version": 251,
+  "nodes": [
+    {
+      "nodeId": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+      "sessionId": "07f81704-4c0e-419a-a1cc-e993f8df3077",
+      "kind": "terminal-session",
+      "agentKind": "main",
+      "runtime": "claude",
+      "taskId": null,
+      "cwd": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding",
+      "status": "running",
+      "label": "claude main agent",
+      "position": {
+        "x": 500,
+        "y": 170
+      },
+      "width": 238,
+      "height": 118,
+      "restartedFromSessionId": "860ce1c6-f962-4f44-82d8-fada035e59a5",
+      "restartedAt": "2026-08-01T10:52:50.798Z"
+    },
+    {
+      "nodeId": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+      "sessionId": "c0da0ab3-1f4c-4733-be3b-147bf24fcc5d",
+      "kind": "terminal-session",
+      "agentKind": "main",
+      "runtime": "codex",
+      "taskId": null,
+      "cwd": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding",
+      "status": "stopped",
+      "label": "codex main agent",
+      "position": {
+        "x": 935.8252572898798,
+        "y": 201.477487135506
+      },
+      "width": 238,
+      "height": 118
+    },
+    {
+      "id": "component-m3-diagram-32557d",
+      "nodeId": "component-m3-diagram-32557d",
+      "kind": "component-node",
+      "type": "excalidraw",
+      "title": "M3 Diagram",
+      "position": {
+        "x": 121,
+        "y": 430
+      },
+      "revision": 1,
+      "statePath": "Harness/a2a/component-nodes/component-m3-diagram-32557d/state.json",
+      "stateRef": {
+        "path": "Harness/a2a/component-nodes/component-m3-diagram-32557d/state.json",
+        "revision": 1
+      },
+      "config": {
+        "componentType": "excalidraw",
+        "editable": true,
+        "backendSourceOfTruth": true
+      }
+    },
+    {
+      "id": "component-m3-notes-754d0d",
+      "nodeId": "component-m3-notes-754d0d",
+      "kind": "component-node",
+      "type": "markdown",
+      "title": "M3 Notes",
+      "position": {
+        "x": 549.7272727272727,
+        "y": 391.8181818181818
+      },
+      "revision": 1,
+      "statePath": "Harness/a2a/component-nodes/component-m3-notes-754d0d/state.json",
+      "stateRef": {
+        "path": "Harness/a2a/component-nodes/component-m3-notes-754d0d/state.json",
+        "revision": 1
+      },
+      "config": {
+        "componentType": "markdown",
+        "editable": true,
+        "backendSourceOfTruth": true
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-1785562732091",
+      "from": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+      "to": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+      "source": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+      "target": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+      "relation": "context -> context",
+      "offset": 35.10000000000002
+    },
+    {
+      "id": "manual-component-m3-diagram-32557d-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-1785578516691",
+      "from": "component-m3-diagram-32557d",
+      "to": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+      "source": "component-m3-diagram-32557d",
+      "target": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+      "relation": "content -> context",
+      "sourceHandle": "content",
+      "targetHandle": "context",
+      "offset": 0
+    },
+    {
+      "id": "manual-component-m3-diagram-32557d-session-0bc880b0-c820-4746-a21c-d843179f3326-1785579462350",
+      "from": "component-m3-diagram-32557d",
+      "to": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+      "source": "component-m3-diagram-32557d",
+      "target": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+      "relation": "content -> context",
+      "sourceHandle": "content",
+      "targetHandle": "context",
+      "offset": 0
+    }
+  ],
+  "positions": {
+    "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+      "x": 935.8252572898798,
+      "y": 201.477487135506
+    },
+    "session-61425c25-c1c6-4bde-b708-fbf46a3f6358": {
+      "x": 500,
+      "y": 170
+    },
+    "session-a1b0a9a3-4a50-49e6-9718-52bbb6841c71": {
+      "x": 495.32930137919516,
+      "y": 214.03801556758853
+    },
+    "session-3d0ab2ff-84b8-43c4-b991-edc4fc20a96d": {
+      "x": -86.6717850287908,
+      "y": 167.93857965451056
+    },
+    "session-12d0640d-7720-4984-850a-a31e9f3637c6": {
+      "x": 534.3570057581574,
+      "y": 175.4971209213052
+    },
+    "component-m3-diagram-32557d": {
+      "x": 121,
+      "y": 430
+    },
+    "component-m3-notes-754d0d": {
+      "x": 549.7272727272727,
+      "y": 391.8181818181818
+    }
+  },
+  "undoStack": [],
+  "redoStack": [],
+  "deletedNodes": [
+    {
+      "nodeId": "session-178fa9e2-52b4-43ea-8570-782088cfe978",
+      "sessionId": "178fa9e2-52b4-43ea-8570-782088cfe978",
+      "deletedAt": "2026-07-31T11:14:08.621Z"
+    },
+    {
+      "nodeId": "session-e77df9f9-51a6-4888-b595-21222b36cd57",
+      "sessionId": "e77df9f9-51a6-4888-b595-21222b36cd57",
+      "deletedAt": "2026-07-31T11:14:12.538Z"
+    },
+    {
+      "nodeId": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+      "sessionId": "e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+      "deletedAt": "2026-07-31T11:14:16.571Z"
+    },
+    {
+      "nodeId": "session-fc1c0445-650d-452a-af80-e6c04f08e990",
+      "sessionId": "fc1c0445-650d-452a-af80-e6c04f08e990",
+      "deletedAt": "2026-07-31T11:14:19.944Z"
+    },
+    {
+      "nodeId": "session-87e54b53-b00c-4168-83d7-b13f9fa7e809",
+      "sessionId": "87e54b53-b00c-4168-83d7-b13f9fa7e809",
+      "deletedAt": "2026-07-31T11:14:21.637Z"
+    },
+    {
+      "nodeId": "session-54eb4005-d249-42e0-936d-579ee084ffe1",
+      "sessionId": "54eb4005-d249-42e0-936d-579ee084ffe1",
+      "deletedAt": "2026-07-31T11:14:23.300Z"
+    },
+    {
+      "nodeId": "session-00ed70b9-7953-4388-84cc-873cc9e70491",
+      "sessionId": "00ed70b9-7953-4388-84cc-873cc9e70491",
+      "deletedAt": "2026-07-31T17:12:41.984Z"
+    },
+    {
+      "nodeId": "component-package-json-5c3e60",
+      "sessionId": null,
+      "deletedAt": "2026-08-01T10:17:58.319Z"
+    },
+    {
+      "nodeId": "component-agents-md-676514",
+      "sessionId": null,
+      "deletedAt": "2026-08-01T10:29:29.862Z"
+    },
+    {
+      "nodeId": "component-agents-md-ac19ed",
+      "sessionId": null,
+      "deletedAt": "2026-08-01T10:32:39.711Z"
+    }
+  ],
+  "graphContextPath": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding\\Harness\\a2a\\workflow-map.json",
+  "updatedAt": "2026-08-01T10:52:50.799Z",
+  "sourceOfTruth": "backend",
+  "componentStatePath": "Harness/a2a/component-nodes"
+}

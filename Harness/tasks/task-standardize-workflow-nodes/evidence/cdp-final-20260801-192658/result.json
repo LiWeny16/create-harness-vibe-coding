@@ -1,0 +1,29 @@
+{
+  "url": "http://127.0.0.1:63534/workflow?token=<redacted>",
+  "browser": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+  "viewport": {
+    "width": 1440,
+    "height": 1000
+  },
+  "evidenceDir": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding\\Harness\\tasks\\task-standardize-workflow-nodes\\evidence\\cdp-final-20260801-192658",
+  "startedAt": "2026-08-01T11:26:58.433Z",
+  "checks": {},
+  "ac": {},
+  "selectors": {},
+  "timings": {
+    "readyMs": 1973
+  },
+  "networkErrors": [],
+  "runtimeExceptions": [],
+  "consoleMessages": [],
+  "graphPuts": [],
+  "longTasks": [],
+  "createdNodeIds": [],
+  "cleanup": [],
+  "notes": [],
+  "failedAt": "2026-08-01T11:27:05.827Z",
+  "error": {
+    "message": "Timed out waiting for create panel",
+    "stack": "Error: Timed out waiting for create panel\n    at waitFor (D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding\\Harness\\tasks\\task-standardize-workflow-nodes\\evidence\\cdp-final-workflow-check.cjs:174:9)\n    at async run (D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding\\Harness\\tasks\\task-standardize-workflow-nodes\\evidence\\cdp-final-workflow-check.cjs:433:5)"
+  }
+}

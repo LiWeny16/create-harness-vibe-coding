@@ -1,0 +1,348 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-standardize-workflow-nodes",
+  "status": "active",
+  "mode": "wf-max",
+  "tier": "WF-Full",
+  "phase": "implementation",
+  "gate": "W2-INTEGRATION",
+  "updatedAt": "2026-08-01T17:32:00+08:00",
+  "activeQuestion": null,
+  "nextAction": "Wait for W2G graph persistence debugger, then rerun M3/M4/M5 and CDP closeout.",
+  "acceptance": [
+    {
+      "id": "AC-001",
+      "status": "pending",
+      "text": "Unified node creation exists from top-right plus and canvas right-click, offers Agent/File/Markdown/Diagram, and removes the old top-center Markdown/Diagram toolbar."
+    },
+    {
+      "id": "AC-002",
+      "status": "pending",
+      "text": "File/text ingestion works: Explorer drag creates workspace-reference File node; Explorer preview can insert File node; external drop/paste stores File node under Harness/user-files; large pasted text creates Markdown node."
+    },
+    {
+      "id": "AC-003",
+      "status": "verified",
+      "text": "Backend exposes a complete workspace file pipe: meta, byte read, bounded text read, HEAD, Range, MIME, traversal denial, stale/missing file state."
+    },
+    {
+      "id": "AC-004",
+      "status": "verified",
+      "text": "Agent-readable graph snapshot includes connected resource refs, handles, directions, stateRef, contentRef, and capability hints for File/Markdown/Diagram nodes."
+    },
+    {
+      "id": "AC-005",
+      "status": "verified",
+      "text": "Markdown default output is configurable per agent, target-selectable, and falls back to oldest connected Markdown when enabled with no explicit target."
+    },
+    {
+      "id": "AC-006",
+      "status": "pending",
+      "text": "Explorer interaction is deterministic: single-click folder toggles open/closed, file click opens preview, right-click menu uses global viewport coordinates and clamps in view, Explorer gestures do not pan/drag canvas."
+    },
+    {
+      "id": "AC-007",
+      "status": "pending",
+      "text": "Node interaction is deterministic: double-click opens config/editor; right-click opens node menu only; delete/settings/open config/copy/cut/duplicate actions are available with stable selectors."
+    },
+    {
+      "id": "AC-008",
+      "status": "pending",
+      "text": "Bridge edge interaction is stable: single-click/drag does not open panel, double-click opens panel, edge/offset persistence happens on commit only and survives reload without disconnections."
+    },
+    {
+      "id": "AC-009",
+      "status": "verified-targeted",
+      "text": "Markdown and Excalidraw editors have enlarged/fullscreen mode, smooth loading/open animation, real editor loaded state, save revisions, Excalidraw icon/brand styling, no useless Rect toolbar button."
+    },
+    {
+      "id": "AC-010",
+      "status": "verified-targeted",
+      "text": "Agent settings panel is searchable, categorized, compact, i18n-ready, has tooltips, selectors/switches for common config, explorer-backed cwd picker, working Add Skill, and no raw JSON for common permission/launch policy."
+    },
+    {
+      "id": "AC-011",
+      "status": "pending",
+      "text": "Overlay stack is deterministic: toasts render above workflow chrome, menus/panels clamp to viewport, fullscreen is top layer."
+    },
+    {
+      "id": "AC-012",
+      "status": "pending",
+      "text": "Performance budget holds on /workflow: no React update loop, no failed API resources, ready under 3s in seeded graph smoke, no long task above 250ms during key interactions, edge drag sends no graph-map PUT before pointerup."
+    }
+  ],
+  "links": {
+    "dependsOn": [],
+    "blocks": [],
+    "related": [
+      "task-define-workflow-context-surface",
+      "task-terminal-input-control",
+      "task-stabilize-workflow-agent-control",
+      "task-upgrade-workflow-agent-canvas"
+    ]
+  },
+  "queues": {
+    "ready": [],
+    "running": [
+      "w2-graph-persistence-debug"
+    ],
+    "blocked": [],
+    "done": [
+      "w0-readonly-fanout",
+      "dgate-rewrite",
+      "w1-backend-contract-tests",
+      "w1-interaction-e2e-tests",
+      "w1-component-perf-e2e-tests",
+      "w2-backend-file-pipe",
+      "w2-frontend-canvas-gestures",
+      "w2-frontend-editors-settings",
+      "w2-frontend-explorer-file",
+      "w2-style-integration",
+      "w2-m4-residual-debug"
+    ]
+  },
+  "workItems": [
+    {
+      "id": "w0-readonly-fanout",
+      "status": "done",
+      "ownerRole": "ceo",
+      "goal": "Fan out read-only RCA across UI interaction, backend/API contract, performance architecture, and CDP/test plan."
+    },
+    {
+      "id": "dgate-rewrite",
+      "status": "done",
+      "ownerRole": "ceo",
+      "goal": "Rewrite task PLAN around AC-001..AC-012, API/UI/state/performance contracts, and disjoint Worker waves."
+    },
+    {
+      "id": "w1-backend-contract-tests",
+      "status": "done",
+      "ownerRole": "test-writer",
+      "goal": "Add RED backend tests for workspace file pipe, connected resource refs, and Markdown output fallback."
+    },
+    {
+      "id": "w1-interaction-e2e-tests",
+      "status": "done",
+      "ownerRole": "test-writer",
+      "goal": "Add RED Playwright/CDP tests for Explorer, menus, node gestures, bridge gestures, overlays, and React #185 guard."
+    },
+    {
+      "id": "w1-component-perf-e2e-tests",
+      "status": "done",
+      "ownerRole": "test-writer",
+      "goal": "Add RED Playwright tests for File preview, Markdown/Excalidraw fullscreen, and performance smoke."
+    },
+    {
+      "id": "w2-backend-file-pipe",
+      "status": "done",
+      "ownerRole": "implementer",
+      "goal": "Implement workspace meta/HEAD/Range/text contract and agent contentRef/capability refs."
+    },
+    {
+      "id": "w2-frontend-explorer-file",
+      "status": "done",
+      "ownerRole": "implementer",
+      "goal": "Fix Explorer single-click, global context menu, preview insert, file preview pipe, and lazy preview policy."
+    },
+    {
+      "id": "w2-frontend-canvas-gestures",
+      "status": "done",
+      "ownerRole": "implementer",
+      "goal": "Centralize canvas/node/edge gestures, drop routing, node menu, bridge drag/double-click, persistence commit guards, and React #185 fix."
+    },
+    {
+      "id": "w2-frontend-editors-settings",
+      "status": "done",
+      "ownerRole": "implementer",
+      "goal": "Productize settings and improve Markdown/Excalidraw fullscreen editors/icons/brand/loading."
+    },
+    {
+      "id": "w2-style-integration",
+      "status": "done",
+      "ownerRole": "implementer",
+      "goal": "Resolve residual Explorer canvas drift, /ws/events test-server failure, visible workflow-toast layer, and final overlay styling."
+    },
+    {
+      "id": "w3-review",
+      "status": "ready",
+      "ownerRole": "reviewer",
+      "goal": "Run independent spec/UX, API/security, and performance/React reviews."
+    },
+    {
+      "id": "w2-m4-residual-debug",
+      "status": "done",
+      "ownerRole": "debugger",
+      "goal": "Fix remaining M4 failures: Explorer node drift and toast create-panel timeout."
+    },
+    {
+      "id": "w4-ceo-cdp-closeout",
+      "status": "ready",
+      "ownerRole": "ceo",
+      "goal": "Run final Playwright/CDP validation against /workflow and record AC matrix."
+    },
+    {
+      "id": "w2-graph-persistence-debug",
+      "status": "running",
+      "ownerRole": "debugger",
+      "goal": "Fix M3 graph-map persistence for component node drag and handle connect while preserving M4 no-PUT-before-pointerup behavior."
+    }
+  ],
+  "dispatchLedger": [
+    {
+      "id": "019fbc4d-5551-7af3-8dfb-9eb118d818a1",
+      "wave": "W0",
+      "runtime": "Codex",
+      "channel": "multi_agent_v1",
+      "role": "codebase-explorer",
+      "status": "returned-closed",
+      "result": "Gesture ownership, overlay layering, drop ambiguity, and edge persistence findings integrated."
+    },
+    {
+      "id": "019fbc4d-a3ae-7002-b9b6-7bf703fb9968",
+      "wave": "W0",
+      "runtime": "Codex",
+      "channel": "multi_agent_v1",
+      "role": "architect",
+      "status": "returned-closed",
+      "result": "File pipe/contentRef/API contract findings integrated."
+    },
+    {
+      "id": "019fbc4d-f053-7ec1-9c4c-a3603ab690a5",
+      "wave": "W0",
+      "runtime": "Codex",
+      "channel": "multi_agent_v1",
+      "role": "architect",
+      "status": "returned-closed",
+      "result": "Performance architecture findings integrated."
+    },
+    {
+      "id": "019fbc4e-3df2-7d22-9d33-35db862c5e79",
+      "wave": "W0",
+      "runtime": "Codex",
+      "channel": "multi_agent_v1",
+      "role": "test-writer",
+      "status": "returned-closed",
+      "result": "AC expansion and CDP/API/Playwright test plan integrated."
+    },
+    {
+      "id": "019fbc59-1943-7b91-8c65-fb3aedfc8213",
+      "wave": "W1",
+      "runtime": "Codex",
+      "channel": "multi_agent_v1",
+      "role": "test-writer",
+      "status": "returned-closed",
+      "result": "Backend RED tests added; initial expected failures were missing meta, HEAD, text, contentRef, and Markdown output routing."
+    },
+    {
+      "id": "019fbc59-6673-7ad3-887e-c65ef0a2407a",
+      "wave": "W1",
+      "runtime": "Codex",
+      "channel": "multi_agent_v1",
+      "role": "test-writer",
+      "status": "returned-closed",
+      "result": "Interaction/CDP RED tests added for Explorer, workspace menu, node menu, bridge, toast, React #185 and failed API collector."
+    },
+    {
+      "id": "019fbc59-a795-7ac2-b39f-8ca849deda20",
+      "wave": "W1",
+      "runtime": "Codex",
+      "channel": "multi_agent_v1",
+      "role": "test-writer",
+      "status": "returned-closed",
+      "result": "M3/M5 RED tests added; initial expected failures were missing file preview selector, Excalidraw node type, and Excalidraw loaded state."
+    },
+    {
+      "id": "019fbc65-25e7-7b83-9f45-dfcdfe2acae6",
+      "wave": "W2A",
+      "runtime": "Codex",
+      "channel": "multi_agent_v1",
+      "role": "implementer",
+      "status": "returned-closed-verified",
+      "result": "Backend file pipe/contentRef/outputRouting implementation complete; targeted backend command passed 26/26 locally."
+    },
+    {
+      "id": "019fbc65-743c-7902-96e3-1fb9f615ec53",
+      "wave": "W2B",
+      "runtime": "Codex",
+      "channel": "multi_agent_v1",
+      "role": "implementer",
+      "status": "returned-closed-typecheck-pass",
+      "result": "Explorer/File implementation returned; typecheck and build passed with existing chunk-size warnings. Remaining targeted Playwright failures: canvas node drift 8.55px and /ws/events 404."
+    },
+    {
+      "id": "019fbc65-c492-7320-b72c-b1c0c1bc0e7b",
+      "wave": "W2C",
+      "runtime": "Codex",
+      "channel": "multi_agent_v1",
+      "role": "implementer",
+      "status": "returned-closed-typecheck-pass",
+      "result": "WorkflowRoute gesture/persistence/node menu implementation returned; typecheck passed. Remaining focused Playwright failures: /ws/events 404 collector and missing visible workflow-toast/style layer."
+    },
+    {
+      "id": "019fbc69-7f71-7e30-82e8-46ceef077ead",
+      "wave": "W2D",
+      "runtime": "Codex",
+      "channel": "multi_agent_v1",
+      "role": "implementer",
+      "status": "returned-closed-verified",
+      "result": "Editor/settings implementation complete; typecheck passed, targeted M3/M5 Playwright 3 passed, focused settings smoke 2 passed, vite build passed with existing chunk-size warnings."
+    },
+    {
+      "id": "019fbc84-303c-7131-bedf-c7ed084c3468",
+      "wave": "W2E",
+      "runtime": "Codex",
+      "channel": "multi_agent_v1",
+      "role": "debugger",
+      "status": "returned-closed-verified",
+      "result": "Resolved Explorer drift, optional /ws/events Playwright collector, and fixed high-z workflow-toast; reported M4 5/5 pass."
+    },
+    {
+      "id": "019fbc95-acd9-77f3-92fb-99a62d237471",
+      "wave": "W2F",
+      "runtime": "Codex",
+      "channel": "multi_agent_v1",
+      "role": "debugger",
+      "status": "returned-closed-verified",
+      "result": "Added coordinate-aware canvas-control detection and Explorer guard; reported typecheck pass, M4 5/5 pass, and AC-006 repeat 3/3 pass."
+    },
+    {
+      "id": "019fbc9f-486f-7273-b358-ff4fa5b8772e",
+      "wave": "W2G",
+      "runtime": "Codex",
+      "channel": "multi_agent_v1",
+      "role": "debugger",
+      "status": "running",
+      "result": "Fix graph-map persistence for component node drag and handle connect after CEO verification found M3 13/15 pass with 2 graph-map failures."
+    }
+  ],
+  "fanout": {
+    "fanoutAttempted": true,
+    "runtime": "Codex",
+    "channel": "multi_agent_v1",
+    "agentsRequested": 14,
+    "agentsReturned": 13,
+    "nativeSubagentsUsable": true,
+    "mode": "WF-Max-Useful",
+    "degradation": "Implementation parallelism is limited by shared high-conflict files WorkflowRoute.tsx and index.css; implementation waves are sequenced where write sets overlap."
+  },
+  "decisions": [
+    "Workspace Explorer file drags into the canvas create reference File nodes, not copied files.",
+    "External files/images dropped or pasted into the canvas are stored under Harness/user-files and represented as File nodes.",
+    "Pasted large text into the canvas creates a Markdown node.",
+    "For this slice, all node connections are effectively bidirectional by default, with permission/port metadata reserved for later refinement.",
+    "Markdown default output is controlled by an agent setting; if multiple connected Markdown nodes exist and no explicit target is selected, use the earliest-created Markdown node.",
+    "Agent settings should hide raw JSON for common permission and launch policy controls, while preserving an advanced area only for genuinely advanced fields.",
+    "Markdown and Diagram nodes should offer enlarged editing; Diagram should use the open-source Excalidraw package already installed in the UI workspace.",
+    "React error #185 is treated as a P0 update-loop regression and must be cleared by CDP/browser evidence before acceptance.",
+    "WebSocket is reserved for invalidation events in this slice, not file byte streaming.",
+    "Service Worker and WASM are out of default scope unless profiling proves they solve a specific bottleneck."
+  ],
+  "risks": [
+    "Current graph state has backend, localStorage, and IndexedDB paths; keeping more than one source of truth can recreate disappearing edge bugs.",
+    "File previews for PDF/image/video/Excel can grow scope quickly; first slice should use browser-native viewers plus lightweight text/CSV support and avoid heavy parsers unless already available.",
+    "Changing node creation and settings UI touches a large WorkflowRoute component; implementation parallelism must respect write-set conflicts.",
+    "The worktree already contains partial prior edits and unrelated dirty files; Workers must not revert unrelated user changes.",
+    "React #185 may hide a state subscription loop that only appears in production/minified builds."
+  ],
+  "artifacts": []
+}

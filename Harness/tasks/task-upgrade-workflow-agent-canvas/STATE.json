@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-upgrade-workflow-agent-canvas",
+  "status": "verified",
+  "mode": "wf",
+  "tier": "WF-Standard",
+  "phase": "verified",
+  "gate": "CLOSED",
+  "updatedAt": "2026-07-31T10:48:00.000Z",
+  "activeQuestion": null,
+  "nextAction": "Closed: all Workflow/Agents/Tasks icon, theme, STATE visualizer, resource wording, and quiet bootstrap requirements verified",
+  "acceptance": [
+    "AC-001",
+    "AC-002",
+    "AC-003",
+    "AC-004",
+    "AC-005",
+    "AC-006",
+    "AC-007",
+    "AC-008",
+    "AC-009",
+    "AC-010",
+    "AC-011",
+    "AC-012",
+    "AC-013",
+    "AC-014",
+    "AC-015",
+    "AC-016"
+  ],
+  "links": {
+    "dependsOn": [],
+    "blocks": [],
+    "related": []
+  },
+  "queues": {
+    "ready": [],
+    "running": [],
+    "blocked": [],
+    "done": [
+      "D1",
+      "D2",
+      "D3"
+    ]
+  },
+  "workItems": [
+    {
+      "id": "D1",
+      "agent": "codebase-explorer",
+      "status": "done",
+      "writeSet": []
+    },
+    {
+      "id": "D2",
+      "agent": "architect",
+      "status": "done",
+      "writeSet": []
+    },
+    {
+      "id": "D3",
+      "agent": "test-writer",
+      "status": "done",
+      "writeSet": [
+        "tests/anti-drift.test.js",
+        "src/wf-ui-server/__tests__/*.test.mjs"
+      ]
+    }
+  ],
+  "dispatchLedger": [
+    {
+      "id": "D1",
+      "agent": "codebase-explorer",
+      "status": "done"
+    },
+    {
+      "id": "D2",
+      "agent": "architect",
+      "status": "done"
+    },
+    {
+      "id": "D3",
+      "agent": "test-writer",
+      "status": "done"
+    }
+  ],
+  "decisions": [
+    "Router is removed from default Workflow UX",
+    "Agent kind is Main Agent or Subagent",
+    "Direct PTY attach replaces detached input controls",
+    "Main/Subagent bootstrap uses runtime CLI initial prompts; explicit /wf startup still uses delayed PTY input sequencing"
+  ],
+  "risks": [
+    "Browser drag edge creation can be flaky",
+    "xterm/WebSocket attach may require package dependency changes",
+    "PTY memory estimates may be platform-limited"
+  ],
+  "artifacts": [
+    "Browser validation on local wf-ui port 63252: Main Agent e1452dc6 replied, described graph, spawned Subagent a386f5a6, and answered a follow-up PTY message about live nodes",
+    "Tests: 99 Node tests passed across anti-drift, wf-ui-server, and generator suites",
+    "Frontend: src/ui npm run typecheck and npm run build passed",
+    "Full npm test passed: 279 pass, 1 skipped",
+    "Final acceptance: Main Agent e1452dc6 replied ACK, described the graph, and spawned AcceptanceSubagent 3c069b58; API state showed 3 live PTYs, 20 workflow records, and 3 graph edges",
+    "Follow-up scope: quiet/minimal agent startup, bounded dismissible panels, stable colors/grid, aggregate resources, and terminal blank-render recovery",
+    "Follow-up scope: runtime brand icons in selectors/nodes/agents/tasks, visualized STATE.json, and resource summary wording for no current live PTY",
+    "Verification: Edge Browser on wf-ui port 58262 showed workflow node icons, icon runtime picker options, Agents resource usage as unavailable instead of fake 0 B/0.0%, task STATE visual view, and raw JSON toggle",
+    "Tests: node --test tests\\anti-drift.test.js; node --test src\\wf-ui-server\\__tests__\\task-parser.test.mjs; npm run typecheck; npm run build",
+    "Closeout verification: npm test passed 281/282 with 1 skip; node --test src\\wf-ui-server\\__tests__\\*.test.mjs passed 146/146; npm run test:e2e passed 174/174; src/ui typecheck/build passed; git diff --check passed",
+    "Browser closeout on wf-ui port 58262: Workflow loaded 6 nodes with runtime icons and role badges, Workflow runtime picker options showed icons, Agents resource summary showed live-PTY-only scope with a real live Codex PTY sample, saved sessions showed unavailable resource rows, Tasks visual STATE and JSON toggle worked",
+    "Correction: STATE visualizer and task parser now render string-only acceptance entries as tracked instead of fake pending"
+  ]
+}

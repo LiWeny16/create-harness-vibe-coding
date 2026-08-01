@@ -1,0 +1,1409 @@
+{
+  "schemaVersion": 1,
+  "version": 45,
+  "nodes": [
+    {
+      "nodeId": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+      "sessionId": "e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+      "agentKind": "main",
+      "runtime": "claude",
+      "taskId": null,
+      "cwd": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding",
+      "status": "saved",
+      "label": "claude main agent",
+      "position": {
+        "x": -181.43518673780113,
+        "y": -188.2514496714482
+      },
+      "width": 238,
+      "height": 118
+    },
+    {
+      "nodeId": "session-178fa9e2-52b4-43ea-8570-782088cfe978",
+      "sessionId": "178fa9e2-52b4-43ea-8570-782088cfe978",
+      "agentKind": "main",
+      "runtime": "codex",
+      "taskId": null,
+      "cwd": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding",
+      "status": "saved",
+      "label": "codex main agent",
+      "position": {
+        "x": 496.88737029340484,
+        "y": -130.30093646229193
+      },
+      "width": 238,
+      "height": 118
+    },
+    {
+      "nodeId": "session-54eb4005-d249-42e0-936d-579ee084ffe1",
+      "sessionId": "54eb4005-d249-42e0-936d-579ee084ffe1",
+      "agentKind": "subagent",
+      "runtime": "claude",
+      "taskId": null,
+      "cwd": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding",
+      "status": "saved",
+      "label": "claude subagent",
+      "position": {
+        "x": -230.94220774162676,
+        "y": 342.2730111655406
+      },
+      "width": 238,
+      "height": 118
+    },
+    {
+      "nodeId": "session-e77df9f9-51a6-4888-b595-21222b36cd57",
+      "sessionId": "e77df9f9-51a6-4888-b595-21222b36cd57",
+      "agentKind": "subagent",
+      "runtime": "claude",
+      "taskId": null,
+      "cwd": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding",
+      "status": "saved",
+      "label": "claude subagent",
+      "position": {
+        "x": 222.97595611302933,
+        "y": 355.7610732274531
+      },
+      "width": 238,
+      "height": 118
+    }
+  ],
+  "edges": [
+    {
+      "id": "manual-session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45-session-178fa9e2-52b4-43ea-8570-782088cfe978-1785486144832",
+      "from": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+      "to": "session-178fa9e2-52b4-43ea-8570-782088cfe978",
+      "relation": "can-communicate"
+    },
+    {
+      "id": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45->session-54eb4005-d249-42e0-936d-579ee084ffe1",
+      "from": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+      "to": "session-54eb4005-d249-42e0-936d-579ee084ffe1",
+      "relation": "can-communicate"
+    },
+    {
+      "id": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45->session-e77df9f9-51a6-4888-b595-21222b36cd57",
+      "from": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+      "to": "session-e77df9f9-51a6-4888-b595-21222b36cd57",
+      "relation": "can-communicate"
+    }
+  ],
+  "positions": {
+    "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45": {
+      "x": -181.43518673780113,
+      "y": -188.2514496714482
+    },
+    "session-178fa9e2-52b4-43ea-8570-782088cfe978": {
+      "x": 496.88737029340484,
+      "y": -130.30093646229193
+    },
+    "session-54eb4005-d249-42e0-936d-579ee084ffe1": {
+      "x": -230.94220774162676,
+      "y": 342.2730111655406
+    },
+    "session-e77df9f9-51a6-4888-b595-21222b36cd57": {
+      "x": 222.97595611302933,
+      "y": 355.7610732274531
+    }
+  },
+  "undoStack": [
+    {
+      "positions": {
+        "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45": {
+          "x": 308.69196900389414,
+          "y": 270.63964776404987
+        },
+        "session-e77df9f9-51a6-4888-b595-21222b36cd57": {
+          "x": 755.1714231334863,
+          "y": 754.5306044764089
+        },
+        "session-54eb4005-d249-42e0-936d-579ee084ffe1": {
+          "x": 251.59220630913262,
+          "y": 746.7981371087276
+        }
+      },
+      "edges": []
+    },
+    {
+      "positions": {
+        "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45": {
+          "x": 308.69196900389414,
+          "y": 270.63964776404987
+        },
+        "session-e77df9f9-51a6-4888-b595-21222b36cd57": {
+          "x": 878.6198253620855,
+          "y": 784.5109307319259
+        },
+        "session-54eb4005-d249-42e0-936d-579ee084ffe1": {
+          "x": 251.59220630913262,
+          "y": 746.7981371087276
+        }
+      },
+      "edges": []
+    },
+    {
+      "positions": {
+        "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45": {
+          "x": 308.69196900389414,
+          "y": 270.63964776404987
+        },
+        "session-e77df9f9-51a6-4888-b595-21222b36cd57": {
+          "x": 878.6198253620855,
+          "y": 784.5109307319259
+        },
+        "session-54eb4005-d249-42e0-936d-579ee084ffe1": {
+          "x": -52.2863930041994,
+          "y": 740.2980601180682
+        }
+      },
+      "edges": []
+    },
+    {
+      "positions": {
+        "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45": {
+          "x": 308.69196900389414,
+          "y": 270.63964776404987
+        },
+        "session-e77df9f9-51a6-4888-b595-21222b36cd57": {
+          "x": 813.6190554554905,
+          "y": 729.2602763113201
+        },
+        "session-54eb4005-d249-42e0-936d-579ee084ffe1": {
+          "x": -52.2863930041994,
+          "y": 740.2980601180682
+        }
+      },
+      "edges": []
+    },
+    {
+      "positions": {
+        "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45": {
+          "x": 308.69196900389414,
+          "y": 270.63964776404987
+        },
+        "session-e77df9f9-51a6-4888-b595-21222b36cd57": {
+          "x": 813.6190554554905,
+          "y": 729.2602763113201
+        },
+        "session-54eb4005-d249-42e0-936d-579ee084ffe1": {
+          "x": 14.258799399961163,
+          "y": 725.4598877935576
+        }
+      },
+      "edges": []
+    },
+    {
+      "positions": {
+        "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45": {
+          "x": 308.69196900389414,
+          "y": 270.63964776404987
+        },
+        "session-e77df9f9-51a6-4888-b595-21222b36cd57": {
+          "x": 813.6190554554905,
+          "y": 729.2602763113201
+        },
+        "session-54eb4005-d249-42e0-936d-579ee084ffe1": {
+          "x": 14.258799399961163,
+          "y": 725.4598877935576
+        },
+        "session-178fa9e2-52b4-43ea-8570-782088cfe978": {
+          "x": 962.6990440905241,
+          "y": 329.35273697013554
+        }
+      },
+      "edges": []
+    },
+    {
+      "positions": {
+        "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45": {
+          "x": 308.69196900389414,
+          "y": 270.63964776404987
+        },
+        "session-e77df9f9-51a6-4888-b595-21222b36cd57": {
+          "x": 695.5390318899078,
+          "y": 795.009380342156
+        },
+        "session-54eb4005-d249-42e0-936d-579ee084ffe1": {
+          "x": 14.258799399961163,
+          "y": 725.4598877935576
+        },
+        "session-178fa9e2-52b4-43ea-8570-782088cfe978": {
+          "x": 962.6990440905241,
+          "y": 329.35273697013554
+        }
+      },
+      "edges": []
+    },
+    {
+      "positions": {
+        "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45": {
+          "x": 572.4363507258898,
+          "y": 284.76881107058534
+        },
+        "session-e77df9f9-51a6-4888-b595-21222b36cd57": {
+          "x": 695.5390318899078,
+          "y": 795.009380342156
+        },
+        "session-54eb4005-d249-42e0-936d-579ee084ffe1": {
+          "x": 14.258799399961163,
+          "y": 725.4598877935576
+        },
+        "session-178fa9e2-52b4-43ea-8570-782088cfe978": {
+          "x": 962.6990440905241,
+          "y": 329.35273697013554
+        }
+      },
+      "edges": []
+    },
+    {
+      "positions": {
+        "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45": {
+          "x": 572.4363507258898,
+          "y": 284.76881107058534
+        },
+        "session-e77df9f9-51a6-4888-b595-21222b36cd57": {
+          "x": 695.5390318899078,
+          "y": 795.009380342156
+        },
+        "session-54eb4005-d249-42e0-936d-579ee084ffe1": {
+          "x": 14.258799399961163,
+          "y": 725.4598877935576
+        },
+        "session-178fa9e2-52b4-43ea-8570-782088cfe978": {
+          "x": 962.6990440905241,
+          "y": 329.35273697013554
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45-session-178fa9e2-52b4-43ea-8570-782088cfe978-1785486144832",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-178fa9e2-52b4-43ea-8570-782088cfe978",
+          "label": "can communicate"
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45": {
+          "x": 572.4363507258898,
+          "y": 284.76881107058534
+        },
+        "session-e77df9f9-51a6-4888-b595-21222b36cd57": {
+          "x": 695.5390318899078,
+          "y": 795.009380342156
+        },
+        "session-54eb4005-d249-42e0-936d-579ee084ffe1": {
+          "x": 14.258799399961163,
+          "y": 725.4598877935576
+        },
+        "session-178fa9e2-52b4-43ea-8570-782088cfe978": {
+          "x": 1033.618759148378,
+          "y": 405.33814596069317
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45-session-178fa9e2-52b4-43ea-8570-782088cfe978-1785486144832",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-178fa9e2-52b4-43ea-8570-782088cfe978",
+          "label": "can communicate"
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45": {
+          "x": 572.4363507258898,
+          "y": 284.76881107058534
+        },
+        "session-e77df9f9-51a6-4888-b595-21222b36cd57": {
+          "x": 695.5390318899078,
+          "y": 795.009380342156
+        },
+        "session-54eb4005-d249-42e0-936d-579ee084ffe1": {
+          "x": 14.258799399961163,
+          "y": 725.4598877935576
+        },
+        "session-178fa9e2-52b4-43ea-8570-782088cfe978": {
+          "x": 865.8591043156082,
+          "y": 429.6343718330254
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45-session-178fa9e2-52b4-43ea-8570-782088cfe978-1785486144832",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-178fa9e2-52b4-43ea-8570-782088cfe978",
+          "label": "can communicate"
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45": {
+          "x": 108.08107356137106,
+          "y": 178.38923848380466
+        },
+        "session-e77df9f9-51a6-4888-b595-21222b36cd57": {
+          "x": 695.5390318899078,
+          "y": 795.009380342156
+        },
+        "session-54eb4005-d249-42e0-936d-579ee084ffe1": {
+          "x": 14.258799399961163,
+          "y": 725.4598877935576
+        },
+        "session-178fa9e2-52b4-43ea-8570-782088cfe978": {
+          "x": 865.8591043156082,
+          "y": 429.6343718330254
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45-session-178fa9e2-52b4-43ea-8570-782088cfe978-1785486144832",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-178fa9e2-52b4-43ea-8570-782088cfe978",
+          "label": "can communicate"
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45": {
+          "x": 108.08107356137106,
+          "y": 178.38923848380466
+        },
+        "session-e77df9f9-51a6-4888-b595-21222b36cd57": {
+          "x": 670.6288572917168,
+          "y": 842.207605896623
+        },
+        "session-54eb4005-d249-42e0-936d-579ee084ffe1": {
+          "x": 14.258799399961163,
+          "y": 725.4598877935576
+        },
+        "session-178fa9e2-52b4-43ea-8570-782088cfe978": {
+          "x": 865.8591043156082,
+          "y": 429.6343718330254
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45-session-178fa9e2-52b4-43ea-8570-782088cfe978-1785486144832",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-178fa9e2-52b4-43ea-8570-782088cfe978",
+          "label": "can communicate"
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45": {
+          "x": 108.08107356137106,
+          "y": 178.38923848380466
+        },
+        "session-e77df9f9-51a6-4888-b595-21222b36cd57": {
+          "x": 465.3900414937759,
+          "y": 519.3319502074689
+        },
+        "session-54eb4005-d249-42e0-936d-579ee084ffe1": {
+          "x": 14.258799399961163,
+          "y": 725.4598877935576
+        },
+        "session-178fa9e2-52b4-43ea-8570-782088cfe978": {
+          "x": 865.8591043156082,
+          "y": 429.6343718330254
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45-session-178fa9e2-52b4-43ea-8570-782088cfe978-1785486144832",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-178fa9e2-52b4-43ea-8570-782088cfe978",
+          "label": "can communicate"
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45": {
+          "x": 108.08107356137106,
+          "y": 178.38923848380466
+        },
+        "session-e77df9f9-51a6-4888-b595-21222b36cd57": {
+          "x": 409.8319502074688,
+          "y": 786.845445411334
+        },
+        "session-54eb4005-d249-42e0-936d-579ee084ffe1": {
+          "x": 14.258799399961163,
+          "y": 725.4598877935576
+        },
+        "session-178fa9e2-52b4-43ea-8570-782088cfe978": {
+          "x": 865.8591043156082,
+          "y": 429.6343718330254
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45-session-178fa9e2-52b4-43ea-8570-782088cfe978-1785486144832",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-178fa9e2-52b4-43ea-8570-782088cfe978",
+          "label": "can communicate"
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45": {
+          "x": 108.08107356137106,
+          "y": 178.38923848380466
+        },
+        "session-e77df9f9-51a6-4888-b595-21222b36cd57": {
+          "x": 273.213692946058,
+          "y": 505.64988794366366
+        },
+        "session-54eb4005-d249-42e0-936d-579ee084ffe1": {
+          "x": 14.258799399961163,
+          "y": 725.4598877935576
+        },
+        "session-178fa9e2-52b4-43ea-8570-782088cfe978": {
+          "x": 865.8591043156082,
+          "y": 429.6343718330254
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45-session-178fa9e2-52b4-43ea-8570-782088cfe978-1785486144832",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-178fa9e2-52b4-43ea-8570-782088cfe978",
+          "label": "can communicate"
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45": {
+          "x": 108.08107356137106,
+          "y": 178.38923848380466
+        },
+        "session-e77df9f9-51a6-4888-b595-21222b36cd57": {
+          "x": 473.5871369294605,
+          "y": 463.7536223834977
+        },
+        "session-54eb4005-d249-42e0-936d-579ee084ffe1": {
+          "x": 14.258799399961163,
+          "y": 725.4598877935576
+        },
+        "session-178fa9e2-52b4-43ea-8570-782088cfe978": {
+          "x": 865.8591043156082,
+          "y": 429.6343718330254
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45-session-178fa9e2-52b4-43ea-8570-782088cfe978-1785486144832",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-178fa9e2-52b4-43ea-8570-782088cfe978",
+          "label": "can communicate"
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45": {
+          "x": 108.08107356137106,
+          "y": 178.38923848380466
+        },
+        "session-e77df9f9-51a6-4888-b595-21222b36cd57": {
+          "x": 490.4114784892164,
+          "y": 397.3417478055142
+        },
+        "session-54eb4005-d249-42e0-936d-579ee084ffe1": {
+          "x": 14.258799399961163,
+          "y": 725.4598877935576
+        },
+        "session-178fa9e2-52b4-43ea-8570-782088cfe978": {
+          "x": 865.8591043156082,
+          "y": 429.6343718330254
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45-session-178fa9e2-52b4-43ea-8570-782088cfe978-1785486144832",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-178fa9e2-52b4-43ea-8570-782088cfe978",
+          "label": "can communicate"
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45": {
+          "x": 108.08107356137106,
+          "y": 178.38923848380466
+        },
+        "session-e77df9f9-51a6-4888-b595-21222b36cd57": {
+          "x": 490.4114784892164,
+          "y": 397.3417478055142
+        },
+        "session-54eb4005-d249-42e0-936d-579ee084ffe1": {
+          "x": 14.258799399961163,
+          "y": 725.4598877935576
+        },
+        "session-178fa9e2-52b4-43ea-8570-782088cfe978": {
+          "x": 621.31235756245,
+          "y": 185.05335823767626
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45-session-178fa9e2-52b4-43ea-8570-782088cfe978-1785486144832",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-178fa9e2-52b4-43ea-8570-782088cfe978",
+          "label": "can communicate"
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45": {
+          "x": 182,
+          "y": 170
+        },
+        "session-178fa9e2-52b4-43ea-8570-782088cfe978": {
+          "x": 500,
+          "y": 170
+        },
+        "session-54eb4005-d249-42e0-936d-579ee084ffe1": {
+          "x": 182,
+          "y": 390
+        },
+        "session-e77df9f9-51a6-4888-b595-21222b36cd57": {
+          "x": 500,
+          "y": 390
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45-session-178fa9e2-52b4-43ea-8570-782088cfe978-1785486144832",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-178fa9e2-52b4-43ea-8570-782088cfe978",
+          "label": "can-communicate"
+        },
+        {
+          "id": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45->session-54eb4005-d249-42e0-936d-579ee084ffe1",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-54eb4005-d249-42e0-936d-579ee084ffe1",
+          "label": "can-communicate"
+        },
+        {
+          "id": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45->session-e77df9f9-51a6-4888-b595-21222b36cd57",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-e77df9f9-51a6-4888-b595-21222b36cd57",
+          "label": "can-communicate"
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45": {
+          "x": 182,
+          "y": 170
+        },
+        "session-178fa9e2-52b4-43ea-8570-782088cfe978": {
+          "x": 500,
+          "y": 170
+        },
+        "session-54eb4005-d249-42e0-936d-579ee084ffe1": {
+          "x": 19.651263570663076,
+          "y": 351.30548250907
+        },
+        "session-e77df9f9-51a6-4888-b595-21222b36cd57": {
+          "x": 500,
+          "y": 390
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45-session-178fa9e2-52b4-43ea-8570-782088cfe978-1785486144832",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-178fa9e2-52b4-43ea-8570-782088cfe978",
+          "label": "can-communicate"
+        },
+        {
+          "id": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45->session-54eb4005-d249-42e0-936d-579ee084ffe1",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-54eb4005-d249-42e0-936d-579ee084ffe1",
+          "label": "can-communicate"
+        },
+        {
+          "id": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45->session-e77df9f9-51a6-4888-b595-21222b36cd57",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-e77df9f9-51a6-4888-b595-21222b36cd57",
+          "label": "can-communicate"
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45": {
+          "x": 182,
+          "y": 170
+        },
+        "session-178fa9e2-52b4-43ea-8570-782088cfe978": {
+          "x": 568.1359981905508,
+          "y": 185.9825180940798
+        },
+        "session-54eb4005-d249-42e0-936d-579ee084ffe1": {
+          "x": 19.651263570663076,
+          "y": 351.30548250907
+        },
+        "session-e77df9f9-51a6-4888-b595-21222b36cd57": {
+          "x": 500,
+          "y": 390
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45-session-178fa9e2-52b4-43ea-8570-782088cfe978-1785486144832",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-178fa9e2-52b4-43ea-8570-782088cfe978",
+          "label": "can-communicate"
+        },
+        {
+          "id": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45->session-54eb4005-d249-42e0-936d-579ee084ffe1",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-54eb4005-d249-42e0-936d-579ee084ffe1",
+          "label": "can-communicate"
+        },
+        {
+          "id": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45->session-e77df9f9-51a6-4888-b595-21222b36cd57",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-e77df9f9-51a6-4888-b595-21222b36cd57",
+          "label": "can-communicate"
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45": {
+          "x": 182,
+          "y": 170
+        },
+        "session-178fa9e2-52b4-43ea-8570-782088cfe978": {
+          "x": 577.3890349818602,
+          "y": 213.7416284680079
+        },
+        "session-54eb4005-d249-42e0-936d-579ee084ffe1": {
+          "x": 19.651263570663076,
+          "y": 351.30548250907
+        },
+        "session-e77df9f9-51a6-4888-b595-21222b36cd57": {
+          "x": 500,
+          "y": 390
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45-session-178fa9e2-52b4-43ea-8570-782088cfe978-1785486144832",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-178fa9e2-52b4-43ea-8570-782088cfe978",
+          "label": "can-communicate"
+        },
+        {
+          "id": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45->session-54eb4005-d249-42e0-936d-579ee084ffe1",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-54eb4005-d249-42e0-936d-579ee084ffe1",
+          "label": "can-communicate"
+        },
+        {
+          "id": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45->session-e77df9f9-51a6-4888-b595-21222b36cd57",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-e77df9f9-51a6-4888-b595-21222b36cd57",
+          "label": "can-communicate"
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45": {
+          "x": 87.78726176121378,
+          "y": 168.3176296743074
+        },
+        "session-178fa9e2-52b4-43ea-8570-782088cfe978": {
+          "x": 577.3890349818602,
+          "y": 213.7416284680079
+        },
+        "session-54eb4005-d249-42e0-936d-579ee084ffe1": {
+          "x": 19.651263570663076,
+          "y": 351.30548250907
+        },
+        "session-e77df9f9-51a6-4888-b595-21222b36cd57": {
+          "x": 500,
+          "y": 390
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45-session-178fa9e2-52b4-43ea-8570-782088cfe978-1785486144832",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-178fa9e2-52b4-43ea-8570-782088cfe978",
+          "label": "can-communicate"
+        },
+        {
+          "id": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45->session-54eb4005-d249-42e0-936d-579ee084ffe1",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-54eb4005-d249-42e0-936d-579ee084ffe1",
+          "label": "can-communicate"
+        },
+        {
+          "id": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45->session-e77df9f9-51a6-4888-b595-21222b36cd57",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-e77df9f9-51a6-4888-b595-21222b36cd57",
+          "label": "can-communicate"
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45": {
+          "x": 87.78726176121378,
+          "y": 168.3176296743074
+        },
+        "session-178fa9e2-52b4-43ea-8570-782088cfe978": {
+          "x": 566.4536278648582,
+          "y": 180.09422195415564
+        },
+        "session-54eb4005-d249-42e0-936d-579ee084ffe1": {
+          "x": 19.651263570663076,
+          "y": 351.30548250907
+        },
+        "session-e77df9f9-51a6-4888-b595-21222b36cd57": {
+          "x": 500,
+          "y": 390
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45-session-178fa9e2-52b4-43ea-8570-782088cfe978-1785486144832",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-178fa9e2-52b4-43ea-8570-782088cfe978",
+          "label": "can-communicate"
+        },
+        {
+          "id": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45->session-54eb4005-d249-42e0-936d-579ee084ffe1",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-54eb4005-d249-42e0-936d-579ee084ffe1",
+          "label": "can-communicate"
+        },
+        {
+          "id": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45->session-e77df9f9-51a6-4888-b595-21222b36cd57",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-e77df9f9-51a6-4888-b595-21222b36cd57",
+          "label": "can-communicate"
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45": {
+          "x": -267.9137935959815,
+          "y": -230.34757060119162
+        },
+        "session-178fa9e2-52b4-43ea-8570-782088cfe978": {
+          "x": 566.4536278648582,
+          "y": 180.09422195415564
+        },
+        "session-54eb4005-d249-42e0-936d-579ee084ffe1": {
+          "x": 19.651263570663076,
+          "y": 351.30548250907
+        },
+        "session-e77df9f9-51a6-4888-b595-21222b36cd57": {
+          "x": 500,
+          "y": 390
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45-session-178fa9e2-52b4-43ea-8570-782088cfe978-1785486144832",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-178fa9e2-52b4-43ea-8570-782088cfe978",
+          "label": "can-communicate"
+        },
+        {
+          "id": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45->session-54eb4005-d249-42e0-936d-579ee084ffe1",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-54eb4005-d249-42e0-936d-579ee084ffe1",
+          "label": "can-communicate"
+        },
+        {
+          "id": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45->session-e77df9f9-51a6-4888-b595-21222b36cd57",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-e77df9f9-51a6-4888-b595-21222b36cd57",
+          "label": "can-communicate"
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45": {
+          "x": -267.9137935959815,
+          "y": -230.34757060119162
+        },
+        "session-178fa9e2-52b4-43ea-8570-782088cfe978": {
+          "x": 566.4536278648582,
+          "y": 180.09422195415564
+        },
+        "session-54eb4005-d249-42e0-936d-579ee084ffe1": {
+          "x": -430.63502526464555,
+          "y": 336.79748464807034
+        },
+        "session-e77df9f9-51a6-4888-b595-21222b36cd57": {
+          "x": 500,
+          "y": 390
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45-session-178fa9e2-52b4-43ea-8570-782088cfe978-1785486144832",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-178fa9e2-52b4-43ea-8570-782088cfe978",
+          "label": "can-communicate"
+        },
+        {
+          "id": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45->session-54eb4005-d249-42e0-936d-579ee084ffe1",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-54eb4005-d249-42e0-936d-579ee084ffe1",
+          "label": "can-communicate"
+        },
+        {
+          "id": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45->session-e77df9f9-51a6-4888-b595-21222b36cd57",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-e77df9f9-51a6-4888-b595-21222b36cd57",
+          "label": "can-communicate"
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45": {
+          "x": -267.9137935959815,
+          "y": -230.34757060119162
+        },
+        "session-178fa9e2-52b4-43ea-8570-782088cfe978": {
+          "x": 628.9757947925569,
+          "y": 28.126625728187364
+        },
+        "session-54eb4005-d249-42e0-936d-579ee084ffe1": {
+          "x": -430.63502526464555,
+          "y": 336.79748464807034
+        },
+        "session-e77df9f9-51a6-4888-b595-21222b36cd57": {
+          "x": 500,
+          "y": 390
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45-session-178fa9e2-52b4-43ea-8570-782088cfe978-1785486144832",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-178fa9e2-52b4-43ea-8570-782088cfe978",
+          "label": "can-communicate"
+        },
+        {
+          "id": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45->session-54eb4005-d249-42e0-936d-579ee084ffe1",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-54eb4005-d249-42e0-936d-579ee084ffe1",
+          "label": "can-communicate"
+        },
+        {
+          "id": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45->session-e77df9f9-51a6-4888-b595-21222b36cd57",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-e77df9f9-51a6-4888-b595-21222b36cd57",
+          "label": "can-communicate"
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45": {
+          "x": -267.9137935959815,
+          "y": -230.34757060119162
+        },
+        "session-178fa9e2-52b4-43ea-8570-782088cfe978": {
+          "x": 628.9757947925569,
+          "y": 28.126625728187364
+        },
+        "session-54eb4005-d249-42e0-936d-579ee084ffe1": {
+          "x": -430.63502526464555,
+          "y": 336.79748464807034
+        },
+        "session-e77df9f9-51a6-4888-b595-21222b36cd57": {
+          "x": 222.7020411960026,
+          "y": 320.67551029900073
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45-session-178fa9e2-52b4-43ea-8570-782088cfe978-1785486144832",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-178fa9e2-52b4-43ea-8570-782088cfe978",
+          "label": "can-communicate"
+        },
+        {
+          "id": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45->session-54eb4005-d249-42e0-936d-579ee084ffe1",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-54eb4005-d249-42e0-936d-579ee084ffe1",
+          "label": "can-communicate"
+        },
+        {
+          "id": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45->session-e77df9f9-51a6-4888-b595-21222b36cd57",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-e77df9f9-51a6-4888-b595-21222b36cd57",
+          "label": "can-communicate"
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45": {
+          "x": -267.9137935959815,
+          "y": -230.34757060119162
+        },
+        "session-178fa9e2-52b4-43ea-8570-782088cfe978": {
+          "x": 628.9757947925569,
+          "y": 28.126625728187364
+        },
+        "session-54eb4005-d249-42e0-936d-579ee084ffe1": {
+          "x": -253.29330742487977,
+          "y": 262.6364026423501
+        },
+        "session-e77df9f9-51a6-4888-b595-21222b36cd57": {
+          "x": 222.7020411960026,
+          "y": 320.67551029900073
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45-session-178fa9e2-52b4-43ea-8570-782088cfe978-1785486144832",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-178fa9e2-52b4-43ea-8570-782088cfe978",
+          "label": "can-communicate"
+        },
+        {
+          "id": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45->session-54eb4005-d249-42e0-936d-579ee084ffe1",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-54eb4005-d249-42e0-936d-579ee084ffe1",
+          "label": "can-communicate"
+        },
+        {
+          "id": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45->session-e77df9f9-51a6-4888-b595-21222b36cd57",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-e77df9f9-51a6-4888-b595-21222b36cd57",
+          "label": "can-communicate"
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45": {
+          "x": -267.9137935959815,
+          "y": -230.34757060119162
+        },
+        "session-178fa9e2-52b4-43ea-8570-782088cfe978": {
+          "x": 628.9757947925569,
+          "y": 28.126625728187364
+        },
+        "session-54eb4005-d249-42e0-936d-579ee084ffe1": {
+          "x": -253.29330742487977,
+          "y": 262.6364026423501
+        },
+        "session-e77df9f9-51a6-4888-b595-21222b36cd57": {
+          "x": 359.1515945657989,
+          "y": 291.8481398687621
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45-session-178fa9e2-52b4-43ea-8570-782088cfe978-1785486144832",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-178fa9e2-52b4-43ea-8570-782088cfe978",
+          "label": "can-communicate"
+        },
+        {
+          "id": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45->session-54eb4005-d249-42e0-936d-579ee084ffe1",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-54eb4005-d249-42e0-936d-579ee084ffe1",
+          "label": "can-communicate"
+        },
+        {
+          "id": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45->session-e77df9f9-51a6-4888-b595-21222b36cd57",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-e77df9f9-51a6-4888-b595-21222b36cd57",
+          "label": "can-communicate"
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45": {
+          "x": -267.9137935959815,
+          "y": -230.34757060119162
+        },
+        "session-178fa9e2-52b4-43ea-8570-782088cfe978": {
+          "x": 418.5960706739196,
+          "y": -550.515383203403
+        },
+        "session-54eb4005-d249-42e0-936d-579ee084ffe1": {
+          "x": -253.29330742487977,
+          "y": 262.6364026423501
+        },
+        "session-e77df9f9-51a6-4888-b595-21222b36cd57": {
+          "x": 359.1515945657989,
+          "y": 291.8481398687621
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45-session-178fa9e2-52b4-43ea-8570-782088cfe978-1785486144832",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-178fa9e2-52b4-43ea-8570-782088cfe978",
+          "label": "can-communicate"
+        },
+        {
+          "id": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45->session-54eb4005-d249-42e0-936d-579ee084ffe1",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-54eb4005-d249-42e0-936d-579ee084ffe1",
+          "label": "can-communicate"
+        },
+        {
+          "id": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45->session-e77df9f9-51a6-4888-b595-21222b36cd57",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-e77df9f9-51a6-4888-b595-21222b36cd57",
+          "label": "can-communicate"
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45": {
+          "x": -267.9137935959815,
+          "y": -230.34757060119162
+        },
+        "session-178fa9e2-52b4-43ea-8570-782088cfe978": {
+          "x": 418.5960706739196,
+          "y": -234.3082827099359
+        },
+        "session-54eb4005-d249-42e0-936d-579ee084ffe1": {
+          "x": -253.29330742487977,
+          "y": 262.6364026423501
+        },
+        "session-e77df9f9-51a6-4888-b595-21222b36cd57": {
+          "x": 359.1515945657989,
+          "y": 291.8481398687621
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45-session-178fa9e2-52b4-43ea-8570-782088cfe978-1785486144832",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-178fa9e2-52b4-43ea-8570-782088cfe978",
+          "label": "can-communicate"
+        },
+        {
+          "id": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45->session-54eb4005-d249-42e0-936d-579ee084ffe1",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-54eb4005-d249-42e0-936d-579ee084ffe1",
+          "label": "can-communicate"
+        },
+        {
+          "id": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45->session-e77df9f9-51a6-4888-b595-21222b36cd57",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-e77df9f9-51a6-4888-b595-21222b36cd57",
+          "label": "can-communicate"
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45": {
+          "x": -267.9137935959815,
+          "y": -230.34757060119162
+        },
+        "session-178fa9e2-52b4-43ea-8570-782088cfe978": {
+          "x": 418.5960706739196,
+          "y": -234.3082827099359
+        },
+        "session-54eb4005-d249-42e0-936d-579ee084ffe1": {
+          "x": -253.29330742487977,
+          "y": 262.6364026423501
+        },
+        "session-e77df9f9-51a6-4888-b595-21222b36cd57": {
+          "x": 370.7218420201278,
+          "y": 257.1373975057753
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45-session-178fa9e2-52b4-43ea-8570-782088cfe978-1785486144832",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-178fa9e2-52b4-43ea-8570-782088cfe978",
+          "label": "can-communicate"
+        },
+        {
+          "id": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45->session-54eb4005-d249-42e0-936d-579ee084ffe1",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-54eb4005-d249-42e0-936d-579ee084ffe1",
+          "label": "can-communicate"
+        },
+        {
+          "id": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45->session-e77df9f9-51a6-4888-b595-21222b36cd57",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-e77df9f9-51a6-4888-b595-21222b36cd57",
+          "label": "can-communicate"
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45": {
+          "x": -20.841437632135325,
+          "y": 128.19578336510043
+        },
+        "session-178fa9e2-52b4-43ea-8570-782088cfe978": {
+          "x": 418.5960706739196,
+          "y": -234.3082827099359
+        },
+        "session-54eb4005-d249-42e0-936d-579ee084ffe1": {
+          "x": -253.29330742487977,
+          "y": 262.6364026423501
+        },
+        "session-e77df9f9-51a6-4888-b595-21222b36cd57": {
+          "x": 370.7218420201278,
+          "y": 257.1373975057753
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45-session-178fa9e2-52b4-43ea-8570-782088cfe978-1785486144832",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-178fa9e2-52b4-43ea-8570-782088cfe978",
+          "label": "can-communicate"
+        },
+        {
+          "id": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45->session-54eb4005-d249-42e0-936d-579ee084ffe1",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-54eb4005-d249-42e0-936d-579ee084ffe1",
+          "label": "can-communicate"
+        },
+        {
+          "id": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45->session-e77df9f9-51a6-4888-b595-21222b36cd57",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-e77df9f9-51a6-4888-b595-21222b36cd57",
+          "label": "can-communicate"
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45": {
+          "x": -181.43518673780113,
+          "y": -188.2514496714482
+        },
+        "session-178fa9e2-52b4-43ea-8570-782088cfe978": {
+          "x": 418.5960706739196,
+          "y": -234.3082827099359
+        },
+        "session-54eb4005-d249-42e0-936d-579ee084ffe1": {
+          "x": -253.29330742487977,
+          "y": 262.6364026423501
+        },
+        "session-e77df9f9-51a6-4888-b595-21222b36cd57": {
+          "x": 370.7218420201278,
+          "y": 257.1373975057753
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45-session-178fa9e2-52b4-43ea-8570-782088cfe978-1785486144832",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-178fa9e2-52b4-43ea-8570-782088cfe978",
+          "label": "can-communicate"
+        },
+        {
+          "id": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45->session-54eb4005-d249-42e0-936d-579ee084ffe1",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-54eb4005-d249-42e0-936d-579ee084ffe1",
+          "label": "can-communicate"
+        },
+        {
+          "id": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45->session-e77df9f9-51a6-4888-b595-21222b36cd57",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-e77df9f9-51a6-4888-b595-21222b36cd57",
+          "label": "can-communicate"
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45": {
+          "x": -181.43518673780113,
+          "y": -188.2514496714482
+        },
+        "session-178fa9e2-52b4-43ea-8570-782088cfe978": {
+          "x": 557.0648779542449,
+          "y": -271.4068164946066
+        },
+        "session-54eb4005-d249-42e0-936d-579ee084ffe1": {
+          "x": -253.29330742487977,
+          "y": 262.6364026423501
+        },
+        "session-e77df9f9-51a6-4888-b595-21222b36cd57": {
+          "x": 370.7218420201278,
+          "y": 257.1373975057753
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45-session-178fa9e2-52b4-43ea-8570-782088cfe978-1785486144832",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-178fa9e2-52b4-43ea-8570-782088cfe978",
+          "label": "can-communicate"
+        },
+        {
+          "id": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45->session-54eb4005-d249-42e0-936d-579ee084ffe1",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-54eb4005-d249-42e0-936d-579ee084ffe1",
+          "label": "can-communicate"
+        },
+        {
+          "id": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45->session-e77df9f9-51a6-4888-b595-21222b36cd57",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-e77df9f9-51a6-4888-b595-21222b36cd57",
+          "label": "can-communicate"
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45": {
+          "x": -181.43518673780113,
+          "y": -188.2514496714482
+        },
+        "session-178fa9e2-52b4-43ea-8570-782088cfe978": {
+          "x": 496.88737029340484,
+          "y": -130.30093646229193
+        },
+        "session-54eb4005-d249-42e0-936d-579ee084ffe1": {
+          "x": -253.29330742487977,
+          "y": 262.6364026423501
+        },
+        "session-e77df9f9-51a6-4888-b595-21222b36cd57": {
+          "x": 370.7218420201278,
+          "y": 257.1373975057753
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45-session-178fa9e2-52b4-43ea-8570-782088cfe978-1785486144832",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-178fa9e2-52b4-43ea-8570-782088cfe978",
+          "label": "can-communicate"
+        },
+        {
+          "id": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45->session-54eb4005-d249-42e0-936d-579ee084ffe1",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-54eb4005-d249-42e0-936d-579ee084ffe1",
+          "label": "can-communicate"
+        },
+        {
+          "id": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45->session-e77df9f9-51a6-4888-b595-21222b36cd57",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-e77df9f9-51a6-4888-b595-21222b36cd57",
+          "label": "can-communicate"
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45": {
+          "x": -181.43518673780113,
+          "y": -188.2514496714482
+        },
+        "session-178fa9e2-52b4-43ea-8570-782088cfe978": {
+          "x": 496.88737029340484,
+          "y": -130.30093646229193
+        },
+        "session-54eb4005-d249-42e0-936d-579ee084ffe1": {
+          "x": -179.0650459650405,
+          "y": 318.4095167483109
+        },
+        "session-e77df9f9-51a6-4888-b595-21222b36cd57": {
+          "x": 370.7218420201278,
+          "y": 257.1373975057753
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45-session-178fa9e2-52b4-43ea-8570-782088cfe978-1785486144832",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-178fa9e2-52b4-43ea-8570-782088cfe978",
+          "label": "can-communicate"
+        },
+        {
+          "id": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45->session-54eb4005-d249-42e0-936d-579ee084ffe1",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-54eb4005-d249-42e0-936d-579ee084ffe1",
+          "label": "can-communicate"
+        },
+        {
+          "id": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45->session-e77df9f9-51a6-4888-b595-21222b36cd57",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-e77df9f9-51a6-4888-b595-21222b36cd57",
+          "label": "can-communicate"
+        }
+      ]
+    },
+    {
+      "positions": {
+        "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45": {
+          "x": -181.43518673780113,
+          "y": -188.2514496714482
+        },
+        "session-178fa9e2-52b4-43ea-8570-782088cfe978": {
+          "x": 496.88737029340484,
+          "y": -130.30093646229193
+        },
+        "session-54eb4005-d249-42e0-936d-579ee084ffe1": {
+          "x": -230.94220774162676,
+          "y": 342.2730111655406
+        },
+        "session-e77df9f9-51a6-4888-b595-21222b36cd57": {
+          "x": 370.7218420201278,
+          "y": 257.1373975057753
+        }
+      },
+      "edges": [
+        {
+          "id": "manual-session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45-session-178fa9e2-52b4-43ea-8570-782088cfe978-1785486144832",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-178fa9e2-52b4-43ea-8570-782088cfe978",
+          "label": "can-communicate"
+        },
+        {
+          "id": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45->session-54eb4005-d249-42e0-936d-579ee084ffe1",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-54eb4005-d249-42e0-936d-579ee084ffe1",
+          "label": "can-communicate"
+        },
+        {
+          "id": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45->session-e77df9f9-51a6-4888-b595-21222b36cd57",
+          "source": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+          "target": "session-e77df9f9-51a6-4888-b595-21222b36cd57",
+          "label": "can-communicate"
+        }
+      ]
+    }
+  ],
+  "redoStack": [],
+  "graphContextPath": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding\\Harness\\a2a\\workflow-map.json",
+  "updatedAt": "2026-07-31T10:19:04.460Z"
+}

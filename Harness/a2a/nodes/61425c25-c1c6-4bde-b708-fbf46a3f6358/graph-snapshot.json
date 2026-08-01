@@ -1,0 +1,351 @@
+{
+  "schemaVersion": 1,
+  "version": 123,
+  "nodes": [
+    {
+      "nodeId": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+      "sessionId": "0bc880b0-c820-4746-a21c-d843179f3326",
+      "agentKind": "main",
+      "runtime": "codex",
+      "taskId": null,
+      "cwd": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding",
+      "status": "saved",
+      "label": "codex main agent",
+      "position": {
+        "x": 444.4158267727512,
+        "y": 204.51446941790073
+      },
+      "width": 238,
+      "height": 118
+    }
+  ],
+  "edges": [],
+  "positions": {
+    "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+      "x": 444.4158267727512,
+      "y": 204.51446941790073
+    }
+  },
+  "undoStack": [
+    {
+      "positions": {},
+      "edges": []
+    },
+    {
+      "positions": {},
+      "edges": []
+    },
+    {
+      "positions": {},
+      "edges": []
+    },
+    {
+      "positions": {},
+      "edges": []
+    },
+    {
+      "positions": {},
+      "edges": []
+    },
+    {
+      "positions": {},
+      "edges": []
+    },
+    {
+      "positions": {},
+      "edges": []
+    },
+    {
+      "positions": {},
+      "edges": []
+    },
+    {
+      "positions": {},
+      "edges": []
+    },
+    {
+      "positions": {},
+      "edges": []
+    },
+    {
+      "positions": {},
+      "edges": []
+    },
+    {
+      "positions": {},
+      "edges": []
+    },
+    {
+      "positions": {},
+      "edges": []
+    },
+    {
+      "positions": {},
+      "edges": []
+    },
+    {
+      "positions": {},
+      "edges": []
+    },
+    {
+      "positions": {},
+      "edges": []
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 1126.2439613376553,
+          "y": 362.85100285151293
+        }
+      },
+      "edges": []
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 1126.2439613376553,
+          "y": 362.85100285151293
+        }
+      },
+      "edges": []
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 1126.2439613376553,
+          "y": 362.85100285151293
+        }
+      },
+      "edges": []
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 1126.2439613376553,
+          "y": 362.85100285151293
+        }
+      },
+      "edges": []
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 610.2068155795146,
+          "y": 159.6681110394205
+        }
+      },
+      "edges": []
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 610.2068155795146,
+          "y": 159.6681110394205
+        }
+      },
+      "edges": []
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 610.2068155795146,
+          "y": 159.6681110394205
+        }
+      },
+      "edges": []
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 587.6650144511042,
+          "y": 82.63928209165871
+        }
+      },
+      "edges": []
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 587.6650144511042,
+          "y": 82.63928209165871
+        }
+      },
+      "edges": []
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 668.3656773546886,
+          "y": 180.51029880451648
+        }
+      },
+      "edges": []
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 668.3656773546886,
+          "y": 180.51029880451648
+        }
+      },
+      "edges": []
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 668.3656773546886,
+          "y": 180.51029880451648
+        }
+      },
+      "edges": []
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 668.3656773546886,
+          "y": 180.51029880451648
+        }
+      },
+      "edges": []
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 668.3656773546886,
+          "y": 180.51029880451648
+        }
+      },
+      "edges": []
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 668.3656773546886,
+          "y": 180.51029880451648
+        }
+      },
+      "edges": []
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 720.5719769673705,
+          "y": 258.6410748560461
+        }
+      },
+      "edges": []
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 720.5719769673705,
+          "y": 258.6410748560461
+        }
+      },
+      "edges": []
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 377.03372612526414,
+          "y": 83.00576333226824
+        }
+      },
+      "edges": []
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 337.26724049723896,
+          "y": 169.16648219298946
+        }
+      },
+      "edges": []
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 444.4158267727512,
+          "y": 204.51446941790073
+        }
+      },
+      "edges": []
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 444.4158267727512,
+          "y": 204.51446941790073
+        }
+      },
+      "edges": []
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 444.4158267727512,
+          "y": 204.51446941790073
+        }
+      },
+      "edges": []
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 444.4158267727512,
+          "y": 204.51446941790073
+        }
+      },
+      "edges": []
+    },
+    {
+      "positions": {
+        "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+          "x": 444.4158267727512,
+          "y": 204.51446941790073
+        }
+      },
+      "edges": []
+    }
+  ],
+  "redoStack": [],
+  "deletedNodes": [
+    {
+      "nodeId": "session-178fa9e2-52b4-43ea-8570-782088cfe978",
+      "sessionId": "178fa9e2-52b4-43ea-8570-782088cfe978",
+      "deletedAt": "2026-07-31T11:14:08.621Z"
+    },
+    {
+      "nodeId": "session-e77df9f9-51a6-4888-b595-21222b36cd57",
+      "sessionId": "e77df9f9-51a6-4888-b595-21222b36cd57",
+      "deletedAt": "2026-07-31T11:14:12.538Z"
+    },
+    {
+      "nodeId": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+      "sessionId": "e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+      "deletedAt": "2026-07-31T11:14:16.571Z"
+    },
+    {
+      "nodeId": "session-fc1c0445-650d-452a-af80-e6c04f08e990",
+      "sessionId": "fc1c0445-650d-452a-af80-e6c04f08e990",
+      "deletedAt": "2026-07-31T11:14:19.944Z"
+    },
+    {
+      "nodeId": "session-87e54b53-b00c-4168-83d7-b13f9fa7e809",
+      "sessionId": "87e54b53-b00c-4168-83d7-b13f9fa7e809",
+      "deletedAt": "2026-07-31T11:14:21.637Z"
+    },
+    {
+      "nodeId": "session-54eb4005-d249-42e0-936d-579ee084ffe1",
+      "sessionId": "54eb4005-d249-42e0-936d-579ee084ffe1",
+      "deletedAt": "2026-07-31T11:14:23.300Z"
+    },
+    {
+      "nodeId": "session-00ed70b9-7953-4388-84cc-873cc9e70491",
+      "sessionId": "00ed70b9-7953-4388-84cc-873cc9e70491",
+      "deletedAt": "2026-07-31T17:12:41.984Z"
+    }
+  ],
+  "graphContextPath": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding\\Harness\\a2a\\workflow-map.json",
+  "updatedAt": "2026-07-31T17:28:18.917Z"
+}

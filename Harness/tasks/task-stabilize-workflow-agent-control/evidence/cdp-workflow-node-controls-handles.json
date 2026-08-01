@@ -1,0 +1,179 @@
+{
+  "url": "http://127.0.0.1:53834/workflow?token=<redacted-token>",
+  "serverPid": 36064,
+  "browser": "Chrome via Playwright CDP",
+  "viewport": {
+    "width": 1365,
+    "height": 768
+  },
+  "beforeApi": {
+    "snapshotStatus": 200,
+    "nodeSummary": [
+      {
+        "id": "session-12d0640d-7720-4984-850a-a31e9f3637c6",
+        "graphNodeId": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+        "label": "claude main agent",
+        "status": "running",
+        "runtime": "claude",
+        "agentKind": "main",
+        "canStart": false,
+        "canStop": true
+      },
+      {
+        "id": "session-3d0ab2ff-84b8-43c4-b991-edc4fc20a96d",
+        "graphNodeId": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+        "label": "codex main agent",
+        "status": "running",
+        "runtime": "codex",
+        "agentKind": "main",
+        "canStart": false,
+        "canStop": true
+      }
+    ],
+    "graphStatus": 200,
+    "graphNodes": [
+      {
+        "nodeId": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+        "sessionId": "12d0640d-7720-4984-850a-a31e9f3637c6",
+        "status": "running",
+        "runtime": "claude",
+        "agentKind": "main"
+      },
+      {
+        "nodeId": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+        "sessionId": "3d0ab2ff-84b8-43c4-b991-edc4fc20a96d",
+        "status": "running",
+        "runtime": "codex",
+        "agentKind": "main"
+      }
+    ],
+    "graphEdges": [
+      {
+        "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-1785518923948",
+        "from": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+        "to": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+        "relation": "wf-bridge",
+        "offset": -59.202615925848036
+      }
+    ]
+  },
+  "dom": {
+    "cardNodeCount": 1,
+    "terminalNodeCount": 1,
+    "flowNodeCount": 2,
+    "nodeHandleCounts": [
+      {
+        "nodeId": "session-12d0640d-7720-4984-850a-a31e9f3637c6",
+        "handles": 4,
+        "text": "Claude Coderunning Back to NodeLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLoooooooooooooooooooooooooooooooo.xterm-dom-renderer-owner-1 .xterm-rows span { display: inline-bl"
+      },
+      {
+        "nodeId": "session-3d0ab2ff-84b8-43c4-b991-edc4fc20a96d",
+        "handles": 4,
+        "text": "CodexMAIN AGENTrunningCodexWorkflow agent Open Terminal"
+      }
+    ],
+    "statusTexts": [
+      "running",
+      "running"
+    ],
+    "hasSavedText": false,
+    "startButtonCount": 0,
+    "stopButtonCount": 2,
+    "bridgeLabelCount": 1,
+    "edgeHitCount": 1,
+    "deleteSelectedEdgeVisible": true
+  },
+  "interactions": {
+    "handleWidthBefore": 9.999969482421875,
+    "handleWidthAfterZoom": 9.999969482421875,
+    "edgePoint": {
+      "x": 906.2392860227264,
+      "y": 178.62760382056513,
+      "total": 462.3770751953125
+    },
+    "selectedAfterLineClick": true,
+    "panelAfterLineClick": false,
+    "beforeOffset": -59.202615925848036,
+    "afterOffset": -39.202615925848036,
+    "offsetChangedAfterDrag": true,
+    "restoredOffset": true,
+    "panelAfterLabelClick": true,
+    "keyProbe": {
+      "capture": 4,
+      "bubble": 4,
+      "keys": [
+        "capture:F12",
+        "bubble:F12",
+        "capture:Control",
+        "bubble:Control",
+        "capture:Shift",
+        "bubble:Shift",
+        "capture:I",
+        "bubble:I"
+      ]
+    }
+  },
+  "network": {
+    "startResponses": [],
+    "failedRequests": [],
+    "badResponses": []
+  },
+  "cdp": {
+    "runtimeExceptions": [],
+    "logErrors": []
+  },
+  "afterApi": {
+    "snapshotStatus": 200,
+    "nodeSummary": [
+      {
+        "id": "session-12d0640d-7720-4984-850a-a31e9f3637c6",
+        "graphNodeId": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+        "label": "claude main agent",
+        "status": "running",
+        "runtime": "claude",
+        "agentKind": "main",
+        "canStart": false,
+        "canStop": true
+      },
+      {
+        "id": "session-3d0ab2ff-84b8-43c4-b991-edc4fc20a96d",
+        "graphNodeId": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+        "label": "codex main agent",
+        "status": "running",
+        "runtime": "codex",
+        "agentKind": "main",
+        "canStart": false,
+        "canStop": true
+      }
+    ],
+    "graphStatus": 200,
+    "graphNodes": [
+      {
+        "nodeId": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+        "sessionId": "12d0640d-7720-4984-850a-a31e9f3637c6",
+        "status": "running",
+        "runtime": "claude",
+        "agentKind": "main"
+      },
+      {
+        "nodeId": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+        "sessionId": "3d0ab2ff-84b8-43c4-b991-edc4fc20a96d",
+        "status": "running",
+        "runtime": "codex",
+        "agentKind": "main"
+      }
+    ],
+    "graphEdges": [
+      {
+        "id": "manual-session-0bc880b0-c820-4746-a21c-d843179f3326-session-61425c25-c1c6-4bde-b708-fbf46a3f6358-1785518923948",
+        "from": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+        "to": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+        "relation": "wf-bridge",
+        "offset": -59.202615925848036
+      }
+    ]
+  },
+  "consoleMessages": [],
+  "screenshotPath": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding\\Harness\\tasks\\task-stabilize-workflow-agent-control\\evidence\\cdp-workflow-node-controls-handles.png"
+}

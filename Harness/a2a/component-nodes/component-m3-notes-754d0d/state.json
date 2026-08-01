@@ -1,0 +1,32 @@
+{
+  "type": "markdown",
+  "revision": 1,
+  "uiContract": {
+    "editor": "markdown",
+    "modes": [
+      "wysiwyg",
+      "source"
+    ],
+    "defaultMode": "wysiwyg"
+  },
+  "inputs": [
+    {
+      "id": "markdown",
+      "type": "markdown",
+      "label": "Markdown"
+    }
+  ],
+  "outputs": [
+    {
+      "id": "markdown",
+      "type": "markdown",
+      "label": "Markdown"
+    },
+    {
+      "id": "plainText",
+      "type": "text",
+      "label": "Plain text"
+    }
+  ],
+  "markdown": ""
+}
