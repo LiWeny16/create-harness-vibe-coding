@@ -4,7 +4,7 @@ Compact heartbeat.
 
 ## Current
 
-- Phase: WF-MAX D-GATE
+- Phase: Implementation
 - Next: Wait for W2G graph persistence debugger, then rerun M3/M4/M5 and CDP closeout.
 - Blocker: no user blocker. W2 implementation is in progress through bounded subagents.
 

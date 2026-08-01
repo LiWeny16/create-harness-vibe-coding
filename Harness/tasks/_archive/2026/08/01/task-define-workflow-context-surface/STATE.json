@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
   "taskId": "task-define-workflow-context-surface",
-  "status": "complete",
+  "status": "archived",
   "mode": "wf-max",
   "tier": "WF-Full",
-  "phase": "final-cdp-complete",
+  "phase": "archived",
   "gate": "COMPLETE",
-  "updatedAt": "2026-08-01T04:56:00.000+08:00",
+  "updatedAt": "2026-08-01T15:42:23.015Z",
   "activeQuestion": null,
   "nextAction": "Done. Final Chrome/CDP evidence is in verification-screenshots/wf-ui-final-cdp-1785531092323.",
   "acceptance": [
@@ -414,5 +414,7 @@
     "Recoverable filesystem undo is data-loss sensitive and must be proven with traversal denial, overwrite conflict, stale revision, and large delete tests before UI polish.",
     "M1 backend reviewer found high/medium stability issues in base64 validation, upload bounds, symlink/junction escape protection, arbitrary opId undo safety, trash-source trust, concurrent revisions, Windows reserved filenames, and context-input write ordering; M1 backend is not stable until hardening tests and fixes pass."
   ],
-  "artifacts": []
+  "artifacts": [],
+  "defaultRuntime": "codex",
+  "defaultAgentRuntime": "codex"
 }

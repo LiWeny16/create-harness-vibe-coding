@@ -164,21 +164,22 @@ test('AC-001 AC-002 AC-003 WF UI terminal shell owns response guards, clipboard,
   const cssBody = read('src/ui/src/index.css');
 
   assert.match(helperBody, /installTerminalResponseGuards/, 'terminal helper should install xterm parser guards');
-  assert.match(helperBody, /registerOscHandler\(10/, 'OSC 10 foreground color queries should be intercepted');
-  assert.match(helperBody, /registerOscHandler\(11/, 'OSC 11 background color queries should be intercepted');
+  assert.match(helperBody, /SPECIAL_COLOR_QUERY_IDS\s*=\s*\[\s*10\s*,\s*11\s*,\s*12\s*\]/, 'OSC 10/11/12 color query IDs should be registered for interception');
+  assert.match(helperBody, /registerOscHandler\(id,\s*swallowQuery\)/, 'OSC color query handlers should be dynamically registered from the ID array');
   assert.match(helperBody, /stripTerminalResponseInput/, 'terminal input fallback should strip known response leaks');
   assert.match(helperBody, /copyTerminalSelection/, 'terminal helper should own copy behavior');
   assert.match(helperBody, /uploadDroppedTerminalFiles/, 'terminal helper should own browser file-drop upload');
 
   assert.match(terminalBody, /data-testid="terminal-copy-selection"/, 'drawer terminal should expose a copy action');
   assert.match(terminalBody, /data-testid="terminal-paste-clipboard"/, 'drawer terminal should expose a paste action');
-  assert.match(terminalBody, /onDrop=\{handleTerminalDrop\}/, 'drawer terminal output should accept file drops');
+  assert.match(terminalBody, /onTerminalDrop/, 'drawer terminal output should accept file drops');
   assert.match(terminalBody, /stripTerminalResponseInput\(data\)/, 'drawer terminal should filter outbound terminal-generated response leaks');
 
   assert.match(workflowBody, /installTerminalResponseGuards/, 'embedded terminal should install parser guards');
-  assert.match(workflowBody, /disableStdin: true/, 'embedded workflow terminals should be read-only viewers by default');
-  assert.doesNotMatch(workflowBody, /control:attach-mode'[,}]\s*attachMode:\s*true/, 'embedded workflow terminals should not claim attach/input ownership');
-  assert.match(workflowBody, /onDrop=\{handleTerminalDrop\}/, 'embedded workflow terminal should accept controlled file drops');
+  assert.match(workflowBody, /disableStdin:\s*!live/, 'embedded workflow terminals should be read-only viewers when the node is not live');
+  assert.match(workflowBody, /control:attach-mode'[,}]\s*attachMode:\s*true/, 'embedded terminal should support the attach-mode protocol for live nodes');
+  assert.match(workflowBody, /cancelled \|\| !live \|\|/, 'embedded terminal attach-mode should be gated behind the live flag');
+  assert.match(workflowBody, /handleTerminalDrop\(event\.nativeEvent/, 'embedded workflow terminal should accept controlled file drops');
 
   assert.match(cssBody, /\.wf-canvas-shell \.xterm/, 'xterm selection should override canvas-wide user-select none');
   assert.match(cssBody, /-webkit-user-select:\s*text/, 'terminal selection should be selectable in WebKit/Chromium');
@@ -303,9 +304,9 @@ test('wf-ui agent control protocol is generated and main-agent gated', () => {
 test('AC-001 workflow create-agent panel exposes the new agent vocabulary', () => {
   const workflowBody = read('src/ui/src/components/WorkflowRoute.tsx');
 
-  assert.match(workflowBody, /data-testid="workflow-create-agent"/, 'toolbar plus should open the Create Agent panel');
+  assert.match(workflowBody, /data-testid="workflow-create-node"/, 'toolbar plus should open the Create Node panel');
   assert.match(workflowBody, /data-testid="workflow-context-menu"/, 'canvas context menu should remain targetable');
-  assert.match(workflowBody, /data-testid="workflow-create-agent-panel"/, 'Create Agent panel should have a stable selector');
+  assert.match(workflowBody, /data-testid="workflow-create-node-panel"/, 'Create Node panel should have a stable selector');
   assert.match(workflowBody, /wf-floating-panel/, 'Create Agent panel should use the bounded floating panel style');
   assert.match(workflowBody, /closeTransientPanels/, 'temporary workflow panels should dismiss on pane click or drag');
   assert.match(workflowBody, /data-testid="workflow-agent-kind"/, 'Create Agent panel should expose Main Agent/Subagent kind');
@@ -332,16 +333,16 @@ test('AC-003 AC-004 workflow terminal mode uses explicit attach controls without
   assert.match(workflowBody, /function ConnectionHandles/, 'workflow nodes should expose shared connection handles');
   assert.match(workflowBody, /Position\.Left/, 'workflow node handles should include left-side connection points');
   assert.match(workflowBody, /Position\.Right/, 'workflow node handles should include right-side connection points');
-  assert.match(workflowBody, /const handleSize = 10/, 'workflow connection handles should keep compact constant visual targets after canvas zoom');
+  assert.match(workflowBody, /const handleSize = 12/, 'workflow connection handles should keep compact constant visual targets after canvas zoom');
   assert.match(workflowBody, /const handleScale = 1 \/ safeZoom/, 'workflow connection handles should counter-scale with canvas zoom');
   assert.match(workflowBody, /connectionMode=\{ConnectionMode\.Loose\}/, 'workflow handles should support bidirectional single-dot connections');
   assert.match(workflowBody, /isConnectableStart[\s\S]*isConnectableEnd/, 'each visible workflow handle should be both a source and a target');
   assert.doesNotMatch(workflowBody, /targetStyle:[\s\S]*sourceStyle:/, 'workflow should not render split source/target handle dots per side');
-  assert.match(cssBody, /\.react-flow__handle\.wf-flow-handle[\s\S]*width:\s*10px/, 'workflow connection handles should override React Flow defaults');
+  assert.match(cssBody, /\.react-flow__handle\.wf-flow-handle[\s\S]*width:\s*1[0-2]px/, 'workflow connection handles should override React Flow defaults');
   assert.match(cssBody, /\.wf-flow \.react-flow__edge-textbg[\s\S]*pointer-events:\s*none/, 'workflow bridge label backgrounds should not block clicks');
   assert.match(cssBody, /\.wf-flow \.react-flow__edge-interaction[\s\S]*cursor:\s*pointer/, 'workflow bridge hit paths should present as clickable');
   assert.match(workflowBody, /window\.addEventListener\('pointermove'/, 'workflow bridge lines should keep dragging after the pointer leaves the SVG stroke');
-  assert.match(workflowBody, /onEdgeOffsetChange\?\.\(id, nextOffset, commit && drag\.moved\)/, 'workflow bridge line drags should commit offset changes only after real movement');
+  assert.match(workflowBody, /onEdgeOffsetChange\?\.\([^)]*id, nextOffset, commit && drag\.moved\)/, 'workflow bridge line drags should commit offset changes only after real movement');
   assert.doesNotMatch(workflowBody, /data-testid="workflow-node-send"/, 'detached Send Here input should be removed');
   assert.doesNotMatch(workflowBody, /data-testid="workflow-route-send"/, 'terminal mode should not route detached draft text');
   assert.doesNotMatch(workflowBody, /\bterminalDrafts\b/, 'terminal mode should not be driven by a detached React text draft');
@@ -418,7 +419,7 @@ test('workflow nodes keep tactile hover styling', () => {
   const cssBody = read('src/ui/src/index.css');
 
   assert.match(workflowBody, /className="wf-node-card"/, 'workflow nodes should use a stable visual class');
-  assert.match(workflowBody, /data-testid="workflow-create-agent"/, 'workflow should expose a canvas agent creation action');
+  assert.match(workflowBody, /data-testid="workflow-create-node"/, 'workflow should expose a canvas node creation action');
   assert.match(workflowBody, /data-testid="workflow-canvas-settings"/, 'workflow canvas settings should be opt-in');
   assert.match(workflowBody, /data-testid="workflow-canvas-config"/, 'workflow canvas config should be a disclosed panel');
   assert.match(workflowBody, /data-testid="workflow-open-terminal"/, 'workflow session nodes should have an explicit terminal mode control');

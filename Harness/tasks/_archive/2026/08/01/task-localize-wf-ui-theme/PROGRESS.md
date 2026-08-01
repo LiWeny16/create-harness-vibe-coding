@@ -2,6 +2,7 @@
 
 ## Status
 
+- Phase: Archived
 **Phase:** implement | **Gate:** D-GATE passed | **Next:** Dispatch W0
 
 ## Completed

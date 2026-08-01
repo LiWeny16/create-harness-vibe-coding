@@ -44,6 +44,11 @@
 | `task-harden-ota-manifest-validation` | 2026/07/30 | 2026-07-30 |
 | `task-wf-ui-control-0729` | 2026/07/30 | 2026-07-30 |
 
+| `task-define-workflow-context-surface` | 2026/08/01 | 2026-08-01 |
+| `task-localize-wf-ui-theme` | 2026/08/01 | 2026-08-01 |
+| `task-stabilize-workflow-agent-control` | 2026/08/01 | 2026-08-01 |
+| `task-upgrade-workflow-agent-canvas` | 2026/08/01 | 2026-08-01 |
+
 ## Task Graph
 
 ### Roots (no dependencies)
@@ -52,9 +57,33 @@
 - `task-harden-ota-manifest-validation` → blocks: none
 - `task-redesign-wf-ui-agent-workflow` → blocks: none
 - `task-wf-ui-control-0729` → blocks: none
+- `task-define-workflow-context-surface` → blocks: none
+- `task-localize-wf-ui-theme` → blocks: none
+- `task-stabilize-workflow-agent-control` → blocks: none
+- `task-upgrade-workflow-agent-canvas` → blocks: none
 
 ## Task Details
 
+### `task-define-workflow-context-surface` {#taskdefineworkflowcontextsurface}
+- **Archived:** 2026/08/01
+- **Status:** archived  **Phase:** archived
+- **Goal:** - Outcome: Build a WF UI context surface that combines a VS Code-like workspace Explorer, controlled terminal/context in...
+- **Depends on:** -  **Blocks:** -
+### `task-localize-wf-ui-theme` {#tasklocalizewfuitheme}
+- **Archived:** 2026/08/01
+- **Status:** archived  **Phase:** archived
+- **Goal:** Add i18n (en/zh) and dark/light theme support to wf-ui control panel. No functional changes — only UI text and theme CSS...
+- **Depends on:** -  **Blocks:** -
+### `task-stabilize-workflow-agent-control` {#taskstabilizeworkflowagentcontrol}
+- **Archived:** 2026/08/01
+- **Status:** archived  **Phase:** archived
+- **Goal:** - Outcome: WF UI and backend maintain one coherent live graph/control state so agents can perceive current connections, ...
+- **Depends on:** -  **Blocks:** -
+### `task-upgrade-workflow-agent-canvas` {#taskupgradeworkflowagentcanvas}
+- **Archived:** 2026/08/01
+- **Status:** archived  **Phase:** archived
+- **Goal:** - Outcome: Rework WF UI Workflow into an agent topology canvas where visible nodes are controllable PTY agents, edges de...
+- **Depends on:** -  **Blocks:** -
 ### `task-harden-ota-manifest-validation` {#taskhardenotamanifestvalidation}
 - **Archived:** 2026/07/30
 - **Status:** archived  **Phase:** archived

@@ -4,9 +4,9 @@
   "status": "active",
   "mode": "wf-max",
   "tier": "WF-Full",
-  "phase": "implementation",
+  "phase": "implement",
   "gate": "W2-INTEGRATION",
-  "updatedAt": "2026-08-01T17:32:00+08:00",
+  "updatedAt": "2026-08-01T15:42:22.467Z",
   "activeQuestion": null,
   "nextAction": "Wait for W2G graph persistence debugger, then rerun M3/M4/M5 and CDP closeout.",
   "acceptance": [
@@ -344,5 +344,7 @@
     "The worktree already contains partial prior edits and unrelated dirty files; Workers must not revert unrelated user changes.",
     "React #185 may hide a state subscription loop that only appears in production/minified builds."
   ],
-  "artifacts": []
+  "artifacts": [],
+  "defaultRuntime": "codex",
+  "defaultAgentRuntime": "codex"
 }

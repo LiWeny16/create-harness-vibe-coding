@@ -2,7 +2,7 @@
 
 ## Current
 
-- Phase: Verified
+- Phase: Archived
 - Next: Closed; all requested Workflow/Agents/Tasks icon, theme, STATE visualizer, resource wording, and quiet bootstrap requirements are verified.
 - Blocker: none
 

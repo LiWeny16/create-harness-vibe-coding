@@ -6,7 +6,7 @@
   "tier": "none",
   "phase": "blocked",
   "gate": null,
-  "updatedAt": "2026-07-24T13:15:42.706Z",
+  "updatedAt": "2026-08-01T15:42:22.467Z",
   "activeQuestion": null,
   "nextAction": "Review task state.",
   "acceptance": [],
@@ -19,5 +19,7 @@
   "dispatchLedger": [],
   "decisions": [],
   "risks": [],
-  "artifacts": []
+  "artifacts": [],
+  "defaultRuntime": "codex",
+  "defaultAgentRuntime": "codex"
 }

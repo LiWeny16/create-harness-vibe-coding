@@ -45,5 +45,7 @@
   "decisions": [],
   "risks": [],
   "artifacts": [],
-  "updatedAt": "2026-07-24T13:15:42.706Z"
+  "updatedAt": "2026-08-01T15:42:22.467Z",
+  "defaultRuntime": "codex",
+  "defaultAgentRuntime": "codex"
 }

@@ -6,7 +6,7 @@
   "tier": "none",
   "phase": "blocked",
   "gate": "SUPERSEDED",
-  "updatedAt": "2026-07-31T11:27:00.000Z",
+  "updatedAt": "2026-08-01T15:42:22.467Z",
   "activeQuestion": null,
   "nextAction": "Superseded by task-upgrade-workflow-agent-canvas and task-stabilize-workflow-agent-control.",
   "acceptance": [
@@ -56,5 +56,7 @@
       "task-upgrade-workflow-agent-canvas",
       "task-stabilize-workflow-agent-control"
     ]
-  }
+  },
+  "defaultRuntime": "codex",
+  "defaultAgentRuntime": "codex"
 }

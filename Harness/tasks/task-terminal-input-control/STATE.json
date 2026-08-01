@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
   "taskId": "task-terminal-input-control",
-  "status": "active",
+  "status": "in_progress",
   "mode": "wf",
   "tier": "WF-Standard",
-  "phase": "test-red",
+  "phase": "implement",
   "gate": "AC-GATE passed",
-  "updatedAt": "2026-08-01T00:00:00.000Z",
+  "updatedAt": "2026-08-01T15:42:22.467Z",
   "activeQuestion": null,
   "nextAction": "Add AC-linked regression tests for terminal input control, then implement controlled terminal input/drop behavior.",
   "acceptance": [
@@ -47,5 +47,7 @@
   "risks": [
     "Browser drag/drop cannot expose original local absolute paths; dropped files must be uploaded to a session-local drop directory."
   ],
-  "artifacts": []
+  "artifacts": [],
+  "defaultRuntime": "codex",
+  "defaultAgentRuntime": "codex"
 }

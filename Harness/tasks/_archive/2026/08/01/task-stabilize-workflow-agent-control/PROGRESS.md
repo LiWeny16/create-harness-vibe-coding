@@ -2,7 +2,7 @@
 
 ## Current
 
-- Phase: Verified
+- Phase: Archived
 - Next: Ready for user review on the restarted `http://127.0.0.1:53834/workflow` server; use the latest ready-file URL because the old browser token is invalid.
 - Blocker: none
 

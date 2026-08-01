@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
   "taskId": "task-upgrade-workflow-agent-canvas",
-  "status": "verified",
+  "status": "archived",
   "mode": "wf",
   "tier": "WF-Standard",
-  "phase": "verified",
+  "phase": "archived",
   "gate": "CLOSED",
-  "updatedAt": "2026-07-31T10:48:00.000Z",
+  "updatedAt": "2026-08-01T15:42:23.034Z",
   "activeQuestion": null,
   "nextAction": "Closed: all Workflow/Agents/Tasks icon, theme, STATE visualizer, resource wording, and quiet bootstrap requirements verified",
   "acceptance": [
@@ -106,5 +106,7 @@
     "Closeout verification: npm test passed 281/282 with 1 skip; node --test src\\wf-ui-server\\__tests__\\*.test.mjs passed 146/146; npm run test:e2e passed 174/174; src/ui typecheck/build passed; git diff --check passed",
     "Browser closeout on wf-ui port 58262: Workflow loaded 6 nodes with runtime icons and role badges, Workflow runtime picker options showed icons, Agents resource summary showed live-PTY-only scope with a real live Codex PTY sample, saved sessions showed unavailable resource rows, Tasks visual STATE and JSON toggle worked",
     "Correction: STATE visualizer and task parser now render string-only acceptance entries as tracked instead of fake pending"
-  ]
+  ],
+  "defaultRuntime": "codex",
+  "defaultAgentRuntime": "codex"
 }

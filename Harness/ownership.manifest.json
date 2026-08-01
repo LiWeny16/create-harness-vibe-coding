@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "generator": "0.8.20",
   "source": "https://raw.githubusercontent.com/LiWeny16/create-harness-vibe-coding/main/templates/common/",
-  "generated": "2026-07-31T04:58:53.565Z",
+  "generated": "2026-08-01T15:42:17.557Z",
   "preserve": [
     "Harness/PROGRESS.md",
     "Harness/tasks/**",
@@ -812,12 +812,12 @@
       "overwrite": "safe"
     },
     {
-      "path": "Harness/scripts/wf-ui-control.mjs",
+      "path": "Harness/scripts/wf-remove.mjs",
       "kind": "script",
       "overwrite": "safe"
     },
     {
-      "path": "Harness/scripts/wf-remove.mjs",
+      "path": "Harness/scripts/wf-ui-control.mjs",
       "kind": "script",
       "overwrite": "safe"
     },

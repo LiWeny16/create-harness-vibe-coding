@@ -4,7 +4,7 @@ Compact heartbeat.
 
 ## Current
 
-- Phase: WF-MAX / Complete
+- Phase: Archived
 - Next: Done. Final Chrome/CDP evidence: `verification-screenshots/wf-ui-final-cdp-1785531092323`.
 - Blocker: none
 
