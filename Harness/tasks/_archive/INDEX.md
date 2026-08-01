@@ -49,6 +49,9 @@
 | `task-stabilize-workflow-agent-control` | 2026/08/01 | 2026-08-01 |
 | `task-upgrade-workflow-agent-canvas` | 2026/08/01 | 2026-08-01 |
 
+| `task-framework-metrics-and-entry-contract` | 2026/08/01 | 2026-08-01 |
+| `task-wf-ui-control-260729` | 2026/08/01 | 2026-08-01 |
+
 ## Task Graph
 
 ### Roots (no dependencies)
@@ -58,9 +61,11 @@
 - `task-redesign-wf-ui-agent-workflow` → blocks: none
 - `task-wf-ui-control-0729` → blocks: none
 - `task-define-workflow-context-surface` → blocks: none
+- `task-framework-metrics-and-entry-contract` → blocks: none
 - `task-localize-wf-ui-theme` → blocks: none
 - `task-stabilize-workflow-agent-control` → blocks: none
 - `task-upgrade-workflow-agent-canvas` → blocks: none
+- `task-wf-ui-control-260729` → blocks: none
 
 ## Task Details
 
@@ -68,6 +73,11 @@
 - **Archived:** 2026/08/01
 - **Status:** archived  **Phase:** archived
 - **Goal:** - Outcome: Build a WF UI context surface that combines a VS Code-like workspace Explorer, controlled terminal/context in...
+- **Depends on:** -  **Blocks:** -
+### `task-framework-metrics-and-entry-contract` {#taskframeworkmetricsandentrycontract}
+- **Archived:** 2026/08/01
+- **Status:** archived  **Phase:** archived
+- **Goal:** Define the next Harness framework iteration with enough precision to implement safely:
 - **Depends on:** -  **Blocks:** -
 ### `task-localize-wf-ui-theme` {#tasklocalizewfuitheme}
 - **Archived:** 2026/08/01
@@ -83,6 +93,11 @@
 - **Archived:** 2026/08/01
 - **Status:** archived  **Phase:** archived
 - **Goal:** - Outcome: Rework WF UI Workflow into an agent topology canvas where visible nodes are controllable PTY agents, edges de...
+- **Depends on:** -  **Blocks:** -
+### `task-wf-ui-control-260729` {#taskwfuicontrol260729}
+- **Archived:** 2026/08/01
+- **Status:** archived  **Phase:** archived
+- **Goal:** Design and implement a Harness web control panel for task capsules, peer agent terminals, workflow visualization, settin...
 - **Depends on:** -  **Blocks:** -
 ### `task-harden-ota-manifest-validation` {#taskhardenotamanifestvalidation}
 - **Archived:** 2026/07/30

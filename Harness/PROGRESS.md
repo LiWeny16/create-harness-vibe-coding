@@ -13,11 +13,9 @@ Non-archived tasks only (max 5). Archived tasks are listed in `Harness/tasks/_ar
 | ID | Goal | Phase | Closed |
 |----|------|-------|--------|
 | task-standardize-workflow-nodes | Standardize Workflow nodes as first-class typed resources with File/Markdown/Diagram/Agent creation, agent-readable connections, file previews, and productized agent settings | Implementation | - |
-| task-framework-metrics-and-entry-contract | Define slim CLAUDE entry contract and HarnessBench v0.1 methodology | Blocked | - |
 | task-homepage-act1-flat-layout | Redesign Act 1 opening: 5 flat staggered boxes, zero tilt, no float, no singled-out openable box | Implementation | - |
-| task-release-0819-formal | Formally release 0.8.19 across npm, canonical GitHub, and legacy mirror | Blocked | - |
+| task-release-0819-formal | Formally release 0.8.19 across npm, canonical GitHub, and legacy mirror | Verified | - |
 | task-terminal-input-control | Control WF UI terminal input, copy/paste, and file drag/drop behavior | Implementation | - |
-| task-wf-ui-control-260729 | Superseded by task-upgrade-workflow-agent-canvas and task-stabilize-workflow-agent-control. | Blocked | - |
 
 ## Cross-Task Decisions
 

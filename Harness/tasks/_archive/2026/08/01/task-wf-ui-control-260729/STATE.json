@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
   "taskId": "task-wf-ui-control-260729",
-  "status": "blocked",
+  "status": "archived",
   "mode": "wf",
   "tier": "none",
-  "phase": "blocked",
+  "phase": "archived",
   "gate": "SUPERSEDED",
-  "updatedAt": "2026-08-01T15:42:22.467Z",
+  "updatedAt": "2026-08-01T15:49:05.570Z",
   "activeQuestion": null,
   "nextAction": "Superseded by task-upgrade-workflow-agent-canvas and task-stabilize-workflow-agent-control.",
   "acceptance": [

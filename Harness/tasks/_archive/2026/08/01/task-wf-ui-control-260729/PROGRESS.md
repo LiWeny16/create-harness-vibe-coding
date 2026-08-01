@@ -4,7 +4,7 @@ Compact heartbeat. Update on phase changes, blockers, failures, and closeout.
 
 ## Status
 
-- Phase: Blocked
+- Phase: Archived
 - Next: Superseded by `task-upgrade-workflow-agent-canvas` and `task-stabilize-workflow-agent-control`.
 - Blocker: none
 

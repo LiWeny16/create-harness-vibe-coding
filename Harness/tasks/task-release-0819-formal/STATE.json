@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
   "taskId": "task-release-0819-formal",
-  "status": "blocked",
+  "status": "done",
   "mode": "wf",
   "defaultRuntime": "codex",
   "defaultAgentRuntime": "codex",
   "tier": "standard",
-  "phase": "blocked",
+  "phase": "done",
   "gate": "npm-2fa",
-  "updatedAt": "2026-07-30T16:20:00.000Z",
+  "updatedAt": "2026-08-01T15:48:36.962Z",
   "activeQuestion": null,
   "nextAction": "Receive npm OTP, set create-harness-vibe-coding@0.8.19 as latest, then rerun final release gates.",
   "acceptance": [
