@@ -1,8 +1,8 @@
 import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
+import { makeHarnessTempRoot } from './support/temp-root.js';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 
@@ -15,7 +15,7 @@ const BUILD_VERSION_SCRIPT = path.resolve(__dirname, '..', 'scripts', 'build-ver
 
 const tempRoots = [];
 function tmpdir() {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'harness-check-root-'));
+  const root = makeHarnessTempRoot('harness-check-root-');
   tempRoots.push(root);
   return root;
 }

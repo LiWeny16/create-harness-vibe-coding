@@ -1,13 +1,13 @@
 import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
+import { makeHarnessTempRoot } from './support/temp-root.js';
 import { generate, getOptionalCatalog, harnessDest } from '../src/generator.js';
 
 const tempRoots = [];
 function tmpdir() {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'harness-generator-'));
+  const root = makeHarnessTempRoot('harness-generator-');
   tempRoots.push(root);
   return root;
 }
@@ -261,6 +261,7 @@ test('generated scaffold stores harness-owned payload under root Harness directo
     'Harness/scripts/wf-update-check.mjs',
     'Harness/scripts/wf-update-runner.mjs',
     'Harness/scripts/wf-auto-update-prompt.mjs',
+    'Harness/scripts/wf-ui-control.mjs',
     'Harness/scripts/wf-remove.mjs',
     'Harness/scripts/scan-clean.mjs',
     'Harness/scripts/sync-host-global.mjs',
@@ -1309,8 +1310,8 @@ test('build-version produces valid semver and populated checksums/sources', asyn
 
   assert.equal(harnessVersion.releaseNotes.version, pkg.version, 'release notes should match package version');
   assert.ok(
-    harnessVersion.releaseNotes.highlights.some(line => /task capsule|wf-command-create|global install/i.test(line)),
-    'release notes should include current release highlights',
+    harnessVersion.releaseNotes.highlights.some(line => /wf-ui|agent terminal|conpty|detached/i.test(line)),
+    'release notes should include current wf-ui release highlights',
   );
 
   // Assert sources is populated with >0 keys and includes remapped paths

@@ -1,14 +1,14 @@
 import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
+import { makeHarnessTempRoot } from './support/temp-root.js';
 import { spawnSync } from 'node:child_process';
 
 const tempRoots = [];
 
 function tmpdir() {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'harness-update-runner-'));
+  const root = makeHarnessTempRoot('harness-update-runner-');
   tempRoots.push(root);
   return root;
 }

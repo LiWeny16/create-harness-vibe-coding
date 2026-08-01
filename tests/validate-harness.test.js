@@ -1,8 +1,8 @@
 import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
+import { makeHarnessTempRoot } from './support/temp-root.js';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { generate } from '../src/generator.js';
 
@@ -16,7 +16,7 @@ const projectFacts = [
 
 const tempRoots = [];
 function tmpdir() {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'harness-validator-'));
+  const root = makeHarnessTempRoot('harness-validator-');
   tempRoots.push(root);
   return root;
 }
@@ -716,6 +716,26 @@ test('validation fails when wf-ui direct command loses CLI launch', () => {
 
   assert.notEqual(result.status, 0);
   assert.match(output, /\.claude\/commands\/wf-ui\.md missing .*wf-ui direct CLI launch/);
+});
+
+test('validation fails when wf-ui direct command loses detached launch', () => {
+  const targetDir = generateProject();
+  for (const rel of ['.claude/commands/wf-ui.md', '.opencode/commands/wf-ui.md']) {
+    writeRel(
+      targetDir,
+      rel,
+      readRel(targetDir, rel).replaceAll(' --detach', ''),
+    );
+  }
+
+  const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
+    cwd: targetDir,
+    encoding: 'utf8',
+  });
+  const output = `${result.stdout}\n${result.stderr}`;
+
+  assert.notEqual(result.status, 0);
+  assert.match(output, /\.claude\/commands\/wf-ui\.md missing .*wf-ui detached launch flag/);
 });
 
 test('validation fails when wf-ui direct command restores workflow router preload', () => {

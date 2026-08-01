@@ -1,8 +1,8 @@
 import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
+import { makeHarnessTempRoot } from './support/temp-root.js';
 import { spawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { createServer } from 'node:http';
@@ -16,7 +16,7 @@ const sha = (s) => 'sha256-' + createHash('sha256').update(s.replace(/\r\n/g, '\
 
 const tempRoots = [];
 function tmpdir() {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'harness-p0-'));
+  const root = makeHarnessTempRoot('harness-p0-');
   tempRoots.push(root);
   return root;
 }

@@ -3,13 +3,14 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { makeHarnessTempRoot } from './support/temp-root.js';
 import { execFileSync, spawnSync } from 'node:child_process';
 
 const bin = path.resolve('bin/create-harness-vibe-coding.js');
 
 const tempRoots = [];
 function tmpdir() {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'harness-cli-'));
+  const root = makeHarnessTempRoot('harness-cli-');
   tempRoots.push(root);
   return root;
 }
@@ -25,6 +26,66 @@ function writeUpdateStub(target, script = "console.log(JSON.stringify({ status: 
     'utf8',
   );
 }
+
+async function waitForPathGone(target, timeoutMs = 8000) {
+  const deadline = Date.now() + timeoutMs;
+  while (fs.existsSync(target)) {
+    if (Date.now() >= deadline) assert.fail(`${target} was not cleaned up`);
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+}
+
+test('wf-ui --detach prints URL and leaves server running after launcher exits', async () => {
+  const root = tmpdir();
+  fs.mkdirSync(path.join(root, 'Harness', 'tasks'), { recursive: true });
+  const launchRoot = path.join(root, 'Harness', '.temp', 'wf-ui-launch');
+  const beforeTemp = new Set(
+    fs.readdirSync(os.tmpdir()).filter(name => name.startsWith('harness-wf-ui-')),
+  );
+  let ready = null;
+  let launchDir = null;
+
+  try {
+    const env = { ...process.env };
+    delete env.HARNESS_WF_UI_READY_FILE;
+    const result = spawnSync(
+      process.execPath,
+      [bin, 'wf-ui', '--project', root, '--host', '127.0.0.1', '--port', '0', '--no-open', '--detach'],
+      {
+        encoding: 'utf8',
+        timeout: 20000,
+        env,
+      },
+    );
+    const output = `${result.stdout}\n${result.stderr}`;
+    assert.equal(result.status, 0, output);
+    assert.match(result.stdout, /\[wf-ui\] http:\/\/127\.0\.0\.1:\d+\/\?token=/);
+    const launchDirs = fs.readdirSync(launchRoot).filter(name => name.startsWith('harness-wf-ui-'));
+    assert.equal(launchDirs.length, 1, 'detached launcher should use a project-local launch dir');
+    launchDir = path.join(launchRoot, launchDirs[0]);
+    const readyFile = path.join(launchDir, 'ready.json');
+    const logFile = path.join(launchDir, 'wf-ui.log');
+    assert.ok(fs.existsSync(readyFile), 'detached child should write ready file');
+    assert.ok(fs.existsSync(logFile), 'detached child should write log file beside ready file');
+    const afterTemp = new Set(
+      fs.readdirSync(os.tmpdir()).filter(name => name.startsWith('harness-wf-ui-')),
+    );
+    assert.deepEqual([...afterTemp].filter(name => !beforeTemp.has(name)), []);
+
+    ready = JSON.parse(fs.readFileSync(readyFile, 'utf8'));
+    const startedUrl = new URL(ready.url);
+    const healthUrl = new URL('/api/health', startedUrl);
+    healthUrl.searchParams.set('token', startedUrl.searchParams.get('token'));
+    const response = await fetch(healthUrl);
+    assert.equal(response.status, 200);
+    assert.equal((await response.json()).status, 'ok');
+  } finally {
+    if (ready?.pid) {
+      try { process.kill(ready.pid, 'SIGTERM'); } catch {}
+    }
+    if (launchDir) await waitForPathGone(launchDir);
+  }
+});
 
 test('--help documents existing-project flags and optional skills', () => {
   const output = execFileSync(process.execPath, [bin, '--help'], { encoding: 'utf8' });
