@@ -3,6 +3,8 @@ import path from 'node:path';
 import { validateTaskId } from './security.mjs';
 
 const MAX_READ_LIMIT = 2000;
+const MAX_DROPPED_FILES = 12;
+const MAX_DROPPED_FILE_BYTES = 10 * 1024 * 1024;
 
 function validateSessionId(sessionId) {
   return validateTaskId(sessionId);
@@ -222,4 +224,82 @@ export function recordInputRequest(projectRoot, sessionId, text) {
   };
   appendJsonl(path.join(found.dir, 'input-requests.jsonl'), event);
   return event;
+}
+
+export function writeDroppedTerminalFiles(projectRoot, sessionId, files = []) {
+  const found = findTerminalSession(projectRoot, sessionId);
+  if (!found) {
+    const err = new Error(`Session not found: ${sessionId}`);
+    err.code = 'NOT_FOUND';
+    throw err;
+  }
+  if (!Array.isArray(files)) throw new Error('files must be an array');
+  if (files.length > MAX_DROPPED_FILES) throw new Error(`Too many dropped files; max ${MAX_DROPPED_FILES}`);
+
+  const dropRoot = path.join(found.dir, 'drops');
+  fs.mkdirSync(dropRoot, { recursive: true });
+
+  const written = files.map((file, index) => {
+    const name = safeDropFileName(file?.name, index);
+    const buffer = decodeDropContent(file?.contentBase64);
+    if (buffer.byteLength > MAX_DROPPED_FILE_BYTES) {
+      throw new Error(`Dropped file is too large: ${name}`);
+    }
+    const targetPath = uniqueDropPath(dropRoot, name);
+    fs.writeFileSync(targetPath, buffer);
+    return {
+      name: path.basename(targetPath),
+      path: targetPath,
+      size: buffer.byteLength,
+      terminalText: quoteTerminalPath(targetPath),
+    };
+  });
+
+  const state = readJson(path.join(found.dir, 'STATE.json'), { sessionId, taskId: found.taskId });
+  appendSessionEvent(projectRoot, state, {
+    type: 'terminal.files.dropped',
+    count: written.length,
+    files: written.map(file => ({ name: file.name, path: file.path, size: file.size })),
+  });
+  return {
+    files: written,
+    terminalInput: written.map(file => file.terminalText).join(' '),
+  };
+}
+
+function safeDropFileName(value, index) {
+  const raw = String(value || `dropped-file-${index + 1}`);
+  const basename = raw.split(/[\\/]+/).pop() || `dropped-file-${index + 1}`;
+  const cleaned = basename
+    .replace(/[<>:"/\\|?*\x00-\x1f]/g, '_')
+    .replace(/^\.+/, '')
+    .trim();
+  return (cleaned || `dropped-file-${index + 1}`).slice(0, 160);
+}
+
+function decodeDropContent(value) {
+  const encoded = String(value || '');
+  if (encoded.length > Math.ceil(MAX_DROPPED_FILE_BYTES * 1.4)) {
+    throw new Error('Dropped file payload is too large');
+  }
+  return Buffer.from(encoded, 'base64');
+}
+
+function uniqueDropPath(dropRoot, filename) {
+  const ext = path.extname(filename);
+  const stem = path.basename(filename, ext) || 'dropped-file';
+  let candidate = path.join(dropRoot, filename);
+  for (let i = 2; fs.existsSync(candidate); i++) {
+    candidate = path.join(dropRoot, `${stem}-${i}${ext}`);
+  }
+  const resolvedRoot = path.resolve(dropRoot);
+  const resolvedCandidate = path.resolve(candidate);
+  if (resolvedCandidate !== resolvedRoot && !resolvedCandidate.startsWith(`${resolvedRoot}${path.sep}`)) {
+    throw new Error('Dropped file path escapes drop directory');
+  }
+  return resolvedCandidate;
+}
+
+function quoteTerminalPath(filePath) {
+  return `'${String(filePath).replace(/'/g, "''")}'`;
 }

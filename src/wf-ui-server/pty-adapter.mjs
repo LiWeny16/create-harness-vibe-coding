@@ -6,6 +6,11 @@ import {
   resolveRuntimeCommand,
   resolveRuntimeLaunchArgs,
 } from './runtime-detector.mjs';
+import {
+  codexUpdatePromptControlEnabled,
+  createCodexUpdatePromptDetector,
+} from './codex-update-prompt.mjs';
+import { graphReadToken } from './control-plane-token.mjs';
 
 async function loadPtyModule() {
   const attempts = [
@@ -53,6 +58,14 @@ export function resolvePtyCommand(executable, args) {
   };
 }
 
+export function windowsPtyOptions() {
+  if (process.platform !== 'win32') return {};
+  return {
+    useConpty: true,
+    useConptyDll: process.env.HARNESS_WF_UI_USE_SYSTEM_CONPTY !== '1',
+  };
+}
+
 /**
  * Spawn a PTY for a given runtime agent.
  *
@@ -64,12 +77,15 @@ export function resolvePtyCommand(executable, args) {
  * @param {string|null} opts.taskId - Optional task ID for the session
  * @param {string} opts.peerId - Peer identifier
  * @param {string} opts.projectRoot - Project root directory
+ * @param {string} [opts.cwd] - Working directory for the PTY
  * @param {string} [opts.command] - Resolved executable command from detector
  * @param {string[]} [opts.commandArgs] - Extra args appended after runtime launch args
  * @param {string} [opts.model] - Optional model override for runtimes that support it
+ * @param {string} [opts.initialPrompt] - Optional initial prompt passed through the runtime CLI
  * @param {number} [opts.cols=120] - Terminal columns
  * @param {number} [opts.rows=32] - Terminal rows
  * @param {function} opts.onData - Callback for PTY output data (chunk) => void
+ * @param {function} [opts.onControlRequest] - Callback when PTY output needs frontend-controlled input
  * @param {function} opts.onExit - Callback for PTY exit ({ exitCode, signal }) => void
  * @returns {Promise<{sessionId: string, pid: number, ptyProcess: object}|{blocked: boolean, reason: string, hint: string}>}
  * @throws {Error} If runtime is not in ALLOWED_RUNTIMES
@@ -79,13 +95,25 @@ export async function spawnPty({
   taskId,
   peerId,
   projectRoot,
+  cwd,
   sessionId,
   command,
   commandArgs = [],
   model = '',
+  initialPrompt = '',
+  launchPolicy = null,
+  controlPlaneUrl = '',
+  controlPlaneToken = '',
+  agentKind = '',
+  workflowMode = '',
+  graphNodeId = '',
+  graphContextPath = '',
+  nodeHomePath = '',
+  nodeInitPath = '',
   cols = 120,
   rows = 32,
   onData,
+  onControlRequest,
   onExit,
 }) {
   // Validate runtime before anything else
@@ -107,9 +135,11 @@ export async function spawnPty({
   const nodePty = loadedPty.module;
 
   const resolvedSessionId = sessionId || generateSessionId();
+  const fullControlToken = agentKind === 'main' ? (controlPlaneToken || '') : '';
+  const readControlToken = controlPlaneToken ? graphReadToken(controlPlaneToken, resolvedSessionId) : '';
 
   const requestedExecutable = command || resolveRuntimeCommand(runtime);
-  const requestedArgs = [...resolveRuntimeLaunchArgs(runtime, { model }), ...commandArgs];
+  const requestedArgs = [...resolveRuntimeLaunchArgs(runtime, { model, launchPolicy, initialPrompt }), ...commandArgs];
   const { executable, args: launchArgs } = resolvePtyCommand(requestedExecutable, requestedArgs);
 
   let ptyProcess;
@@ -118,10 +148,23 @@ export async function spawnPty({
       name: 'xterm-256color',
       cols,
       rows,
-      cwd: projectRoot || process.cwd(),
+      cwd: cwd || projectRoot || process.cwd(),
+      ...windowsPtyOptions(),
       env: {
         ...process.env,
         HARNESS_PEER_RUNTIME: runtime,
+        HARNESS_AGENT_KIND: agentKind || '',
+        HARNESS_WORKFLOW_MODE: workflowMode || '',
+        HARNESS_WORKFLOW_NODE_ID: graphNodeId || '',
+        HARNESS_WORKFLOW_MAP: graphContextPath || '',
+        HARNESS_NODE_HOME: nodeHomePath || '',
+        HARNESS_NODE_INIT: nodeInitPath || '',
+        HARNESS_WF_UI_URL: controlPlaneUrl || '',
+        HARNESS_WF_UI_TOKEN: fullControlToken,
+        HARNESS_WF_UI_READ_TOKEN: readControlToken,
+        WF_UI_URL: controlPlaneUrl || '',
+        WF_UI_TOKEN: fullControlToken,
+        WF_UI_READ_TOKEN: readControlToken,
         CLAUDE_PEER_TASK_ID: taskId || '',
         HARNESS_PEER_TASK_ID: taskId || '',
         CLAUDE_PEER_ID: peerId,
@@ -138,10 +181,17 @@ export async function spawnPty({
   }
 
   const pid = ptyProcess.pid;
+  const codexUpdateDetector = createCodexUpdatePromptDetector({
+    enabled: runtime === 'codex' && codexUpdatePromptControlEnabled(),
+  });
 
   ptyProcess.onData((data) => {
     if (typeof onData === 'function') {
       onData(data);
+    }
+    const controlRequest = codexUpdateDetector.observe(data);
+    if (controlRequest && typeof onControlRequest === 'function') {
+      onControlRequest(controlRequest);
     }
   });
 

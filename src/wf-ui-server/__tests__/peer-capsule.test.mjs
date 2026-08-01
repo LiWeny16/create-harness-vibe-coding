@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import os from 'node:os';
+import { makeHarnessTempRoot } from '../../../tests/support/temp-root.js';
 
 import {
   createPeerCapsule,
@@ -16,7 +16,7 @@ import {
  * Create a temporary project root with a Harness/tasks structure for testing.
  */
 function makeTempProject() {
-  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'peer-capsule-test-'));
+  const tmpDir = makeHarnessTempRoot('peer-capsule-test-');
   // Create the expected structure
   fs.mkdirSync(path.join(tmpDir, 'Harness', 'tasks'), { recursive: true });
   return tmpDir;

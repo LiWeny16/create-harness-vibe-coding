@@ -8,16 +8,56 @@ function readState(taskDir) {
   catch (err) { throw new Error(`STATE.json at ${statePath} contains malformed JSON: ${err.message}`); }
 }
 
+function readJson(filePath) {
+  try {
+    if (!fs.existsSync(filePath)) return null;
+    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
+function pushRuntime(runtimes, runtime) {
+  const value = String(runtime || '').trim();
+  if (!value) return;
+  if (!runtimes.some(item => item.toLowerCase() === value.toLowerCase())) {
+    runtimes.push(value);
+  }
+}
+
+function runtimeHistoryForTask(state, taskDir) {
+  const runtimes = [];
+  for (const key of ['defaultRuntime', 'defaultAgentRuntime', 'agentRuntime', 'cliAgent']) {
+    pushRuntime(runtimes, state?.[key]);
+  }
+  for (const key of ['runtimeHistory', 'runtimes', 'terminalRuntimes']) {
+    if (Array.isArray(state?.[key])) {
+      for (const runtime of state[key]) pushRuntime(runtimes, runtime);
+    }
+  }
+
+  const sessionsDir = path.join(taskDir, 'sessions');
+  let entries = [];
+  try { entries = fs.readdirSync(sessionsDir, { withFileTypes: true }); }
+  catch { entries = []; }
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue;
+    const sessionState = readJson(path.join(sessionsDir, entry.name, 'STATE.json'));
+    pushRuntime(runtimes, sessionState?.runtime);
+  }
+  return runtimes;
+}
+
 function normalizeAcceptance(acceptance) {
   if (!Array.isArray(acceptance)) return [];
   return acceptance.map((ac) => {
-    if (typeof ac === 'string') return { id: '', text: ac, status: 'pending' };
+    if (typeof ac === 'string') return { id: ac, text: '', status: 'tracked' };
     if (ac && typeof ac === 'object') return {
       id: ac.id || '',
       text: ac.text || JSON.stringify(ac),
-      status: ac.status || 'pending',
+      status: ac.status || 'tracked',
     };
-    return { id: '', text: String(ac), status: 'pending' };
+    return { id: String(ac), text: '', status: 'tracked' };
   });
 }
 
@@ -39,6 +79,7 @@ export function parseTaskCapsule(taskDir) {
     activeQuestion: state.activeQuestion || null,
     nextAction: state.nextAction || null,
     defaultRuntime: state.defaultRuntime || state.defaultAgentRuntime || state.agentRuntime || state.cliAgent || null,
+    runtimeHistory: runtimeHistoryForTask(state, taskDir),
     acceptance: normalizeAcceptance(state.acceptance),
     dependsOn: Array.isArray(links.dependsOn) ? links.dependsOn : [],
     blocks: Array.isArray(links.blocks) ? links.blocks : [],

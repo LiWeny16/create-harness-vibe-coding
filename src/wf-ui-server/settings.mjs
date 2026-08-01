@@ -11,6 +11,16 @@ export const DEFAULT_SETTINGS = {
   terminal: { enabled: false, attachMode: false, defaultRuntime: 'codex' },
   peers: { allowlist: RUNTIME_DEFINITIONS.map((runtime) => runtime.id) },
   ui: { theme: 'auto', language: 'en', reducedMotion: false },
+  cleanup: {
+    enabled: true,
+    autoPruneOnStartup: true,
+    autoPruneIntervalHours: 6,
+    autoPruneStoppedSessions: false,
+    stoppedSessionRetentionDays: 14,
+    keepStoppedSessions: 20,
+    includeTaskSessions: false,
+    detachedLogRetentionHours: 24,
+  },
 };
 
 /**

@@ -2,14 +2,14 @@ import test, { describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import os from 'node:os';
+import { makeHarnessTempRoot } from '../../../tests/support/temp-root.js';
 import { parseArchivedTasks, parseTaskCapsule, parseTaskList } from '../task-parser.mjs';
 
 describe('task-parser', () => {
   let baseDir;
 
   before(() => {
-    baseDir = fs.mkdtempSync(path.join(os.tmpdir(), 'tp-test-'));
+    baseDir = makeHarnessTempRoot('tp-test-');
 
     // task-alpha — fully populated, latest updatedAt
     const dirA = path.join(baseDir, 'task-alpha');
@@ -30,6 +30,12 @@ describe('task-parser', () => {
     }));
     fs.writeFileSync(path.join(dirA, 'PLAN.md'), '# Plan A');
     fs.writeFileSync(path.join(dirA, 'PROGRESS.md'), '# Progress A');
+    const alphaClaude = path.join(dirA, 'sessions', 'session-claude');
+    const alphaCodex = path.join(dirA, 'sessions', 'session-codex');
+    fs.mkdirSync(alphaClaude, { recursive: true });
+    fs.mkdirSync(alphaCodex, { recursive: true });
+    fs.writeFileSync(path.join(alphaClaude, 'STATE.json'), JSON.stringify({ sessionId: 'session-claude', runtime: 'claude', status: 'saved' }));
+    fs.writeFileSync(path.join(alphaCodex, 'STATE.json'), JSON.stringify({ sessionId: 'session-codex', runtime: 'codex', status: 'saved' }));
 
     // task-beta — completed, no plan/progress files
     const dirB = path.join(baseDir, 'task-beta');
@@ -45,7 +51,7 @@ describe('task-parser', () => {
       updatedAt: '2026-07-28T12:00:00.000Z',
       activeQuestion: null,
       nextAction: null,
-      acceptance: [],
+      acceptance: ['AC-TRACKED'],
       links: { dependsOn: [], blocks: ['task-alpha'], related: [] }
     }));
 
@@ -109,6 +115,7 @@ test('parseTaskCapsule parses a valid task capsule directory with STATE.json', (
   assert.deepEqual(result.blocks, []);
   assert.equal(result.hasPlan, true);
   assert.equal(result.hasProgress, true);
+  assert.deepEqual(result.runtimeHistory, ['claude', 'codex']);
 });
 
 test('parseTaskCapsule returns null for directory without STATE.json', () => {
@@ -165,6 +172,7 @@ test('parseTaskList handles completed capsule without PLAN.md or PROGRESS.md', (
   assert.equal(beta.phase, 'closed');
   assert.equal(beta.hasPlan, false);
   assert.equal(beta.hasProgress, false);
+  assert.deepEqual(beta.acceptance, [{ id: 'AC-TRACKED', text: '', status: 'tracked' }]);
 });
 
 test('parseTaskList includes capsule with activeQuestion as string', () => {

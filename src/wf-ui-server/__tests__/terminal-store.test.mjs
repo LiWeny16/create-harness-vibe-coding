@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
+import { makeHarnessTempRoot } from '../../../tests/support/temp-root.js';
 import {
   appendSessionEvent,
   appendTerminalData,
@@ -14,7 +14,7 @@ import {
 } from '../terminal-store.mjs';
 
 function makeSession() {
-  const projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'terminal-store-'));
+  const projectRoot = makeHarnessTempRoot('terminal-store-');
   const session = {
     taskId: 'task-alpha',
     sessionId: 'session-abc',
@@ -39,7 +39,7 @@ test('persistSession writes task-scoped STATE.json', () => {
 });
 
 test('persistSession writes unbound sessions under Harness/a2a/sessions', () => {
-  const projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'terminal-store-'));
+  const projectRoot = makeHarnessTempRoot('terminal-store-');
   const session = {
     taskId: null,
     sessionId: 'session-unbound',
@@ -92,7 +92,7 @@ test('globTerminalEvents reads event and terminal files by glob', () => {
 });
 
 test('globTerminalEvents reads Harness/a2a session events', () => {
-  const projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'terminal-store-'));
+  const projectRoot = makeHarnessTempRoot('terminal-store-');
   const session = {
     taskId: null,
     sessionId: 'session-a2a-glob',

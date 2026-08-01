@@ -1,12 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
+import { makeHarnessTempRoot } from '../../../tests/support/temp-root.js';
 import { readRuntimeConfig, writeRuntimeConfig } from '../runtime-config.mjs';
 
 test('writeRuntimeConfig writes project JSON model fields', () => {
-  const projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'runtime-config-'));
+  const projectRoot = makeHarnessTempRoot('runtime-config-');
   try {
     const result = writeRuntimeConfig(projectRoot, 'opencode', {
       scope: 'project',
@@ -23,7 +23,7 @@ test('writeRuntimeConfig writes project JSON model fields', () => {
 });
 
 test('writeRuntimeConfig writes project TOML fields and backs up existing file', () => {
-  const projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'runtime-config-'));
+  const projectRoot = makeHarnessTempRoot('runtime-config-');
   try {
     const configPath = path.join(projectRoot, '.codex', 'config.toml');
     fs.mkdirSync(path.dirname(configPath), { recursive: true });

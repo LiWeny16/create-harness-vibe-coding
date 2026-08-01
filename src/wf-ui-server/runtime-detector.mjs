@@ -267,7 +267,24 @@ export function resolveRuntimeLaunchArgs(runtimeId, opts = {}) {
   const definition = getRuntimeDefinition(runtimeId);
   const args = [];
   const model = String(opts.model || '').trim();
+  const initialPrompt = String(opts.initialPrompt || '').trim();
   if (definition?.modelArg && model) args.push(definition.modelArg, model);
+  const launchPolicy = opts.launchPolicy || {};
+  const bypassAll = launchPolicy.sandboxMode === 'danger-full-access'
+    && launchPolicy.approvalPolicy === 'never';
+  if (bypassAll) {
+    if (runtimeId === 'claude' || runtimeId === 'cc') {
+      args.push('--dangerously-skip-permissions');
+    } else if (runtimeId === 'codex') {
+      args.push('--dangerously-bypass-approvals-and-sandbox');
+    } else if (runtimeId === 'opencode') {
+      args.push('--auto');
+    }
+  }
+  if (initialPrompt) {
+    if (runtimeId === 'opencode') args.push('--prompt', initialPrompt);
+    else if (runtimeId === 'claude' || runtimeId === 'cc' || runtimeId === 'codex') args.push(initialPrompt);
+  }
   return args;
 }
 

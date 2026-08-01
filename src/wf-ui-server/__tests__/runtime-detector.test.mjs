@@ -79,6 +79,27 @@ test('runtime launch policy is separate from command detection', () => {
   assert.deepEqual(resolveRuntimeLaunchArgs('codex', { model: 'gpt-5' }), ['--model', 'gpt-5']);
 });
 
+test('runtime launch args convert full-access never-approval policy to CLI bypass flags', () => {
+  const launchPolicy = { sandboxMode: 'danger-full-access', approvalPolicy: 'never' };
+  assert.deepEqual(resolveRuntimeLaunchArgs('claude', { launchPolicy }), ['--dangerously-skip-permissions']);
+  assert.deepEqual(resolveRuntimeLaunchArgs('cc', { launchPolicy }), ['--dangerously-skip-permissions']);
+  assert.deepEqual(resolveRuntimeLaunchArgs('codex', { model: 'gpt-5', launchPolicy }), [
+    '--model',
+    'gpt-5',
+    '--dangerously-bypass-approvals-and-sandbox',
+  ]);
+  assert.deepEqual(resolveRuntimeLaunchArgs('opencode', { launchPolicy }), ['--auto']);
+});
+
+test('runtime launch args pass initial prompts through runtime-native CLI shapes', () => {
+  assert.deepEqual(resolveRuntimeLaunchArgs('claude', { initialPrompt: 'WF node ready' }), ['WF node ready']);
+  assert.deepEqual(resolveRuntimeLaunchArgs('codex', {
+    model: 'gpt-5',
+    initialPrompt: 'Describe graph',
+  }), ['--model', 'gpt-5', 'Describe graph']);
+  assert.deepEqual(resolveRuntimeLaunchArgs('opencode', { initialPrompt: 'Describe graph' }), ['--prompt', 'Describe graph']);
+});
+
 test('resume args match installed CLI resume command shapes', () => {
   assert.deepEqual(resolveRuntimeResumeArgs('claude', { agentSessionId: 'abc-123' }), ['--resume', 'abc-123']);
   assert.deepEqual(resolveRuntimeResumeArgs('claude'), ['--continue']);

@@ -4,7 +4,7 @@ import net from 'node:net';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import os from 'node:os';
+import { makeHarnessTempRoot } from '../../../tests/support/temp-root.js';
 
 import { startServer, stopServer } from '../server.mjs';
 import { attachTerminalWs } from '../ws-terminal.mjs';
@@ -203,7 +203,7 @@ let sessionA;
 let sessionB;
 
 before(async () => {
-  tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-ui-term-'));
+  tempRoot = makeHarnessTempRoot('wf-ui-term-');
   const tasksDir = path.join(tempRoot, 'Harness', 'tasks');
   fs.mkdirSync(tasksDir, { recursive: true });
 

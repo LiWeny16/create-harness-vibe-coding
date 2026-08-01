@@ -2,7 +2,7 @@ import test, { describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import os from 'node:os';
+import { makeHarnessTempRoot } from '../../../tests/support/temp-root.js';
 import { loadSettings, resolveSettings } from '../settings.mjs';
 import { RUNTIME_DEFINITIONS } from '../runtime-detector.mjs';
 
@@ -11,13 +11,23 @@ const DEFAULTS = {
   terminal: { enabled: false, attachMode: false, defaultRuntime: 'codex' },
   peers: { allowlist: RUNTIME_DEFINITIONS.map(runtime => runtime.id) },
   ui: { theme: 'auto', language: 'en', reducedMotion: false },
+  cleanup: {
+    enabled: true,
+    autoPruneOnStartup: true,
+    autoPruneIntervalHours: 6,
+    autoPruneStoppedSessions: false,
+    stoppedSessionRetentionDays: 14,
+    keepStoppedSessions: 20,
+    includeTaskSessions: false,
+    detachedLogRetentionHours: 24,
+  },
 };
 
 describe('settings', () => {
   let baseDir;
 
   before(() => {
-    baseDir = fs.mkdtempSync(path.join(os.tmpdir(), 'st-test-'));
+    baseDir = makeHarnessTempRoot('st-test-');
   });
 
   after(() => {

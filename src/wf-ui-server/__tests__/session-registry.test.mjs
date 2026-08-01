@@ -35,6 +35,45 @@ test('create can start an unbound terminal agent session', () => {
   assert.equal(session.provider, 'anthropic');
 });
 
+test('AC-001 AC-005 create preserves explicit agent launch fields and graph context', () => {
+  const reg = new SessionRegistry();
+  const graphContext = {
+    nodeId: 'agent-main-1',
+    connectedPeerIds: ['agent-subagent-1'],
+    relationship: 'main-controls-subagent',
+  };
+  const launchPolicy = {
+    sandboxMode: 'danger-full-access',
+    approvalPolicy: 'never',
+  };
+
+  const session = reg.create({
+    agentKind: 'main',
+    runtime: 'codex',
+    workflowMode: 'wf',
+    taskId: 'task-alpha',
+    cwd: 'D:\\workspaces\\alpha',
+    launchPolicy,
+    graphContext,
+  });
+
+  assert.equal(session.agentKind, 'main');
+  assert.equal(session.runtime, 'codex');
+  assert.equal(session.workflowMode, 'wf');
+  assert.equal(session.taskId, 'task-alpha');
+  assert.equal(session.cwd, 'D:\\workspaces\\alpha');
+  assert.deepEqual(session.launchPolicy, launchPolicy);
+  assert.deepEqual(session.graphContext, graphContext);
+});
+
+test('AC-001 AC-005 create rejects Router as an agent kind', () => {
+  const reg = new SessionRegistry();
+  assert.throws(() => reg.create({ runtime: 'codex', agentKind: 'router' }), {
+    name: 'Error',
+    message: /agent kind.*router/i,
+  });
+});
+
 test('create can mark a wf CEO terminal session', () => {
   const reg = new SessionRegistry();
   const session = reg.create({
@@ -175,12 +214,12 @@ test('remove then get returns undefined', () => {
   assert.equal(reg.count(), 0);
 });
 
-test('stop removes web session from live registry and returns saved state', () => {
+test('stop removes web session from live registry and returns stopped state', () => {
   const reg = new SessionRegistry();
   const created = reg.create({ runtime: 'claude' });
   const stopped = reg.stop(created.sessionId);
   assert.equal(stopped.sessionId, created.sessionId);
-  assert.equal(stopped.status, 'saved');
+  assert.equal(stopped.status, 'stopped');
   assert.equal(reg.get(created.sessionId), undefined);
   assert.equal(reg.count(), 0);
 });

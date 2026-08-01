@@ -6,6 +6,7 @@ import { RUNTIME_IDS } from './runtime-detector.mjs';
  * No fake agents in product code.
  */
 export const ALLOWED_RUNTIMES = RUNTIME_IDS;
+export const ALLOWED_AGENT_KINDS = new Set(['main', 'subagent']);
 
 /**
  * Generate a short peer ID from a runtime name.
@@ -15,6 +16,19 @@ export const ALLOWED_RUNTIMES = RUNTIME_IDS;
 function generatePeerId(runtime) {
   const suffix = crypto.randomBytes(4).toString('hex');
   return `${runtime}-${suffix}`;
+}
+
+function resolveAgentKind(agentKind, role) {
+  const explicit = String(agentKind || '').trim().toLowerCase();
+  if (explicit) {
+    if (!ALLOWED_AGENT_KINDS.has(explicit)) {
+      throw new Error(`Invalid agent kind '${agentKind}'. Must be one of: ${[...ALLOWED_AGENT_KINDS].join(', ')}`);
+    }
+    return explicit;
+  }
+  const normalizedRole = String(role || '').toLowerCase();
+  if (normalizedRole.includes('ceo') || normalizedRole.includes('main')) return 'main';
+  return 'subagent';
 }
 
 /**
@@ -72,20 +86,46 @@ export class SessionRegistry {
   create({
     taskId = null,
     runtime,
+    agentKind = '',
     role = 'terminal-agent',
     objective = '',
     cols = 120,
     rows = 32,
     projectRoot = '',
+    cwd = '',
     subagentMode = 'wf-subagents',
     workflowMode = null,
     model = '',
     provider = '',
+    prompt = '',
+    env = null,
+    permissions = null,
+    customRole = '',
+    skills = null,
+    skillPolicy = 'auto',
+    contextSources = null,
+    capabilities = null,
+    nodeConfig = null,
+    restartRequired = false,
+    restartRequiredFields = null,
+    configRevision = 0,
     ceoPrompt = '',
+    launchPolicy = null,
+    graphContext = null,
+    graphNodeId = '',
+    graphVersion = 0,
+    graphContextPath = '',
+    parentAgentId = null,
+    parentNodeId = null,
+    nodeHomePath = '',
+    nodeHomeRel = '',
+    nodeInitPath = '',
+    nodeInitRel = '',
   }) {
     if (!ALLOWED_RUNTIMES.has(runtime)) {
       throw new Error(`Invalid runtime '${runtime}'. Must be one of: ${[...ALLOWED_RUNTIMES].join(', ')}`);
     }
+    const resolvedAgentKind = resolveAgentKind(agentKind, role);
 
     const now = new Date().toISOString();
     const sessionId = generateSessionId();
@@ -96,13 +136,39 @@ export class SessionRegistry {
       taskId: taskId || null,
       peerId,
       runtime,
+      agentKind: resolvedAgentKind,
       role,
       objective,
+      projectRoot,
+      cwd: cwd || projectRoot || '',
       subagentMode,
       workflowMode,
       model,
       provider,
+      prompt,
+      env: env && typeof env === 'object' && !Array.isArray(env) ? env : {},
+      permissions: permissions && typeof permissions === 'object' && !Array.isArray(permissions) ? permissions : {},
+      customRole,
+      skills: Array.isArray(skills) ? skills : [],
+      skillPolicy,
+      contextSources: Array.isArray(contextSources) ? contextSources : ['workflow-map'],
+      capabilities: Array.isArray(capabilities) ? capabilities : ['terminal'],
+      nodeConfig: nodeConfig && typeof nodeConfig === 'object' && !Array.isArray(nodeConfig) ? nodeConfig : null,
+      restartRequired: Boolean(restartRequired),
+      restartRequiredFields: Array.isArray(restartRequiredFields) ? restartRequiredFields : [],
+      configRevision: Number(configRevision || 0),
       ceoPrompt,
+      launchPolicy,
+      graphContext,
+      graphNodeId,
+      graphVersion,
+      graphContextPath,
+      parentAgentId,
+      parentNodeId,
+      nodeHomePath,
+      nodeHomeRel,
+      nodeInitPath,
+      nodeInitRel,
       status: 'starting',
       cols,
       rows,
@@ -119,7 +185,10 @@ export class SessionRegistry {
       resumeCommand: null,
       terminalSeq: 0,
       transcriptRing: '',
+      controlRequest: null,
       wsClientCount: 0,
+      inputOwnerId: '',
+      ptySessionId: sessionId,
     };
 
     this._sessions.set(sessionId, session);
@@ -188,7 +257,7 @@ export class SessionRegistry {
     this._sessions.delete(sessionId);
     return {
       ...session,
-      status: 'saved',
+      status: 'stopped',
       stoppedAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };

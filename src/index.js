@@ -28,6 +28,7 @@ function hasFlag(args, flag) {
 // never fall through to the scaffold installer.
 if (raw[0] === 'wf-ui') {
   await runWfUi(raw.slice(1));
+  await flushStdout();
   process.exit(0);
 }
 
@@ -392,6 +393,8 @@ async function runWfUi(args) {
   const rawPort = extractFlag(args, '--port') || '0';
   const port = Number.parseInt(rawPort, 10);
   const openBrowser = !hasFlag(args, '--no-open');
+  const detach = hasFlag(args, '--detach');
+  const detachedChild = hasFlag(args, '--detached-child');
 
   if (host !== '127.0.0.1') {
     console.error('[wf-ui] host must be 127.0.0.1');
@@ -400,6 +403,16 @@ async function runWfUi(args) {
   if (!Number.isInteger(port) || port < 0 || port > 65535) {
     console.error('[wf-ui] port must be an integer from 0 to 65535');
     process.exit(1);
+  }
+
+  if (detach && !detachedChild) {
+    try {
+      await runDetachedWfUi(args);
+    } catch (err) {
+      console.error(`[wf-ui] ${err.message}`);
+      process.exit(1);
+    }
+    return;
   }
 
   try {
@@ -439,13 +452,222 @@ async function runWfUi(args) {
       },
     }));
     warmRuntimeCache();
-    console.log(`[wf-ui] ${started.url}`);
+    await writeStdoutLine(`[wf-ui] ${started.url}`);
+    writeWfUiReadyFile(started.url, projectRoot);
     if (openBrowser) openLocalUrl(started.url);
-    await waitForWfUiShutdown(started.server);
+    try {
+      await waitForWfUiShutdown(started.server);
+    } finally {
+      cleanupWfUiLaunchDirFromReadyFile();
+    }
   } catch (err) {
     console.error(`[wf-ui] ${err.message}`);
     process.exit(1);
   }
+}
+
+async function runDetachedWfUi(args) {
+  const projectRoot = extractFlag(args, '--project') || process.cwd();
+  const readyDir = process.env.HARNESS_WF_UI_READY_FILE
+    ? null
+    : makeProjectLocalWfUiLaunchDir(projectRoot);
+  const readyFile = process.env.HARNESS_WF_UI_READY_FILE || path.join(readyDir, 'ready.json');
+  const logFile = path.join(path.dirname(readyFile), 'wf-ui.log');
+  fs.mkdirSync(path.dirname(readyFile), { recursive: true });
+  try { fs.rmSync(readyFile, { force: true }); } catch {}
+
+  const childArgs = args.filter(arg => arg !== '--detach');
+  childArgs.push('--detached-child');
+  const child = spawnDetachedWfUiChild(childArgs, readyFile, logFile);
+
+  let childExit = null;
+  child.once('exit', (code, signal) => {
+    childExit = { code, signal };
+  });
+  child.unref();
+
+  const started = await waitForWfUiReadyFile(readyFile, () => {
+    if (process.platform === 'win32' && childExit?.code === 0) return null;
+    return childExit;
+  }, logFile);
+  spawnWfUiLaunchCleanupWatcher(started.pid, path.dirname(readyFile));
+  await writeStdoutLine(`[wf-ui] ${started.url}`);
+}
+
+function makeProjectLocalWfUiLaunchDir(projectRoot) {
+  const launchRoot = path.join(path.resolve(projectRoot || process.cwd()), 'Harness', '.temp', 'wf-ui-launch');
+  fs.mkdirSync(launchRoot, { recursive: true });
+  return fs.mkdtempSync(path.join(launchRoot, 'harness-wf-ui-'));
+}
+
+function spawnDetachedWfUiChild(childArgs, readyFile, logFile) {
+  if (process.platform === 'win32') {
+    const launcherScript = `
+const { spawn } = require('child_process');
+const fs = require('fs');
+const spec = JSON.parse(process.argv[1]);
+const logFd = fs.openSync(spec.logFile, 'a');
+const child = spawn(spec.execPath, spec.argv, {
+  cwd: spec.cwd,
+  detached: true,
+  env: { ...process.env, HARNESS_WF_UI_READY_FILE: spec.readyFile },
+  stdio: ['ignore', logFd, logFd],
+  windowsHide: true,
+});
+fs.closeSync(logFd);
+child.unref();
+`;
+    return spawn(process.execPath, ['-e', launcherScript, JSON.stringify({
+      execPath: process.execPath,
+      argv: [process.argv[1], 'wf-ui', ...childArgs],
+      cwd: process.cwd(),
+      readyFile,
+      logFile,
+    })], {
+      cwd: process.cwd(),
+      env: process.env,
+      stdio: 'ignore',
+      windowsHide: true,
+    });
+  }
+
+  const logFd = fs.openSync(logFile, 'a');
+  const child = spawn(process.execPath, [process.argv[1], 'wf-ui', ...childArgs], {
+    cwd: process.cwd(),
+    detached: true,
+    env: {
+      ...process.env,
+      HARNESS_WF_UI_READY_FILE: readyFile,
+    },
+    stdio: ['ignore', logFd, logFd],
+  });
+  fs.closeSync(logFd);
+  return child;
+}
+
+function writeWfUiReadyFile(url, projectRoot) {
+  const readyFile = process.env.HARNESS_WF_UI_READY_FILE;
+  if (!readyFile) return;
+  try {
+    fs.mkdirSync(path.dirname(readyFile), { recursive: true });
+    fs.writeFileSync(readyFile, `${JSON.stringify({
+      url,
+      pid: process.pid,
+      projectRoot: path.resolve(projectRoot),
+      startedAt: new Date().toISOString(),
+    })}\n`, 'utf8');
+  } catch (err) {
+    console.error(`[wf-ui] could not write ready file: ${err.message}`);
+  }
+}
+
+function isProjectLocalWfUiLaunchDir(dir) {
+  const resolved = path.resolve(dir);
+  const launchRoot = path.dirname(resolved);
+  return path.basename(resolved).startsWith('harness-wf-ui-')
+    && path.basename(launchRoot) === 'wf-ui-launch'
+    && path.basename(path.dirname(launchRoot)) === '.temp'
+    && path.basename(path.dirname(path.dirname(launchRoot))) === 'Harness';
+}
+
+function removeWfUiLaunchDir(dir) {
+  if (!isProjectLocalWfUiLaunchDir(dir)) return;
+  const resolved = path.resolve(dir);
+  const launchRoot = path.dirname(resolved);
+  try {
+    fs.rmSync(resolved, { recursive: true, force: true });
+  } catch {
+    // Best-effort cleanup; the detached cleanup watcher also retries after process exit.
+  }
+  try {
+    if (fs.existsSync(launchRoot) && fs.readdirSync(launchRoot).length === 0) {
+      fs.rmdirSync(launchRoot);
+    }
+  } catch {
+    // no-op
+  }
+}
+
+function cleanupWfUiLaunchDirFromReadyFile() {
+  const readyFile = process.env.HARNESS_WF_UI_READY_FILE;
+  if (!readyFile) return;
+  removeWfUiLaunchDir(path.dirname(readyFile));
+}
+
+function spawnWfUiLaunchCleanupWatcher(pid, launchDir) {
+  if (!pid || !isProjectLocalWfUiLaunchDir(launchDir)) return;
+  const watcherScript = `
+const fs = require('fs');
+const path = require('path');
+const pid = Number(process.argv[1]);
+const dir = process.argv[2];
+const launchRoot = path.dirname(dir);
+function alive() {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
+function cleanup() {
+  try { fs.rmSync(dir, { recursive: true, force: true }); } catch {}
+  try {
+    if (fs.existsSync(launchRoot) && fs.readdirSync(launchRoot).length === 0) {
+      fs.rmdirSync(launchRoot);
+    }
+  } catch {}
+}
+(function wait() {
+  if (!alive()) {
+    cleanup();
+    return;
+  }
+  setTimeout(wait, 1000);
+})();
+`;
+  try {
+    const watcher = spawn(process.execPath, ['-e', watcherScript, String(pid), path.resolve(launchDir)], {
+      cwd: process.cwd(),
+      detached: true,
+      stdio: 'ignore',
+      windowsHide: true,
+    });
+    watcher.unref();
+  } catch {
+    // no-op
+  }
+}
+
+function waitForWfUiReadyFile(readyFile, getChildExit, logFile) {
+  const deadline = Date.now() + 15000;
+  return new Promise((resolve, reject) => {
+    const poll = () => {
+      try {
+        if (fs.existsSync(readyFile)) {
+          const payload = JSON.parse(fs.readFileSync(readyFile, 'utf8'));
+          if (payload?.url) {
+            resolve(payload);
+            return;
+          }
+        }
+      } catch {
+        // The child may still be writing the handoff file.
+      }
+
+      const childExit = getChildExit();
+      if (childExit) {
+        reject(new Error(`detached server exited before startup (${childExit.signal || childExit.code}); log: ${logFile}`));
+        return;
+      }
+      if (Date.now() >= deadline) {
+        reject(new Error(`detached server did not report a URL within 15s; log: ${logFile}`));
+        return;
+      }
+      setTimeout(poll, 80);
+    };
+    poll();
+  });
 }
 
 function waitForWfUiShutdown(server) {
@@ -479,6 +701,26 @@ function openLocalUrl(url) {
   } catch (err) {
     console.error(`[wf-ui] could not open browser automatically: ${err.message}`);
   }
+}
+
+function flushStdout() {
+  return new Promise((resolve) => {
+    if (!process.stdout.writable || process.stdout.writableEnded) {
+      resolve();
+      return;
+    }
+    process.stdout.write('', resolve);
+  });
+}
+
+function writeStdoutLine(line) {
+  return new Promise((resolve) => {
+    if (!process.stdout.writable || process.stdout.writableEnded) {
+      resolve();
+      return;
+    }
+    process.stdout.write(`${line}\n`, resolve);
+  });
 }
 
 function parseArgs(args) {

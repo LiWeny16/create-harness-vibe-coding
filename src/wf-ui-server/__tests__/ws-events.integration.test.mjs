@@ -4,7 +4,7 @@ import net from 'node:net';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import os from 'node:os';
+import { makeHarnessTempRoot } from '../../../tests/support/temp-root.js';
 import { startServer, stopServer } from '../server.mjs';
 import { attachEventsWs } from '../ws-events.mjs';
 
@@ -242,7 +242,7 @@ let tempRoot;
 let wsHandle;
 
 before(async () => {
-  tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'wf-ui-ws-'));
+  tempRoot = makeHarnessTempRoot('wf-ui-ws-');
   const tasksDir = path.join(tempRoot, 'Harness', 'tasks', 'task-test-a');
   fs.mkdirSync(tasksDir, { recursive: true });
   fs.writeFileSync(path.join(tasksDir, 'STATE.json'), JSON.stringify({
