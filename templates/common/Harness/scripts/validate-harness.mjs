@@ -1697,6 +1697,7 @@ for (const rel of ['.claude/commands/wf-ui.md', '.opencode/commands/wf-ui.md']) 
   requireText(rel, 'create-harness-vibe-coding wf-ui', `${rel} wf-ui direct CLI launch`);
   requireText(rel, '--host 127.0.0.1', `${rel} wf-ui loopback host`);
   requireText(rel, '--open', `${rel} wf-ui browser open flag`);
+  requireText(rel, '--detach', `${rel} wf-ui detached launch flag`);
   forbidText(rel, 'workflow command', `${rel} wf-ui workflow routing`);
   forbidText(rel, 'Load `CLAUDE.md`', `${rel} wf-ui old router preload`);
   forbidText(rel, 'Harness/tasks/task-wf-ui-control-0729/STATE.json', `${rel} wf-ui old task-state preload`);
@@ -1705,6 +1706,7 @@ for (const rel of ['.claude/skills/wf-ui/SKILL.md', '.agents/skills/wf-ui/SKILL.
   requireText(rel, 'Codex compatibility shim', `${rel} wf-ui Codex compatibility shim`);
   requireText(rel, 'direct command', `${rel} wf-ui direct command statement`);
   requireText(rel, 'create-harness-vibe-coding wf-ui', `${rel} wf-ui direct CLI launch`);
+  requireText(rel, '--detach', `${rel} wf-ui detached launch flag`);
   forbidText(rel, 'Harness/tasks/task-wf-ui-control-0729/STATE.json', `${rel} wf-ui old task-state preload`);
 }
 requireText('Harness/scripts/wf-update-check.mjs', 'releaseHighlights', 'wf-update-check release highlights metadata');

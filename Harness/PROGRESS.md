@@ -4,7 +4,7 @@ Global task index. Load at session start to see what is active and what was done
 
 ## Active Task
 
-- None
+- task-standardize-workflow-nodes
 
 ## Task Index
 
@@ -12,8 +12,14 @@ Non-archived tasks only (max 5). Archived tasks are listed in `Harness/tasks/_ar
 
 | ID | Goal | Phase | Closed |
 |----|------|-------|--------|
+| task-standardize-workflow-nodes | Standardize Workflow nodes as first-class typed resources with File/Markdown/Diagram/Agent creation, agent-readable connections, file previews, and productized agent settings | WF-MAX D-GATE | - |
+| task-define-workflow-context-surface | Build stable WF UI Explorer, terminal context insertion, rich node settings/skills, and Markdown/Excalidraw component nodes | Complete | 2026-08-01 |
+| task-terminal-input-control | Control WF UI terminal input, copy/paste, and file drag/drop behavior | Test RED | - |
+| task-stabilize-workflow-agent-control | Stabilize WF UI live graph state, managed agent control, and stop/delete behavior | Verified | - |
+| task-upgrade-workflow-agent-canvas | Rework WF UI Workflow into a controllable Main/Subagent topology canvas | Verified | - |
 | task-framework-metrics-and-entry-contract | Define slim CLAUDE entry contract and HarnessBench v0.1 methodology | Blocked | - |
 | task-homepage-act1-flat-layout | Redesign Act 1 opening: 5 flat staggered boxes, zero tilt, no float, no singled-out openable box | Implementation | - |
+| task-release-0819-formal | Formally release 0.8.19 across npm, canonical GitHub, and legacy mirror | Blocked | - |
 
 ## Cross-Task Decisions
 

@@ -74,5 +74,15 @@
     "theme": "auto",
     "language": "zh",
     "reducedMotion": false
+  },
+  "cleanup": {
+    "enabled": true,
+    "autoPruneOnStartup": true,
+    "autoPruneIntervalHours": 6,
+    "autoPruneStoppedSessions": false,
+    "stoppedSessionRetentionDays": 14,
+    "keepStoppedSessions": 20,
+    "includeTaskSessions": false,
+    "detachedLogRetentionHours": 24
   }
 }

@@ -30,13 +30,20 @@ Do not paste full API responses, accessibility trees, or terminal transcripts.
 Run from the project root:
 
 ```text
-create-harness-vibe-coding wf-ui --project . --host 127.0.0.1 --port 0 --open
+create-harness-vibe-coding wf-ui --project . --host 127.0.0.1 --port 0 --open --detach
 ```
 
-If the global binary is not available, use:
+If you are inside the generator source repository and the global binary is not
+available, use:
 
 ```text
-npx create-harness-vibe-coding@0.8.19 wf-ui --project . --host 127.0.0.1 --port 0 --open
+node bin/create-harness-vibe-coding.js wf-ui --project . --host 127.0.0.1 --port 0 --open --detach
+```
+
+Otherwise use:
+
+```text
+npx create-harness-vibe-coding@0.8.20 wf-ui --project . --host 127.0.0.1 --port 0 --open --detach
 ```
 
 Rules:
@@ -44,7 +51,7 @@ Rules:
 - Default port `0` for an OS-assigned free port.
 - Generate a random one-time token.
 - Open `http://127.0.0.1:<port>/?token=<token>`.
-- Leave the server running until the user stops it.
+- Detach the server so command timeouts do not stop the control panel.
 
 ## Architecture
 

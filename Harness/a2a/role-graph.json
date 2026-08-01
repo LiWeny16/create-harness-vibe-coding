@@ -7,7 +7,7 @@
       "role": "CEO Leader",
       "level": 0,
       "kind": "controller",
-      "skills": ["wf", "subagent-orchestrator", "terminal-control"],
+      "skills": ["wf", "subagent-orchestrator", "terminal-control", "wf-ui-map"],
       "permissions": ["plan", "dispatch", "read-terminals", "send-terminal-input"]
     },
     {
@@ -31,7 +31,7 @@
       "role": "Backend Expert",
       "level": 1,
       "kind": "implementer",
-      "skills": ["runtime-detection", "terminal-control", "a2a-files"],
+      "skills": ["runtime-detection", "terminal-control", "wf-ui-map", "a2a-files"],
       "permissions": ["read-code", "write-backend", "terminal-io"]
     },
     {
@@ -63,7 +63,7 @@
       "role": "Terminal Controller",
       "level": 1,
       "kind": "runtime",
-      "skills": ["terminal-control"],
+      "skills": ["terminal-control", "wf-ui-map"],
       "permissions": ["read-terminals", "send-terminal-input"]
     }
   ],

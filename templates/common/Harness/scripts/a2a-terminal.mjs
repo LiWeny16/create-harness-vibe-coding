@@ -51,7 +51,7 @@ function appendJsonl(filePath, row) {
 function allSessionDirs(projectRoot) {
   const tasksRoot = path.join(projectRoot, 'Harness', 'tasks');
   let tasks = [];
-  try { tasks = fs.readdirSync(tasksRoot, { withFileTypes: true }); } catch { return []; }
+  try { tasks = fs.readdirSync(tasksRoot, { withFileTypes: true }); } catch { tasks = []; }
   const out = [];
   for (const task of tasks) {
     if (!task.isDirectory() || task.name.startsWith('_')) continue;
@@ -61,6 +61,12 @@ function allSessionDirs(projectRoot) {
     for (const session of sessions) {
       if (session.isDirectory()) out.push({ taskId: task.name, sessionId: session.name, dir: path.join(sessionsRoot, session.name) });
     }
+  }
+  const a2aSessionsRoot = path.join(projectRoot, 'Harness', 'a2a', 'sessions');
+  let a2aSessions = [];
+  try { a2aSessions = fs.readdirSync(a2aSessionsRoot, { withFileTypes: true }); } catch { a2aSessions = []; }
+  for (const session of a2aSessions) {
+    if (session.isDirectory()) out.push({ taskId: null, sessionId: session.name, dir: path.join(a2aSessionsRoot, session.name) });
   }
   return out;
 }
@@ -112,7 +118,9 @@ function globEvents(projectRoot, flags) {
   const rows = [];
   for (const session of allSessionDirs(projectRoot)) {
     for (const filename of ['events.jsonl', 'terminal.jsonl', 'input-requests.jsonl']) {
-      const rel = `Harness/tasks/${session.taskId}/sessions/${session.sessionId}/${filename}`;
+      const rel = session.taskId
+        ? `Harness/tasks/${session.taskId}/sessions/${session.sessionId}/${filename}`
+        : `Harness/a2a/sessions/${session.sessionId}/${filename}`;
       if (!regex.test(rel)) continue;
       for (const row of readJsonl(path.join(session.dir, filename))) {
         const tsMs = row.ts ? new Date(row.ts).getTime() : 0;
