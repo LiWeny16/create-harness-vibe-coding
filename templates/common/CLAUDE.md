@@ -4,6 +4,15 @@ This repository dogfoods the generated Harness scaffold. Scaffold source files l
 
 ## 1. Harness Binding & Startup
 
+When running inside a Harness-managed PTY node, the backend injects identity
+through environment variables instead of terminal prompt text. If
+`HARNESS_NODE_INIT` or `HARNESS_PEER_SESSION_ID` is set, quietly read the file
+pointed to by `HARNESS_NODE_INIT` before taking node-specific action. Use
+`HARNESS_PEER_SESSION_ID`, `HARNESS_WORKFLOW_NODE_ID`, `HARNESS_AGENT_KIND`,
+`HARNESS_PEER_RUNTIME`, `HARNESS_WORKFLOW_MAP`, `HARNESS_NODE_HOME`, and
+`HARNESS_WF_UI_URL` to identify this node, runtime, graph position, and control
+plane. Do not require or wait for a user-injected bootstrap prompt.
+
 If `Harness/` exists, this repository is governed by the Harness contract.
 
 Default installed-project startup is thin: after loading `CLAUDE.md`, read `Harness/memory/startup-hints.md` (L2 lightweight digest, 5-10 hints). This is NOT loading `Harness/MEMORY.md`, `Harness/README.md`, or PROGRESS — it is a minimal startup hint file only.

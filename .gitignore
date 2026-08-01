@@ -33,6 +33,7 @@ temp/
 tests/batch/.tmp/
 
 # Runtime mode state
+Harness/.temp/
 Harness/.runtime/
 Harness/a2a/workflows.json
 Harness/a2a/sessions/

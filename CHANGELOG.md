@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.8.20] - 2026-07-31
+
+- Fix `/wf-ui` direct command startup by adding detached server handoff, so OpenCode command timeouts do not stop the local control panel.
+- Preserve Agent terminal output when the drawer is minimized and restored by keeping the xterm instance mounted and replaying only missing terminal history.
+- Harden Windows PTY launch under detached UI servers by using the bundled ConPTY cleanup path by default, avoiding `AttachConsole failed` noise from the Homebridge PTY helper.
+- Detect Codex CLI update menus inside Harness-managed PTY sessions and let the wf-ui terminal prompt the user to skip this session or skip until the next version.
+- Add wf-ui storage cleanup controls for stopped session logs and detached launch temp logs, with retention settings and safer workflow node hover feedback.
+
 ## [0.8.19] - 2026-07-30
 
 - Publish `$wf-ui` as the Harness control panel with task capsule observability, agent workflow hierarchy, runtime detection, real PTY-backed detected CLI launches, and multi-terminal peer sessions.
