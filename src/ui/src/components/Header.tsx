@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Bot, CircleHelp, GitBranch, LayoutDashboard, Monitor, Settings, UsersRound } from 'lucide-react';
 import { apiJsonCached } from '../api';
+import { useT } from '../i18n/index';
 
 const NAV = [
   { to: '/tasks', label: 'Tasks', icon: LayoutDashboard },
@@ -14,12 +15,13 @@ const NAV = [
 type ProjectInfo = { root?: string; taskCount?: number };
 type WorkflowInfo = { taskId?: string | null; phase?: string | null; gate?: string | null };
 
-function basename(value: string | undefined) {
-  if (!value) return 'project';
+function basename(value: string | undefined, t: (key: string) => string) {
+  if (!value) return t('project');
   return value.split(/[\\/]/).filter(Boolean).pop() || value;
 }
 
 export default function Header() {
+  const t = useT();
   const location = useLocation();
   const [project, setProject] = useState<ProjectInfo | null>(null);
   const [workflow, setWorkflow] = useState<WorkflowInfo | null>(null);
@@ -86,7 +88,7 @@ export default function Header() {
         </div>
         <span>Harness</span>
         <span style={{ color: 'var(--muted)', fontSize: 11, fontWeight: 500 }}>
-          {basename(project?.root)}
+          {basename(project?.root, t)}
         </span>
       </Link>
 
@@ -113,7 +115,7 @@ export default function Header() {
               }}
             >
               <Icon size={14} />
-              {label}
+              {t(label)}
             </Link>
           );
         })}
@@ -131,15 +133,15 @@ export default function Header() {
           whiteSpace: 'nowrap',
           maxWidth: 420,
         }}
-        title={activeMeta || 'No active workflow'}
+        title={activeMeta || t('No active workflow')}
       >
         {activeMeta || `${project?.taskCount ?? 0} task(s)`}
       </div>
 
       <button
         data-testid="theme-toggle"
-        title="System theme"
-        aria-label="System theme"
+        title={t('System theme')}
+        aria-label={t('System theme')}
         style={{
           width: 28,
           height: 28,
@@ -155,8 +157,8 @@ export default function Header() {
         <Monitor size={14} />
       </button>
       <button
-        title="Harness help"
-        aria-label="Harness help"
+        title={t('Harness help')}
+        aria-label={t('Harness help')}
         style={{
           width: 28,
           height: 28,

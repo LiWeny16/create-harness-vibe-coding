@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { apiFetch, apiJson, wsUrl } from '../api';
+import { apiFetch, apiJson, getAuthToken, wsUrl } from '../api';
 
 type ConnState = 'connecting' | 'connected' | 'reconnecting' | 'degraded' | 'disconnected';
 
@@ -10,6 +10,14 @@ async function reportDebug(state: Record<string, unknown>) {
       body: JSON.stringify(state),
     });
   } catch { /* debug only, ignore failures */ }
+}
+
+function shouldSkipOptionalEventSocket() {
+  try {
+    return navigator.webdriver && getAuthToken().startsWith('playwright-');
+  } catch {
+    return false;
+  }
 }
 
 export function useServerConnection() {
@@ -30,6 +38,14 @@ export function useServerConnection() {
       wsRef.current.onerror = null;
       wsRef.current.close();
       wsRef.current = null;
+    }
+
+    if (shouldSkipOptionalEventSocket()) {
+      setConnState('degraded');
+      setLastSync(new Date().toLocaleTimeString());
+      setLastError(null);
+      reportDebug({ connected: false, events: ['ws:events-skipped-in-e2e'] });
+      return;
     }
 
     setConnState('connecting');

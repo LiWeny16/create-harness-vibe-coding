@@ -1,4 +1,5 @@
 import { motion } from 'motion/react';
+import { useT } from '../i18n/index';
 
 type Props = {
   connState: string;
@@ -8,6 +9,7 @@ type Props = {
 };
 
 export default function Footer({ connState, eventSeq, lastSync, lastError }: Props) {
+  const t = useT();
   const statusColor =
     connState === 'connected' ? 'var(--success)' :
     connState === 'degraded' || connState === 'reconnecting' ? 'var(--warn)' :
@@ -40,7 +42,7 @@ export default function Footer({ connState, eventSeq, lastSync, lastError }: Pro
             display: 'inline-block',
           }}
         />
-        <span>{connState || 'disconnected'}</span>
+        <span>{connState || t('disconnected')}</span>
       </span>
 
       {/* Event seq */}
@@ -48,13 +50,13 @@ export default function Footer({ connState, eventSeq, lastSync, lastError }: Pro
 
       {/* Last sync */}
       <span data-testid="footer-last-sync">
-        {lastSync ? `last sync:${lastSync}` : 'no sync'}
+        {lastSync ? t('last sync:') + lastSync : t('no sync')}
       </span>
 
       {/* Last error */}
       {lastError && (
         <span data-testid="footer-last-error" style={{ color: 'var(--danger)' }}>
-          error:{lastError}
+          {t('error:') + lastError}
         </span>
       )}
 

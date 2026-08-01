@@ -1,14 +1,25 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { PointerEvent } from 'react';
+import type { ClipboardEvent, DragEvent, PointerEvent } from 'react';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import { Terminal as XTerm } from '@xterm/xterm';
 import '@xterm/xterm/css/xterm.css';
-import { Eye, EyeOff, Maximize2, Minimize2, Square, Terminal, Trash2, X } from 'lucide-react';
+import { Clipboard, Copy, Eye, EyeOff, Maximize2, Minimize2, Square, Terminal, Trash2, X } from 'lucide-react';
 import { motion } from 'motion/react';
 import { apiJson, wsUrl } from '../api';
+import { useT } from '../i18n/index';
 import { useReducedMotion } from '../hooks/useReducedMotion';
-import type { Session } from '../types';
+import type { ControlRequest, Session } from '../types';
+import {
+  announceTerminalInputOwner,
+  copyTerminalSelection,
+  handleTerminalDrop,
+  handleTerminalPaste,
+  installTerminalResponseGuards,
+  pasteClipboardToTerminal,
+  stripTerminalResponseInput,
+  terminalShouldHandleKey as terminalControlShouldHandleKey,
+} from '../terminalControl';
 
 type Props = {
   sessionId: string | null;
@@ -40,11 +51,12 @@ const RUNTIME_LABELS: Record<string, string> = {
 };
 
 function stateColor(state: string, connected: boolean) {
-  if (state === 'running') return 'var(--success)';
-  if (state === 'saved' || state === 'stopping') return 'var(--warn)';
-  if (state === 'blocked' || state === 'exited') return 'var(--danger)';
-  if (state === 'starting') return 'var(--warn)';
-  if (!connected && state === 'running') return 'var(--success)';
+  const status = displaySessionStatus(state);
+  if (status === 'running') return 'var(--success)';
+  if (status === 'stopped' || status === 'stopping') return 'var(--warn)';
+  if (status === 'blocked' || status === 'exited') return 'var(--danger)';
+  if (status === 'starting') return 'var(--warn)';
+  if (!connected && status === 'running') return 'var(--success)';
   return 'var(--muted)';
 }
 
@@ -68,9 +80,9 @@ function shortId(value: string | undefined | null) {
   return value.length > 18 ? `${value.slice(0, 8)}...${value.slice(-6)}` : value;
 }
 
-function titleForSession(session: Session | null, sessionId: string | null) {
+function titleForSession(session: Session | null, sessionId: string | null, t: (key: string, ...args: string[]) => string) {
   const runtime = session?.runtime || '';
-  const label = RUNTIME_LABELS[runtime] || runtime || 'Agent Terminal';
+  const label = RUNTIME_LABELS[runtime] || runtime || t('Agent Terminal');
   const peer = session?.peerId || session?.sessionId || sessionId || '';
   return `${label} - ${shortId(peer)}`;
 }
@@ -79,7 +91,13 @@ function isLiveState(state: string) {
   return state === 'running' || state === 'starting';
 }
 
+function displaySessionStatus(state: string | undefined) {
+  if (state === 'saved') return 'stopped';
+  return state || 'unknown';
+}
+
 export default function TerminalDrawer({ sessionId, onClose }: Props) {
+  const t = useT();
   const [attachMode, setAttachMode] = useState(true);
   const [sessionState, setSessionState] = useState<string>('starting');
   const [sessionMeta, setSessionMeta] = useState<Session | null>(null);
@@ -89,6 +107,8 @@ export default function TerminalDrawer({ sessionId, onClose }: Props) {
   const [terminalReady, setTerminalReady] = useState(false);
   const [stopping, setStopping] = useState(false);
   const [minimized, setMinimized] = useState(false);
+  const [controlRequest, setControlRequest] = useState<ControlRequest | null>(null);
+  const [respondingControl, setRespondingControl] = useState<string | null>(null);
   const [terminalSize, setTerminalSize] = useState<TerminalSize>({ cols: 0, rows: 0 });
   const [position, setPosition] = useState<Point>(() => typeof window === 'undefined' ? { x: 40, y: 80 } : initialPosition());
   const [size, setSize] = useState<Size>(() => typeof window === 'undefined' ? { width: 760, height: 480 } : initialSize());
@@ -108,7 +128,7 @@ export default function TerminalDrawer({ sessionId, onClose }: Props) {
   const dragRef = useRef<{ mode: 'move' | 'resize'; start: Point; position: Point; size: Size } | null>(null);
 
   const interactive = attachMode && isLiveState(sessionState);
-  const title = titleForSession(sessionMeta, sessionId);
+  const title = titleForSession(sessionMeta, sessionId, t);
 
   const sendMessage = useCallback((msg: object) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
@@ -148,13 +168,13 @@ export default function TerminalDrawer({ sessionId, onClose }: Props) {
 
   const writeInput = useCallback((data: string) => {
     const sid = activeSessionRef.current;
-    if (!sid || !attachModeRef.current || !data) return;
+    if (!sid || !attachModeRef.current || !isLiveState(sessionStateRef.current) || !data) return;
     if (sendMessage({ type: 'pty:input', data })) return;
     apiJson(`/api/sessions/${encodeURIComponent(sid)}/input`, {
       method: 'POST',
       body: JSON.stringify({ data }),
     }).catch((e: any) => {
-      terminalRef.current?.writeln(`\r\n[error] ${e?.message || 'input rejected'}`);
+      terminalRef.current?.writeln(`\r\n[error] ${e?.message || t('input rejected')}`);
     });
   }, [sendMessage]);
 
@@ -171,19 +191,21 @@ export default function TerminalDrawer({ sessionId, onClose }: Props) {
       });
       if (next) terminalRef.current?.focus();
     } catch (e: any) {
-      terminalRef.current?.writeln(`\r\n[error] ${e?.message || 'attach mode update failed'}`);
+      terminalRef.current?.writeln(`\r\n[error] ${e?.message || t('attach mode update failed')}`);
     }
   }, [sendMessage, sessionId]);
 
   const loadSessionMeta = useCallback(async (sid: string) => {
     try {
-      const sessions = await apiJson<Session[]>('/api/sessions');
+      const sessions = await apiJson<Session[]>('/api/sessions?all=1');
       const current = sessions.find(session => session.sessionId === sid) || null;
       if (activeSessionRef.current !== sid) return;
       setSessionMeta(current);
+      setControlRequest(current?.controlRequest?.status === 'pending' ? current.controlRequest : null);
       if (current?.status) {
-        setSessionState(current.status);
-        sessionStateRef.current = current.status;
+        const status = displaySessionStatus(current.status);
+        setSessionState(status);
+        sessionStateRef.current = status;
       }
     } catch {
       // Metadata is helpful, but the terminal can still render without it.
@@ -237,9 +259,11 @@ export default function TerminalDrawer({ sessionId, onClose }: Props) {
         try {
           const msg = JSON.parse(event.data);
           if (msg.type === 'pty:data') {
+            const seq = Number(msg.seq || 0);
+            if (Number.isFinite(seq) && seq > 0) lastSeqRef.current = Math.max(lastSeqRef.current, seq);
             terminalRef.current?.write(String(msg.data || ''));
           } else if (msg.type === 'session:state') {
-            const nextState = String(msg.state || 'unknown');
+            const nextState = displaySessionStatus(String(msg.state || 'unknown'));
             setSessionState(nextState);
             sessionStateRef.current = nextState;
             if (typeof msg.attachMode === 'boolean') {
@@ -251,6 +275,13 @@ export default function TerminalDrawer({ sessionId, onClose }: Props) {
             }
           } else if (msg.type === 'session:error') {
             terminalRef.current?.writeln(`\r\n[error] ${msg.message}`);
+          } else if (msg.type === 'codex:update-prompt') {
+            setControlRequest(msg as ControlRequest);
+            setRespondingControl(null);
+            setMinimized(false);
+          } else if (msg.type === 'codex:update-prompt:resolved') {
+            setControlRequest(current => current?.requestId === msg.requestId ? null : current);
+            setRespondingControl(null);
           }
         } catch {
           terminalRef.current?.write(String(event.data || ''));
@@ -268,6 +299,20 @@ export default function TerminalDrawer({ sessionId, onClose }: Props) {
       setConnected(false);
     }
   }, [fitAndSync]);
+
+  const minimizeTerminal = useCallback(() => {
+    terminalRef.current?.blur();
+    setMinimized(true);
+  }, []);
+
+  const restoreTerminal = useCallback(() => {
+    setMinimized(false);
+    requestAnimationFrame(() => {
+      fitAndSync();
+      if (sessionId) loadHistory(sessionId, { reset: false });
+      terminalRef.current?.focus();
+    });
+  }, [fitAndSync, loadHistory, sessionId]);
 
   useEffect(() => {
     attachModeRef.current = attachMode;
@@ -289,6 +334,8 @@ export default function TerminalDrawer({ sessionId, onClose }: Props) {
     sessionStateRef.current = 'starting';
     setSessionMeta(null);
     setPtyTitle('');
+    setControlRequest(null);
+    setRespondingControl(null);
     lastResizeSentRef.current = { cols: 0, rows: 0 };
     lastSeqRef.current = 0;
     setPosition(initialPosition());
@@ -328,12 +375,19 @@ export default function TerminalDrawer({ sessionId, onClose }: Props) {
         brightWhite: '#ffffff',
       },
     });
+    term.attachCustomKeyEventHandler((event) => (
+      terminalControlShouldHandleKey(event, attachModeRef.current && isLiveState(sessionStateRef.current), term)
+    ));
     const fit = new FitAddon();
     term.loadAddon(fit);
     term.loadAddon(new WebLinksAddon());
     term.open(terminalHostRef.current);
+    const responseGuardDisposables = installTerminalResponseGuards(term);
     const titleDisposable = term.onTitleChange(title => setPtyTitle(title));
-    const dataDisposable = term.onData(writeInput);
+    const dataDisposable = term.onData(data => {
+      const input = stripTerminalResponseInput(data);
+      if (input) writeInput(input);
+    });
     const resizeDisposable = term.onResize(next => {
       setTerminalSize(next);
       schedulePtyResize(next);
@@ -351,6 +405,7 @@ export default function TerminalDrawer({ sessionId, onClose }: Props) {
       titleDisposable.dispose();
       dataDisposable.dispose();
       resizeDisposable.dispose();
+      responseGuardDisposables.forEach(disposable => disposable.dispose());
       fit.dispose();
       if (resizeSyncTimerRef.current) window.clearTimeout(resizeSyncTimerRef.current);
       term.dispose();
@@ -389,6 +444,63 @@ export default function TerminalDrawer({ sessionId, onClose }: Props) {
     terminalRef.current?.clear();
   };
 
+  const claimInputOwner = useCallback(() => {
+    if (!sessionId) return;
+    announceTerminalInputOwner({ sessionId, surface: 'drawer' });
+    terminalRef.current?.focus();
+  }, [sessionId]);
+
+  const copySelection = useCallback(() => {
+    copyTerminalSelection(terminalRef.current).catch((e: any) => {
+      terminalRef.current?.writeln(`\r\n[error] ${e?.message || t('copy failed')}`);
+    });
+  }, [t]);
+
+  const pasteClipboard = useCallback(() => {
+    if (!sessionId) return;
+    claimInputOwner();
+    pasteClipboardToTerminal(writeInput).catch((e: any) => {
+      terminalRef.current?.writeln(`\r\n[error] ${e?.message || t('paste failed')}`);
+    });
+  }, [claimInputOwner, sessionId, t, writeInput]);
+
+  const onTerminalDrop = useCallback((event: DragEvent<HTMLDivElement>) => {
+    if (!sessionId) return;
+    void handleTerminalDrop(event.nativeEvent, {
+      sessionId,
+      surface: 'drawer',
+      writeInput,
+    }).catch((e: any) => {
+      terminalRef.current?.writeln(`\r\n[error] ${e?.message || t('drop failed')}`);
+    });
+  }, [sessionId, t, writeInput]);
+
+  const onTerminalPaste = useCallback((event: ClipboardEvent<HTMLDivElement>) => {
+    if (!sessionId) return;
+    void handleTerminalPaste(event.nativeEvent, {
+      sessionId,
+      surface: 'drawer',
+      writeInput,
+    }).catch((e: any) => {
+      terminalRef.current?.writeln(`\r\n[error] ${e?.message || t('paste failed')}`);
+    });
+  }, [sessionId, t, writeInput]);
+
+  const respondToControlRequest = async (choice: string) => {
+    if (!sessionId || !controlRequest || respondingControl) return;
+    setRespondingControl(choice);
+    try {
+      await apiJson(`/api/sessions/${encodeURIComponent(sessionId)}/codex-update-prompt`, {
+        method: 'POST',
+        body: JSON.stringify({ choice }),
+      });
+      setControlRequest(null);
+    } catch (e: any) {
+      setRespondingControl(null);
+      terminalRef.current?.writeln(`\r\n[error] ${e?.message || t('Codex update response failed')}`);
+    }
+  };
+
   const stopSession = async () => {
     if (!sessionId || stopping) return;
     const previousState = sessionStateRef.current;
@@ -401,10 +513,10 @@ export default function TerminalDrawer({ sessionId, onClose }: Props) {
     }));
     try {
       await apiJson(`/api/sessions/${encodeURIComponent(sessionId)}/stop`, { method: 'POST' });
-      setSessionState('saved');
-      sessionStateRef.current = 'saved';
+      setSessionState('stopped');
+      sessionStateRef.current = 'stopped';
       window.dispatchEvent(new CustomEvent('harness:sessions-changed', {
-        detail: { sessionId, state: 'saved' },
+        detail: { sessionId, state: 'stopped' },
       }));
       close();
     } catch (e: any) {
@@ -412,7 +524,7 @@ export default function TerminalDrawer({ sessionId, onClose }: Props) {
       sessionStateRef.current = previousState;
       if (terminalRef.current) terminalRef.current.options.disableStdin = !attachModeRef.current || !isLiveState(previousState);
       setStopping(false);
-      terminalRef.current?.writeln(`\r\n[error] ${e?.message || 'stop failed'}`);
+      terminalRef.current?.writeln(`\r\n[error] ${e?.message || t('stop failed')}`);
     }
   };
 
@@ -465,11 +577,12 @@ export default function TerminalDrawer({ sessionId, onClose }: Props) {
 
   if (!open) return null;
 
-  if (minimized) {
-    return (
+  return (
+    <>
+    {minimized && (
       <button
         data-testid="terminal-minimized"
-        onClick={() => setMinimized(false)}
+        onClick={restoreTerminal}
         style={{
           position: 'fixed',
           left: 16,
@@ -492,16 +605,15 @@ export default function TerminalDrawer({ sessionId, onClose }: Props) {
       >
         <Terminal size={13} />
         <span style={{ fontSize: 11, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{title}</span>
-        <span style={{ marginLeft: 'auto', fontSize: 10, color: stateColor(sessionState, connected) }}>{sessionState}</span>
+        <span style={{ marginLeft: 'auto', fontSize: 10, color: stateColor(sessionState, connected) }}>{displaySessionStatus(sessionState)}</span>
       </button>
-    );
-  }
+    )}
 
-  return (
     <motion.div
       data-testid="terminal-window"
       initial={reducedMotion ? undefined : { opacity: 0, scale: 0.98 }}
-      animate={{ opacity: 1, scale: 1 }}
+      animate={{ opacity: minimized ? 0 : 1, scale: minimized ? 0.98 : 1 }}
+      aria-hidden={minimized}
       onPointerMove={handlePointerMove}
       onPointerUp={endPointer}
       onPointerCancel={endPointer}
@@ -519,6 +631,8 @@ export default function TerminalDrawer({ sessionId, onClose }: Props) {
         background: 'var(--bg)',
         boxShadow: '0 24px 80px rgba(0,0,0,0.22)',
         overflow: 'hidden',
+        pointerEvents: minimized ? 'none' : 'auto',
+        visibility: minimized ? 'hidden' : 'visible',
       }}
     >
       <div
@@ -543,31 +657,31 @@ export default function TerminalDrawer({ sessionId, onClose }: Props) {
           </span>
         )}
         <span style={{ fontSize: 10, color: connected ? 'var(--success)' : 'var(--warn)', flexShrink: 0 }}>
-          {connected ? 'ws live' : 'http fallback'}
+          {connected ? t('ws live') : t('http fallback')}
         </span>
         <span style={{ fontSize: 10, color: stateColor(sessionState, connected), flexShrink: 0 }}>
-          pty {sessionState}
+          pty {displaySessionStatus(sessionState)}
         </span>
         <span style={{ flex: 1 }} />
         <button
           data-testid="terminal-attach-toggle"
-          title={attachMode ? 'Attach mode' : 'Watch mode'}
+          title={attachMode ? t('Attach mode') : t('Watch mode')}
           onClick={() => setAttach(!attachMode)}
           style={{ fontSize: 10, color: attachMode ? 'var(--success)' : 'var(--muted)', display: 'flex', alignItems: 'center', gap: 4, border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '3px 7px', flexShrink: 0 }}
         >
           {attachMode ? <Eye size={10} /> : <EyeOff size={10} />}
-          {attachMode ? 'attach' : 'watch'}
+          {attachMode ? t('attach') : t('watch')}
         </button>
-        <button title="Clear terminal" onClick={clearOutput} style={{ color: 'var(--muted)', display: 'grid', placeItems: 'center', width: 26, height: 26, border: '1px solid var(--border)', borderRadius: 'var(--radius)' }}>
+        <button title={t('Clear terminal')} onClick={clearOutput} style={{ color: 'var(--muted)', display: 'grid', placeItems: 'center', width: 26, height: 26, border: '1px solid var(--border)', borderRadius: 'var(--radius)' }}>
           <Trash2 size={11} />
         </button>
-        <button title="Minimize terminal" onClick={() => setMinimized(true)} style={{ color: 'var(--muted)', display: 'grid', placeItems: 'center', width: 26, height: 26, border: '1px solid var(--border)', borderRadius: 'var(--radius)' }}>
+        <button title={t('Minimize terminal')} onClick={minimizeTerminal} style={{ color: 'var(--muted)', display: 'grid', placeItems: 'center', width: 26, height: 26, border: '1px solid var(--border)', borderRadius: 'var(--radius)' }}>
           <Minimize2 size={11} />
         </button>
-        <button data-testid="terminal-stop" title="Stop session" onClick={stopSession} disabled={stopping} style={{ color: 'var(--danger)', display: 'grid', placeItems: 'center', width: 26, height: 26, border: '1px solid var(--border)', borderRadius: 'var(--radius)', opacity: stopping ? 0.45 : 1 }}>
+        <button data-testid="terminal-stop" title={t('Stop session')} onClick={stopSession} disabled={stopping} style={{ color: 'var(--danger)', display: 'grid', placeItems: 'center', width: 26, height: 26, border: '1px solid var(--border)', borderRadius: 'var(--radius)', opacity: stopping ? 0.45 : 1 }}>
           <Square size={11} />
         </button>
-        <button title="Close terminal" onClick={close} style={{ color: 'var(--muted)', display: 'grid', placeItems: 'center', width: 26, height: 26, border: '1px solid var(--border)', borderRadius: 'var(--radius)' }}>
+        <button title={t('Close terminal')} onClick={close} style={{ color: 'var(--muted)', display: 'grid', placeItems: 'center', width: 26, height: 26, border: '1px solid var(--border)', borderRadius: 'var(--radius)' }}>
           <X size={12} />
         </button>
       </div>
@@ -575,27 +689,91 @@ export default function TerminalDrawer({ sessionId, onClose }: Props) {
       <div
         ref={terminalHostRef}
         data-testid="terminal-output"
-        onPointerDown={() => terminalRef.current?.focus()}
+        tabIndex={0}
+        onPointerDown={claimInputOwner}
+        onClick={claimInputOwner}
+        onDragOver={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+        }}
+        onDrop={onTerminalDrop}
+        onPaste={onTerminalPaste}
         style={{
           flex: 1,
           minHeight: 0,
           background: '#0b0d10',
           overflow: 'hidden',
+          outline: 'none',
         }}
       />
 
+      {controlRequest?.type === 'codex:update-prompt' && (
+        <div
+          data-testid="codex-update-prompt"
+          role="dialog"
+          aria-modal="false"
+          aria-labelledby="codex-update-prompt-title"
+          style={{
+            position: 'absolute',
+            left: 18,
+            right: 18,
+            bottom: 48,
+            display: 'grid',
+            gap: 9,
+            padding: 12,
+            border: '1px solid rgba(245,158,11,0.55)',
+            borderRadius: 'var(--radius)',
+            background: 'rgba(255,251,235,0.97)',
+            boxShadow: '0 16px 46px rgba(0,0,0,0.22)',
+            color: '#111827',
+            zIndex: 2,
+          }}
+        >
+          <div>
+            <div id="codex-update-prompt-title" style={{ fontSize: 12, fontWeight: 800 }}>{t('Codex update prompt')}</div>
+            <div style={{ fontSize: 10, color: '#6b7280', marginTop: 2 }}>
+              {t('Codex is waiting for an update choice in this terminal. Choose how Harness should answer it.')}
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
+            <button
+              data-testid="codex-update-skip-session"
+              onClick={() => respondToControlRequest('skip-session')}
+              disabled={Boolean(respondingControl)}
+              style={{ padding: '6px 9px', borderRadius: 'var(--radius)', border: '1px solid #d97706', background: '#fff7ed', color: '#92400e', fontSize: 11, fontWeight: 700, opacity: respondingControl ? 0.62 : 1 }}
+            >
+              {respondingControl === 'skip-session' ? t('Sending...') : t('Skip this session')}
+            </button>
+            <button
+              data-testid="codex-update-skip-version"
+              onClick={() => respondToControlRequest('skip-until-next-version')}
+              disabled={Boolean(respondingControl)}
+              style={{ padding: '6px 9px', borderRadius: 'var(--radius)', border: '1px solid #111827', background: '#111827', color: '#fff', fontSize: 11, fontWeight: 700, opacity: respondingControl ? 0.62 : 1 }}
+            >
+              {respondingControl === 'skip-until-next-version' ? t('Sending...') : t('Skip until next version')}
+            </button>
+          </div>
+        </div>
+      )}
+
       <div style={{ height: 34, padding: '4px 10px', borderTop: '1px solid var(--border)', display: 'flex', gap: 6, fontSize: 10, color: 'var(--muted)', alignItems: 'center', flexShrink: 0 }}>
-        <button onClick={fitAndSync} title="Fit terminal viewport" style={{ fontSize: 10, display: 'flex', alignItems: 'center', gap: 3, border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '2px 6px' }}>
-          <Maximize2 size={9} /> Fit
+        <button onClick={fitAndSync} title={t('Fit terminal viewport')} style={{ fontSize: 10, display: 'flex', alignItems: 'center', gap: 3, border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '2px 6px' }}>
+          <Maximize2 size={9} /> {t('Fit')}
+        </button>
+        <button data-testid="terminal-copy-selection" onClick={copySelection} title={t('Copy selection')} style={{ fontSize: 10, display: 'flex', alignItems: 'center', gap: 3, border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '2px 6px' }}>
+          <Copy size={9} /> {t('Copy')}
+        </button>
+        <button data-testid="terminal-paste-clipboard" onClick={pasteClipboard} title={t('Paste clipboard')} style={{ fontSize: 10, display: 'flex', alignItems: 'center', gap: 3, border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '2px 6px' }}>
+          <Clipboard size={9} /> {t('Paste')}
         </button>
         <span style={{ flex: 1 }} />
-        <span>{stopping ? 'stopping...' : interactive ? 'input enabled' : 'input locked'}</span>
+        <span>{stopping ? t('stopping...') : interactive ? t('input enabled') : t('input locked')}</span>
         <span>{terminalSize.cols || '--'}x{terminalSize.rows || '--'}</span>
       </div>
 
       <div
         onPointerDown={startResize}
-        title="Resize terminal"
+        title={t('Resize terminal')}
         style={{
           position: 'absolute',
           right: 0,
@@ -607,5 +785,6 @@ export default function TerminalDrawer({ sessionId, onClose }: Props) {
         }}
       />
     </motion.div>
+    </>
   );
 }

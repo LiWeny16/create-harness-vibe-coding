@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Bot, GitBranch, RefreshCw, ShieldCheck, Terminal } from 'lucide-react';
 import { apiJsonCached, invalidateApiCache } from '../api';
+import { useT } from '../i18n/index';
 import LoadingView from './LoadingView';
 
 type RoleNode = {
@@ -30,6 +31,7 @@ function NodeIcon({ kind }: { kind: string }) {
 }
 
 export default function RolesRoute() {
+  const t = useT();
   const [graph, setGraph] = useState<RoleGraph | null>(null);
   const [selectedId, setSelectedId] = useState('ceo');
   const [loading, setLoading] = useState(true);
@@ -42,7 +44,7 @@ export default function RolesRoute() {
       setSelectedId(current => current && data.agents.some(agent => agent.agentId === current) ? current : data.rootAgentId);
       setError(null);
     } catch (e: any) {
-      setError(e?.message || 'Failed to load roles');
+      setError(e?.message || t('Failed to load roles'));
     } finally {
       setLoading(false);
     }
@@ -66,17 +68,17 @@ export default function RolesRoute() {
   const inbound = graph?.edges.filter(edge => edge.to === selectedId) || [];
   const outbound = graph?.edges.filter(edge => edge.from === selectedId) || [];
 
-  if (loading) return <LoadingView label="Loading roles" />;
-  if (!graph) return <div style={{ padding: 20, color: '#991b1b', fontSize: 11 }}>{error || 'No role graph available.'}</div>;
+  if (loading) return <LoadingView label={t('Loading roles')} />;
+  if (!graph) return <div style={{ padding: 20, color: '#991b1b', fontSize: 11 }}>{error || t('No role graph available.')}</div>;
 
   return (
     <div style={{ display: 'grid', gap: 12 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
         <h2 style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--muted)', margin: 0, display: 'flex', alignItems: 'center', gap: 5 }}>
-          <GitBranch size={14} /> Roles
+          <GitBranch size={14} /> {t('Roles')}
         </h2>
         <button onClick={() => { invalidateApiCache('/api/roles'); loadRoles(); }} style={{ fontSize: 10, color: 'var(--muted)', display: 'flex', alignItems: 'center', gap: 4, border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '4px 8px' }}>
-          <RefreshCw size={11} /> Refresh
+          <RefreshCw size={11} /> {t('Refresh')}
         </button>
       </div>
 
@@ -87,7 +89,7 @@ export default function RolesRoute() {
           {lanes.map(([level, nodes]) => (
             <div key={level} style={{ display: 'grid', gap: 6 }}>
               <div style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase', fontWeight: 700 }}>
-                {level === 0 ? 'Leader' : 'Role Layer'}
+                {level === 0 ? t('Leader') : t('Role Layer')}
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 6 }}>
                 {nodes.map(node => {
@@ -137,22 +139,22 @@ export default function RolesRoute() {
                 </div>
               </div>
 
-              <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 5 }}>Edges</div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 5 }}>{t('Edges')}</div>
               <div style={{ display: 'grid', gap: 3, fontSize: 10, marginBottom: 10 }}>
                 {[...inbound.map(edge => `${edge.from} -> ${edge.relation}`), ...outbound.map(edge => `${edge.relation} -> ${edge.to}`)].map((line, index) => (
                   <div key={`${line}-${index}`} style={{ color: 'var(--muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{line}</div>
                 ))}
-                {inbound.length + outbound.length === 0 && <div style={{ color: 'var(--muted)' }}>no edges</div>}
+                {inbound.length + outbound.length === 0 && <div style={{ color: 'var(--muted)' }}>{t('no edges')}</div>}
               </div>
 
-              <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 5 }}>Skills</div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 5 }}>{t('Skills')}</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, marginBottom: 10 }}>
                 {(selected.skills || []).map(skill => (
                   <span key={skill} style={{ fontSize: 9, padding: '1px 5px', border: '1px solid var(--border)', borderRadius: 99, color: 'var(--muted)' }}>{skill}</span>
                 ))}
               </div>
 
-              <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 5 }}>Permissions</div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 5 }}>{t('Permissions')}</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
                 {(selected.permissions || []).map(permission => (
                   <span key={permission} style={{ fontSize: 9, padding: '1px 5px', border: '1px solid var(--border)', borderRadius: 99, color: 'var(--muted)' }}>{permission}</span>
@@ -160,7 +162,7 @@ export default function RolesRoute() {
               </div>
             </>
           ) : (
-            <div style={{ color: 'var(--muted)', fontSize: 11 }}>Select a role.</div>
+            <div style={{ color: 'var(--muted)', fontSize: 11 }}>{t('Select a role.')}</div>
           )}
         </aside>
       </section>
