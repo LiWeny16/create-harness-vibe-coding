@@ -1239,12 +1239,12 @@ test('generated optional workflows are registered under Harness workflows and wf
   assert.equal(fs.existsSync(path.join(targetDir, 'docs', 'workflows', 'browser-e2e.md')), false);
 });
 
-test('built-in wf-browser skill includes Browser Use and Chrome DevTools CDP checklist', () => {
+test('built-in wf-browser skill defines agent-operable browser control runtime', () => {
   const root = tmpdir();
-  const targetDir = path.join(root, 'browser-cdp-checklist');
+  const targetDir = path.join(root, 'browser-agent-runtime');
 
   const result = generate({
-    projectName: 'browser-cdp-checklist',
+    projectName: 'browser-agent-runtime',
     targetDir,
   });
 
@@ -1252,20 +1252,29 @@ test('built-in wf-browser skill includes Browser Use and Chrome DevTools CDP che
 
   const browserWorkflow = readRel(targetDir, '.claude/skills/wf-browser/SKILL.md');
 
-  assert.match(browserWorkflow, /## Browser Use CLI/);
-  assert.match(browserWorkflow, /browser-use --doctor/);
-  assert.match(browserWorkflow, /new_tab\("https:\/\/example\.com"\)/);
-  assert.match(browserWorkflow, /capture_screenshot/);
-  assert.match(browserWorkflow, /old `browser-use open\/state\/click\/screenshot\/input\/wait` subcommands are removed/);
-  assert.match(browserWorkflow, /## Chrome DevTools \/ CDP Checklist/);
-  assert.match(browserWorkflow, /Record URL, port, browser, and viewport/);
-  assert.match(browserWorkflow, /available Browser Use, Playwright, CDP, MCP, or manual tooling/);
-  assert.match(browserWorkflow, /Check not just HTTP 200/);
-  assert.match(browserWorkflow, /runtime exceptions, console errors, and failed network requests/);
-  assert.match(browserWorkflow, /stable accessible labels\/roles or `data-testid`/);
-  assert.match(browserWorkflow, /critical flow end-to-end with real user actions/);
-  assert.match(browserWorkflow, /screenshot, trace, video, state snapshot, or result artifact paths/);
-  assert.match(browserWorkflow, /Clean up dev server or browser processes/);
+  assert.match(browserWorkflow, /Agent-Operable Web Runtime/);
+  assert.match(browserWorkflow, /Two Jobs/);
+  assert.match(browserWorkflow, /Architecture Design Track/);
+  assert.match(browserWorkflow, /Runtime Control Track/);
+  assert.match(browserWorkflow, /Recovery Track/);
+  assert.match(browserWorkflow, /Readiness Levels/);
+  assert.match(browserWorkflow, /L4 \| Multi-agent-ready/);
+  assert.match(browserWorkflow, /Design-To-Control Continuity/);
+  assert.match(browserWorkflow, /Quality Gates/);
+  assert.match(browserWorkflow, /WebSocket/);
+  assert.match(browserWorkflow, /observe\.\*/);
+  assert.match(browserWorkflow, /act\.\*/);
+  assert.match(browserWorkflow, /virtual cursor/);
+  assert.match(browserWorkflow, /Multi-Agent Window Contract/);
+  assert.match(browserWorkflow, /window\.create/);
+  assert.match(browserWorkflow, /leaseId/);
+  assert.match(browserWorkflow, /Harness\/wf-browser\//);
+  assert.match(browserWorkflow, /Third-Party Pages/);
+  assert.match(browserWorkflow, /Playwright/);
+  assert.match(browserWorkflow, /CDP/);
+  assert.match(browserWorkflow, /data-testid/);
+  assert.match(browserWorkflow, /accessible labels\/roles/);
+  assert.match(browserWorkflow, /inputs, buttons, filters, rows, empty\/error\/loading states/);
 });
 
 // ============================================================================

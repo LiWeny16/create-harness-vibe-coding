@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent, SyntheticEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { Maximize2, X } from 'lucide-react';
-import { AnimatePresence, motion } from 'motion/react';
+import { motion } from 'motion/react';
 import type { WorkflowComponentNodeState } from '../types';
 import { useT } from '../i18n';
 import ComponentBrandIcon from './ComponentBrandIcon';
@@ -85,6 +85,56 @@ function copyScene(value: Scene): Scene {
   };
 }
 
+function finiteNumber(value: unknown, fallback = 0) {
+  const next = Number(value);
+  return Number.isFinite(next) ? next : fallback;
+}
+
+function previewElementsForStage(elements: SceneElement[]) {
+  if (!elements.length) return [];
+  const normalized = elements.map(element => {
+    const width = Math.max(1, finiteNumber(element.width, 48));
+    const height = Math.max(1, finiteNumber(element.height, 36));
+    return {
+      ...element,
+      x: finiteNumber(element.x),
+      y: finiteNumber(element.y),
+      width,
+      height,
+    };
+  });
+
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (const element of normalized) {
+    minX = Math.min(minX, element.x);
+    minY = Math.min(minY, element.y);
+    maxX = Math.max(maxX, element.x + element.width);
+    maxY = Math.max(maxY, element.y + element.height);
+  }
+
+  const viewWidth = 300;
+  const viewHeight = 180;
+  const padding = 14;
+  const boundsWidth = Math.max(1, maxX - minX);
+  const boundsHeight = Math.max(1, maxY - minY);
+  const scale = Math.min(
+    (viewWidth - padding * 2) / boundsWidth,
+    (viewHeight - padding * 2) / boundsHeight,
+    1.8,
+  );
+
+  return normalized.map(element => ({
+    ...element,
+    x: Math.round(((element.x - minX) * scale + padding) * 100) / 100,
+    y: Math.round(((element.y - minY) * scale + padding) * 100) / 100,
+    width: Math.max(3, Math.round(element.width * scale * 100) / 100),
+    height: Math.max(3, Math.round(element.height * scale * 100) / 100),
+  }));
+}
+
 export default function ExcalidrawComponentNode({ state, onSave }: Props) {
   const t = useT();
   const [scene, setScene] = useState<Scene>(() => normalizeScene(state.scene));
@@ -101,6 +151,7 @@ export default function ExcalidrawComponentNode({ state, onSave }: Props) {
   const draftSceneRef = useRef<Scene>(normalizeScene(state.scene));
   const draftPublishFrameRef = useRef<number | null>(null);
   const elements = useMemo(() => scene.elements || [], [scene.elements]);
+  const previewElements = useMemo(() => previewElementsForStage(elements), [elements]);
 
   useEffect(() => {
     const next = normalizeScene(state.scene);
@@ -243,8 +294,12 @@ export default function ExcalidrawComponentNode({ state, onSave }: Props) {
           </button>
         </div>
       </div>
-      <div className="workflow-excalidraw-stage" aria-label="Excalidraw scene preview">
-        {elements.map(element => (
+      <div
+        className="workflow-excalidraw-stage"
+        aria-label="Excalidraw scene preview"
+        data-has-content={previewElements.length > 0 ? 'true' : 'false'}
+      >
+        {previewElements.map(element => (
           <div
             key={element.id}
             data-testid="workflow-excalidraw-element"
@@ -274,10 +329,8 @@ export default function ExcalidrawComponentNode({ state, onSave }: Props) {
         </button>
       </div>
 
-      {typeof document !== 'undefined' && createPortal(
-        <AnimatePresence>
-          {fullscreenOpen && (
-            <motion.div
+      {typeof document !== 'undefined' && fullscreenOpen && createPortal(
+        <motion.div
               data-testid="workflow-component-fullscreen"
               data-component-type="excalidraw"
               data-node-id={state.nodeId}
@@ -291,42 +344,41 @@ export default function ExcalidrawComponentNode({ state, onSave }: Props) {
               onWheel={stopCanvasEvent}
               onKeyDown={stopCanvasKeys}
             >
-              <motion.section
-                className="workflow-component-fullscreen-shell workflow-excalidraw-fullscreen-shell"
-                role="dialog"
-                aria-modal="true"
-                aria-label={t('Excalidraw fullscreen editor')}
-                initial={{ opacity: 0, scale: 0.96, y: 18 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.98, y: 12 }}
-                transition={{ type: 'spring', stiffness: 260, damping: 28, mass: 0.85 }}
-              >
-                <header className="workflow-component-fullscreen-header">
-                  <div>
-                    <ComponentBrandIcon type="excalidraw" size={16} />
-                    <span>{state.title || t('Diagram')}</span>
-                  </div>
-                  <div className="workflow-component-fullscreen-actions">
-                    <span>{(draftScene.elements || []).length} elements - rev {state.revision}</span>
-                    <button
-                      type="button"
-                      data-testid="workflow-component-fullscreen-save"
-                      onClick={saveFullscreen}
-                      disabled={saving}
-                    >
-                      {saving ? t('Saving...') : t('Save')}
-                    </button>
-                    <button
-                      type="button"
-                      data-testid="workflow-component-fullscreen-close"
-                      title={t('Close')}
-                      aria-label={t('Close')}
-                      onClick={() => setFullscreenOpen(false)}
-                    >
-                      <X size={15} />
-                    </button>
-                  </div>
-                </header>
+          <motion.section
+            className="workflow-component-fullscreen-shell workflow-excalidraw-fullscreen-shell"
+            role="dialog"
+            aria-modal="true"
+            aria-label={t('Excalidraw fullscreen editor')}
+            initial={{ opacity: 0, scale: 0.96, y: 18 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ type: 'spring', stiffness: 260, damping: 28, mass: 0.85 }}
+          >
+            <header className="workflow-component-fullscreen-header">
+              <div>
+                <ComponentBrandIcon type="excalidraw" size={16} />
+                <span>{state.title || t('Diagram')}</span>
+              </div>
+              <div className="workflow-component-fullscreen-actions">
+                <span>{(draftScene.elements || []).length} elements - rev {state.revision}</span>
+                <button
+                  type="button"
+                  data-testid="workflow-component-fullscreen-save"
+                  onClick={saveFullscreen}
+                  disabled={saving}
+                >
+                  {saving ? t('Saving...') : t('Save')}
+                </button>
+                <button
+                  type="button"
+                  data-testid="workflow-component-fullscreen-close"
+                  title={t('Close')}
+                  aria-label={t('Close')}
+                  onClick={() => setFullscreenOpen(false)}
+                >
+                  <X size={15} />
+                </button>
+              </div>
+            </header>
 
                 <div
                   ref={fullscreenEditorRef}
@@ -368,10 +420,8 @@ export default function ExcalidrawComponentNode({ state, onSave }: Props) {
                     {error || editorLoadError}
                   </div>
                 )}
-              </motion.section>
-            </motion.div>
-          )}
-        </AnimatePresence>,
+          </motion.section>
+        </motion.div>,
         document.body,
       )}
     </div>

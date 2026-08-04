@@ -17,7 +17,7 @@
   --wf-z-preview: 1080;
   --wf-z-settings: 1180;
   --wf-z-toast: 2000;
-  --wf-z-fullscreen: 1600;
+  --wf-z-fullscreen: 2600;
 }
 
 *, *::before, *::after {
@@ -509,7 +509,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   transform: translateX(-50%);
   font-size: 11px;
   font-weight: 800;
-  pointer-events: none;
+  pointer-events: auto;
 }
 
 .workflow-toast[data-kind="error"] {
@@ -615,7 +615,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
 }
 
 .wf-flow .react-flow__nodes {
-  z-index: 10;
+  z-index: 360;
 }
 
 .wf-flow .react-flow__edgelabel-renderer {
@@ -647,6 +647,21 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   z-index: var(--wf-z-settings) !important;
 }
 
+.wf-flow .react-flow__panel.workflow-node-settings-panel-host {
+  position: fixed !important;
+  right: 12px !important;
+  bottom: 12px !important;
+  max-width: calc(100vw - 24px);
+  margin: 0 !important;
+  pointer-events: auto;
+}
+
+.react-flow__panel.workflow-node-settings-panel-host .workflow-node-settings {
+  transform: none;
+  width: min(520px, calc(100vw - 24px));
+  max-width: calc(100vw - 24px);
+}
+
 .workflow-node-settings {
   z-index: var(--wf-z-settings) !important;
 }
@@ -656,9 +671,14 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
 }
 
 .wf-node-card {
+  pointer-events: auto;
   box-shadow: 0 4px 14px rgba(0,0,0,0.06);
   transform: translateY(0);
   transition: box-shadow 160ms ease, transform 160ms ease, border-color 160ms ease;
+}
+
+.wf-node-card > :not(.react-flow__handle) {
+  pointer-events: auto;
 }
 
 .wf-node-card[data-selected="true"] {
@@ -685,7 +705,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
 
 .workflow-node-settings {
   position: relative;
-  width: min(560px, calc(100vw - 24px));
+  width: min(520px, calc(100vw - 48px));
   height: min(780px, calc(100vh - var(--header-h) - 28px));
   max-height: min(780px, calc(100vh - var(--header-h) - 28px));
   display: grid;
@@ -1256,17 +1276,18 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   color: #92400e;
 }
 
-.react-flow__handle.wf-flow-handle {
+.wf-flow .react-flow__handle.wf-flow-handle {
   width: 11px;
   height: 11px;
   border: 1.5px solid #166534;
   background: #f8fafc;
   opacity: 0.92;
   box-shadow: 0 1px 3px rgba(15,23,42,0.16), 0 0 0 2px rgba(22,163,74,0.08);
-  z-index: 3;
+  z-index: 60 !important;
+  pointer-events: all !important;
 }
 
-.react-flow__handle.wf-flow-handle::after {
+.wf-flow .react-flow__handle.wf-flow-handle::after {
   content: "";
   position: absolute;
   inset: 3px;
@@ -1275,12 +1296,12 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   opacity: 0.85;
 }
 
-.react-flow__handle.wf-flow-handle[data-handle-role="input"] {
+.wf-flow .react-flow__handle.wf-flow-handle[data-handle-role="input"] {
   border-color: #15803d;
   background: #fff;
 }
 
-.react-flow__handle.wf-flow-handle[data-handle-role="output"] {
+.wf-flow .react-flow__handle.wf-flow-handle[data-handle-role="output"] {
   border-color: #16a34a;
   background: #f8fafc;
 }
@@ -1294,7 +1315,13 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   background: #6965DB;
 }
 
-.react-flow__handle.wf-flow-handle:hover {
+.wf-flow .react-flow__handle.workflow-agent-context-handle {
+  width: 16px !important;
+  height: 16px !important;
+  box-sizing: border-box;
+}
+
+.wf-flow .react-flow__handle.wf-flow-handle:hover {
   opacity: 1;
   box-shadow: 0 2px 6px rgba(15,23,42,0.20), 0 0 0 3px rgba(22,163,74,0.12);
 }
@@ -1385,7 +1412,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   background: rgba(255,255,255,0.97);
   color: var(--fg);
   box-shadow: 0 14px 34px rgba(15,23,42,0.11);
-  overflow: hidden;
+  overflow: visible;
   text-align: left;
 }
 
@@ -2049,6 +2076,13 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
 
   .wf-node-card:hover {
     transform: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .react-flow__panel.workflow-node-settings-panel-host .workflow-node-settings {
+    transform: none;
+    width: calc(100vw - 24px);
   }
 }
 

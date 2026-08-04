@@ -139,6 +139,168 @@ WebSocket is for invalidation events only in this slice: `workspace.changed`, `c
   - Diagram: `state:read`, `state:update`, `excalidraw:read`, `excalidraw:update`.
 - React state setters must not run from render paths or unguarded effects. Any effect that writes Zustand/ReactFlow/backend state must compare revision or stable identity first.
 
+## Node Runtime Architecture Amendment
+
+The next architecture target is a unified Node Runtime. Every large node type
+must be wrapped in the same backend-owned lifecycle, state, storage, connection,
+and action contract. `WorkflowRoute` must stop acting as the state bus for every
+node subtype; it should become a canvas shell that renders node snapshots and
+dispatches typed node actions.
+
+### Problem Re-Audit
+
+| Finding | Current evidence | Required correction |
+|---|---|---|
+| Component state is only partly backend-owned | `component-node-store.mjs` owns `state.json` and revisions, but `WorkflowRoute.tsx` also keeps `componentNodeOverrides`, graph localStorage, IndexedDB, manual edges, selected state, create panels, and editor state. | Backend owns persisted node state and graph topology. Frontend owns only draft UI state and sends typed mutations. |
+| Graph has multiple truth paths | `WorkflowRoute.tsx` persists graph state to localStorage, IndexedDB, React state, and `/api/a2a/graph-map`. | Keep backend graph-map as the only shared truth. Local/IndexedDB can only be read-through cache with version guard, not a writer of authority. |
+| Excalidraw preview is not runtime-managed | The small node preview draws divs from `scene.elements`; if scene normalization or save is missed, the node renders blank while fullscreen editor has separate draft state. | Excalidraw node must expose `node.preview.render`, `node.state.read`, `node.state.patch`, `node.asset.snapshot`, and autosave/commit semantics through backend-backed actions. |
+| Component nodes lack first-class settings | Terminal nodes use `WorkflowNodeSettingsPanel`; component nodes fall back to a minimal generic config panel. | Markdown, Excalidraw, and File need their own `node.settings.schema` and a shared settings shell. |
+| Agent control is split between terminal APIs and graph APIs | `send-input`, `tail`, start/stop/restart/delete, and graph connect are separate commands with different target semantics. | Agent node should expose one `agentNode.*` capability layer that delegates to terminal/session/graph internals. |
+
+### Canonical Node Model
+
+Every workflow node must have a backend-owned record:
+
+```ts
+type WorkflowRuntimeNode = {
+  nodeId: string;
+  kind: "agent" | "markdown" | "excalidraw" | "file";
+  version: number;
+  lifecycle: "draft" | "ready" | "running" | "stopped" | "error" | "deleted";
+  status: { state: string; reason?: string; updatedAt: string };
+  graph: {
+    position: { x: number; y: number };
+    size?: { width: number; height: number };
+    selected?: boolean;
+    handles: Array<{ id: string; role: "input" | "output"; type: string; label: string }>;
+    connections: Array<{ edgeId: string; peerNodeId: string; localHandle: string; peerHandle: string; direction: "in" | "out" }>;
+  };
+  stateRef: { path: string; revision: number };
+  contentRef?: Record<string, unknown>;
+  settings: { schemaId: string; values: Record<string, unknown>; revision: number };
+  capabilities: string[];
+  ui: {
+    previewKind: string;
+    settingsPanel: string;
+    testId: string;
+    labels: Record<string, string>;
+  };
+};
+```
+
+The backend returns these records through a single node snapshot API. The
+frontend may keep ephemeral drafts such as text selection, unsaved editor text,
+hover state, menus, and drag position, but persisted node state can only change
+through typed node mutations.
+
+### Node Type Contracts
+
+| Node type | Required state | Required actions | Required UI |
+|---|---|---|---|
+| Agent | session id, runtime, model/provider, cwd, role/prompt, lifecycle, terminal IO refs, graph context refs | `agent.readOutput`, `agent.sendInput`, `agent.focusInput`, `agent.start`, `agent.stop`, `agent.restart`, `agent.delete`, `agent.readContext` | terminal preview, transcript drawer, settings panel, status/error surface |
+| Markdown | markdown body, editor mode, revision, output routing compatibility | `markdown.read`, `markdown.patch`, `markdown.replace`, `markdown.append`, `markdown.save`, `markdown.openSettings`, `markdown.delete` | small preview, inline/source editor, fullscreen editor, settings panel |
+| Excalidraw | canonical scene JSON, files map, rendered preview metadata, revision | `excalidraw.readScene`, `excalidraw.patchScene`, `excalidraw.saveScene`, `excalidraw.renderPreview`, `excalidraw.exportImage`, `excalidraw.openSettings`, `excalidraw.delete` | nonblank small preview, fullscreen editor, save/autosave state, settings panel |
+| File | source, path, mime, size, etag, stale/missing state, preview kind | `file.readMeta`, `file.readText`, `file.readBytes`, `file.refresh`, `file.openSettings`, `file.delete` | lazy preview, stale/missing state, metadata settings panel |
+| Graph edge | edge id, endpoints, handles, relation, permissions, offset | `graph.connectNodes`, `graph.disconnectNodes`, `graph.updateEdge`, `graph.readConnections` | visible edge, bridge label, edge settings panel |
+
+### Backend Runtime Modules
+
+The backend should be split into explicit runtime modules instead of spreading
+node semantics across route code and generic stores:
+
+```text
+src/wf-ui-server/
+  workflow-node-runtime.mjs        # node registry, snapshots, action dispatch
+  workflow-node-types/
+    agent-node.mjs                 # session/terminal backed node adapter
+    markdown-node.mjs              # markdown state/settings adapter
+    excalidraw-node.mjs            # scene state/render/export adapter
+    file-node.mjs                  # workspace/user-file adapter
+  workflow-graph-store.mjs         # graph-map topology, positions, connections
+  workflow-node-settings-store.mjs # per-node settings schema + values
+```
+
+Required backend APIs:
+
+| API | Purpose |
+|---|---|
+| `GET /api/workflow/nodes` | list canonical node snapshots |
+| `GET /api/workflow/nodes/:nodeId` | read one canonical node snapshot |
+| `POST /api/workflow/nodes` | create any node type through one entry point |
+| `PATCH /api/workflow/nodes/:nodeId/state` | type-checked persisted state mutation |
+| `PATCH /api/workflow/nodes/:nodeId/settings` | type-checked settings mutation |
+| `POST /api/workflow/nodes/:nodeId/actions/:action` | run node action and return after snapshot |
+| `POST /api/workflow/edges` | semantic connect with handle validation |
+| `DELETE /api/workflow/edges/:edgeId` | semantic disconnect |
+| `GET /api/workflow/context/:nodeId` | agent-readable connected context |
+
+Existing `/api/a2a/*` routes may remain as compatibility shims, but they should
+delegate to the Node Runtime rather than implementing separate behavior.
+
+### Frontend Architecture
+
+`WorkflowRoute.tsx` should be decomposed into a shell plus adapters:
+
+```text
+src/ui/src/components/workflow/
+  WorkflowCanvasRoute.tsx          # load snapshot, render ReactFlow, route events
+  nodeRuntimeClient.ts             # typed API client + optimistic guards
+  nodeRegistry.tsx                 # kind -> renderer/settings/actions
+  AgentNodeView.tsx
+  MarkdownNodeView.tsx
+  ExcalidrawNodeView.tsx
+  FileNodeView.tsx
+  NodeSettingsShell.tsx            # shared settings UI
+  GraphEdgeView.tsx
+```
+
+Frontend rules:
+
+- Node renderers receive `WorkflowRuntimeNode` snapshots, not mixed workflow
+  route state.
+- Each node renderer exposes `preview`, `inlineEditor`, `settings`, and
+  `actions` through the registry.
+- Small previews must be derived from canonical backend state or a backend
+  render artifact. Excalidraw cannot rely on ad hoc div rendering as the only
+  preview path.
+- Settings panels are per node type but share one shell and common controls:
+  title, lifecycle, connection list, handles, delete, duplicate, export, and
+  node-specific settings.
+- ReactFlow drag/selection is local until commit. Commit calls graph actions,
+  then refreshes backend node snapshots.
+
+### wf-browser Capability Layer
+
+The first-party bridge should expose semantic node actions, not only DOM-level
+`act.click`/`act.drag`:
+
+| Capability | Example command |
+|---|---|
+| Agent node | `agentNode.sendInput`, `agentNode.readOutput`, `agentNode.stop`, `agentNode.restart` |
+| Component node | `componentNode.readState`, `componentNode.saveState`, `componentNode.openSettings`, `componentNode.delete` |
+| Markdown node | `markdownNode.append`, `markdownNode.replace`, `markdownNode.read` |
+| Excalidraw node | `excalidrawNode.saveScene`, `excalidrawNode.readScene`, `excalidrawNode.renderPreview` |
+| File node | `fileNode.readMeta`, `fileNode.readText`, `fileNode.refresh` |
+| Graph | `graph.connectNodes`, `graph.disconnectNodes`, `graph.readConnections` |
+
+This keeps user-visible operation possible through the virtual cursor, while the
+actual state transition is semantic, typed, and verifiable.
+
+### Migration Order
+
+1. Add backend Node Runtime snapshots and action dispatch behind compatibility
+   APIs; do not remove current `/api/a2a/*` endpoints.
+2. Move graph-map code into a dedicated graph store and make backend graph-map
+   the only shared writer.
+3. Add node settings schemas for Agent, Markdown, Excalidraw, and File.
+4. Add Excalidraw canonical preview path: save scene -> backend stores revision
+   -> preview renderer reads canonical scene or generated artifact -> small node
+   must show nonblank state when elements exist.
+5. Refactor frontend into node registry and shared settings shell.
+6. Add wf-browser semantic actions for node and graph operations.
+7. Run browser acceptance: create/read/update/settings/delete/connect for each
+   node type, plus Excalidraw nonblank preview and revision persistence.
+
 ## Performance Contract
 
 - `WorkflowRoute` must be split or guarded so zoom/pointer movement does not rerender every node.

@@ -18,20 +18,48 @@ export type WorkflowComponentNodeData = Record<string, unknown> & {
 
 export type WorkflowComponentFlowNode = import('@xyflow/react').Node<WorkflowComponentNodeData, 'workflowComponentNode'>;
 
-function inputIds(state: WorkflowComponentNodeState) {
+function defaultInputIds(type: WorkflowComponentType) {
+  if (type === 'markdown') return ['markdown'];
+  if (type === 'file') return ['file'];
+  return ['scene'];
+}
+
+function defaultOutputIds(type: WorkflowComponentType) {
+  if (type === 'markdown') return ['markdown', 'plainText'];
+  if (type === 'file') return ['file', 'path'];
+  return ['scene', 'image'];
+}
+
+function inputIds(state: WorkflowComponentNodeState, type: WorkflowComponentType) {
   return state.observableInputs && state.observableInputs.length > 0
     ? state.observableInputs
-    : ['selection'];
+    : defaultInputIds(type);
 }
 
-function outputIds(state: WorkflowComponentNodeState) {
+function outputIds(state: WorkflowComponentNodeState, type: WorkflowComponentType) {
   return state.observableOutputs && state.observableOutputs.length > 0
     ? state.observableOutputs
-    : ['content'];
+    : defaultOutputIds(type);
 }
 
-function primaryHandleId(ids: string[], fallback: string) {
-  return ids.find(id => String(id || '').trim()) || fallback;
+function uniqueHandleIds(ids: string[], fallback: string) {
+  const seen = new Set<string>();
+  const next = ids
+    .map(id => String(id || '').trim())
+    .filter(Boolean)
+    .filter(id => {
+      if (seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    });
+  return next.length > 0 ? next : [fallback];
+}
+
+function handleTop(index: number, total: number) {
+  if (total <= 1) return '50%';
+  const start = 30;
+  const end = 70;
+  return `${start + ((end - start) * index) / (total - 1)}%`;
 }
 
 export default function WorkflowComponentNode({ data, selected }: NodeProps<WorkflowComponentFlowNode>) {
@@ -39,12 +67,13 @@ export default function WorkflowComponentNode({ data, selected }: NodeProps<Work
   const type = (state.type || data.workflowNode.componentType || 'markdown') as WorkflowComponentType;
   const zoom = Math.max(0.05, Number(data.viewportZoom || 1));
   const handleScale = 1 / zoom;
-  const inputId = primaryHandleId(inputIds(state), 'input');
-  const outputId = primaryHandleId(outputIds(state), 'output');
+  const inputs = uniqueHandleIds(inputIds(state, type), 'input');
+  const outputs = uniqueHandleIds(outputIds(state, type), 'output');
   const handleBaseStyle = {
     width: 12,
     height: 12,
-    top: '50%',
+    zIndex: 30,
+    pointerEvents: 'all' as const,
     transformOrigin: 'center',
   };
 
@@ -58,26 +87,42 @@ export default function WorkflowComponentNode({ data, selected }: NodeProps<Work
       data-component-type={type}
       className="workflow-component-node"
     >
-      <Handle
-        id={inputId}
-        type="target"
-        position={Position.Left}
-        data-testid="workflow-component-node-input"
-        data-input-id={inputId}
-        data-handle-role="input"
-        className="wf-flow-handle workflow-component-node-handle workflow-component-node-handle-input"
-        style={{ ...handleBaseStyle, transform: `translate(-50%, -50%) scale(${handleScale})` }}
-      />
-      <Handle
-        id={outputId}
-        type="source"
-        position={Position.Right}
-        data-testid="workflow-component-node-output"
-        data-output-id={outputId}
-        data-handle-role="output"
-        className="wf-flow-handle workflow-component-node-handle workflow-component-node-handle-output"
-        style={{ ...handleBaseStyle, transform: `translate(50%, -50%) scale(${handleScale})` }}
-      />
+      {inputs.map((inputId, index) => (
+        <Handle
+          key={`input-${inputId}`}
+          id={inputId}
+          type="target"
+          position={Position.Left}
+          data-testid="workflow-component-node-input"
+          data-input-id={inputId}
+          data-handle-index={index}
+          data-handle-role="input"
+          className="wf-flow-handle workflow-component-node-handle workflow-component-node-handle-input"
+          style={{
+            ...handleBaseStyle,
+            top: handleTop(index, inputs.length),
+            transform: `translate(-50%, -50%) scale(${handleScale})`,
+          }}
+        />
+      ))}
+      {outputs.map((outputId, index) => (
+        <Handle
+          key={`output-${outputId}`}
+          id={outputId}
+          type="source"
+          position={Position.Right}
+          data-testid="workflow-component-node-output"
+          data-output-id={outputId}
+          data-handle-index={index}
+          data-handle-role="output"
+          className="wf-flow-handle workflow-component-node-handle workflow-component-node-handle-output"
+          style={{
+            ...handleBaseStyle,
+            top: handleTop(index, outputs.length),
+            transform: `translate(50%, -50%) scale(${handleScale})`,
+          }}
+        />
+      ))}
 
       <header className="workflow-component-node-header">
         <div>

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent, SyntheticEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { Maximize2, X } from 'lucide-react';
-import { AnimatePresence, motion } from 'motion/react';
+import { motion } from 'motion/react';
 import type { WorkflowComponentNodeState } from '../types';
 import { useT } from '../i18n';
 import ComponentBrandIcon from './ComponentBrandIcon';
@@ -210,10 +210,8 @@ export default function MarkdownComponentNode({ state, onSave }: Props) {
         </button>
       </div>
 
-      {typeof document !== 'undefined' && createPortal(
-        <AnimatePresence>
-          {fullscreenOpen && (
-            <motion.div
+      {typeof document !== 'undefined' && fullscreenOpen && createPortal(
+        <motion.div
               data-testid="workflow-component-fullscreen"
               data-component-type="markdown"
               data-node-id={state.nodeId}
@@ -227,42 +225,41 @@ export default function MarkdownComponentNode({ state, onSave }: Props) {
               onWheel={stopCanvasEvent}
               onKeyDown={stopCanvasKeys}
             >
-              <motion.section
-                className="workflow-component-fullscreen-shell"
-                role="dialog"
-                aria-modal="true"
-                aria-label={t('Markdown fullscreen editor')}
-                initial={{ opacity: 0, scale: 0.96, y: 18 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.98, y: 12 }}
-                transition={{ type: 'spring', stiffness: 260, damping: 28, mass: 0.85 }}
-              >
-                <header className="workflow-component-fullscreen-header">
-                  <div>
-                    <ComponentBrandIcon type="markdown" size={15} />
-                    <span>{state.title || t('Markdown')}</span>
-                  </div>
-                  <div className="workflow-component-fullscreen-actions">
-                    <span>rev {state.revision}</span>
-                    <button
-                      type="button"
-                      data-testid="workflow-component-fullscreen-save"
-                      onClick={saveFullscreen}
-                      disabled={saving}
-                    >
-                      {saving ? t('Saving...') : t('Save')}
-                    </button>
-                    <button
-                      type="button"
-                      data-testid="workflow-component-fullscreen-close"
-                      title={t('Close')}
-                      aria-label={t('Close')}
-                      onClick={() => setFullscreenOpen(false)}
-                    >
-                      <X size={15} />
-                    </button>
-                  </div>
-                </header>
+          <motion.section
+            className="workflow-component-fullscreen-shell"
+            role="dialog"
+            aria-modal="true"
+            aria-label={t('Markdown fullscreen editor')}
+            initial={{ opacity: 0, scale: 0.96, y: 18 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ type: 'spring', stiffness: 260, damping: 28, mass: 0.85 }}
+          >
+            <header className="workflow-component-fullscreen-header">
+              <div>
+                <ComponentBrandIcon type="markdown" size={15} />
+                <span>{state.title || t('Markdown')}</span>
+              </div>
+              <div className="workflow-component-fullscreen-actions">
+                <span>rev {state.revision}</span>
+                <button
+                  type="button"
+                  data-testid="workflow-component-fullscreen-save"
+                  onClick={saveFullscreen}
+                  disabled={saving}
+                >
+                  {saving ? t('Saving...') : t('Save')}
+                </button>
+                <button
+                  type="button"
+                  data-testid="workflow-component-fullscreen-close"
+                  title={t('Close')}
+                  aria-label={t('Close')}
+                  onClick={() => setFullscreenOpen(false)}
+                >
+                  <X size={15} />
+                </button>
+              </div>
+            </header>
 
                 <div className="workflow-markdown-fullscreen-body">
                   {editorLoadError ? (
@@ -308,10 +305,8 @@ export default function MarkdownComponentNode({ state, onSave }: Props) {
                     {error || editorLoadError}
                   </div>
                 )}
-              </motion.section>
-            </motion.div>
-          )}
-        </AnimatePresence>,
+          </motion.section>
+        </motion.div>,
         document.body,
       )}
     </div>

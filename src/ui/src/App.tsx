@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState, useEffect } from 'react';
+import { lazy, Suspense, useState, useEffect, useMemo } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -6,6 +6,8 @@ import LoadingView from './components/LoadingView';
 import { useServerConnection } from './hooks/useServerConnection';
 import { apiFetch, apiJson } from './api';
 import { I18nProvider } from './i18n';
+import { WfBrowserDebugRuntime, useWfBrowserCapabilities, type WfBrowserCapability } from './wfBrowserDebug';
+import { useWfBrowserRouteCapabilities } from './wfBrowserRouteCapabilities';
 
 const TaskList = lazy(() => import('./components/TaskList'));
 const WorkflowRoute = lazy(() => import('./components/WorkflowRoute'));
@@ -45,6 +47,69 @@ export default function App() {
   const [errors, setErrors] = useState<string[]>([]);
   const [routePulse, setRoutePulse] = useState(false);
   const fullCanvas = location.pathname === '/workflow';
+  const shellCapabilities = useMemo<WfBrowserCapability[]>(() => {
+    const nav = [
+      { id: 'nav.tasks', testId: 'nav-tasks', label: 'Tasks Route', route: '/tasks' },
+      { id: 'nav.workflow', testId: 'nav-workflow', label: 'Workflow Route', route: '/workflow' },
+      { id: 'nav.agents', testId: 'nav-agents', label: 'Agents Route', route: '/agents' },
+      { id: 'nav.roles', testId: 'nav-roles', label: 'Roles Route', route: '/roles' },
+      { id: 'nav.settings', testId: 'nav-settings', label: 'Settings Route', route: '/settings' },
+    ];
+    const capabilities: WfBrowserCapability[] = [
+      {
+        id: 'app.shell',
+        kind: 'component',
+        label: 'WF-UI App Shell',
+        selectors: { testId: 'app-shell' },
+        keys: { pathname: location.pathname },
+        state: () => ({
+          pathname: location.pathname,
+          connection: connState,
+          eventSeq,
+          fullCanvas,
+          activeTerminalSession,
+          errorCount: errors.length + (lastError ? 1 : 0),
+        }),
+        actions: {
+          'observe.currentRoute': { label: 'Observe current route' },
+        },
+        captures: ['ui-tree', 'state', 'logs'],
+      },
+      {
+        id: 'app.header',
+        kind: 'component',
+        label: 'Header',
+        selectors: { testId: 'header' },
+        state: () => ({ pathname: location.pathname }),
+        captures: ['ui-tree', 'state'],
+      },
+      {
+        id: 'app.themeToggle',
+        kind: 'element',
+        label: 'Theme Toggle',
+        selectors: { testId: 'theme-toggle', role: 'button', name: 'System theme' },
+        actions: { click: { label: 'Click theme toggle' } },
+        captures: ['ui-tree'],
+      },
+      ...nav.map(item => ({
+        id: item.id,
+        kind: 'element',
+        label: item.label,
+        selectors: { testId: item.testId, role: 'link', name: item.label.replace(' Route', '') },
+        keys: { route: item.route },
+        state: () => ({ active: location.pathname === item.route || (item.route === '/tasks' && location.pathname === '/') }),
+        actions: { click: { label: `Navigate to ${item.route}` } },
+        captures: ['ui-tree', 'state'],
+      } satisfies WfBrowserCapability)),
+    ];
+    return capabilities;
+  }, [activeTerminalSession, connState, errors.length, eventSeq, fullCanvas, lastError, location.pathname]);
+
+  useWfBrowserCapabilities(shellCapabilities);
+  useWfBrowserRouteCapabilities(location.pathname, {
+    activeTerminalSession,
+    connection: connState,
+  });
 
   useEffect(() => {
     const handler = (e: ErrorEvent) => setErrors(prev => [...prev, e.message].slice(-20));
@@ -99,7 +164,11 @@ export default function App() {
 
   return (
     <I18nProvider>
-      <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+      <div
+        data-testid="app-shell"
+        data-wf-capability="app.shell"
+        style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}
+      >
         <Header />
         {routePulse && <div className="route-progress" aria-hidden="true" />}
         <main style={{ flex: 1, overflow: fullCanvas ? 'hidden' : 'auto', padding: fullCanvas ? 0 : '16px 20px', minHeight: 0 }}>
@@ -120,6 +189,7 @@ export default function App() {
           </Suspense>
         )}
         {!fullCanvas && <Footer connState={connState} eventSeq={eventSeq} lastSync={lastSync} lastError={lastError} />}
+        <WfBrowserDebugRuntime />
       </div>
     </I18nProvider>
   );

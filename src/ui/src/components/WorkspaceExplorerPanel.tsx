@@ -695,12 +695,12 @@ export default function WorkspaceExplorerPanel({ root, onInsertFile, onGestureSt
           </div>
           <button
             type="button"
-            data-testid="workspace-preview-insert"
+            data-testid="workspace-insert-file"
             className="workspace-preview-insert"
             onClick={() => onInsertFile?.(previewEntry)}
           >
             <Plus size={12} />
-            <span data-testid="workspace-insert-file">{t('Insert to canvas')}</span>
+            <span data-testid="workspace-preview-insert">{t('Insert to canvas')}</span>
           </button>
         </div>
       )}

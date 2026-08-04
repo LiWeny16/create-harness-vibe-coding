@@ -84,6 +84,22 @@ function control() {
   };
 }
 
+function observableInputsForType(type: ComponentType) {
+  if (type === 'markdown') return ['markdown'];
+  if (type === 'file') return ['file'];
+  return ['scene'];
+}
+
+function observableOutputsForType(type: ComponentType) {
+  if (type === 'markdown') return ['markdown', 'plainText'];
+  if (type === 'file') return ['file', 'path'];
+  return ['scene', 'image'];
+}
+
+function primaryOutputForType(type: ComponentType) {
+  return observableOutputsForType(type)[0];
+}
+
 function defaultComponentState(type: ComponentType, nodeId: string): ComponentState {
   const title = type === 'markdown' ? 'M3 Notes' : type === 'file' ? 'M3 File' : 'M3 Diagram';
   return {
@@ -98,9 +114,9 @@ function defaultComponentState(type: ComponentType, nodeId: string): ComponentSt
     file: type === 'file'
       ? { source: 'workspace', path: 'package.json', name: 'package.json', mime: 'application/json', size: 820 }
       : undefined,
-    observableInputs: type === 'file' ? ['file'] : ['selection', 'linked-agent-context'],
-    observableOutputs: type === 'file' ? ['file', 'path'] : ['content', 'revision', 'summary'],
-    statePath: `Harness/a2a/component-nodes/${nodeId}.json`,
+    observableInputs: observableInputsForType(type),
+    observableOutputs: observableOutputsForType(type),
+    statePath: `Harness/a2a/component-nodes/${nodeId}/state.json`,
   };
 }
 
@@ -126,7 +142,38 @@ function componentNodeSnapshot(state: ComponentState, position: { x: number; y: 
   };
 }
 
-function workflowSnapshot(components: ComponentState[] = []) {
+function runtimeNodeSnapshot(state: ComponentState, position: { x: number; y: number }) {
+  return {
+    nodeId: state.nodeId,
+    kind: state.type,
+    version: state.revision,
+    lifecycle: 'ready',
+    status: { state: 'ready', updatedAt: '2026-08-01T00:00:00.000Z' },
+    graph: {
+      position,
+      handles: [
+        ...state.observableInputs.map(id => ({ id, role: 'input', type: id, label: id })),
+        ...state.observableOutputs.map(id => ({ id, role: 'output', type: id, label: id })),
+      ],
+      connections: [],
+    },
+    stateRef: { path: state.statePath, revision: state.revision },
+    contentRef: state.type === 'file'
+      ? state.file
+      : { kind: 'component-state', statePath: state.statePath, revision: state.revision },
+    settings: { schemaId: `${state.type}-settings`, values: {}, revision: 0 },
+    capabilities: ['state:read', 'state:update'],
+    ui: {
+      previewKind: state.type,
+      settingsPanel: `${state.type}-settings`,
+      testId: `workflow-${state.type}-node`,
+      labels: { title: state.title },
+    },
+  };
+}
+
+function workflowSnapshot(components: ComponentState[] = [], options: { includeInitialEdges?: boolean } = {}) {
+  const includeInitialEdges = options.includeInitialEdges !== false;
   const componentNodes = components.map((state, index) => componentNodeSnapshot(state, {
     x: 260 + (index * 360),
     y: 420,
@@ -143,7 +190,16 @@ function workflowSnapshot(components: ComponentState[] = []) {
     position: node.position,
     statePath: node.statePath,
     revision: node.revision,
+    stateRef: { path: node.statePath, revision: node.revision },
   }));
+  const componentStateRefs = Object.fromEntries(components.map(state => [state.nodeId, {
+    type: state.type,
+    title: state.title,
+    statePath: state.statePath,
+    revision: state.revision,
+    ...(state.file ? { file: state.file } : {}),
+  }]));
+  const initialSourceHandle = components.length > 0 ? primaryOutputForType(components[0].type) : 'output';
   return {
     schemaVersion: 1,
     snapshotVersion: 1,
@@ -196,13 +252,13 @@ function workflowSnapshot(components: ComponentState[] = []) {
       graphNodeId,
       config: nodeConfig,
     }, ...componentNodes],
-    edges: components.length > 0 ? [{
+    edges: includeInitialEdges && components.length > 0 ? [{
       id: `edge-${components[0].nodeId}-${graphNodeId}`,
       source: components[0].nodeId,
       target: graphNodeId,
-      sourceHandle: 'content',
+      sourceHandle: initialSourceHandle,
       targetHandle: 'context',
-      label: 'content -> context',
+      label: `${initialSourceHandle} <-> context`,
     }] : [],
     graph: {
       schemaVersion: 1,
@@ -223,11 +279,11 @@ function workflowSnapshot(components: ComponentState[] = []) {
         position: { x: 620, y: 180 },
         config: nodeConfig,
       }, ...graphComponentNodes],
-      edges: components.length > 0 ? [{
+      edges: includeInitialEdges && components.length > 0 ? [{
         id: `edge-${components[0].nodeId}-${graphNodeId}`,
         source: components[0].nodeId,
         target: graphNodeId,
-        sourceHandle: 'content',
+        sourceHandle: initialSourceHandle,
         targetHandle: 'context',
       }] : [],
       positions: {
@@ -239,6 +295,7 @@ function workflowSnapshot(components: ComponentState[] = []) {
       graphContextPath: 'Harness/a2a/workflow-map.json',
       componentStatePath: 'Harness/a2a/component-nodes',
       sourceOfTruth: 'backend',
+      componentStateRefs,
     },
     componentNodes: Object.fromEntries(components.map(state => [state.nodeId, state])),
     graphContextBySessionId: {
@@ -246,6 +303,7 @@ function workflowSnapshot(components: ComponentState[] = []) {
         workflowMapPath: 'Harness/a2a/workflow-map.json',
         componentStatePath: 'Harness/a2a/component-nodes',
         sourceOfTruth: 'backend',
+        componentStateRefs,
       },
     },
   };
@@ -265,7 +323,7 @@ function workspaceEntries(relPath: string) {
 
 async function installWorkflowFixture(
   page: Page,
-  options: { initialComponents?: ComponentState[]; failNextPut?: number } = {},
+  options: { initialComponents?: ComponentState[]; failNextPut?: number; includeInitialEdges?: boolean } = {},
 ): Promise<HarnessNetwork> {
   const network: HarnessNetwork = {
     componentCreateRequests: [],
@@ -286,7 +344,7 @@ async function installWorkflowFixture(
 
   page.on('pageerror', error => network.pageErrors.push(error.message));
   page.on('response', response => {
-    const isExpectedPutFailure = response.url().includes('/api/a2a/component-nodes/') && response.status() === failNextPut;
+    const isExpectedPutFailure = response.url().includes('/api/workflow/nodes/') && response.status() === failNextPut;
     if (response.status() >= 400 && !response.url().includes('/favicon.ico') && !isExpectedPutFailure) {
       network.failedResponses.push(`${response.status()} ${response.url()}`);
     }
@@ -315,7 +373,8 @@ async function installWorkflowFixture(
     status: 'open',
     phase: 'm3-red',
   }]));
-  await page.route('**/api/a2a/snapshot**', route => jsonResponse(route, workflowSnapshot([...components.values()])));
+  const currentSnapshot = () => workflowSnapshot([...components.values()], { includeInitialEdges: options.includeInitialEdges });
+  await page.route('**/api/a2a/snapshot**', route => jsonResponse(route, currentSnapshot()));
   await page.route('**/api/a2a/graph-map**', async route => {
     const payload = route.request().postDataJSON() as JsonRecord || {};
     network.graphMapRequests.push({
@@ -325,11 +384,11 @@ async function installWorkflowFixture(
     return jsonResponse(route, {
       ok: true,
       revision: network.graphMapRequests.length + 2,
-      graph: workflowSnapshot([...components.values()]).graph,
+      graph: currentSnapshot().graph,
       sourceOfTruth: 'backend',
     });
   });
-  await page.route('**/api/sessions?all=1**', route => jsonResponse(route, workflowSnapshot([...components.values()]).sessions));
+  await page.route('**/api/sessions?all=1**', route => jsonResponse(route, currentSnapshot().sessions));
   await page.route('**/api/terminals/**/range**', route => jsonResponse(route, {
     entries: [{ seq: 1, stream: 'stdout', data: '\r\nM3 terminal fixture ready\r\n' }],
   }));
@@ -398,7 +457,13 @@ async function installWorkflowFixture(
     restartRequired: false,
     revision: 3,
   }));
-  await page.route('**/api/a2a/component-nodes', async route => {
+  await page.route(/\/api\/workflow\/nodes(?:\?.*)?$/, async route => {
+    if (route.request().method() === 'GET') {
+      return jsonResponse(route, {
+        ok: true,
+        nodes: [...components.values()].map(state => runtimeNodeSnapshot(state, { x: 260, y: 420 })),
+      });
+    }
     const payload = route.request().postDataJSON() as JsonRecord;
     network.componentCreateRequests.push(payload);
     const type = payload.type as ComponentType;
@@ -417,23 +482,28 @@ async function installWorkflowFixture(
     delete backendState.title;
     return jsonResponse(route, {
       ok: true,
-      nodeId,
-      revision: state.revision,
-      node: componentNodeSnapshot(state, payload.position || { x: 260, y: 420 }),
+      node: runtimeNodeSnapshot(state, payload.position || { x: 260, y: 420 }),
       state: backendState,
-      sourceOfTruth: 'backend',
+      revision: state.revision,
     });
   });
-  await page.route('**/api/a2a/component-nodes/*', async route => {
+  await page.route(/\/api\/workflow\/nodes\/.+/, async route => {
     const url = new URL(route.request().url());
-    const nodeId = url.pathname.split('/').pop() || '';
+    const parts = url.pathname.split('/').filter(Boolean);
+    const nodeId = parts[3] || '';
     if (route.request().method() === 'GET') {
-      return jsonResponse(route, components.get(nodeId) || defaultComponentState('markdown', nodeId));
+      const state = components.get(nodeId) || defaultComponentState('markdown', nodeId);
+      return jsonResponse(route, {
+        ok: true,
+        node: runtimeNodeSnapshot(state, { x: 260, y: 420 }),
+        state,
+        revision: state.revision,
+      });
     }
-    if (route.request().method() === 'PUT') {
+    if (route.request().method() === 'PATCH' && parts[4] === 'state') {
       const payload = route.request().postDataJSON() as JsonRecord;
       network.componentPutRequests.push({
-        method: 'PUT',
+        method: 'PATCH',
         nodeId,
         payload,
       });
@@ -462,13 +532,57 @@ async function installWorkflowFixture(
       components.set(nodeId, updated);
       return jsonResponse(route, {
         ok: true,
-        nodeId,
-        revision: updated.revision,
+        node: runtimeNodeSnapshot(updated, { x: 260, y: 420 }),
         state: updated,
-        sourceOfTruth: 'backend',
+        revision: updated.revision,
+      });
+    }
+    if (route.request().method() === 'POST' && parts[4] === 'actions') {
+      const action = decodeURIComponent(parts[5] || '');
+      if (action === 'node.delete') {
+        components.delete(nodeId);
+        return jsonResponse(route, { ok: true, action, node: null, result: { ok: true, nodeId } });
+      }
+      const state = components.get(nodeId) || defaultComponentState('markdown', nodeId);
+      return jsonResponse(route, {
+        ok: true,
+        action,
+        node: runtimeNodeSnapshot(state, { x: 260, y: 420 }),
+        result: {},
+      });
+    }
+    if (route.request().method() === 'PATCH' && parts[4] === 'settings') {
+      const state = components.get(nodeId) || defaultComponentState('markdown', nodeId);
+      return jsonResponse(route, {
+        ok: true,
+        node: runtimeNodeSnapshot(state, { x: 260, y: 420 }),
+        settings: { schemaId: `${state.type}-settings`, values: route.request().postDataJSON() || {}, revision: 1 },
       });
     }
     return jsonResponse(route, { ok: false, message: 'unsupported' }, 405);
+  });
+  await page.route(/\/api\/workflow\/edges(?:\?.*)?$/, async route => {
+    const payload = route.request().postDataJSON() as JsonRecord || {};
+    const edge = {
+      id: `${payload.from}->${payload.to}`,
+      from: payload.from,
+      to: payload.to,
+      relation: payload.relation || 'wf-bridge',
+      sourceHandle: payload.sourceHandle || null,
+      targetHandle: payload.targetHandle || null,
+    };
+    network.graphMapRequests.push({
+      method: route.request().method(),
+      payload,
+    });
+    return jsonResponse(route, { ok: true, edge }, 201);
+  });
+  await page.route(/\/api\/workflow\/edges\/.+/, route => {
+    network.graphMapRequests.push({
+      method: route.request().method(),
+      payload: { edgeId: decodeURIComponent(new URL(route.request().url()).pathname.split('/').pop() || '') },
+    });
+    return jsonResponse(route, { ok: true });
   });
 
   return network;
@@ -478,6 +592,7 @@ async function openWorkflow(page: Page) {
   await page.goto(`/workflow?token=${encodeURIComponent(token)}`);
   await expect(page.getByTestId('workflow-canvas')).toBeVisible();
   await expect(page.getByTestId('workflow-node').first()).toBeVisible();
+  await expect(page.getByTestId('workflow-canvas')).toHaveAttribute('data-wf-browser-ready', 'true');
 }
 
 async function createComponentNode(page: Page, type: ComponentType) {
@@ -580,15 +695,46 @@ async function fillSourceEditor(page: Page, text: string) {
   await page.keyboard.type(text);
 }
 
-async function expectInViewport(page: Page, locator: Locator) {
+async function dragHandlePath(page: Page, source: Locator, target: Locator) {
+  const sourceBox = await source.boundingBox();
+  const targetBox = await target.boundingBox();
+  expect(sourceBox, 'source handle should be visible before connect').not.toBeNull();
+  expect(targetBox, 'target handle should be visible before connect').not.toBeNull();
+  const sx = sourceBox!.x + sourceBox!.width / 2;
+  const sy = sourceBox!.y + sourceBox!.height / 2;
+  const tx = targetBox!.x + targetBox!.width / 2;
+  const ty = targetBox!.y + targetBox!.height / 2;
+  await page.mouse.move(sx, sy);
+  await page.mouse.down();
+  await page.mouse.move((sx + tx) / 2, sy, { steps: 8 });
+  await page.mouse.move((sx + tx) / 2, ty, { steps: 8 });
+  await page.mouse.move(tx, ty, { steps: 8 });
+  await page.mouse.up();
+}
+
+async function expectInViewport(page: Page, locator: Locator, label = 'surface') {
   const box = await locator.boundingBox();
   const viewport = page.viewportSize();
-  expect(box).not.toBeNull();
-  expect(viewport).not.toBeNull();
-  expect(box!.x).toBeGreaterThanOrEqual(0);
-  expect(box!.y).toBeGreaterThanOrEqual(0);
-  expect(box!.x + box!.width).toBeLessThanOrEqual(viewport!.width + 1);
-  expect(box!.y + box!.height).toBeLessThanOrEqual(viewport!.height + 1);
+  expect(box, `${label} should have a bounding box`).not.toBeNull();
+  expect(viewport, 'viewport should be available').not.toBeNull();
+  expect(box!.x, `${label} left edge should be in viewport`).toBeGreaterThanOrEqual(0);
+  expect(box!.y, `${label} top edge should be in viewport`).toBeGreaterThanOrEqual(0);
+  expect(box!.x + box!.width, `${label} right edge should be in viewport`).toBeLessThanOrEqual(viewport!.width + 1);
+  expect(box!.y + box!.height, `${label} bottom edge should be in viewport`).toBeLessThanOrEqual(viewport!.height + 1);
+}
+
+async function expectTopLayerAtCenter(page: Page, topLayer: Locator, coveredLayer: Locator, label = 'top layer') {
+  const topSelector = `[data-testid="${await topLayer.getAttribute('data-testid')}"]`;
+  const coveredBox = await coveredLayer.boundingBox();
+  expect(coveredBox, `${label} covered layer should have a bounding box`).not.toBeNull();
+  await expect(page.evaluate(({ selector, x, y }) => {
+    const element = document.elementFromPoint(x, y);
+    return Boolean(element?.closest(selector));
+  }, {
+    selector: topSelector,
+    x: coveredBox!.x + coveredBox!.width / 2,
+    y: coveredBox!.y + coveredBox!.height / 2,
+  })).resolves.toBe(true);
 }
 
 test.describe('WF UI M3 RED trusted component nodes acceptance', () => {
@@ -628,6 +774,94 @@ test.describe('WF UI M3 RED trusted component nodes acceptance', () => {
       }),
     }));
     await expect(page.getByTestId('workflow-file-node')).toBeVisible();
+  });
+
+  test('AC-001 opens the same node picker from the canvas right-click create-node path', async ({ page }) => {
+    await installWorkflowFixture(page);
+    await page.setViewportSize({ width: 1440, height: 960 });
+    await openWorkflow(page);
+
+    const pane = page.locator('.react-flow__pane');
+    await expect(pane).toBeVisible();
+    const contextResult = await page.evaluate(() => {
+      const paneElement = document.querySelector('.react-flow__pane') as HTMLElement | null;
+      if (!paneElement) return { ok: false, reason: 'pane missing' };
+      const rect = paneElement.getBoundingClientRect();
+      const point = {
+        x: Math.round(rect.left + rect.width * 0.82),
+        y: Math.round(rect.top + rect.height * 0.68),
+      };
+      const target = document.elementFromPoint(point.x, point.y) as HTMLElement | null;
+      if (!target?.closest('.react-flow__pane')) {
+        return { ok: false, reason: 'blank pane target missing', target: target?.className || target?.tagName || '' };
+      }
+      target.dispatchEvent(new PointerEvent('pointerdown', {
+        bubbles: true,
+        cancelable: true,
+        button: 2,
+        buttons: 2,
+        clientX: point.x,
+        clientY: point.y,
+        pointerId: 1,
+        pointerType: 'mouse',
+        isPrimary: true,
+        view: window,
+      }));
+      target.dispatchEvent(new MouseEvent('mousedown', {
+        bubbles: true,
+        cancelable: true,
+        button: 2,
+        buttons: 2,
+        clientX: point.x,
+        clientY: point.y,
+        view: window,
+      }));
+      target.dispatchEvent(new MouseEvent('contextmenu', {
+        bubbles: true,
+        cancelable: true,
+        button: 2,
+        buttons: 2,
+        clientX: point.x,
+        clientY: point.y,
+        view: window,
+      }));
+      target.dispatchEvent(new PointerEvent('pointerup', {
+        bubbles: true,
+        cancelable: true,
+        button: 2,
+        buttons: 0,
+        clientX: point.x,
+        clientY: point.y,
+        pointerId: 1,
+        pointerType: 'mouse',
+        isPrimary: true,
+        view: window,
+      }));
+      target.dispatchEvent(new MouseEvent('mouseup', {
+        bubbles: true,
+        cancelable: true,
+        button: 2,
+        buttons: 0,
+        clientX: point.x,
+        clientY: point.y,
+        view: window,
+      }));
+      return { ok: true, target: target.className || target.tagName };
+    });
+    expect(contextResult).toEqual(expect.objectContaining({ ok: true }));
+
+    const menu = page.getByTestId('workflow-context-menu');
+    await expect(menu).toBeVisible();
+    await expectInViewport(page, menu, 'canvas context menu');
+    await menu.locator('[data-testid="workflow-context-action"][data-action="create-node"]').click();
+
+    const picker = page.getByTestId('workflow-create-node-panel');
+    await expect(picker).toBeVisible();
+    await expectInViewport(page, picker, 'canvas create node picker');
+    await expect(page.getByTestId('workflow-context-menu')).toHaveCount(0);
+    for (const kind of ['agent', 'file', 'markdown', 'diagram']) {
+      await expect(picker.locator(`[data-testid="workflow-create-node-option"][data-node-kind="${kind}"]`)).toBeVisible();
+    }
   });
 
   test('AC-002 canvas drop creates File node refs for workspace items and stored File nodes for external files', async ({ page }) => {
@@ -715,7 +949,7 @@ test.describe('WF UI M3 RED trusted component nodes acceptance', () => {
 
   test('AC-006 Markdown node supports WYSIWYG edit, source mode, revisioned PUT, and reload persistence', async ({ page }) => {
     const markdownState = defaultComponentState('markdown', markdownNodeId);
-    const network = await installWorkflowFixture(page, { initialComponents: [markdownState] });
+    const network = await installWorkflowFixture(page, { initialComponents: [markdownState], includeInitialEdges: false });
     await openWorkflow(page);
 
     await expect(page.locator(`[data-testid="workflow-component-node"][data-node-id="${markdownNodeId}"]`)).toBeVisible();
@@ -724,7 +958,7 @@ test.describe('WF UI M3 RED trusted component nodes acceptance', () => {
     await page.getByTestId('workflow-component-node-save').click();
     await expect.poll(() => network.componentPutRequests.length).toBe(1);
     expect(network.componentPutRequests[0]).toEqual(expect.objectContaining({
-      method: 'PUT',
+      method: 'PATCH',
       nodeId: markdownNodeId,
       payload: expect.objectContaining({
         revision: 1,
@@ -774,7 +1008,7 @@ test.describe('WF UI M3 RED trusted component nodes acceptance', () => {
 
     await expect.poll(() => network.componentPutRequests.length).toBe(1);
     expect(network.componentPutRequests[0]).toEqual(expect.objectContaining({
-      method: 'PUT',
+      method: 'PATCH',
       nodeId: excalidrawNodeId,
       payload: expect.objectContaining({
         revision: 1,
@@ -794,7 +1028,7 @@ test.describe('WF UI M3 RED trusted component nodes acceptance', () => {
   test('AC-009 Markdown fullscreen shows loading state, rich editor readiness, and revisioned save', async ({ page }) => {
     test.setTimeout(90_000);
     const markdownState = defaultComponentState('markdown', markdownNodeId);
-    const network = await installWorkflowFixture(page, { initialComponents: [markdownState] });
+    const network = await installWorkflowFixture(page, { initialComponents: [markdownState], includeInitialEdges: false });
     await openWorkflow(page);
 
     const markdownNode = page.locator(`[data-testid="workflow-component-node"][data-node-id="${markdownNodeId}"]`);
@@ -814,7 +1048,7 @@ test.describe('WF UI M3 RED trusted component nodes acceptance', () => {
 
     await expect.poll(() => network.componentPutRequests.length).toBe(1);
     expect(network.componentPutRequests[0]).toEqual(expect.objectContaining({
-      method: 'PUT',
+      method: 'PATCH',
       nodeId: markdownNodeId,
       payload: expect.objectContaining({
         revision: 1,
@@ -858,6 +1092,16 @@ test.describe('WF UI M3 RED trusted component nodes acceptance', () => {
     await expect(editor).toHaveAttribute('data-editor-loaded', 'true', { timeout: 30000 });
     await expect(editor.locator('.excalidraw')).toBeVisible();
     await expect(page.getByTestId('workflow-excalidraw-test-helper-add-rect')).toHaveCount(0);
+
+    await page.evaluate(() => {
+      window.dispatchEvent(new CustomEvent('wf:workflow-toast', { detail: { message: 'M3 fullscreen layer check' } }));
+    });
+    const toast = page.getByTestId('workflow-toast');
+    await expect(toast).toBeVisible();
+    const fullscreenZ = await fullscreen.evaluate(element => Number.parseInt(getComputedStyle(element).zIndex || '0', 10));
+    const toastZ = await toast.evaluate(element => Number.parseInt(getComputedStyle(element).zIndex || '0', 10));
+    expect(fullscreenZ).toBeGreaterThan(toastZ);
+    await expectTopLayerAtCenter(page, fullscreen, toast, 'fullscreen');
   });
 
   test('AC-007 Markdown and Diagram nodes open fullscreen editors backed by rich components', async ({ page }) => {
@@ -931,7 +1175,7 @@ test.describe('WF UI M3 RED trusted component nodes acceptance', () => {
 
   test('AC-006 component nodes are ReactFlow nodes, connect to agent nodes, and use backend snapshot as source of truth', async ({ page }) => {
     const markdownState = defaultComponentState('markdown', markdownNodeId);
-    const network = await installWorkflowFixture(page, { initialComponents: [markdownState] });
+    const network = await installWorkflowFixture(page, { initialComponents: [markdownState], includeInitialEdges: false });
     await openWorkflow(page);
 
     const componentNode = page.locator(`[data-testid="workflow-component-node"][data-node-id="${markdownNodeId}"]`);
@@ -939,17 +1183,38 @@ test.describe('WF UI M3 RED trusted component nodes acceptance', () => {
     await expect(componentNode).toBeVisible();
     await expect(componentNode).toHaveAttribute('data-react-flow-node', 'true');
     await expect(componentNode).toHaveAttribute('data-source-of-truth', 'backend');
-    await expect(componentNode.locator('[data-testid="workflow-component-node-output"][data-output-id="content"]')).toBeVisible();
-    await expect(componentNode.locator('[data-testid="workflow-component-node-input"][data-input-id="selection"]')).toBeVisible();
-    await expect(page.locator(`[data-testid="workflow-edge"][data-source="${markdownNodeId}"][data-target="${graphNodeId}"]`)).toBeVisible();
+    await expect(componentNode.locator('[data-testid="workflow-component-node-output"][data-output-id="markdown"]')).toBeVisible();
+    await expect(componentNode.locator('[data-testid="workflow-component-node-input"][data-input-id="markdown"]')).toBeVisible();
+    await expect(page.locator(`[data-testid="workflow-edge"][data-source="${markdownNodeId}"][data-target="${graphNodeId}"]`)).toHaveCount(0);
 
-    const sourceHandle = componentNode.locator('[data-testid="workflow-component-node-output"][data-output-id="content"]');
+    const sourceHandle = componentNode.locator('[data-testid="workflow-component-node-output"][data-output-id="markdown"]');
     const targetHandle = agentNode.locator('[data-testid="workflow-agent-node-context-input"]').first();
-    await sourceHandle.dragTo(targetHandle);
+    await expect(sourceHandle).toBeVisible();
+    await expect(targetHandle).toBeVisible();
+    const intentResult = await page.evaluate(async ({ sourceNodeId, targetNodeId }) => {
+      return (window as any).__WF_BROWSER_DEBUG__?.runPrimitive('act.intent', {
+        intent: 'graph.connectNodes',
+        sourceNodeId,
+        targetNodeId,
+        sourceHandle: 'markdown',
+        targetHandle: 'context',
+      });
+    }, { sourceNodeId: markdownNodeId, targetNodeId: graphNodeId });
+    expect(intentResult).toEqual(expect.objectContaining({
+      status: 'ok',
+      result: expect.objectContaining({ settled: true }),
+    }));
     await expect.poll(() => network.graphMapRequests.some(request => (
-      JSON.stringify(request.payload).includes(markdownNodeId)
+      request.method === 'POST'
+      && JSON.stringify(request.payload).includes(markdownNodeId)
       && JSON.stringify(request.payload).includes(graphNodeId)
     ))).toBe(true);
+    const createdEdge = page.locator(`[data-testid="workflow-edge"][data-source="${markdownNodeId}"][data-target="${graphNodeId}"]`);
+    await expect(createdEdge).toBeVisible();
+    await expect(page.getByTestId('workflow-bridge-label').filter({ hasText: 'markdown <-> context' })).toBeVisible();
+    const createdEdgePath = createdEdge.locator('.react-flow__edge-path').first();
+    await expect(createdEdgePath).toHaveAttribute('marker-start', /url/);
+    await expect(createdEdgePath).toHaveAttribute('marker-end', /url/);
   });
 
   test('AC-006 stale revision or network failure shows a clear error without losing local Markdown text', async ({ page }) => {
@@ -984,14 +1249,14 @@ test.describe('WF UI M3 RED trusted component nodes acceptance', () => {
     await expect(page.getByTestId('workflow-node-settings')).toBeVisible();
 
     const surfaces = [
-      page.getByTestId('workflow-explorer-shell'),
-      page.getByTestId('workflow-create-node'),
-      page.getByTestId('workflow-markdown-node-editor'),
-      page.getByTestId('workflow-excalidraw-node'),
-      page.getByTestId('workflow-node-settings'),
+      ['explorer', page.getByTestId('workflow-explorer-shell')],
+      ['create-node', page.getByTestId('workflow-create-node')],
+      ['markdown-editor', page.getByTestId('workflow-markdown-node-editor')],
+      ['excalidraw-node', page.getByTestId('workflow-excalidraw-node')],
+      ['node-settings', page.getByTestId('workflow-node-settings')],
     ];
-    for (const surface of surfaces) {
-      await expectInViewport(page, surface);
+    for (const [label, surface] of surfaces) {
+      await expectInViewport(page, surface as Locator, String(label));
     }
     await expect(page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).resolves.toBe(true);
 

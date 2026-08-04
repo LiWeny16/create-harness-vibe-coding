@@ -1,4 +1,4 @@
-import { expect, test, type Page, type Request, type Route } from '@playwright/test';
+import { expect, test, type Locator, type Page, type Request, type Route } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -35,6 +35,8 @@ type ComponentState = {
 
 type PerfNetwork = {
   graphMapRequests: JsonRecord[];
+  graphMapPutsBeforePointerUp: JsonRecord[];
+  edgeGesturePhase: 'idle' | 'dragging';
   failedResponses: string[];
   requestFailures: string[];
   pageErrors: string[];
@@ -46,6 +48,10 @@ function jsonResponse(route: Route, body: unknown, status = 200) {
     contentType: 'application/json',
     body: JSON.stringify(body),
   });
+}
+
+function cloneJson<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T;
 }
 
 function control() {
@@ -61,6 +67,22 @@ function control() {
     canCreateAgent: true,
     canCreateComponentNode: true,
   };
+}
+
+function observableInputsForType(type: ComponentType) {
+  if (type === 'markdown') return ['markdown'];
+  if (type === 'file') return ['file'];
+  return ['scene'];
+}
+
+function observableOutputsForType(type: ComponentType) {
+  if (type === 'markdown') return ['markdown', 'plainText'];
+  if (type === 'file') return ['file', 'path'];
+  return ['scene', 'image'];
+}
+
+function primaryOutputForType(type: ComponentType) {
+  return observableOutputsForType(type)[0];
 }
 
 function componentState(type: ComponentType, index: number): ComponentState {
@@ -90,9 +112,9 @@ function componentState(type: ComponentType, index: number): ComponentState {
     file: type === 'file'
       ? { source: 'workspace', path: 'package.json', name: 'package.json', mime: 'application/json', size: 820 }
       : undefined,
-    observableInputs: type === 'file' ? ['file'] : ['selection', 'linked-agent-context'],
-    observableOutputs: type === 'file' ? ['file', 'path'] : ['content', 'revision', 'summary'],
-    statePath: `Harness/a2a/component-nodes/${nodeId}.json`,
+    observableInputs: observableInputsForType(type),
+    observableOutputs: observableOutputsForType(type),
+    statePath: `Harness/a2a/component-nodes/${nodeId}/state.json`,
   };
 }
 
@@ -133,7 +155,7 @@ function buildEdges(components: ComponentState[]) {
       id: `perf-edge-${index}`,
       source: source.nodeId,
       target: graphNodeId,
-      sourceHandle: source.type === 'file' ? 'path' : 'content',
+      sourceHandle: primaryOutputForType(source.type),
       targetHandle: 'context',
       label: 'resource -> context',
     };
@@ -144,6 +166,13 @@ function workflowSnapshot() {
   const components = buildComponents();
   const componentNodes = components.map(componentNodeSnapshot);
   const edges = buildEdges(components);
+  const componentStateRefs = Object.fromEntries(components.map(state => [state.nodeId, {
+    type: state.type,
+    title: state.title,
+    statePath: state.statePath,
+    revision: state.revision,
+    ...(state.file ? { file: state.file } : {}),
+  }]));
   const agentPosition = { x: 620, y: 120 };
   const agentNode = {
     id: graphNodeId,
@@ -240,6 +269,7 @@ function workflowSnapshot() {
           position: node.position,
           statePath: node.statePath,
           revision: node.revision,
+          stateRef: { path: node.statePath, revision: node.revision },
         })),
       ],
       edges,
@@ -252,6 +282,7 @@ function workflowSnapshot() {
       graphContextPath: 'Harness/a2a/workflow-map.json',
       componentStatePath: 'Harness/a2a/component-nodes',
       sourceOfTruth: 'backend',
+      componentStateRefs,
     },
     componentNodes: Object.fromEntries(components.map(state => [state.nodeId, state])),
     graphContextBySessionId: {
@@ -259,6 +290,7 @@ function workflowSnapshot() {
         workflowMapPath: 'Harness/a2a/workflow-map.json',
         componentStatePath: 'Harness/a2a/component-nodes',
         sourceOfTruth: 'backend',
+        componentStateRefs,
       },
     },
   };
@@ -275,11 +307,14 @@ function requestJson(request: Request) {
 async function installPerformanceFixture(page: Page): Promise<PerfNetwork> {
   const network: PerfNetwork = {
     graphMapRequests: [],
+    graphMapPutsBeforePointerUp: [],
+    edgeGesturePhase: 'idle',
     failedResponses: [],
     requestFailures: [],
     pageErrors: [],
   };
   const snapshot = workflowSnapshot();
+  let committedGraph = cloneJson(snapshot.graph) as JsonRecord;
 
   page.on('pageerror', error => network.pageErrors.push(error.message));
   page.on('requestfailed', request => {
@@ -316,14 +351,34 @@ async function installPerformanceFixture(page: Page): Promise<PerfNetwork> {
   }]));
   await page.route('**/api/a2a/snapshot**', route => jsonResponse(route, snapshot));
   await page.route('**/api/a2a/graph-map**', route => {
-    network.graphMapRequests.push({
+    const record = {
       method: route.request().method(),
       payload: requestJson(route.request()),
-    });
+    };
+    network.graphMapRequests.push(record);
+    if (record.method === 'PUT' && network.edgeGesturePhase === 'dragging') {
+      network.graphMapPutsBeforePointerUp.push(record);
+    }
+    if (record.method === 'PUT') {
+      committedGraph = {
+        ...committedGraph,
+        ...cloneJson(record.payload),
+        version: Number(record.payload.version || committedGraph.version || 1),
+        nodes: Array.isArray(record.payload.nodes) ? cloneJson(record.payload.nodes) : committedGraph.nodes,
+        edges: Array.isArray(record.payload.edges) ? cloneJson(record.payload.edges) : committedGraph.edges,
+        positions: record.payload.positions && typeof record.payload.positions === 'object'
+          ? cloneJson(record.payload.positions)
+          : committedGraph.positions,
+        graphContextPath: committedGraph.graphContextPath || 'Harness/a2a/workflow-map.json',
+        sourceOfTruth: record.payload.sourceOfTruth || committedGraph.sourceOfTruth || 'backend',
+        undoStack: [],
+        redoStack: [],
+      };
+    }
     return jsonResponse(route, {
       ok: true,
-      revision: network.graphMapRequests.length + 2,
-      graph: snapshot.graph,
+      revision: Number(committedGraph.version || network.graphMapRequests.length + 2),
+      graph: cloneJson(committedGraph),
       sourceOfTruth: 'backend',
     });
   });
@@ -432,6 +487,56 @@ async function componentNodeWithViewportExpand(page: Page, innerTestId: string) 
   throw new Error(`No in-viewport component expand button found for ${innerTestId}`);
 }
 
+async function actionableBridgeLabel(page: Page): Promise<Locator> {
+  const labels = page.getByTestId('workflow-bridge-label');
+  const viewport = page.viewportSize();
+  expect(viewport).not.toBeNull();
+  const count = await labels.count();
+  for (let index = 0; index < count; index += 1) {
+    const label = labels.nth(index);
+    const box = await label.boundingBox();
+    if (!box) continue;
+    if (
+      box.x < 0
+      || box.y < 0
+      || box.x + box.width > viewport!.width
+      || box.y + box.height > viewport!.height
+    ) continue;
+    const actionable = await label.evaluate(element => {
+      const rect = element.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const topElement = document.elementFromPoint(centerX, centerY);
+      return topElement === element || Boolean(topElement && element.contains(topElement));
+    });
+    if (actionable) return label;
+  }
+  throw new Error('No actionable bridge label found in the viewport');
+}
+
+async function workflowPanePoint(page: Page) {
+  const point = await page.evaluate(() => {
+    const pane = document.querySelector<HTMLElement>('.react-flow__pane');
+    const rect = pane?.getBoundingClientRect();
+    if (!pane || !rect) return null;
+    const candidates = [
+      { x: 0.82, y: 0.22 },
+      { x: 0.78, y: 0.72 },
+      { x: 0.58, y: 0.86 },
+      { x: 0.92, y: 0.48 },
+    ];
+    for (const candidate of candidates) {
+      const x = rect.left + rect.width * candidate.x;
+      const y = rect.top + rect.height * candidate.y;
+      const element = document.elementFromPoint(x, y);
+      if (element === pane || element?.classList.contains('react-flow__pane')) return { x, y };
+    }
+    return { x: rect.left + rect.width * 0.82, y: rect.top + rect.height * 0.48 };
+  });
+  expect(point).not.toBeNull();
+  return point!;
+}
+
 test.describe('WF UI M5 RED workflow performance smoke', () => {
   test('AC-012 seeded workflow graph is ready under 3s with no >250ms long task on key menus/editors', async ({ page }) => {
     test.setTimeout(120_000);
@@ -459,6 +564,34 @@ test.describe('WF UI M5 RED workflow performance smoke', () => {
     let end = await performanceNow(page);
     await expectNoLongTaskAbove(page, start, end, 'create node menu open');
     await page.keyboard.press('Escape');
+
+    const bridgeLabel = await actionableBridgeLabel(page);
+    const bridgeBox = await bridgeLabel.boundingBox();
+    expect(bridgeBox).not.toBeNull();
+    start = await performanceNow(page);
+    network.edgeGesturePhase = 'dragging';
+    await page.mouse.move(bridgeBox!.x + bridgeBox!.width / 2, bridgeBox!.y + bridgeBox!.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(bridgeBox!.x + bridgeBox!.width / 2, bridgeBox!.y + bridgeBox!.height / 2 + 36, { steps: 4 });
+    await page.waitForTimeout(80);
+    expect(network.graphMapPutsBeforePointerUp).toEqual([]);
+    network.edgeGesturePhase = 'idle';
+    await page.mouse.up();
+    await expect.poll(() => network.graphMapRequests.some(request => request.method === 'PUT')).toBe(true);
+    await page.waitForTimeout(120);
+    end = await performanceNow(page);
+    await expectNoLongTaskAbove(page, start, end, 'seeded edge label drag');
+
+    const panePoint = await workflowPanePoint(page);
+    start = await performanceNow(page);
+    await page.mouse.move(panePoint.x, panePoint.y);
+    await page.mouse.wheel(0, -320);
+    await page.mouse.down();
+    await page.mouse.move(panePoint.x + 96, panePoint.y + 40, { steps: 6 });
+    await page.mouse.up();
+    await page.waitForTimeout(120);
+    end = await performanceNow(page);
+    await expectNoLongTaskAbove(page, start, end, 'seeded zoom and pan');
 
     const markdownNode = await componentNodeWithViewportExpand(page, 'workflow-markdown-node-editor');
     await expect(markdownNode).toBeVisible();

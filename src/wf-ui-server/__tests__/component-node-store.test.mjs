@@ -303,6 +303,33 @@ test('AC-006 listComponentNodes returns snapshot-ready refs without inlining fro
   }
 });
 
+test('AC-006 componentNodeStates rejects corrupt persisted state instead of hydrating defaults', async () => {
+  const projectRoot = makeProject();
+  try {
+    const { componentNodeStates, createComponentNode } = await loadComponentNodeStore();
+    const created = createComponentNode(projectRoot, {
+      type: 'excalidraw',
+      title: 'Corrupt Scene Guard',
+      position: { x: 10, y: 10 },
+      scene: { elements: [], appState: {}, files: {} },
+    });
+    fs.writeFileSync(path.join(projectRoot, created.node.statePath), `${JSON.stringify({
+      type: 'excalidraw',
+      revision: created.node.revision,
+      inputs: created.state.inputs,
+      outputs: created.state.outputs,
+    }, null, 2)}\n`, 'utf8');
+
+    assert.throws(
+      () => componentNodeStates(projectRoot),
+      /scene is missing|out of sync|STATE_MISMATCH/i,
+      'snapshot hydration must not silently replace corrupt persisted state with an empty scene',
+    );
+  } finally {
+    fs.rmSync(projectRoot, { recursive: true, force: true });
+  }
+});
+
 test('AC-006 component node store rejects invalid types, traversal ids, and escaped mutable state paths', async () => {
   const projectRoot = makeProject();
   try {

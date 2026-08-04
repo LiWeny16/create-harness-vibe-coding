@@ -88,6 +88,16 @@ import WorkspaceExplorerPanel from './WorkspaceExplorerPanel';
 import WorkflowNodeSettingsPanel from './WorkflowNodeSettingsPanel';
 import WorkflowComponentNode from './WorkflowComponentNode';
 import type { WorkflowComponentFlowNode } from './WorkflowComponentNode';
+import { getNodeRenderer } from './workflow/nodeRegistry';
+import {
+  createEdge as createRuntimeEdge,
+  createNodeResponse as createRuntimeNode,
+  deleteEdge as deleteRuntimeEdge,
+  executeNodeActionResponse as executeRuntimeNodeAction,
+  fetchNode as fetchRuntimeNode,
+  patchNodeStateResponse as patchRuntimeNodeState,
+  type WorkflowRuntimeNode,
+} from './workflow/nodeRuntimeClient';
 
 type Props = { onSelectSession: (sessionId: string) => void };
 
@@ -109,6 +119,7 @@ type WorkflowGraphEdge = {
   source: string;
   target: string;
   label?: string;
+  relation?: string;
   sourceHandle?: string | null;
   targetHandle?: string | null;
   offset?: number;
@@ -187,6 +198,11 @@ type BridgeEdgeData = Record<string, unknown> & {
   onEdgeOffsetChange?: (edgeId: string, offset: number, commit?: boolean) => void;
 };
 type FlowEdge = Edge<BridgeEdgeData, 'wfBridge'>;
+type ComponentHeaderDragEvent = {
+  target: EventTarget | null;
+  clientX: number;
+  clientY: number;
+};
 
 type CanvasMenu = { x: number; y: number; flowX: number; flowY: number };
 type NodeMenu = CanvasMenu & { nodeId: string };
@@ -458,6 +474,13 @@ function normalizePosition(value: unknown): GraphPosition | null {
   return { x, y };
 }
 
+function normalizeWorkflowEdgeHandle(node: WorkflowNode | undefined, role: 'source' | 'target', value: unknown) {
+  const handle = String(value || '').trim();
+  if (!handle) return null;
+  if (role === 'target' && handle === 'left' && node && !isComponentNode(node)) return 'context';
+  return handle;
+}
+
 function graphStateFromWorkflow(workflow: WorkflowSnapshot | null, translate: (key: string) => string): WorkflowGraphState {
   const graph = workflow?.graph;
   if (!graph) return emptyGraphState();
@@ -471,9 +494,11 @@ function graphStateFromWorkflow(workflow: WorkflowSnapshot | null, translate: (k
     if (node.nodeId && point && !positions[node.nodeId]) positions[node.nodeId] = point;
   }
   const graphIdToCanvasId = new Map<string, string>();
+  const nodeByCanvasId = new Map<string, WorkflowNode>();
   for (const node of workflow?.nodes || []) {
     graphIdToCanvasId.set(node.id, node.id);
     if (node.graphNodeId) graphIdToCanvasId.set(node.graphNodeId, node.id);
+    nodeByCanvasId.set(node.id, node);
   }
   return normalizeGraphState({
     schemaVersion: graphSchemaVersion,
@@ -489,8 +514,9 @@ function graphStateFromWorkflow(workflow: WorkflowSnapshot | null, translate: (k
         source,
         target,
         label: bridgeRelationLabel(edge.relation, translate),
-        sourceHandle: edge.sourceHandle || null,
-        targetHandle: edge.targetHandle || null,
+        relation: edge.relation || 'wf-bridge',
+        sourceHandle: normalizeWorkflowEdgeHandle(nodeByCanvasId.get(source), 'source', edge.sourceHandle),
+        targetHandle: normalizeWorkflowEdgeHandle(nodeByCanvasId.get(target), 'target', edge.targetHandle),
         offset: Number.isFinite(Number(edge.offset)) ? Number(edge.offset) : undefined,
       };
     }).filter(edge => edge.source && edge.target),
@@ -574,6 +600,18 @@ function isComponentNode(node: WorkflowNode | null | undefined) {
   return Boolean(node && (node.kind === 'component-node' || componentTypeFromNode(node)));
 }
 
+function defaultObservableInputs(type: WorkflowComponentType) {
+  if (type === 'markdown') return ['markdown'];
+  if (type === 'file') return ['file'];
+  return ['scene'];
+}
+
+function defaultObservableOutputs(type: WorkflowComponentType) {
+  if (type === 'markdown') return ['markdown', 'plainText'];
+  if (type === 'file') return ['file', 'path'];
+  return ['scene', 'image'];
+}
+
 function defaultComponentState(type: WorkflowComponentType, nodeId: string, title: string): WorkflowComponentNodeState {
   const file = type === 'file'
     ? { source: 'workspace', path: '', name: '', mime: '', size: 0 }
@@ -588,9 +626,9 @@ function defaultComponentState(type: WorkflowComponentType, nodeId: string, titl
       ? { elements: [], appState: { viewBackgroundColor: '#ffffff' }, files: {} }
       : undefined,
     file,
-    observableInputs: type === 'file' ? ['file'] : ['selection'],
-    observableOutputs: type === 'file' ? ['file', 'path'] : ['content'],
-    statePath: `Harness/a2a/component-nodes/${nodeId}.json`,
+    observableInputs: defaultObservableInputs(type),
+    observableOutputs: defaultObservableOutputs(type),
+    statePath: `Harness/a2a/component-nodes/${nodeId}/state.json`,
   };
 }
 
@@ -645,6 +683,114 @@ function componentNodeFromState(state: WorkflowComponentNodeState): WorkflowNode
     observableInputs: state.observableInputs,
     observableOutputs: state.observableOutputs,
     graphNodeId: state.nodeId,
+  };
+}
+
+function runtimeHandleIds(
+  runtimeNode: WorkflowRuntimeNode | null | undefined,
+  role: 'input' | 'output',
+  fallback: string[],
+) {
+  const ids = (runtimeNode?.graph?.handles || [])
+    .filter(handle => handle.role === role)
+    .map(handle => String(handle.id || '').trim())
+    .filter(Boolean);
+  return ids.length > 0 ? ids : fallback;
+}
+
+function componentStateFromRuntime(
+  type: WorkflowComponentType,
+  runtimeNode: WorkflowRuntimeNode,
+  statePayload: Record<string, unknown> | null | undefined,
+  fallbackTitle: string,
+  previous?: WorkflowComponentNodeState,
+): WorkflowComponentNodeState {
+  const nodeId = runtimeNode.nodeId;
+  const raw = statePayload && typeof statePayload === 'object' ? statePayload as Record<string, any> : {};
+  const defaultState = defaultComponentState(type, nodeId, fallbackTitle);
+  const title = String(
+    raw.title
+      || runtimeNode.ui?.labels?.title
+      || previous?.title
+      || fallbackTitle
+      || nodeId,
+  );
+  const revision = Number(raw.revision || runtimeNode.stateRef?.revision || runtimeNode.version || previous?.revision || defaultState.revision);
+  return {
+    ...defaultState,
+    ...(previous || {}),
+    ...raw,
+    nodeId,
+    type,
+    title,
+    revision,
+    statePath: String(runtimeNode.stateRef?.path || raw.statePath || previous?.statePath || defaultState.statePath),
+    markdown: raw.markdown !== undefined ? String(raw.markdown) : previous?.markdown ?? defaultState.markdown,
+    scene: raw.scene !== undefined ? raw.scene : previous?.scene ?? defaultState.scene,
+    file: raw.file !== undefined ? raw.file : previous?.file ?? defaultState.file,
+    observableInputs: Array.isArray(raw.observableInputs)
+      ? raw.observableInputs
+      : Array.isArray(raw.inputs)
+        ? raw.inputs.map((item: any) => String(item?.id || '')).filter(Boolean)
+        : runtimeHandleIds(runtimeNode, 'input', previous?.observableInputs || defaultState.observableInputs || []),
+    observableOutputs: Array.isArray(raw.observableOutputs)
+      ? raw.observableOutputs
+      : Array.isArray(raw.outputs)
+        ? raw.outputs.map((item: any) => String(item?.id || '')).filter(Boolean)
+        : runtimeHandleIds(runtimeNode, 'output', previous?.observableOutputs || defaultState.observableOutputs || []),
+  };
+}
+
+function componentWorkflowNodeFromRuntime(runtimeNode: WorkflowRuntimeNode, state: WorkflowComponentNodeState): WorkflowNode {
+  return {
+    ...componentNodeFromState(state),
+    id: runtimeNode.nodeId,
+    label: state.title || runtimeNode.ui?.labels?.title || runtimeNode.nodeId,
+    level: 0,
+    status: runtimeNode.status?.state || 'ready',
+    lifecycle: runtimeNode.lifecycle,
+    runtimeState: runtimeNode.status?.state || runtimeNode.lifecycle,
+    managedByCurrentServer: true,
+    control: {
+      canReadGraph: true,
+      canModifyGraph: true,
+      canDelete: true,
+      canCreateComponentNode: true,
+    },
+    revision: state.revision,
+    statePath: state.statePath,
+    observableInputs: state.observableInputs,
+    observableOutputs: state.observableOutputs,
+  };
+}
+
+function runtimeNodeFromCanvasNode(node: CanvasNode, state?: WorkflowComponentNodeState): WorkflowRuntimeNode | null {
+  const type = componentTypeFromNode(node);
+  const nodeState = state || node.componentState;
+  if (!type || !nodeState) return null;
+  return {
+    nodeId: node.graphNodeId || node.id,
+    kind: type,
+    version: Number(nodeState.revision || node.revision || 1),
+    lifecycle: node.lifecycle || 'ready',
+    status: { state: node.status || node.runtimeState || 'ready', updatedAt: new Date().toISOString() },
+    graph: {
+      position: { x: node.x, y: node.y },
+      handles: [
+        ...(nodeState.observableInputs || []).map(id => ({ id, role: 'input' as const, type: id, label: id })),
+        ...(nodeState.observableOutputs || []).map(id => ({ id, role: 'output' as const, type: id, label: id })),
+      ],
+      connections: [],
+    },
+    stateRef: { path: nodeState.statePath || `Harness/a2a/component-nodes/${nodeState.nodeId}/state.json`, revision: Number(nodeState.revision || 1) },
+    settings: { schemaId: `${type}-settings`, values: {}, revision: 0 },
+    capabilities: [],
+    ui: {
+      previewKind: type,
+      settingsPanel: `${type}-settings`,
+      testId: `workflow-${type}-node`,
+      labels: { title: nodeState.title || node.label || type },
+    },
   };
 }
 
@@ -793,6 +939,7 @@ function sameGraphEdges(left: WorkflowGraphEdge[], right: WorkflowGraphEdge[]) {
     if (a.id !== b.id) return false;
     if (a.source !== b.source || a.target !== b.target) return false;
     if ((a.label || '') !== (b.label || '')) return false;
+    if ((a.relation || '') !== (b.relation || '')) return false;
     if ((a.sourceHandle || '') !== (b.sourceHandle || '')) return false;
     if ((a.targetHandle || '') !== (b.targetHandle || '')) return false;
     if (numericEdgeOffset(a.offset) !== numericEdgeOffset(b.offset)) return false;
@@ -810,16 +957,48 @@ function graphCommitSignature(state: WorkflowGraphState) {
   });
 }
 
+function safeFlowEdgeId(value: unknown, fallback: string) {
+  const raw = String(value || '').trim();
+  if (!raw) return fallback;
+  const safe = raw.replace(/[^A-Za-z0-9_.:-]+/g, '-').replace(/^-+|-+$/g, '');
+  return safe || fallback;
+}
+
+function waitForUiFrames(frameCount = 2) {
+  return new Promise<void>((resolve) => {
+    if (typeof window === 'undefined' || typeof window.requestAnimationFrame !== 'function') {
+      resolve();
+      return;
+    }
+    let remaining = Math.max(1, Math.floor(frameCount));
+    const step = () => {
+      remaining -= 1;
+      if (remaining <= 0) {
+        resolve();
+        return;
+      }
+      window.requestAnimationFrame(step);
+    };
+    window.requestAnimationFrame(step);
+  });
+}
+
 function storedEdgesToFlowEdges(edges: WorkflowGraphEdge[], translate: (key: string) => string): FlowEdge[] {
-  return edges.map(edge => ({
-    id: edge.id,
+  return edges.map((edge, index) => ({
+    id: safeFlowEdgeId(edge.id, `edge-${edge.source}-${edge.target}-${index}`),
     source: edge.source,
     target: edge.target,
-    sourceHandle: edge.sourceHandle || undefined,
-    targetHandle: edge.targetHandle || undefined,
+    sourceHandle: edge.sourceHandle || null,
+    targetHandle: edge.targetHandle || null,
     type: 'wfBridge',
     label: bridgeRelationLabel(edge.label, translate),
-    data: { offset: numericEdgeOffset(edge.offset) },
+    data: {
+      runtimeEdgeId: edge.id,
+      relation: edge.relation || bridgeRelationLabel(edge.label, translate),
+      sourceHandle: edge.sourceHandle || undefined,
+      targetHandle: edge.targetHandle || undefined,
+      offset: numericEdgeOffset(edge.offset),
+    },
   }));
 }
 
@@ -952,6 +1131,7 @@ function toFlowEdges(edges: WorkflowEdge[], activeRouteEdgeIds: Set<string>, t: 
         offset: numericEdgeOffset(edge.offset),
       },
       animated: active,
+      markerStart: { type: MarkerType.ArrowClosed, color: active ? WORKFLOW_GREEN : '#9ca3af' },
       markerEnd: { type: MarkerType.ArrowClosed, color: active ? WORKFLOW_GREEN : '#9ca3af' },
       style: edgeStyle(active),
       labelStyle: { fill: active ? WORKFLOW_GREEN_DARK : '#6b7280', fontSize: 10, fontWeight: 600 },
@@ -992,6 +1172,7 @@ function styleManualEdge(
       ...callbacks,
     },
     animated: selected,
+    markerStart: { type: MarkerType.ArrowClosed, color: selected ? WORKFLOW_GREEN : WORKFLOW_GREEN_DARK },
     markerEnd: { type: MarkerType.ArrowClosed, color: selected ? WORKFLOW_GREEN : WORKFLOW_GREEN_DARK },
     style: edgeStyle(selected, true),
     labelStyle: { fill: WORKFLOW_GREEN_DARK, fontSize: 10, fontWeight: 700 },
@@ -1201,6 +1382,7 @@ function WorkflowRouteInner({ onSelectSession }: Props) {
   const [bridgePanel, setBridgePanel] = useState<BridgePanelState>(null);
   const [bridgeMessages, setBridgeMessages] = useState<BridgeMessage[]>([]);
   const [bridgeLoading, setBridgeLoading] = useState(false);
+  const [statusToast, setStatusToast] = useState('');
   const [nodeModes, setNodeModes] = useState<Record<string, NodeMode>>({});
   const [graphState, setGraphState] = useState<WorkflowGraphState>(() => emptyGraphState());
   const [graphLoaded, setGraphLoaded] = useState(false);
@@ -1210,8 +1392,10 @@ function WorkflowRouteInner({ onSelectSession }: Props) {
   const [terminalInputOwner, setTerminalInputOwner] = useState<TerminalInputOwnerState>(null);
   const [nodeConfigOverrides, setNodeConfigOverrides] = useState<Record<string, NodeConfigOverride>>({});
   const [componentNodeOverrides, setComponentNodeOverrides] = useState<Record<string, ComponentNodeOverride>>({});
+  const [selectedRuntimeNode, setSelectedRuntimeNode] = useState<WorkflowRuntimeNode | null>(null);
   const [nodes, setNodes, onNodesChange] = useNodesState<FlowNode>([]);
   const [flowReady, setFlowReady] = useState(false);
+  const [flowSettled, setFlowSettled] = useState(false);
   const flowWrapperRef = useRef<HTMLDivElement>(null);
   const flowRef = useRef<ReactFlowInstance<FlowNode, FlowEdge> | null>(null);
   const fittedOnce = useRef(false);
@@ -1227,7 +1411,9 @@ function WorkflowRouteInner({ onSelectSession }: Props) {
   const graphStateRef = useRef<WorkflowGraphState>(graphState);
   const manualEdgesRef = useRef<FlowEdge[]>(manualEdges);
   const graphBaseVersionRef = useRef<number | null>(null);
+  const translateRef = useRef(t);
   const reloadRef = useRef(reload);
+  translateRef.current = t;
   reloadRef.current = reload;
 
   const componentStateById = useMemo(() => collectComponentStates(workflow, componentNodeOverrides), [componentNodeOverrides, workflow]);
@@ -1247,6 +1433,10 @@ function WorkflowRouteInner({ onSelectSession }: Props) {
     || nodes.find(node => selectedNodeIds.has(node.id))?.data.workflowNode
     || canvasNodes[0]
     || null;
+  const selectedComponentType = componentTypeFromNode(selectedNode);
+  const selectedRuntimeRenderer = selectedRuntimeNode ? getNodeRenderer(selectedRuntimeNode.kind) : undefined;
+  const SelectedRuntimeSettings = selectedRuntimeRenderer?.SettingsComponent;
+  const selectedNodeComponentState = (selectedNode as CanvasNode | null)?.componentState;
   const deletableSelectedNodeIds = useMemo(() => [...selectedNodeIds].filter(nodeId => {
     const node = canvasNodeById.get(nodeId);
     return Boolean(node && canDeleteNode(node));
@@ -1262,23 +1452,67 @@ function WorkflowRouteInner({ onSelectSession }: Props) {
       title: node.label || node.id,
     })), [canvasNodes]);
 
-  const updateGraph = useCallback((patch: Partial<Pick<WorkflowGraphState, 'positions' | 'edges'>>) => {
+  useEffect(() => {
+    if (!showConfig || !selectedNode) {
+      setSelectedRuntimeNode(null);
+      return;
+    }
+    const graphId = selectedNode.graphNodeId || selectedNode.id;
+    const fallback = isComponentNode(selectedNode)
+      ? runtimeNodeFromCanvasNode(selectedNode as CanvasNode, componentStateById.get(selectedNode.id) || selectedNodeComponentState)
+      : null;
+    let cancelled = false;
+    fetchRuntimeNode(graphId)
+      .then(node => {
+        if (!cancelled) setSelectedRuntimeNode(node);
+      })
+      .catch(() => {
+        if (!cancelled) setSelectedRuntimeNode(fallback);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    componentStateById,
+    selectedNode?.graphNodeId,
+    selectedNode?.id,
+    selectedNode?.revision,
+    selectedNodeComponentState?.revision,
+    showConfig,
+  ]);
+
+  const updateGraph = useCallback((
+    patch: Partial<Pick<WorkflowGraphState, 'positions' | 'edges'>>,
+    options: { forceCommit?: boolean } = {},
+  ) => {
     const current = graphStateRef.current;
     const positions = patch.positions || current.positions;
     const edges = patch.edges || current.edges;
-    if (sameGraphPositions(current.positions, positions) && sameGraphEdges(current.edges, edges)) return;
+    const unchanged = sameGraphPositions(current.positions, positions) && sameGraphEdges(current.edges, edges);
+    if (unchanged && !options.forceCommit) return;
     const next = normalizeGraphState({
       ...current,
       positions,
       edges,
       version: current.version + 1,
-      undoStack: [...current.undoStack, { positions: current.positions, edges: current.edges }].slice(-40),
-      redoStack: [],
+      undoStack: unchanged ? current.undoStack : [...current.undoStack, { positions: current.positions, edges: current.edges }].slice(-40),
+      redoStack: unchanged ? current.redoStack : [],
     });
     graphStateRef.current = next;
     graphCommitPendingRef.current = true;
     setGraphState(next);
-  }, []);
+    if (patch.edges) {
+      const nextManualEdges = storedEdgesToFlowEdges(next.edges, t);
+      manualEdgesRef.current = nextManualEdges;
+      setManualEdges(nextManualEdges);
+      setSelectedEdgeIds(current => {
+        if (current.size === 0) return current;
+        const visibleEdgeIds = new Set(nextManualEdges.map(edge => edge.id));
+        const selected = new Set([...current].filter(edgeId => visibleEdgeIds.has(edgeId)));
+        return selected.size === current.size ? current : selected;
+      });
+    }
+  }, [t]);
 
   const markGraphConnectionGesture = useCallback((
     event: ReactPointerEvent<HTMLDivElement> | ReactMouseEvent<HTMLDivElement> | ReactDragEvent<HTMLDivElement>,
@@ -1295,6 +1529,69 @@ function WorkflowRouteInner({ onSelectSession }: Props) {
   const finishGraphConnectionGesture = useCallback(() => {
     if (!graphConnectionGestureActiveRef.current) return;
     graphConnectionGestureActiveRef.current = false;
+  }, []);
+
+  const componentHeaderDragRef = useRef<{
+    nodeId: string;
+    startX: number;
+    startY: number;
+    startPosition: GraphPosition | null;
+    zoom: number;
+  } | null>(null);
+
+  const beginComponentHeaderDrag = useCallback((event: ComponentHeaderDragEvent) => {
+    const target = event.target instanceof Element ? event.target : null;
+    if (!target?.closest('.workflow-component-node-header')) return;
+    const nodeElement = target.closest<HTMLElement>('[data-testid="workflow-component-node"]');
+    const nodeId = nodeElement?.getAttribute('data-node-id') || '';
+    if (!nodeId) return;
+    const position = flowRef.current?.getNode(nodeId)?.position || graphStateRef.current.positions[nodeId] || null;
+    const viewport = flowRef.current?.getViewport();
+    const zoom = Math.max(0.05, Number.isFinite(viewport?.zoom) ? Number(viewport?.zoom) : 1);
+    componentHeaderDragRef.current = {
+      nodeId,
+      startX: event.clientX,
+      startY: event.clientY,
+      startPosition: position ? { x: position.x, y: position.y } : null,
+      zoom,
+    };
+  }, []);
+
+  const finishComponentHeaderDragFromPoint = useCallback((clientX: number, clientY: number) => {
+    const drag = componentHeaderDragRef.current;
+    componentHeaderDragRef.current = null;
+    if (!drag) return;
+    const moved = Math.hypot(clientX - drag.startX, clientY - drag.startY);
+    if (moved < BRIDGE_LABEL_DRAG_THRESHOLD) return;
+    window.setTimeout(() => {
+      const flowPosition = flowRef.current?.getNode(drag.nodeId)?.position || null;
+      const startPosition = drag.startPosition || graphStateRef.current.positions[drag.nodeId] || flowPosition;
+      if (!startPosition) return;
+      const reactFlowMoved = flowPosition
+        && (Math.abs(flowPosition.x - startPosition.x) > 0.1 || Math.abs(flowPosition.y - startPosition.y) > 0.1);
+      const position = reactFlowMoved ? flowPosition : {
+        x: Math.round((startPosition.x + ((clientX - drag.startX) / drag.zoom)) * 100) / 100,
+        y: Math.round((startPosition.y + ((clientY - drag.startY) / drag.zoom)) * 100) / 100,
+      };
+      if (!position) return;
+      setNodes(current => current.map(node => (
+        node.id === drag.nodeId ? { ...node, position: { x: position.x, y: position.y } } : node
+      )));
+      updateGraph({
+        positions: {
+          ...graphStateRef.current.positions,
+          [drag.nodeId]: { x: position.x, y: position.y },
+        },
+      }, { forceCommit: true });
+    }, 0);
+  }, [updateGraph]);
+
+  const finishComponentHeaderDrag = useCallback((event: ComponentHeaderDragEvent) => {
+    finishComponentHeaderDragFromPoint(event.clientX, event.clientY);
+  }, [finishComponentHeaderDragFromPoint]);
+
+  const cancelComponentHeaderDrag = useCallback(() => {
+    componentHeaderDragRef.current = null;
   }, []);
 
   const handleNodesChange = useCallback((changes: Parameters<typeof onNodesChange>[0]) => {
@@ -1323,25 +1620,43 @@ function WorkflowRouteInner({ onSelectSession }: Props) {
         graphConnectionGestureActiveRef.current = true;
       }
     };
+    const startHeaderDrag = (event: PointerEvent | MouseEvent) => {
+      beginComponentHeaderDrag(event);
+    };
     window.addEventListener('pointerdown', markConnectionGesture, true);
     window.addEventListener('mousedown', markConnectionGesture, true);
     window.addEventListener('dragstart', markConnectionGesture, true);
+    window.addEventListener('pointerdown', startHeaderDrag, true);
+    window.addEventListener('mousedown', startHeaderDrag, true);
     window.addEventListener('pointerup', finishGraphConnectionGesture, true);
     window.addEventListener('pointercancel', finishGraphConnectionGesture, true);
     window.addEventListener('mouseup', finishGraphConnectionGesture, true);
     window.addEventListener('dragend', finishGraphConnectionGesture, true);
     window.addEventListener('drop', finishGraphConnectionGesture, true);
+    const finishHeaderDrag = (event: PointerEvent | MouseEvent) => {
+      finishComponentHeaderDragFromPoint(event.clientX, event.clientY);
+    };
+    window.addEventListener('pointerup', finishHeaderDrag, true);
+    window.addEventListener('mouseup', finishHeaderDrag, true);
+    window.addEventListener('pointercancel', cancelComponentHeaderDrag, true);
+    window.addEventListener('blur', cancelComponentHeaderDrag, true);
     return () => {
       window.removeEventListener('pointerdown', markConnectionGesture, true);
       window.removeEventListener('mousedown', markConnectionGesture, true);
       window.removeEventListener('dragstart', markConnectionGesture, true);
+      window.removeEventListener('pointerdown', startHeaderDrag, true);
+      window.removeEventListener('mousedown', startHeaderDrag, true);
       window.removeEventListener('pointerup', finishGraphConnectionGesture, true);
       window.removeEventListener('pointercancel', finishGraphConnectionGesture, true);
       window.removeEventListener('mouseup', finishGraphConnectionGesture, true);
       window.removeEventListener('dragend', finishGraphConnectionGesture, true);
       window.removeEventListener('drop', finishGraphConnectionGesture, true);
+      window.removeEventListener('pointerup', finishHeaderDrag, true);
+      window.removeEventListener('mouseup', finishHeaderDrag, true);
+      window.removeEventListener('pointercancel', cancelComponentHeaderDrag, true);
+      window.removeEventListener('blur', cancelComponentHeaderDrag, true);
     };
-  }, [finishGraphConnectionGesture]);
+  }, [beginComponentHeaderDrag, cancelComponentHeaderDrag, finishComponentHeaderDragFromPoint, finishGraphConnectionGesture]);
 
   const toggleNodeMode = useCallback((nodeId: string) => {
     const node = canvasNodeById.get(nodeId);
@@ -1427,7 +1742,7 @@ function WorkflowRouteInner({ onSelectSession }: Props) {
     setError(null);
     try {
       if (isComponentNode(node)) {
-        await apiJson(`/api/a2a/component-nodes/${encodeURIComponent(graphId)}`, { method: 'DELETE' });
+        await executeRuntimeNodeAction(graphId, 'node.delete');
         setComponentNodeOverrides(current => {
           const next = { ...current };
           delete next[nodeId];
@@ -1437,6 +1752,7 @@ function WorkflowRouteInner({ onSelectSession }: Props) {
       } else {
         await apiJson(`/api/a2a/nodes/${encodeURIComponent(graphId)}`, { method: 'DELETE' });
       }
+      invalidateApiCache('/api/workflow/nodes');
       invalidateApiCache('/api/a2a/snapshot');
       invalidateApiCache('/api/sessions');
       setNodeModes(current => {
@@ -1499,39 +1815,36 @@ function WorkflowRouteInner({ onSelectSession }: Props) {
     const current = componentStateById.get(nodeId);
     if (!current) return null;
     try {
-      const result = await apiJson<{
-        ok?: boolean;
-        nodeId?: string;
-        revision?: number;
-        state?: WorkflowComponentNodeState;
-        sourceOfTruth?: string;
-      }>(`/api/a2a/component-nodes/${encodeURIComponent(nodeId)}`, {
-        method: 'PUT',
-        body: JSON.stringify(patch),
-      });
-      const updated: WorkflowComponentNodeState = {
+      const result = await patchRuntimeNodeState(nodeId, patch as Record<string, unknown>);
+      if (!result.node) throw new Error('Component save failed: runtime node missing');
+      const previous: WorkflowComponentNodeState = {
         ...current,
         ...patch,
-        ...(result.state || {}),
         nodeId,
         type: current.type,
-        revision: Number(result.state?.revision || result.revision || current.revision + 1),
-        statePath: result.state?.statePath || current.statePath,
-        observableInputs: result.state?.observableInputs || patch.observableInputs || current.observableInputs,
-        observableOutputs: result.state?.observableOutputs || patch.observableOutputs || current.observableOutputs,
       };
+      const updated = componentStateFromRuntime(
+        current.type,
+        result.node,
+        result.state || previous as unknown as Record<string, unknown>,
+        current.title,
+        previous,
+      );
+      const node = componentWorkflowNodeFromRuntime(result.node, updated);
       setComponentNodeOverrides(overrides => ({
         ...overrides,
         [nodeId]: {
           ...overrides[nodeId],
+          node,
           state: updated,
         },
       }));
+      invalidateApiCache('/api/workflow/nodes');
       invalidateApiCache('/api/a2a/snapshot');
       return updated;
     } catch (e: any) {
+      if (isConflictError(e)) throw new Error('Component save failed: stale revision');
       const message = String(e?.message || '');
-      if (message.includes('409')) throw new Error('Component save failed: stale revision');
       throw new Error(message || 'Component save failed');
     }
   }, [componentStateById]);
@@ -1713,17 +2026,18 @@ function WorkflowRouteInner({ onSelectSession }: Props) {
   useEffect(() => {
     if (!workflow?.workflowId) return;
     setGraphLoaded(false);
-    const projectState = graphStateFromWorkflow(workflow, t);
+    const translate = translateRef.current;
+    const projectState = graphStateFromWorkflow(workflow, translate);
     graphStateRef.current = projectState;
     graphBaseVersionRef.current = finiteGraphVersion(workflow.graph?.version);
     graphCommitPendingRef.current = false;
     lastGraphPutSignatureRef.current = '';
     setGraphState(projectState);
-    const nextManualEdges = storedEdgesToFlowEdges(projectState.edges, t);
+    const nextManualEdges = storedEdgesToFlowEdges(projectState.edges, translate);
     manualEdgesRef.current = nextManualEdges;
     setManualEdges(nextManualEdges);
     setGraphLoaded(true);
-  }, [t, workflow?.workflowId, workflow?.graph?.version]);
+  }, [workflow?.workflowId, workflow?.graph?.version]);
 
   useEffect(() => {
     if (!workflow?.workflowId || !graphLoaded) return;
@@ -1767,7 +2081,7 @@ function WorkflowRouteInner({ onSelectSession }: Props) {
         to: canvasNodeById.get(edge.target)?.graphNodeId || edge.target,
         source: canvasNodeById.get(edge.source)?.graphNodeId || edge.source,
         target: canvasNodeById.get(edge.target)?.graphNodeId || edge.target,
-        relation: bridgeRelationLabel(edge.label, t),
+        relation: edge.relation || bridgeRelationLabel(edge.label, t),
         sourceHandle: edge.sourceHandle || undefined,
         targetHandle: edge.targetHandle || undefined,
         offset: numericEdgeOffset(edge.offset),
@@ -1838,10 +2152,47 @@ function WorkflowRouteInner({ onSelectSession }: Props) {
   }, [nodeIds]);
 
   useEffect(() => {
-    if (!fittedOnce.current && flowReady && nodes.length > 0 && flowRef.current) {
-      fittedOnce.current = true;
-      requestAnimationFrame(() => flowRef.current?.fitView({ padding: 0.22, duration: 0 }));
+    const showToast = (event: Event) => {
+      const detail = (event as CustomEvent<{ message?: unknown }>).detail;
+      const message = String(detail?.message || '').trim();
+      if (message) setStatusToast(message);
+    };
+    window.addEventListener('wf:workflow-toast', showToast);
+    return () => window.removeEventListener('wf:workflow-toast', showToast);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    let settleFrame = 0;
+    const markSettled = () => {
+      waitForUiFrames(2).then(() => {
+        if (active) setFlowSettled(true);
+      });
+    };
+
+    if (!flowReady || nodes.length === 0 || !flowRef.current) {
+      setFlowSettled(false);
+      return () => {
+        active = false;
+      };
     }
+    if (!fittedOnce.current) {
+      fittedOnce.current = true;
+      setFlowSettled(false);
+      settleFrame = requestAnimationFrame(() => {
+        if (!active) return;
+        flowRef.current?.fitView({ padding: 0.22, duration: 0 });
+        markSettled();
+      });
+      return () => {
+        active = false;
+        if (settleFrame) cancelAnimationFrame(settleFrame);
+      };
+    }
+    markSettled();
+    return () => {
+      active = false;
+    };
   }, [flowReady, nodes.length]);
 
   useEffect(() => {
@@ -1852,28 +2203,41 @@ function WorkflowRouteInner({ onSelectSession }: Props) {
   const nodeTypes = useMemo(() => ({ wfNode: WfNodeCard, workflowComponentNode: WorkflowComponentNode }), []);
 
   const flowEdgesToStored = useCallback((nextEdges: FlowEdge[]) => nextEdges.map(edge => ({
-    id: edge.id,
+    id: typeof edge.data?.runtimeEdgeId === 'string' ? edge.data.runtimeEdgeId : edge.id,
     source: edge.source,
     target: edge.target || '',
-    label: bridgeRelationLabel(typeof edge.label === 'string' ? edge.label : edge.data?.relation, t),
-    sourceHandle: edge.sourceHandle || null,
-    targetHandle: edge.targetHandle || null,
+    label: typeof edge.label === 'string' ? edge.label : bridgeRelationLabel(edge.data?.relation, t),
+    relation: bridgeRelationLabel(edge.data?.relation, t),
+    sourceHandle: typeof edge.data?.sourceHandle === 'string' ? edge.data.sourceHandle : edge.sourceHandle || null,
+    targetHandle: typeof edge.data?.targetHandle === 'string' ? edge.data.targetHandle : edge.targetHandle || null,
     offset: numericEdgeOffset(edge.data?.offset),
   })), [t]);
 
-  const deleteSelectedEdges = useCallback(() => {
+  const deleteSelectedEdges = useCallback(async () => {
     if (selectedEdgeIds.size === 0) return;
     const ids = new Set(selectedEdgeIds);
     const current = manualEdgesRef.current;
     const next = current.filter(edge => !ids.has(edge.id));
     if (next.length !== current.length) {
+      try {
+        await Promise.all([...ids].map(edgeId => {
+          const edge = current.find(item => item.id === edgeId);
+          const runtimeEdgeId = typeof edge?.data?.runtimeEdgeId === 'string' ? edge.data.runtimeEdgeId : edgeId;
+          return deleteRuntimeEdge(runtimeEdgeId);
+        }));
+        invalidateApiCache('/api/workflow/nodes');
+        invalidateApiCache('/api/a2a/snapshot');
+      } catch (e: any) {
+        setError(e?.message || t('Failed to delete selected edges'));
+        return;
+      }
       manualEdgesRef.current = next;
       setManualEdges(next);
       updateGraph({ edges: flowEdgesToStored(next) });
     }
     setSelectedEdgeIds(new Set());
     setBridgePanel(current => current && ids.has(current.edgeId) ? null : current);
-  }, [flowEdgesToStored, selectedEdgeIds, updateGraph]);
+  }, [flowEdgesToStored, selectedEdgeIds, setError, t, updateGraph]);
 
   const updateEdgeOffset = useCallback((edgeId: string, offset: number, commit = false) => {
     const nextOffset = numericEdgeOffset(offset);
@@ -2069,60 +2433,30 @@ function WorkflowRouteInner({ onSelectSession }: Props) {
         ? (options.file?.name || options.file?.path?.split('/').pop() || 'File Node')
         : 'Diagram';
     try {
-      const result = await apiJson<{
-        ok?: boolean;
-        nodeId?: string;
-        node?: WorkflowNode & { title?: string };
-        state?: WorkflowComponentNodeState;
-        revision?: number;
-        statePath?: string;
-        sourceOfTruth?: string;
-      }>('/api/a2a/component-nodes', {
-        method: 'POST',
-        body: JSON.stringify({
-          type,
-          title: options.title || defaultTitle,
-          position,
-          ...(options.markdown !== undefined ? { markdown: options.markdown } : {}),
-          ...(options.scene !== undefined ? { scene: options.scene } : {}),
-          ...(options.file ? { file: options.file } : {}),
-        }),
+      const result = await createRuntimeNode({
+        type,
+        title: options.title || defaultTitle,
+        position,
+        ...(options.markdown !== undefined ? { markdown: options.markdown } : {}),
+        ...(options.scene !== undefined ? { scene: options.scene } : {}),
+        ...(options.file ? { file: options.file as Record<string, unknown> } : {}),
       });
-      const nodeId = result.nodeId || result.state?.nodeId || result.node?.id || `component-${type}-${Date.now()}`;
-      const title = result.state?.title || result.node?.title || result.node?.label || defaultTitle;
-      const defaultState = defaultComponentState(type, nodeId, title);
-      const statePath = result.state?.statePath
-        || result.node?.statePath
-        || result.statePath
-        || `Harness/a2a/component-nodes/${nodeId}/state.json`;
-      const revision = Number(result.state?.revision || result.node?.revision || result.revision || defaultState.revision || 1);
-      const state: WorkflowComponentNodeState = {
-        ...defaultState,
-        ...(result.state || {}),
-        nodeId,
+      if (!result.node) throw new Error('Component create failed: runtime node missing');
+      const seedState = defaultComponentState(type, result.node.nodeId, options.title || defaultTitle);
+      const state = componentStateFromRuntime(
         type,
-        title,
-        revision,
-        statePath,
-        file: result.state?.file || options.file || defaultState.file,
-        markdown: result.state?.markdown ?? options.markdown ?? defaultState.markdown,
-        scene: result.state?.scene ?? options.scene ?? defaultState.scene,
-        observableInputs: result.state?.observableInputs || result.node?.observableInputs || defaultState.observableInputs,
-        observableOutputs: result.state?.observableOutputs || result.node?.observableOutputs || defaultState.observableOutputs,
-      };
-      const node: WorkflowNode = {
-        ...componentNodeFromState(state),
-        ...(result.node || {}),
-        id: nodeId,
-        kind: 'component-node',
-        componentType: type,
-        type,
-        label: result.node?.label || state.title || nodeId,
-        revision: state.revision,
-        statePath: state.statePath,
-        observableInputs: state.observableInputs,
-        observableOutputs: state.observableOutputs,
-      };
+        result.node,
+        result.state || seedState as unknown as Record<string, unknown>,
+        options.title || defaultTitle,
+        {
+          ...seedState,
+          markdown: options.markdown ?? seedState.markdown,
+          scene: options.scene ?? seedState.scene,
+          file: options.file ?? seedState.file,
+        },
+      );
+      const node = componentWorkflowNodeFromRuntime(result.node, state);
+      const nodeId = state.nodeId;
       setComponentNodeOverrides(current => ({
         ...current,
         [nodeId]: { node, state, position },
@@ -2133,6 +2467,7 @@ function WorkflowRouteInner({ onSelectSession }: Props) {
           [nodeId]: position,
         },
       });
+      invalidateApiCache('/api/workflow/nodes');
       invalidateApiCache('/api/a2a/snapshot');
       setSelectedNodeId(nodeId);
       setSelectedNodeIds(new Set([nodeId]));
@@ -2392,23 +2727,47 @@ function WorkflowRouteInner({ onSelectSession }: Props) {
     }).catch((e: any) => setError(e?.message || t('Failed to create Markdown node')));
   }, [createComponentNode, createFileNodesFromUploads, flowPositionFromClient, setError, t]);
 
-  const onConnect = useCallback((connection: Connection) => {
+  const onConnect = useCallback(async (connection: Connection) => {
     if (!connection.source || !connection.target || connection.source === connection.target) return;
     const current = manualEdgesRef.current;
-    if (current.some(edge => edge.source === connection.source && edge.target === connection.target)) return;
+    if (current.some(edge => (
+      (edge.source === connection.source && edge.target === connection.target)
+      || (edge.source === connection.target && edge.target === connection.source)
+    ))) return;
+    const sourceGraphId = canvasNodeById.get(connection.source)?.graphNodeId || connection.source;
+    const targetGraphId = canvasNodeById.get(connection.target)?.graphNodeId || connection.target;
+    let edgeId = `manual-${connection.source}-${connection.target}-${Date.now()}`;
+    let runtimeEdgeId = edgeId;
+    try {
+      const result = await createRuntimeEdge(sourceGraphId, targetGraphId, {
+        relation: 'wf-bridge',
+        sourceHandle: connection.sourceHandle || undefined,
+        targetHandle: connection.targetHandle || undefined,
+      });
+      runtimeEdgeId = String(result.edge?.id || edgeId);
+      edgeId = safeFlowEdgeId(runtimeEdgeId, edgeId);
+      invalidateApiCache('/api/workflow/nodes');
+      invalidateApiCache('/api/a2a/snapshot');
+    } catch (e: any) {
+      setError(e?.message || t('Failed to connect nodes'));
+      return;
+    }
     const edge: FlowEdge = {
-      id: `manual-${connection.source}-${connection.target}-${Date.now()}`,
+      id: edgeId,
       source: connection.source,
       target: connection.target,
-      sourceHandle: connection.sourceHandle,
-      targetHandle: connection.targetHandle,
+      sourceHandle: connection.sourceHandle || null,
+      targetHandle: connection.targetHandle || null,
       type: 'wfBridge',
       label: connection.sourceHandle || connection.targetHandle
-        ? `${connection.sourceHandle || 'source'} -> ${connection.targetHandle || 'target'}`
+        ? `${connection.sourceHandle || 'source'} <-> ${connection.targetHandle || 'target'}`
         : 'wf-bridge',
       data: {
         sourceNodeId: connection.source,
         targetNodeId: connection.target,
+        runtimeEdgeId,
+        sourceHandle: connection.sourceHandle || undefined,
+        targetHandle: connection.targetHandle || undefined,
         fromSessionId: canvasNodeById.get(connection.source)?.sessionId,
         toSessionId: canvasNodeById.get(connection.target)?.sessionId,
         relation: 'wf-bridge',
@@ -2422,7 +2781,49 @@ function WorkflowRouteInner({ onSelectSession }: Props) {
     setSelectedEdgeIds(new Set([edge.id]));
     setSelectedNodeId('');
     setSelectedNodeIds(new Set());
-  }, [canvasNodeById, flowEdgesToStored, updateGraph]);
+  }, [canvasNodeById, flowEdgesToStored, setError, t, updateGraph]);
+
+  const resolveCanvasConnectionNodeId = useCallback((nodeId: string) => {
+    const value = String(nodeId || '').trim();
+    if (!value) return '';
+    if (canvasNodeById.has(value)) return value;
+    for (const node of canvasNodeById.values()) {
+      if (node.graphNodeId === value || node.sessionId === value) return node.id;
+    }
+    return value;
+  }, [canvasNodeById]);
+
+  useEffect(() => {
+    const handleWfBrowserIntent = (event: Event) => {
+      const detail = (event as CustomEvent<{
+        intent?: string;
+        payload?: Record<string, unknown>;
+        handled?: boolean;
+        resolve?: (value: unknown) => void;
+        reject?: (error: unknown) => void;
+      }>).detail;
+      if (!detail || detail.intent !== 'graph.connectNodes') return;
+      detail.handled = true;
+      const payload = detail.payload || {};
+      const source = resolveCanvasConnectionNodeId(String(payload.sourceNodeId || payload.source || payload.from || ''));
+      const target = resolveCanvasConnectionNodeId(String(payload.targetNodeId || payload.target || payload.to || ''));
+      if (!source || !target) {
+        detail.resolve?.({ ok: false, code: 'ENDPOINT_REQUIRED', source, target });
+        return;
+      }
+      onConnect({
+        source,
+        target,
+        sourceHandle: String(payload.sourceHandle || ''),
+        targetHandle: String(payload.targetHandle || ''),
+      } as Connection)
+        .then(() => waitForUiFrames(2))
+        .then(() => detail.resolve?.({ ok: true, intent: detail.intent, source, target, settled: true }))
+        .catch(error => detail.reject?.(error));
+    };
+    window.addEventListener('harness:wf-browser:intent', handleWfBrowserIntent);
+    return () => window.removeEventListener('harness:wf-browser:intent', handleWfBrowserIntent);
+  }, [onConnect, resolveCanvasConnectionNodeId]);
 
   const openPaneMenu = (event: ReactMouseEvent | globalThis.MouseEvent) => {
     event.preventDefault();
@@ -2619,7 +3020,7 @@ function WorkflowRouteInner({ onSelectSession }: Props) {
       return `[${entry.seq || ''}] ${entry.ts || ''} ${direction}\n${String(entry.data || '').trimEnd()}`;
     });
     navigator.clipboard?.writeText([
-      `${bridgePanel.label}: ${bridgePanel.fromSessionId} -> ${bridgePanel.toSessionId}`,
+      `${bridgePanel.label}: ${bridgePanel.fromSessionId} <-> ${bridgePanel.toSessionId}`,
       ...lines,
     ].join('\n\n')).catch(() => {});
   }, [bridgeMessages, bridgePanel]);
@@ -2630,7 +3031,7 @@ function WorkflowRouteInner({ onSelectSession }: Props) {
     : [];
   const nodeContextCanDelete = nodeContextSelection.length > 0
     && nodeContextSelection.every(nodeId => canDeleteNode(canvasNodeById.get(nodeId)));
-  const workflowToastMessage = error;
+  const workflowToastMessage = error || statusToast;
   const workflowToastIsError = Boolean(error);
   const handleNodeContextAction = (action: string) => {
     if (!nodeContextMenu) return;
@@ -2680,16 +3081,32 @@ function WorkflowRouteInner({ onSelectSession }: Props) {
       onDrop={handleCanvasDrop}
       onDropCapture={finishGraphConnectionGesture}
       onPaste={handleCanvasPaste}
-      onPointerDownCapture={markGraphConnectionGesture}
-      onPointerUpCapture={finishGraphConnectionGesture}
-      onPointerCancelCapture={finishGraphConnectionGesture}
-      onMouseDownCapture={markGraphConnectionGesture}
-      onMouseUpCapture={finishGraphConnectionGesture}
+      onPointerDownCapture={(event) => {
+        markGraphConnectionGesture(event);
+        beginComponentHeaderDrag(event);
+      }}
+      onPointerUpCapture={(event) => {
+        finishComponentHeaderDrag(event);
+        finishGraphConnectionGesture();
+      }}
+      onPointerCancelCapture={() => {
+        cancelComponentHeaderDrag();
+        finishGraphConnectionGesture();
+      }}
+      onMouseDownCapture={(event) => {
+        markGraphConnectionGesture(event);
+        beginComponentHeaderDrag(event);
+      }}
+      onMouseUpCapture={(event) => {
+        finishComponentHeaderDragFromPoint(event.clientX, event.clientY);
+        finishGraphConnectionGesture();
+      }}
       onContextMenuCapture={openNodeMenuFromCapture}
     >
       <ReactFlow
         className="wf-flow"
         data-testid="workflow-canvas"
+        data-wf-browser-ready={flowSettled ? 'true' : 'false'}
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
@@ -2732,7 +3149,7 @@ function WorkflowRouteInner({ onSelectSession }: Props) {
               ...graphStateRef.current.positions,
               [node.id]: { x: node.position.x, y: node.position.y },
             },
-          });
+          }, { forceCommit: isComponentNode(node.data?.workflowNode) });
         }}
         minZoom={0.25}
         maxZoom={1.7}
@@ -3136,7 +3553,17 @@ function WorkflowRouteInner({ onSelectSession }: Props) {
           </Panel>
         )}
 
-        {showConfig && selectedNode && !(selectedNode.kind === 'terminal-session' && selectedNode.sessionId) && (
+        {showConfig && selectedNode && selectedComponentType && selectedRuntimeNode && SelectedRuntimeSettings && (
+          <Panel position="bottom-right" className="workflow-node-settings-panel-host">
+            <SelectedRuntimeSettings
+              node={selectedRuntimeNode}
+              onClose={() => setShowConfig(false)}
+              onDelete={() => deleteNode(selectedNode.id)}
+            />
+          </Panel>
+        )}
+
+        {showConfig && selectedNode && !(selectedNode.kind === 'terminal-session' && selectedNode.sessionId) && !(selectedComponentType && SelectedRuntimeSettings) && (
           <Panel position="bottom-right" className="workflow-node-settings-panel-host">
             <aside data-canvas-control="true" data-testid="workflow-node-config" className="wf-floating-panel nodrag nopan nowheel" style={{ ...PANEL, width: 340, maxHeight: 'calc(100vh - var(--header-h) - 44px)', overflow: 'auto', padding: 12, cursor: 'default' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 8 }}>
@@ -3286,6 +3713,7 @@ function WfBridgeEdge({
   targetPosition,
   data,
   label,
+  markerStart,
   markerEnd,
   style,
   selected,
@@ -3441,6 +3869,7 @@ function WfBridgeEdge({
       <BaseEdge
         id={id}
         path={edgePath}
+        markerStart={markerStart}
         markerEnd={markerEnd}
         style={visibleStyle}
         interactionWidth={0}
@@ -3703,6 +4132,8 @@ function ConnectionHandles({ zoom }: { zoom: number }) {
   const handleBaseStyle: CSSProperties = {
     width: handleSize,
     height: handleSize,
+    zIndex: 30,
+    pointerEvents: 'all',
     transformOrigin: 'center',
   };
   const transforms: Record<string, string> = {
@@ -3810,7 +4241,6 @@ function WfNodeCard({ data, selected }: NodeProps<AgentFlowNode>) {
         }}
         >
         <RuntimeAccentStrip color={runtimeColor} />
-        <ConnectionHandles zoom={data.viewportZoom} />
         <div style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0, padding: '0 9px 0 13px', borderBottom: '1px solid var(--border)', background: 'rgba(255,255,255,0.96)' }}>
           {node.runtime ? <RuntimeBrandMark runtime={node.runtime} size={15} /> : <Terminal size={14} />}
           <span style={{ fontSize: 13, fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayNodeTitle(node)}</span>
@@ -3870,6 +4300,7 @@ function WfNodeCard({ data, selected }: NodeProps<AgentFlowNode>) {
         >
           <EmbeddedWorkflowTerminal sessionId={node.sessionId!} live={live} />
         </div>
+        <ConnectionHandles zoom={data.viewportZoom} />
       </motion.div>
     );
   }
@@ -3905,7 +4336,6 @@ function WfNodeCard({ data, selected }: NodeProps<AgentFlowNode>) {
       }}
     >
       <RuntimeAccentStrip color={runtimeColor} />
-      <ConnectionHandles zoom={data.viewportZoom} />
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
         {node.runtime ? <RuntimeBrandMark runtime={node.runtime} size={15} /> : <Icon size={14} />}
         <span style={{ fontSize: 15, fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayNodeTitle(node)}</span>
@@ -3963,6 +4393,7 @@ function WfNodeCard({ data, selected }: NodeProps<AgentFlowNode>) {
           </button>
         )}
       </div>
+      <ConnectionHandles zoom={data.viewportZoom} />
     </motion.div>
   );
 }

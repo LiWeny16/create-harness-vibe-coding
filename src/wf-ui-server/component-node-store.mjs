@@ -388,14 +388,70 @@ export function listComponentNodes(projectRoot) {
 export function componentStateRefs(projectRoot) {
   const refs = {};
   for (const node of listComponentNodes(projectRoot)) {
-    const state = readJson(absoluteStatePath(projectRoot, node.statePath, node.nodeId), null);
+    const current = getComponentNode(projectRoot, node.nodeId);
     refs[node.nodeId] = {
       type: node.type,
       title: node.title,
       statePath: node.statePath,
       revision: node.revision,
-      ...(state?.file ? { file: state.file } : {}),
+      ...(current.state.file ? { file: current.state.file } : {}),
     };
   }
   return refs;
+}
+
+function portIds(ports, fallback) {
+  const ids = (Array.isArray(ports) ? ports : [])
+    .map(port => String(port?.id || '').trim())
+    .filter(Boolean);
+  return ids.length > 0 ? ids : fallback.map(port => port.id);
+}
+
+function requiredStatePayload(node, raw) {
+  if (node.type === 'markdown' && typeof raw.markdown !== 'string') {
+    throw new ComponentNodeError('Component markdown state is missing or out of sync', {
+      statusCode: 409,
+      code: 'STATE_MISMATCH',
+    });
+  }
+  if (node.type === 'excalidraw' && !isPlainObject(raw.scene)) {
+    throw new ComponentNodeError('Component Excalidraw scene is missing or out of sync', {
+      statusCode: 409,
+      code: 'STATE_MISMATCH',
+    });
+  }
+  if (node.type === 'file' && !isPlainObject(raw.file)) {
+    throw new ComponentNodeError('Component file state is missing or out of sync', {
+      statusCode: 409,
+      code: 'STATE_MISMATCH',
+    });
+  }
+}
+
+export function componentNodeStates(projectRoot) {
+  const states = {};
+  for (const listedNode of listComponentNodes(projectRoot)) {
+    const { node, state: raw } = getComponentNode(projectRoot, listedNode.nodeId);
+    requiredStatePayload(node, raw);
+    const inputs = Array.isArray(raw.inputs) ? raw.inputs : inputsForType(node.type);
+    const outputs = Array.isArray(raw.outputs) ? raw.outputs : outputsForType(node.type);
+    const state = {
+      nodeId: node.nodeId,
+      type: node.type,
+      title: node.title,
+      revision: node.revision,
+      observableInputs: portIds(inputs, inputsForType(node.type)),
+      observableOutputs: portIds(outputs, outputsForType(node.type)),
+      statePath: node.statePath,
+    };
+    if (node.type === 'markdown') {
+      state.markdown = raw.markdown;
+    } else if (node.type === 'excalidraw') {
+      state.scene = raw.scene;
+    } else if (node.type === 'file') {
+      state.file = raw.file;
+    }
+    states[node.nodeId] = state;
+  }
+  return states;
 }

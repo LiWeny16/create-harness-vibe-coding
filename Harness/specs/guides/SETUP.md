@@ -160,7 +160,7 @@ The harness validator checks for specific structural invariants. When comparing 
 | `Harness/tasks/<id>/PROGRESS.md` | `## Current Goal`, `## Phase`, `## Heartbeat`, `## Loaded Context` headings |
 | `Harness/tasks/<id>/PLAN.md` | `## Tasks`, `## Parallel Dispatch`, `## Subagent Synthesis`, `## Verification` headings |
 | `Harness/specs/guides/SETUP.md` | Retained install/bootstrap guide for new projects, existing projects, legacy upgrades, and Harness update decisions. Keep "Install or Upgrade Path" present. |
-| `.claude/skills/wf-browser/SKILL.md` and `.agents/skills/wf-browser/SKILL.md` | Built-in browser workflow requires `data-testid`, `accessible labels/roles`, and `inputs, buttons, filters, rows, empty/error/loading states` guidance |
+| `.claude/skills/wf-browser/SKILL.md` and `.agents/skills/wf-browser/SKILL.md` | Built-in agent-operable browser workflow requires architecture design track, runtime control track, readiness levels, WebSocket bridge, observe/act primitives, virtual cursor, multi-window/subagent leases, `Harness/wf-browser/` artifacts, `data-testid`, `accessible labels/roles`, and `inputs, buttons, filters, rows, empty/error/loading states` guidance |
 | `Harness/workflows/ts-react-frontend.md` (if installed as optional) | Same UI selector contract as above |
 
 **Files that do NOT need manual merge when the path does not already exist (auto-created by harness):**

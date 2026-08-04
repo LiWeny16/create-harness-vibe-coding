@@ -4,7 +4,7 @@ import { parseTaskCapsule, parseTaskList } from './task-parser.mjs';
 import { RUNTIME_DEFINITIONS } from './runtime-detector.mjs';
 import { listTerminalSessions } from './terminal-store.mjs';
 import { normalizeNodeConfig, recommendSkills } from './node-config-store.mjs';
-import { componentStateRefs, listComponentNodes } from './component-node-store.mjs';
+import { componentNodeStates, componentStateRefs, listComponentNodes } from './component-node-store.mjs';
 import { workspaceMimeForPath } from './workspace-store.mjs';
 
 const DEFAULT_ROLE_GRAPH = {
@@ -758,7 +758,7 @@ function buildSessionGraph(projectRoot, workflowId, sessions) {
     if (order !== 0) return order;
     return String(a.nodeId).localeCompare(String(b.nodeId));
   };
-  const resourceRefFor = (resourceNode, edge, direction) => {
+  const resourceRefFor = (resourceNode, edge, endpointRole) => {
     const ref = componentRefs[resourceNode.nodeId] || {
       type: resourceNode.type || resourceNode.componentType || resourceNode.kind,
       title: resourceNode.title || resourceNode.label || resourceNode.nodeId,
@@ -766,16 +766,29 @@ function buildSessionGraph(projectRoot, workflowId, sessions) {
       revision: resourceNode.revision,
     };
     const type = ref.type || resourceNode.type || resourceNode.componentType;
+    const connection = {
+      edgeId: edge.id || `${edge.from}->${edge.to}`,
+      endpointRole,
+      localHandle: endpointRole === 'source' ? edge.sourceHandle || null : edge.targetHandle || null,
+      peerHandle: endpointRole === 'source' ? edge.targetHandle || null : edge.sourceHandle || null,
+      sourceHandle: edge.sourceHandle || null,
+      targetHandle: edge.targetHandle || null,
+      relation: edge.relation || 'wf-bridge',
+      direction: 'bidirectional',
+    };
     return {
       nodeId: resourceNode.nodeId,
       kind: resourceNode.kind || 'component-node',
       type,
       title: ref.title || resourceNode.title || resourceNode.label || resourceNode.nodeId,
       createdAt: ref.createdAt || resourceNode.createdAt || null,
-      direction,
+      direction: 'bidirectional',
+      endpointRole,
       relation: edge.relation || 'wf-bridge',
       sourceHandle: edge.sourceHandle || null,
       targetHandle: edge.targetHandle || null,
+      connection,
+      connections: [connection],
       stateRef: {
         path: ref.statePath || resourceNode.statePath,
         revision: Number(ref.revision || resourceNode.revision || 0),
@@ -820,11 +833,11 @@ function buildSessionGraph(projectRoot, workflowId, sessions) {
     const connectedResourceRefs = edges
       .filter(edge => edge.from === node.nodeId || edge.to === node.nodeId)
       .map((edge) => {
-        const direction = edge.from === node.nodeId ? 'outbound' : 'inbound';
-        const resourceNodeId = direction === 'outbound' ? edge.to : edge.from;
+        const endpointRole = edge.from === node.nodeId ? 'source' : 'target';
+        const resourceNodeId = endpointRole === 'source' ? edge.to : edge.from;
         const resourceNode = byNodeId.get(resourceNodeId);
         if (!resourceNode || resourceNode.sessionId) return null;
-        return resourceRefFor(resourceNode, edge, direction);
+        return resourceRefFor(resourceNode, edge, endpointRole);
       })
       .filter(Boolean)
       .sort(compareResourceRefs);
@@ -1028,6 +1041,7 @@ export function buildWorkflowSnapshot(projectRoot, sessionRegistry) {
     edges,
     sessions,
     graph,
+    componentNodes: componentNodeStates(projectRoot),
     graphContextBySessionId,
   };
 }

@@ -108,6 +108,7 @@ const required = [
   'Harness/specs/protocols/HARNESS_BRIDGE.md',
   'Harness/specs/protocols/DEBUG_PROTOCOL.md',
   'Harness/specs/protocols/MEMORY_PROTOCOL.md',
+  'Harness/wf-browser/README.md',
   'Harness/templates/PRD.template.md',
   'Harness/templates/ACCEPTANCE.template.md',
   'Harness/templates/UI_CONTRACT.template.md',
@@ -1504,7 +1505,14 @@ requireText('Harness/specs/protocols/ACCEPTANCE_PROTOCOL.md', 'AC-GATE', 'accept
 requireText('Harness/specs/protocols/ACCEPTANCE_PROTOCOL.md', 'Acceptance Result', 'acceptance result matrix');
 requireText('Harness/specs/protocols/ACCEPTANCE_PROTOCOL.md', 'Syntax-only checks', 'syntax-only checks are not browser acceptance evidence');
 requireText('Harness/specs/protocols/AGENT_ISOLATION.md', 'implementer', 'agent isolation implementer rule');
+requireText('Harness/specs/protocols/HARNESS_BRIDGE.md', 'Agent-Operable Web Runtime', 'harness bridge agent-operable runtime');
+requireText('Harness/specs/protocols/HARNESS_BRIDGE.md', 'Backend Broker Protocol', 'harness bridge backend broker protocol');
+requireText('Harness/specs/protocols/HARNESS_BRIDGE.md', 'Multi-Agent Window Contract', 'harness bridge multi-agent window contract');
+requireText('Harness/specs/protocols/HARNESS_BRIDGE.md', 'Artifact Workspace', 'harness bridge artifact workspace');
 requireText('Harness/specs/protocols/HARNESS_BRIDGE.md', 'Network Trace Collector', 'harness bridge network trace collector');
+requireText('Harness/wf-browser/README.md', 'Runtime Artifacts', 'wf-browser artifact workspace README');
+requireText('Harness/wf-browser/README.md', 'A write/control lease is exclusive per window', 'wf-browser artifact README lease rule');
+requireText('Harness/wf-browser/README.md', 'latest 20 runs or 7 days', 'wf-browser artifact README retention rule');
 requireText('Harness/specs/workflows/WF-AUTO.md', 'Intent Checkpoint', 'wf-auto intent checkpoint');
 requireText('Harness/specs/workflows/WF-AUTO.md', 'Adaptive Coverage Exhaustion Gate', 'wf-auto adaptive coverage exhaustion gate');
 requireText('Harness/specs/workflows/WF-AUTO.md', 'dynamic high-risk obligations', 'wf-auto dynamic high-risk obligations');
@@ -1658,14 +1666,32 @@ requireText('.claude/skills/wf-auto/SKILL.md', 'Harness/tasks/continuous/PROGRES
 requireText('.claude/skills/wf-auto/SKILL.md', 'evidence ledger path/summary', 'wf-auto skill return evidence ledger path');
 if (fs.existsSync(path.join(root, '.claude/skills/wf-browser/SKILL.md'))) {
   requireText('.claude/skills/wf-browser/SKILL.md', 'Cache Discipline', 'wf-browser skill cache discipline');
+  requireText('.claude/skills/wf-browser/SKILL.md', 'Two Jobs', 'wf-browser two-job design/control purpose');
+  requireText('.claude/skills/wf-browser/SKILL.md', 'Architecture design', 'wf-browser architecture design purpose');
+  requireText('.claude/skills/wf-browser/SKILL.md', 'Runtime control', 'wf-browser runtime control purpose');
+  requireText('.claude/skills/wf-browser/SKILL.md', 'Readiness Levels', 'wf-browser readiness levels');
+  requireText('.claude/skills/wf-browser/SKILL.md', 'L4 | Multi-agent-ready', 'wf-browser multi-agent readiness level');
+  requireText('.claude/skills/wf-browser/SKILL.md', 'Mode Selection', 'wf-browser mode selection');
+  requireText('.claude/skills/wf-browser/SKILL.md', 'Architecture Design Track', 'wf-browser architecture design track');
+  requireText('.claude/skills/wf-browser/SKILL.md', 'Runtime Control Track', 'wf-browser runtime control track');
+  requireText('.claude/skills/wf-browser/SKILL.md', 'Recovery Track', 'wf-browser recovery track');
+  requireText('.claude/skills/wf-browser/SKILL.md', 'Design-To-Control Continuity', 'wf-browser design-to-control continuity');
+  requireText('.claude/skills/wf-browser/SKILL.md', 'Quality Gates', 'wf-browser quality gates');
+  requireText('.claude/skills/wf-browser/SKILL.md', 'Agent-Operable Web Runtime', 'wf-browser agent-operable runtime');
   requireText('.claude/skills/wf-browser/SKILL.md', 'Browser Evidence Contract', 'wf-browser browser evidence contract');
-  requireText('.claude/skills/wf-browser/SKILL.md', 'Controllable UI Contract', 'wf-browser controllable UI contract');
-  requireText('.claude/skills/wf-browser/SKILL.md', 'Browser Use CLI', 'wf-browser current Browser Use CLI guidance');
-  requireText('.claude/skills/wf-browser/SKILL.md', 'browser-use --doctor', 'wf-browser Browser Use doctor command');
-  requireText('.claude/skills/wf-browser/SKILL.md', 'browser-use skill', 'wf-browser Browser Use skill command');
-  requireText('.claude/skills/wf-browser/SKILL.md', 'new_tab("https://example.com")', 'wf-browser Browser Use script-style example');
-  requireText('.claude/skills/wf-browser/SKILL.md', 'capture_screenshot', 'wf-browser Browser Use screenshot helper');
-  requireText('.claude/skills/wf-browser/SKILL.md', 'old `browser-use open/state/click/screenshot/input/wait` subcommands are removed', 'wf-browser removed old Browser Use subcommands');
+  requireText('.claude/skills/wf-browser/SKILL.md', 'Agent-Operable UI Contract', 'wf-browser agent-operable UI contract');
+  requireText('.claude/skills/wf-browser/SKILL.md', 'WebSocket', 'wf-browser WebSocket bridge guidance');
+  requireText('.claude/skills/wf-browser/SKILL.md', 'observe.*', 'wf-browser observation primitives');
+  requireText('.claude/skills/wf-browser/SKILL.md', 'act.*', 'wf-browser action primitives');
+  requireText('.claude/skills/wf-browser/SKILL.md', 'virtual cursor', 'wf-browser virtual cursor guidance');
+  requireText('.claude/skills/wf-browser/SKILL.md', 'Backend Broker', 'wf-browser backend broker guidance');
+  requireText('.claude/skills/wf-browser/SKILL.md', 'Multi-Agent Window Contract', 'wf-browser multi-agent window contract');
+  requireText('.claude/skills/wf-browser/SKILL.md', 'window.create', 'wf-browser window pool operations');
+  requireText('.claude/skills/wf-browser/SKILL.md', 'leaseId', 'wf-browser window lease identity');
+  requireText('.claude/skills/wf-browser/SKILL.md', 'Third-Party Pages', 'wf-browser third-party fallback guidance');
+  requireText('.claude/skills/wf-browser/SKILL.md', 'Harness/wf-browser/', 'wf-browser artifact workspace');
+  requireText('.claude/skills/wf-browser/SKILL.md', 'Playwright', 'wf-browser Playwright fallback');
+  requireText('.claude/skills/wf-browser/SKILL.md', 'CDP', 'wf-browser CDP fallback');
   requireText('.claude/skills/wf-browser/SKILL.md', 'data-testid', 'wf-browser data-testid guidance');
   requireText('.claude/skills/wf-browser/SKILL.md', 'accessible labels/roles', 'wf-browser accessible selector guidance');
   requireText('.claude/skills/wf-browser/SKILL.md', 'inputs, buttons, filters, rows, empty/error/loading states', 'wf-browser controllable UI coverage targets');

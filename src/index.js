@@ -420,19 +420,23 @@ async function runWfUi(args) {
     const { SessionRegistry } = await import('./wf-ui-server/session-registry.mjs');
     const { attachEventsWs } = await import('./wf-ui-server/ws-events.mjs');
     const { attachTerminalWs } = await import('./wf-ui-server/ws-terminal.mjs');
+    const { attachWfBrowserWs } = await import('./wf-ui-server/ws-wf-browser.mjs');
     const { warmRuntimeCache } = await import('./wf-ui-server/runtime-detector.mjs');
     const { appendSessionEvent, appendTerminalData, persistSession, recordInputRequest } =
       await import('./wf-ui-server/terminal-store.mjs');
     const registry = new SessionRegistry();
     const terminalHub = {};
+    const wfBrowserHub = {};
     const started = await serverModule.startServer({
       projectRoot,
       host,
       port,
       sessionRegistry: registry,
       terminalHub,
+      wfBrowserHub,
     });
     attachEventsWs(started.server, started.token, projectRoot);
+    Object.assign(wfBrowserHub, attachWfBrowserWs(started.server, started.token, projectRoot));
     Object.assign(terminalHub, attachTerminalWs(started.server, started.token, registry, {
       onTerminalInput(session, data) {
         try {

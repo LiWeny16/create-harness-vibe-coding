@@ -409,6 +409,27 @@ test.describe('WF UI M2 RED node settings acceptance', () => {
     await expect(page.getByTestId('workflow-node-restart-required')).toBeHidden();
   });
 
+  test('AC-010 settings search, nav, common config controls, and skill add stay productized', async ({ page }) => {
+    await installWorkflowFixture(page);
+    await openWorkflow(page);
+    await openNodeSettings(page);
+
+    const search = page.getByTestId('workflow-node-settings-search');
+    await expect(search).toBeVisible();
+    await search.fill('runtime');
+    await expect(page.locator('[data-testid="workflow-node-settings-nav-item"][data-section="runtime"]')).toBeVisible();
+    await expect(page.getByTestId('workflow-node-permission-mode')).toBeVisible();
+    await expect(page.getByTestId('workflow-node-launch-policy')).toBeVisible();
+    await expect(page.getByTestId('workflow-node-setting-permissions').locator('textarea')).toHaveCount(0);
+    await expect(page.getByTestId('workflow-node-setting-launch-policy').locator('textarea')).toHaveCount(0);
+
+    await search.fill('skills');
+    await expect(page.locator('[data-testid="workflow-node-settings-nav-item"][data-section="skills"]')).toBeVisible();
+    await page.getByTestId('workflow-node-skill-add-input').fill('wf-review');
+    await page.getByTestId('workflow-node-skill-add').click();
+    await expect(page.locator('[data-testid="workflow-node-skill-chip"][data-skill-id="wf-review"]')).toBeVisible();
+  });
+
   test('AC-005 launch-affecting edits show restart-required, post restart, and clear after success', async ({ page }) => {
     const network = await installWorkflowFixture(page);
     await openWorkflow(page);

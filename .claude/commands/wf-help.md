@@ -15,7 +15,7 @@ which returns this same table without loading `Harness/MEMORY.md` or entering WF
 | `/wf-auto-spark` | workflow skill | `/wf-auto-spark` | Perpetual inspiration mode with roadmap anchoring and external spark search. |
 | `/wf-review <focus>` | workflow skill | `/wf-review security and test coverage` | Peer CLI review through Claude/Codex/OpenCode, with reviewer subagent fallback. |
 | `/wf-learn` | workflow skill | `/wf-learn` | Force context-master -> memory-master learning cycle after repeated failures or closeout. |
-| `/wf-browser <task>` | workflow skill | `/wf-browser verify checkout flow` | Built-in browser automation/E2E workflow with real UI interaction, screenshots, traces, and CDP/network evidence. |
+| `/wf-browser <task>` | workflow skill | `/wf-browser verify checkout flow` | Agent-operable browser architecture and runtime-control workflow with WebSocket bridge, UI capability contract, virtual cursor, artifacts, multi-window leases, and Playwright/CDP fallback. |
 | `/wf-readme <task>` | workflow skill | `/wf-readme polish quickstart` | Preserve, merge, or improve README docs without trampling existing project documentation. |
 | `/wf-update` | direct command | `/wf-update` | Check/apply Harness scaffold updates with safe file classification and conflict handling. |
 | `/wf-remove` | workflow skill | `/wf-remove` | Safely remove Harness files while preserving project/user data unless explicitly purged. |

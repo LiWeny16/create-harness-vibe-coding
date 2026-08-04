@@ -32,6 +32,9 @@ CLAUDE.local.md
 
 # Harness runtime state
 Harness/.runtime/
+Harness/wf-browser/runs/
+Harness/wf-browser/tmp/
+Harness/wf-browser/cache/
 
 # Env & secrets
 .env

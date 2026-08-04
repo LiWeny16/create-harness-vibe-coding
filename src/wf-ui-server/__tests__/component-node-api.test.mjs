@@ -403,6 +403,116 @@ test('AC-006 /api/a2a/snapshot includes component nodes as refs alongside termin
   assert.ok(snapshot.body.graph.edges.some(edge => edge.id === 'edge-main-to-markdown' && edge.from === 'session-main-node' && edge.to === componentNodeId));
 });
 
+test('AC-006 /api/a2a/snapshot includes full componentNodes state for Excalidraw preview hydration', async () => {
+  const { baseUrl, token } = await makeServer();
+  const scene = {
+    elements: [
+      { id: 'start', type: 'ellipse', x: 20, y: 30, width: 96, height: 48, strokeColor: '#1864ab', backgroundColor: '#e7f5ff' },
+      { id: 'arrow', type: 'arrow', x: 130, y: 54, width: 80, height: 0, points: [[0, 0], [80, 0]], strokeColor: '#2f9e44' },
+      { id: 'label', type: 'text', x: 42, y: 42, width: 52, height: 24, text: 'Start', strokeColor: '#1e1e1e' },
+    ],
+    appState: { viewBackgroundColor: '#ffffff', name: 'Hydration Flow' },
+    files: {},
+  };
+  const diagram = await postJson(baseUrl, token, '/api/a2a/component-nodes', {
+    type: 'excalidraw',
+    title: 'Hydration Diagram',
+    position: { x: 480, y: 260 },
+    scene,
+  });
+  assert.equal(diagram.status, 201);
+
+  const snapshot = await getJson(baseUrl, token, '/api/a2a/snapshot?fresh=1');
+
+  assert.equal(snapshot.status, 200);
+  const nodeId = diagram.body.node.nodeId;
+  const state = snapshot.body.componentNodes?.[nodeId];
+  assert.ok(state, 'snapshot must expose top-level componentNodes state for frontend hydration');
+  assert.equal(state.nodeId, nodeId);
+  assert.equal(state.type, 'excalidraw');
+  assert.equal(state.title, 'Hydration Diagram');
+  assert.equal(state.revision, diagram.body.node.revision);
+  assert.equal(state.statePath, diagram.body.node.statePath);
+  assert.deepEqual(state.scene, scene);
+  assert.deepEqual(state.observableInputs, ['scene']);
+  assert.deepEqual(state.observableOutputs, ['scene', 'image']);
+
+  const graphNode = snapshot.body.nodes.find(node => node.id === nodeId);
+  assert.ok(graphNode, 'snapshot nodes should still include the component graph node');
+  assert.equal(Object.hasOwn(graphNode, 'scene'), false, 'graph node metadata should not inline Excalidraw state');
+  assert.equal(Object.hasOwn(graphNode, 'markdown'), false, 'graph node metadata should not inline Markdown state');
+});
+
+test('AC-006 /api/a2a/snapshot keeps refs and hydration state in sync for every component type', async () => {
+  const { baseUrl, token } = await makeServer();
+  const markdown = await postJson(baseUrl, token, '/api/a2a/component-nodes', {
+    type: 'markdown',
+    title: 'Hydration Notes',
+    position: { x: 180, y: 160 },
+    markdown: '# Hydration Notes\n',
+  });
+  const diagram = await postJson(baseUrl, token, '/api/a2a/component-nodes', {
+    type: 'excalidraw',
+    title: 'Hydration Diagram',
+    position: { x: 520, y: 160 },
+    scene: {
+      elements: [{ id: 'shape', type: 'rectangle', x: 10, y: 20, width: 90, height: 50 }],
+      appState: { viewBackgroundColor: '#ffffff' },
+      files: {},
+    },
+  });
+  const fileNode = await postJson(baseUrl, token, '/api/a2a/component-nodes', {
+    type: 'file',
+    title: 'package.json',
+    position: { x: 860, y: 160 },
+    file: {
+      source: 'workspace',
+      path: 'package.json',
+      name: 'package.json',
+      mime: 'application/json',
+      size: 1024,
+    },
+  });
+  const created = [markdown, diagram, fileNode];
+  for (const response of created) assert.equal(response.status, 201);
+
+  const snapshot = await getJson(baseUrl, token, '/api/a2a/snapshot?fresh=1');
+
+  assert.equal(snapshot.status, 200);
+  for (const response of created) {
+    const node = response.body.node;
+    const state = snapshot.body.componentNodes?.[node.nodeId];
+    const ref = snapshot.body.graph.componentStateRefs?.[node.nodeId];
+    const graphNode = snapshot.body.nodes.find(item => item.id === node.nodeId);
+
+    assert.ok(state, `${node.nodeId} must have UI hydration state`);
+    assert.ok(ref, `${node.nodeId} must have agent-readable state ref`);
+    assert.ok(graphNode, `${node.nodeId} must have graph metadata`);
+    assert.equal(state.nodeId, node.nodeId);
+    assert.equal(state.type, node.type);
+    assert.equal(state.title, node.title);
+    assert.equal(state.revision, node.revision);
+    assert.equal(state.statePath, node.statePath);
+    assert.match(state.statePath.replace(/\\/g, '/'), /^Harness\/a2a\/component-nodes\/component-[^/]+\/state\.json$/);
+    assert.deepEqual(ref, {
+      type: node.type,
+      title: node.title,
+      statePath: node.statePath,
+      revision: node.revision,
+      ...(state.file ? { file: state.file } : {}),
+    });
+    assert.equal(graphNode.stateRef.path, node.statePath);
+    assert.equal(graphNode.stateRef.revision, node.revision);
+    assert.equal(Object.hasOwn(graphNode, 'markdown'), false, 'graph metadata must not inline Markdown hydration state');
+    assert.equal(Object.hasOwn(graphNode, 'scene'), false, 'graph metadata must not inline Excalidraw hydration state');
+    assert.equal(Object.hasOwn(graphNode, 'file'), false, 'graph metadata must not inline File hydration state');
+  }
+
+  assert.equal(snapshot.body.componentNodes[markdown.body.node.nodeId].markdown, '# Hydration Notes\n');
+  assert.equal(snapshot.body.componentNodes[diagram.body.node.nodeId].scene.elements.length, 1);
+  assert.equal(snapshot.body.componentNodes[fileNode.body.node.nodeId].file.path, 'package.json');
+});
+
 test('AC-006 agent-readable workflow map context references component node state refs only', async () => {
   const { baseUrl, token, registry } = await makeServer();
   const session = registry.create({
@@ -480,9 +590,11 @@ test('AC-003 graph context exposes connected File and Markdown resources for an 
   ].sort());
   const fileRef = context.connectedResourceRefs.find(item => item.type === 'file');
   assert.equal(fileRef.file.path, 'Harness/tasks/task-alpha/PLAN.md');
-  assert.equal(fileRef.direction, 'inbound');
+  assert.equal(fileRef.direction, 'bidirectional');
+  assert.equal(fileRef.endpointRole, 'target');
   const markdownRef = context.connectedResourceRefs.find(item => item.type === 'markdown');
-  assert.equal(markdownRef.direction, 'outbound');
+  assert.equal(markdownRef.direction, 'bidirectional');
+  assert.equal(markdownRef.endpointRole, 'source');
   assert.equal(markdownRef.stateRef.path, markdownNode.body.node.statePath);
 });
 
@@ -541,7 +653,8 @@ test('AC-004 graph context exposes connected File Markdown and Diagram refs with
   const refsByNodeId = new Map(context.connectedResourceRefs.map(ref => [ref.nodeId, ref]));
 
   const fileRef = refsByNodeId.get(fileNode.body.node.nodeId);
-  assert.equal(fileRef.direction, 'inbound');
+  assert.equal(fileRef.direction, 'bidirectional');
+  assert.equal(fileRef.endpointRole, 'target');
   assert.equal(fileRef.sourceHandle, 'file');
   assert.equal(fileRef.targetHandle, 'context');
   assert.deepEqual(fileRef.stateRef, {
@@ -567,7 +680,8 @@ test('AC-004 graph context exposes connected File Markdown and Diagram refs with
   });
 
   const markdownRef = refsByNodeId.get(markdownNode.body.node.nodeId);
-  assert.equal(markdownRef.direction, 'outbound');
+  assert.equal(markdownRef.direction, 'bidirectional');
+  assert.equal(markdownRef.endpointRole, 'source');
   assert.equal(markdownRef.sourceHandle, 'output');
   assert.equal(markdownRef.targetHandle, 'markdown');
   assert.deepEqual(markdownRef.contentRef, {
@@ -585,7 +699,8 @@ test('AC-004 graph context exposes connected File Markdown and Diagram refs with
 
   const diagramRef = refsByNodeId.get(diagramNode.body.node.nodeId);
   assert.equal(diagramRef.type, 'excalidraw');
-  assert.equal(diagramRef.direction, 'inbound');
+  assert.equal(diagramRef.direction, 'bidirectional');
+  assert.equal(diagramRef.endpointRole, 'target');
   assert.equal(diagramRef.sourceHandle, 'scene');
   assert.equal(diagramRef.targetHandle, 'context');
   assert.deepEqual(diagramRef.contentRef, {

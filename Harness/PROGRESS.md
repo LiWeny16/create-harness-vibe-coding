@@ -4,7 +4,7 @@ Global task index. Load at session start to see what is active and what was done
 
 ## Active Task
 
-- task-standardize-workflow-nodes
+- None
 
 ## Task Index
 
@@ -12,10 +12,11 @@ Non-archived tasks only (max 5). Archived tasks are listed in `Harness/tasks/_ar
 
 | ID | Goal | Phase | Closed |
 |----|------|-------|--------|
-| task-standardize-workflow-nodes | Standardize Workflow nodes as first-class typed resources with File/Markdown/Diagram/Agent creation, agent-readable connections, file previews, and productized agent settings | Implementation | - |
 | task-homepage-act1-flat-layout | Redesign Act 1 opening: 5 flat staggered boxes, zero tilt, no float, no singled-out openable box | Implementation | - |
-| task-release-0819-formal | Formally release 0.8.19 across npm, canonical GitHub, and legacy mirror | Verified | - |
+| task-release-0819-formal | Formally release 0.8.19 across npm, canonical GitHub, and legacy mirror | Blocked | - |
+| task-standardize-workflow-nodes | Standardize Workflow nodes as first-class typed resources with File/Markdown/Diagram/Agent creation, agent-readable connections, file previews, and productized agent settings | Implementation | - |
 | task-terminal-input-control | Control WF UI terminal input, copy/paste, and file drag/drop behavior | Implementation | - |
+| task-wf-ui-control-260729 | Design the $wf-ui control-plane architecture and first MVP slice before implementation. | Intake | - |
 
 ## Cross-Task Decisions
 

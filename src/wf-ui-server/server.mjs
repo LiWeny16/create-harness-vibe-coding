@@ -62,6 +62,35 @@ import {
   getComponentNode,
   updateComponentNode,
 } from './component-node-store.mjs';
+import {
+  listNodes,
+  getNode,
+  createNode as createWorkflowNode,
+  updateNodeState,
+  updateNodeSettings,
+  executeNodeAction,
+  deleteNode as deleteWorkflowNode,
+  getNodeContext,
+} from './workflow-node-runtime.mjs';
+import { connectNodes, disconnectNodes, getGraphSnapshot } from './workflow-graph-store.mjs';
+import {
+  cleanupWfBrowserRuns,
+  createWfBrowserRun,
+  createWfBrowserWindow,
+  getWfBrowserLease,
+  getWfBrowserRun,
+  getWfBrowserWindow,
+  leaseWfBrowserWindow,
+  listWfBrowserArtifacts,
+  listWfBrowserRuns,
+  listWfBrowserWindows,
+  recordWfBrowserAction,
+  releaseWfBrowserLease,
+  storeWfBrowserArtifact,
+  validateWfBrowserCommandLease,
+  wfBrowserBackendCapabilities,
+  wfBrowserDebugUrlParams,
+} from './wf-browser-store.mjs';
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -225,6 +254,48 @@ function sendMappedError(res, err) {
   const statusCode = Number(err?.statusCode || 400);
   const code = err?.code || (statusCode === 404 ? 'NOT_FOUND' : statusCode === 409 ? 'CONFLICT' : 'BAD_REQUEST');
   return sendError(res, statusCode, code, err?.message || 'Request failed');
+}
+
+function wfBrowserCommandId(payload = {}) {
+  const value = String(payload.commandId || payload.command?.commandId || '').trim();
+  if (value) return value;
+  return `command-${Date.now().toString(36)}-${Math.random().toString(16).slice(2, 8)}`;
+}
+
+function wfBrowserPrimitive(payload = {}) {
+  return String(payload.primitive || payload.command?.primitive || '').trim();
+}
+
+function wfBrowserArtifactTypeForPrimitive(primitive) {
+  if (primitive === 'observe.uiTree') return 'ui-tree';
+  if (primitive === 'observe.logs') return 'logs';
+  if (primitive === 'observe.network') return 'network';
+  if (primitive === 'observe.ast') return 'ast';
+  if (primitive === 'observe.replay') return 'replay';
+  if (primitive === 'observe.state' || primitive === 'observe.route' || primitive === 'observe.capabilities') return 'state';
+  if (primitive === 'observe.diff') return 'analysis';
+  return '';
+}
+
+function normalizeWfBrowserRoute(value) {
+  const text = String(value || '').trim();
+  if (!text || /^https?:\/\//i.test(text) || text.startsWith('//')) return '/';
+  return text.startsWith('/') ? text : `/${text}`;
+}
+
+function wfBrowserLaunchUrl(requestUrl, token, windowState, lease = null, options = {}) {
+  const origin = `${requestUrl.protocol}//${requestUrl.host}`;
+  const launchUrl = new URL(normalizeWfBrowserRoute(options.route || windowState.route || '/'), origin);
+  if (token) launchUrl.searchParams.set('token', token);
+  const params = new URLSearchParams(wfBrowserDebugUrlParams({
+    runId: windowState.runId,
+    windowId: windowState.windowId,
+    agentId: options.agentId || lease?.agentId || windowState.agentId || '',
+    leaseId: options.leaseId || lease?.leaseId || '',
+    debug: options.debug !== false,
+  }));
+  for (const [key, value] of params.entries()) launchUrl.searchParams.set(key, value);
+  return launchUrl.toString();
 }
 
 function tokenFromRequest(req, url) {
@@ -495,7 +566,7 @@ function withResumeMetadata(session) {
   };
 }
 
-export function createServer({ projectRoot, sessionRegistry: sr, token: expectedToken, terminalHub = null }) {
+export function createServer({ projectRoot, sessionRegistry: sr, token: expectedToken, terminalHub = null, wfBrowserHub = null }) {
   const absRoot = canonicalizeProjectPath(projectRoot);
   const startTime = Date.now();
   ensureA2aDefaults(absRoot);
@@ -553,6 +624,258 @@ export function createServer({ projectRoot, sessionRegistry: sr, token: expected
         }
       } catch { /* fallback */ }
       return sendJson(res, 200, { root: absRoot, version, taskCount });
+    }
+
+    if (req.method === 'GET' && pathname === '/api/wf-browser/capabilities') {
+      return sendJson(res, 200, wfBrowserBackendCapabilities());
+    }
+
+    if (req.method === 'POST' && pathname === '/api/wf-browser/cleanup') {
+      readJsonBody(req).then((payload) => {
+        try {
+          return sendJson(res, 200, cleanupWfBrowserRuns(absRoot, payload));
+        } catch (e) {
+          return sendMappedError(res, e);
+        }
+      }).catch(e => sendError(res, 400, 'BAD_REQUEST', e.message));
+      return;
+    }
+
+    if (req.method === 'GET' && pathname === '/api/wf-browser/runs') {
+      try {
+        return sendJson(res, 200, listWfBrowserRuns(absRoot, {
+          limit: url.searchParams.get('limit') || 20,
+        }));
+      } catch (e) {
+        return sendMappedError(res, e);
+      }
+    }
+
+    if (req.method === 'POST' && pathname === '/api/wf-browser/runs') {
+      readJsonBody(req).then((payload) => {
+        try {
+          return sendJson(res, 201, createWfBrowserRun(absRoot, payload));
+        } catch (e) {
+          return sendMappedError(res, e);
+        }
+      }).catch(e => sendError(res, 400, 'BAD_REQUEST', e.message));
+      return;
+    }
+
+    if (req.method === 'GET' && pathname === '/api/wf-browser/connections') {
+      try {
+        return sendJson(res, 200, {
+          ok: true,
+          connections: typeof wfBrowserHub?.listConnections === 'function'
+            ? wfBrowserHub.listConnections()
+            : [],
+        });
+      } catch (e) {
+        return sendMappedError(res, e);
+      }
+    }
+
+    const wfBrowserCommandsMatch = pathname.match(/^\/api\/wf-browser\/runs\/([^/]+)\/windows\/([^/]+)\/commands$/);
+    if (req.method === 'POST' && wfBrowserCommandsMatch) {
+      readJsonBody(req).then(async (payload) => {
+        const runId = wfBrowserCommandsMatch[1];
+        const windowId = wfBrowserCommandsMatch[2];
+        const commandId = wfBrowserCommandId(payload);
+        const primitive = wfBrowserPrimitive(payload);
+        const commandPayload = {
+          ...payload,
+          commandId,
+          primitive,
+          runId,
+          windowId,
+          agentId: payload.agentId || payload.command?.agentId || '',
+          leaseId: payload.leaseId || payload.command?.leaseId || '',
+        };
+        try {
+          if (typeof wfBrowserHub?.sendCommand !== 'function') {
+            const err = new Error('wf-browser WebSocket bridge is not attached');
+            err.statusCode = 409;
+            err.code = 'BRIDGE_UNAVAILABLE';
+            throw err;
+          }
+          const leaseCheck = validateWfBrowserCommandLease(absRoot, runId, windowId, commandPayload);
+          recordWfBrowserAction(absRoot, runId, windowId, {
+            type: 'command.requested',
+            commandId,
+            primitive,
+            agentId: commandPayload.agentId,
+            leaseId: commandPayload.leaseId,
+            status: 'pending',
+            target: payload.target || payload.payload?.target,
+          });
+          const command = await wfBrowserHub.sendCommand({
+            ...commandPayload,
+            access: leaseCheck.access,
+          });
+          let artifact = null;
+          const artifactType = payload.storeArtifact === false ? '' : wfBrowserArtifactTypeForPrimitive(primitive);
+          if (artifactType && command.status === 'ok') {
+            artifact = storeWfBrowserArtifact(absRoot, runId, windowId, {
+              type: artifactType,
+              name: `${commandId}.json`,
+              label: primitive,
+              json: {
+                primitive,
+                commandId,
+                result: command.result,
+                artifacts: command.artifacts || [],
+                events: command.events || [],
+              },
+            }).artifact;
+          }
+          recordWfBrowserAction(absRoot, runId, windowId, {
+            type: 'command.result',
+            commandId,
+            primitive,
+            agentId: commandPayload.agentId,
+            leaseId: commandPayload.leaseId,
+            status: command.status || 'ok',
+            artifactIds: artifact ? [artifact.artifactId] : [],
+            error: command.error || undefined,
+          });
+          return sendJson(res, 200, { ok: true, command, artifact });
+        } catch (e) {
+          try {
+            recordWfBrowserAction(absRoot, runId, windowId, {
+              type: 'command.failed',
+              commandId,
+              primitive,
+              agentId: commandPayload.agentId,
+              leaseId: commandPayload.leaseId,
+              status: 'failed',
+              error: { code: e?.code || 'ERROR', message: e?.message || 'Command failed' },
+            });
+          } catch { /* best-effort command evidence */ }
+          return sendMappedError(res, e);
+        }
+      }).catch(e => sendError(res, 400, 'BAD_REQUEST', e.message));
+      return;
+    }
+
+    const wfBrowserArtifactsMatch = pathname.match(/^\/api\/wf-browser\/runs\/([^/]+)\/windows\/([^/]+)\/artifacts$/);
+    if (req.method === 'GET' && wfBrowserArtifactsMatch) {
+      try {
+        return sendJson(res, 200, listWfBrowserArtifacts(absRoot, wfBrowserArtifactsMatch[1], wfBrowserArtifactsMatch[2]));
+      } catch (e) {
+        return sendMappedError(res, e);
+      }
+    }
+    if (req.method === 'POST' && wfBrowserArtifactsMatch) {
+      readJsonBody(req).then((payload) => {
+        try {
+          return sendJson(res, 201, storeWfBrowserArtifact(absRoot, wfBrowserArtifactsMatch[1], wfBrowserArtifactsMatch[2], payload));
+        } catch (e) {
+          return sendMappedError(res, e);
+        }
+      }).catch(e => sendError(res, 400, 'BAD_REQUEST', e.message));
+      return;
+    }
+
+    const wfBrowserLeaseReleaseMatch = pathname.match(/^\/api\/wf-browser\/runs\/([^/]+)\/windows\/([^/]+)\/lease\/([^/]+)\/release$/);
+    if (req.method === 'POST' && wfBrowserLeaseReleaseMatch) {
+      readJsonBody(req).then((payload) => {
+        try {
+          return sendJson(res, 200, releaseWfBrowserLease(
+            absRoot,
+            wfBrowserLeaseReleaseMatch[1],
+            wfBrowserLeaseReleaseMatch[2],
+            wfBrowserLeaseReleaseMatch[3],
+            payload,
+          ));
+        } catch (e) {
+          return sendMappedError(res, e);
+        }
+      }).catch(e => sendError(res, 400, 'BAD_REQUEST', e.message));
+      return;
+    }
+
+    const wfBrowserLeaseMatch = pathname.match(/^\/api\/wf-browser\/runs\/([^/]+)\/windows\/([^/]+)\/lease$/);
+    if (req.method === 'POST' && wfBrowserLeaseMatch) {
+      readJsonBody(req).then((payload) => {
+        try {
+          const result = leaseWfBrowserWindow(absRoot, wfBrowserLeaseMatch[1], wfBrowserLeaseMatch[2], payload);
+          const windowState = getWfBrowserWindow(absRoot, wfBrowserLeaseMatch[1], wfBrowserLeaseMatch[2]).window;
+          return sendJson(res, 201, {
+            ...result,
+            launchUrl: wfBrowserLaunchUrl(url, expectedToken, windowState, result.lease),
+          });
+        } catch (e) {
+          return sendMappedError(res, e);
+        }
+      }).catch(e => sendError(res, 400, 'BAD_REQUEST', e.message));
+      return;
+    }
+
+    const wfBrowserLaunchUrlMatch = pathname.match(/^\/api\/wf-browser\/runs\/([^/]+)\/windows\/([^/]+)\/launch-url$/);
+    if (req.method === 'GET' && wfBrowserLaunchUrlMatch) {
+      try {
+        const windowState = getWfBrowserWindow(absRoot, wfBrowserLaunchUrlMatch[1], wfBrowserLaunchUrlMatch[2]).window;
+        const leaseId = url.searchParams.get('leaseId') || url.searchParams.get('lease') || '';
+        const lease = leaseId ? getWfBrowserLease(absRoot, wfBrowserLaunchUrlMatch[1], wfBrowserLaunchUrlMatch[2], leaseId).lease : null;
+        const debug = url.searchParams.get('debug') !== '0' && url.searchParams.get('debug') !== 'false';
+        const debugUrlParams = wfBrowserDebugUrlParams({
+          runId: windowState.runId,
+          windowId: windowState.windowId,
+          agentId: url.searchParams.get('agentId') || lease?.agentId || windowState.agentId || '',
+          leaseId: lease?.leaseId || '',
+          debug,
+        });
+        return sendJson(res, 200, {
+          ok: true,
+          runId: windowState.runId,
+          windowId: windowState.windowId,
+          leaseId: lease?.leaseId || '',
+          route: normalizeWfBrowserRoute(url.searchParams.get('route') || windowState.route || '/'),
+          debugUrlParams,
+          launchUrl: wfBrowserLaunchUrl(url, expectedToken, windowState, lease, {
+            route: url.searchParams.get('route') || '',
+            agentId: url.searchParams.get('agentId') || '',
+            debug,
+          }),
+        });
+      } catch (e) {
+        return sendMappedError(res, e);
+      }
+    }
+
+    const wfBrowserWindowsMatch = pathname.match(/^\/api\/wf-browser\/runs\/([^/]+)\/windows$/);
+    if (req.method === 'GET' && wfBrowserWindowsMatch) {
+      try {
+        return sendJson(res, 200, listWfBrowserWindows(absRoot, wfBrowserWindowsMatch[1]));
+      } catch (e) {
+        return sendMappedError(res, e);
+      }
+    }
+    if (req.method === 'POST' && wfBrowserWindowsMatch) {
+      readJsonBody(req).then((payload) => {
+        try {
+          const result = createWfBrowserWindow(absRoot, wfBrowserWindowsMatch[1], payload);
+          return sendJson(res, 201, {
+            ...result,
+            launchUrl: wfBrowserLaunchUrl(url, expectedToken, result.window, null, {
+              route: payload.route || '',
+              agentId: payload.agentId || '',
+            }),
+          });
+        } catch (e) {
+          return sendMappedError(res, e);
+        }
+      }).catch(e => sendError(res, 400, 'BAD_REQUEST', e.message));
+      return;
+    }
+
+    const wfBrowserRunMatch = pathname.match(/^\/api\/wf-browser\/runs\/([^/]+)$/);
+    if (req.method === 'GET' && wfBrowserRunMatch) {
+      try {
+        return sendJson(res, 200, getWfBrowserRun(absRoot, wfBrowserRunMatch[1]));
+      } catch (e) {
+        return sendMappedError(res, e);
+      }
     }
 
     // ── GET /api/tasks ──
@@ -765,6 +1088,140 @@ export function createServer({ projectRoot, sessionRegistry: sr, token: expected
       } catch (e) {
         return sendMappedError(res, e);
       }
+    }
+
+    // ── Workflow Node Runtime ──
+    if (req.method === 'GET' && pathname === '/api/workflow/nodes') {
+      Promise.resolve().then(() => listNodes(absRoot))
+        .then(data => sendJson(res, 200, data))
+        .catch(e => sendMappedError(res, e));
+      return;
+    }
+
+    const workflowNodeByIdMatch = pathname.match(/^\/api\/workflow\/nodes\/([^/]+)$/);
+    if (req.method === 'GET' && workflowNodeByIdMatch) {
+      Promise.resolve().then(() => getNode(absRoot, decodeURIComponent(workflowNodeByIdMatch[1])))
+        .then(data => sendJson(res, 200, data))
+        .catch(e => sendMappedError(res, e));
+      return;
+    }
+
+    if (req.method === 'POST' && pathname === '/api/workflow/nodes') {
+      readJsonBody(req)
+        .then(payload => createWorkflowNode(absRoot, payload))
+        .then(data => sendJson(res, 201, data))
+        .catch(e => sendMappedError(res, e));
+      return;
+    }
+
+    const workflowNodeStateMatch = pathname.match(/^\/api\/workflow\/nodes\/([^/]+)\/state$/);
+    if (req.method === 'PATCH' && workflowNodeStateMatch) {
+      readJsonBody(req)
+        .then(payload => updateNodeState(absRoot, decodeURIComponent(workflowNodeStateMatch[1]), payload))
+        .then(data => sendJson(res, 200, data))
+        .catch(e => sendMappedError(res, e));
+      return;
+    }
+
+    const workflowNodeSettingsMatch = pathname.match(/^\/api\/workflow\/nodes\/([^/]+)\/settings$/);
+    if (req.method === 'PATCH' && workflowNodeSettingsMatch) {
+      readJsonBody(req)
+        .then(payload => updateNodeSettings(absRoot, decodeURIComponent(workflowNodeSettingsMatch[1]), payload))
+        .then(data => sendJson(res, 200, data))
+        .catch(e => sendMappedError(res, e));
+      return;
+    }
+
+    const workflowNodeActionMatch = pathname.match(/^\/api\/workflow\/nodes\/([^/]+)\/actions\/([^/]+)$/);
+    if (req.method === 'POST' && workflowNodeActionMatch) {
+      readJsonBody(req)
+        .then(async (payload) => {
+          const key = decodeURIComponent(workflowNodeActionMatch[1]);
+          const action = decodeURIComponent(workflowNodeActionMatch[2]);
+          if (action === 'agent.start' || action === 'agent.restart') {
+            if (!sr || typeof sr.create !== 'function') {
+              const e = new NodeConfigError('Session registry not available', {
+                statusCode: 501,
+                code: 'NOT_IMPLEMENTED',
+              });
+              throw e;
+            }
+            const run = () => action === 'agent.restart'
+              ? restartWorkflowGraphNode(sr, absRoot, key, {
+                  ...payload,
+                  ...controlPlanePayload(url, expectedToken),
+                }, terminalHub)
+              : startWorkflowGraphNode(sr, absRoot, key, {
+                  ...payload,
+                  ...controlPlanePayload(url, expectedToken),
+                }, terminalHub);
+            const lockKey = `workflow-action:${action}:${key}`;
+            const result = typeof sr.withLock === 'function'
+              ? await sr.withLock(lockKey, run)
+              : await Promise.resolve().then(run);
+            const snapshot = await getNode(absRoot, result.graphNodeId || key).catch(() => ({ node: null }));
+            return { ok: true, action, node: snapshot.node, result };
+          }
+          if (action === 'agent.stop') {
+            if (!sr || typeof sr.get !== 'function') {
+              const e = new NodeConfigError('Session registry not available', {
+                statusCode: 501,
+                code: 'NOT_IMPLEMENTED',
+              });
+              throw e;
+            }
+            const { node } = snapshotNodeByKey(absRoot, sr, key);
+            const result = stopRuntimeSession(sr, absRoot, node.sessionId, terminalHub);
+            const snapshot = await getNode(absRoot, node.graphNodeId || node.id || key).catch(() => ({ node: null }));
+            return { ok: true, action, node: snapshot.node, result };
+          }
+          if (action === 'agent.sendInput') {
+            if (!sr || typeof sr.get !== 'function') {
+              const e = new NodeConfigError('Session registry not available', {
+                statusCode: 501,
+                code: 'NOT_IMPLEMENTED',
+              });
+              throw e;
+            }
+            const { node } = snapshotNodeByKey(absRoot, sr, key);
+            const result = sendRuntimeSessionInput(sr, absRoot, node.sessionId, payload, req.headers);
+            const snapshot = await getNode(absRoot, node.graphNodeId || node.id || key).catch(() => ({ node: null }));
+            return { ok: true, action, node: snapshot.node, result };
+          }
+          return executeNodeAction(
+            absRoot,
+            key,
+            action,
+            payload,
+          );
+        })
+        .then(data => sendJson(res, 200, data))
+        .catch(e => sendMappedError(res, e));
+      return;
+    }
+
+    if (req.method === 'POST' && pathname === '/api/workflow/edges') {
+      readJsonBody(req)
+        .then(payload => connectNodes(absRoot, payload))
+        .then(data => sendJson(res, 201, data))
+        .catch(e => sendMappedError(res, e));
+      return;
+    }
+
+    const workflowEdgeDeleteMatch = pathname.match(/^\/api\/workflow\/edges\/([^/]+)$/);
+    if (req.method === 'DELETE' && workflowEdgeDeleteMatch) {
+      Promise.resolve().then(() => disconnectNodes(absRoot, decodeURIComponent(workflowEdgeDeleteMatch[1])))
+        .then(data => sendJson(res, 200, data))
+        .catch(e => sendMappedError(res, e));
+      return;
+    }
+
+    const workflowContextMatch = pathname.match(/^\/api\/workflow\/context\/([^/]+)$/);
+    if (req.method === 'GET' && workflowContextMatch) {
+      Promise.resolve().then(() => getNodeContext(absRoot, decodeURIComponent(workflowContextMatch[1])))
+        .then(data => sendJson(res, 200, data))
+        .catch(e => sendMappedError(res, e));
+      return;
     }
 
     const graphNodeConfigMatch = pathname.match(/^\/api\/a2a\/(?:nodes|graph-nodes)\/([^/]+)\/config$/);
@@ -1098,44 +1555,18 @@ export function createServer({ projectRoot, sessionRegistry: sr, token: expected
       if (!sr || typeof sr.get !== 'function') {
         return sendError(res, 501, 'NOT_IMPLEMENTED', 'Session registry not available');
       }
-      const session = sr.get(inputMatch[1]);
-      if (!session) return sendError(res, 404, 'NOT_FOUND', 'Session not found');
       readJsonBody(req).then((payload) => {
-        const data = String(payload.data || payload.text || payload.input || '');
-        const actorSessionId = cleanString(
-          payload.fromSessionId
-            || payload.actorSessionId
-            || payload.sourceSessionId
-            || req.headers['x-harness-session-id'],
-          '',
-        );
-        if (actorSessionId && !validateTaskId(actorSessionId)) {
-          return sendError(res, 400, 'BAD_REQUEST', 'Invalid actor session ID');
+        try {
+          return sendJson(res, 200, sendRuntimeSessionInput(
+            sr,
+            absRoot,
+            decodeURIComponent(inputMatch[1]),
+            payload,
+            req.headers,
+          ));
+        } catch (e) {
+          return sendMappedError(res, e);
         }
-        if (!writePtyInput(session.sessionId, data)) return sendError(res, 409, 'NO_PTY', 'No PTY process attached to this session');
-        sr.update(session.sessionId, { attachMode: true });
-        const updated = sr.get(session.sessionId);
-        persistSession(absRoot, updated);
-        recordInputRequest(absRoot, session.sessionId, data);
-        appendTerminalData(absRoot, updated, data, 'stdin');
-        let bridgeMessage = null;
-        if (actorSessionId && actorSessionId !== session.sessionId) {
-          bridgeMessage = recordBridgeMessage(absRoot, {
-            fromSessionId: actorSessionId,
-            toSessionId: session.sessionId,
-            fromNodeId: cleanString(payload.fromNodeId || payload.sourceNodeId, ''),
-            toNodeId: cleanString(payload.toNodeId || session.graphNodeId, ''),
-            data,
-            source: cleanString(payload.source, 'api.sessions.input'),
-          });
-          appendSessionEvent(absRoot, updated, {
-            type: 'wf.bridge.message',
-            bridgeId: bridgeMessage?.bridgeId || null,
-            fromSessionId: actorSessionId,
-            toSessionId: session.sessionId,
-          });
-        }
-        return sendJson(res, 200, { ok: true, sessionId: session.sessionId, bridgeMessage });
       }).catch(e => sendError(res, 400, 'BAD_REQUEST', e.message));
       return;
     }
@@ -1422,6 +1853,59 @@ function stopRuntimeSession(sr, absRoot, sessionId, terminalHub = null) {
     state: updated.status || 'stopped',
   });
   return { ok: true, killed, stopped: updated, saved: updated };
+}
+
+function sendRuntimeSessionInput(sr, absRoot, sessionId, payload = {}, headers = {}) {
+  const session = sr.get(sessionId);
+  if (!session) {
+    throw new NodeConfigError('Session not found', {
+      statusCode: 404,
+      code: 'NOT_FOUND',
+    });
+  }
+  const data = String(payload.data || payload.text || payload.input || '');
+  const actorSessionId = cleanString(
+    payload.fromSessionId
+      || payload.actorSessionId
+      || payload.sourceSessionId
+      || headers['x-harness-session-id'],
+    '',
+  );
+  if (actorSessionId && !validateTaskId(actorSessionId)) {
+    throw new NodeConfigError('Invalid actor session ID', {
+      statusCode: 400,
+      code: 'BAD_REQUEST',
+    });
+  }
+  if (!writePtyInput(session.sessionId, data)) {
+    throw new NodeConfigError('No PTY process attached to this session', {
+      statusCode: 409,
+      code: 'NO_PTY',
+    });
+  }
+  sr.update(session.sessionId, { attachMode: true });
+  const updated = sr.get(session.sessionId);
+  persistSession(absRoot, updated);
+  recordInputRequest(absRoot, session.sessionId, data);
+  appendTerminalData(absRoot, updated, data, 'stdin');
+  let bridgeMessage = null;
+  if (actorSessionId && actorSessionId !== session.sessionId) {
+    bridgeMessage = recordBridgeMessage(absRoot, {
+      fromSessionId: actorSessionId,
+      toSessionId: session.sessionId,
+      fromNodeId: cleanString(payload.fromNodeId || payload.sourceNodeId, ''),
+      toNodeId: cleanString(payload.toNodeId || session.graphNodeId, ''),
+      data,
+      source: cleanString(payload.source, 'api.sessions.input'),
+    });
+    appendSessionEvent(absRoot, updated, {
+      type: 'wf.bridge.message',
+      bridgeId: bridgeMessage?.bridgeId || null,
+      fromSessionId: actorSessionId,
+      toSessionId: session.sessionId,
+    });
+  }
+  return { ok: true, sessionId: session.sessionId, bridgeMessage };
 }
 
 function findWorkflowSnapshotNode(snapshot, key) {
@@ -2206,6 +2690,7 @@ export function startServer(opts = {}) {
     sessionRegistry: opts.sessionRegistry,
     token,
     terminalHub: opts.terminalHub || null,
+    wfBrowserHub: opts.wfBrowserHub || null,
   });
   const cleanupTimer = startCleanupScheduler(projectRoot, opts.sessionRegistry);
   if (cleanupTimer) server.once('close', () => clearInterval(cleanupTimer));

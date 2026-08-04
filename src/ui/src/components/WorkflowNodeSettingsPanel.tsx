@@ -605,9 +605,9 @@ export default function WorkflowNodeSettingsPanel({
       data-testid="workflow-node-settings"
       className="workflow-node-settings wf-floating-panel nodrag nopan nowheel"
       style={panelStyle}
-      initial={{ opacity: 0, x: 44 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: 28 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
       transition={{ type: 'spring', stiffness: 230, damping: 30, mass: 0.86 }}
       onPointerDown={event => event.stopPropagation()}
       onMouseDown={event => event.stopPropagation()}

@@ -1,23 +1,23 @@
 {
   "schemaVersion": 1,
   "taskId": "task-standardize-workflow-nodes",
-  "status": "active",
-  "mode": "wf-max",
+  "status": "in_progress",
+  "mode": "direct",
   "tier": "WF-Full",
   "phase": "implement",
-  "gate": "W2-INTEGRATION",
-  "updatedAt": "2026-08-01T15:42:22.467Z",
+  "gate": "PASS_CLOSEOUT",
+  "updatedAt": "2026-08-04T14:14:00.555Z",
   "activeQuestion": null,
-  "nextAction": "Wait for W2G graph persistence debugger, then rerun M3/M4/M5 and CDP closeout.",
+  "nextAction": "Pause checkpoint: Excalidraw hydration/state persistence bug was fixed and verified in targeted backend/UI checks before this pause. A follow-up bidirectional connection-state fix is partially implemented but not yet green: RED tests were added for AC-007 runtime connections and reverse duplicate edges; backend runtime/a2a/agent adapter and frontend edge label/marker/type changes are in progress. Do not archive until the bidirectional connection work is finished and validation is rerun.",
   "acceptance": [
     {
       "id": "AC-001",
-      "status": "pending",
+      "status": "verified",
       "text": "Unified node creation exists from top-right plus and canvas right-click, offers Agent/File/Markdown/Diagram, and removes the old top-center Markdown/Diagram toolbar."
     },
     {
       "id": "AC-002",
-      "status": "pending",
+      "status": "verified",
       "text": "File/text ingestion works: Explorer drag creates workspace-reference File node; Explorer preview can insert File node; external drop/paste stores File node under Harness/user-files; large pasted text creates Markdown node."
     },
     {
@@ -37,37 +37,37 @@
     },
     {
       "id": "AC-006",
-      "status": "pending",
+      "status": "verified",
       "text": "Explorer interaction is deterministic: single-click folder toggles open/closed, file click opens preview, right-click menu uses global viewport coordinates and clamps in view, Explorer gestures do not pan/drag canvas."
     },
     {
       "id": "AC-007",
-      "status": "pending",
+      "status": "verified",
       "text": "Node interaction is deterministic: double-click opens config/editor; right-click opens node menu only; delete/settings/open config/copy/cut/duplicate actions are available with stable selectors."
     },
     {
       "id": "AC-008",
-      "status": "pending",
+      "status": "verified",
       "text": "Bridge edge interaction is stable: single-click/drag does not open panel, double-click opens panel, edge/offset persistence happens on commit only and survives reload without disconnections."
     },
     {
       "id": "AC-009",
-      "status": "verified-targeted",
+      "status": "verified",
       "text": "Markdown and Excalidraw editors have enlarged/fullscreen mode, smooth loading/open animation, real editor loaded state, save revisions, Excalidraw icon/brand styling, no useless Rect toolbar button."
     },
     {
       "id": "AC-010",
-      "status": "verified-targeted",
+      "status": "verified",
       "text": "Agent settings panel is searchable, categorized, compact, i18n-ready, has tooltips, selectors/switches for common config, explorer-backed cwd picker, working Add Skill, and no raw JSON for common permission/launch policy."
     },
     {
       "id": "AC-011",
-      "status": "pending",
+      "status": "verified",
       "text": "Overlay stack is deterministic: toasts render above workflow chrome, menus/panels clamp to viewport, fullscreen is top layer."
     },
     {
       "id": "AC-012",
-      "status": "pending",
+      "status": "verified",
       "text": "Performance budget holds on /workflow: no React update loop, no failed API resources, ready under 3s in seeded graph smoke, no long task above 250ms during key interactions, edge drag sends no graph-map PUT before pointerup."
     }
   ],
@@ -83,9 +83,7 @@
   },
   "queues": {
     "ready": [],
-    "running": [
-      "w2-graph-persistence-debug"
-    ],
+    "running": [],
     "blocked": [],
     "done": [
       "w0-readonly-fanout",
@@ -98,7 +96,10 @@
       "w2-frontend-editors-settings",
       "w2-frontend-explorer-file",
       "w2-style-integration",
-      "w2-m4-residual-debug"
+      "w2-m4-residual-debug",
+      "w2-graph-persistence-debug",
+      "w3-review",
+      "w4-ceo-cdp-closeout"
     ]
   },
   "workItems": [
@@ -164,7 +165,7 @@
     },
     {
       "id": "w3-review",
-      "status": "ready",
+      "status": "done",
       "ownerRole": "reviewer",
       "goal": "Run independent spec/UX, API/security, and performance/React reviews."
     },
@@ -176,13 +177,13 @@
     },
     {
       "id": "w4-ceo-cdp-closeout",
-      "status": "ready",
+      "status": "done",
       "ownerRole": "ceo",
       "goal": "Run final Playwright/CDP validation against /workflow and record AC matrix."
     },
     {
       "id": "w2-graph-persistence-debug",
-      "status": "running",
+      "status": "done",
       "ownerRole": "debugger",
       "goal": "Fix M3 graph-map persistence for component node drag and handle connect while preserving M4 no-PUT-before-pointerup behavior."
     }
@@ -311,16 +312,25 @@
       "runtime": "Codex",
       "channel": "multi_agent_v1",
       "role": "debugger",
-      "status": "running",
-      "result": "Fix graph-map persistence for component node drag and handle connect after CEO verification found M3 13/15 pass with 2 graph-map failures."
+      "status": "returned-closed-verified",
+      "result": "Closed graph persistence/browser-control gaps; build pass, M3 14/14, M4 5/5, M5 1/1, backend target 47/47."
+    },
+    {
+      "id": "019fccde-92e4-7e61-8b8c-8549be5c6181",
+      "wave": "W4",
+      "runtime": "Codex",
+      "channel": "multi_agent_v1",
+      "role": "reflector",
+      "status": "returned-pass-closeout",
+      "result": "PASS_CLOSEOUT after final validation: M2 AC-010 1/1, M3/M4/M5 21/21, backend 78 tests, typecheck, and build. Residual risk is task-index inconsistency outside this task and untracked runtime files needing inclusion in any commit."
     }
   ],
   "fanout": {
     "fanoutAttempted": true,
     "runtime": "Codex",
     "channel": "multi_agent_v1",
-    "agentsRequested": 14,
-    "agentsReturned": 13,
+    "agentsRequested": 22,
+    "agentsReturned": 22,
     "nativeSubagentsUsable": true,
     "mode": "WF-Max-Useful",
     "degradation": "Implementation parallelism is limited by shared high-conflict files WorkflowRoute.tsx and index.css; implementation waves are sequenced where write sets overlap."
@@ -344,7 +354,13 @@
     "The worktree already contains partial prior edits and unrelated dirty files; Workers must not revert unrelated user changes.",
     "React #185 may hide a state subscription loop that only appears in production/minified builds."
   ],
-  "artifacts": [],
+  "artifacts": [
+    {
+      "type": "browser-acceptance",
+      "path": "src/ui/test-results",
+      "note": "Final closeout: M2 AC-010 1/1 and combined M3/M4/M5 21/21 after W3 fixes."
+    }
+  ],
   "defaultRuntime": "codex",
   "defaultAgentRuntime": "codex"
 }

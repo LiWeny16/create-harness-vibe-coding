@@ -100,6 +100,7 @@ export default function Header() {
               key={to}
               to={to}
               data-testid={`nav-${label.toLowerCase()}`}
+              data-wf-capability={`nav.${label.toLowerCase()}`}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -140,6 +141,7 @@ export default function Header() {
 
       <button
         data-testid="theme-toggle"
+        data-wf-capability="app.themeToggle"
         title={t('System theme')}
         aria-label={t('System theme')}
         style={{

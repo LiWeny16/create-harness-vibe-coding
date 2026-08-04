@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "generator": "0.8.20",
   "source": "https://raw.githubusercontent.com/LiWeny16/create-harness-vibe-coding/main/templates/common/",
-  "generated": "2026-08-01T15:42:17.557Z",
+  "generated": "2026-08-03T14:20:00.568Z",
   "preserve": [
     "Harness/PROGRESS.md",
     "Harness/tasks/**",
@@ -194,6 +194,11 @@
     {
       "path": ".agents/skills/wf-browser/SKILL.md",
       "kind": "skill",
+      "overwrite": "safe"
+    },
+    {
+      "path": ".agents/skills/wf-browser/references/BROWSER_CONTROL_PATTERNS.md",
+      "kind": "config",
       "overwrite": "safe"
     },
     {
@@ -474,6 +479,11 @@
     {
       "path": ".claude/skills/wf-browser/SKILL.md",
       "kind": "skill",
+      "overwrite": "safe"
+    },
+    {
+      "path": ".claude/skills/wf-browser/references/BROWSER_CONTROL_PATTERNS.md",
+      "kind": "config",
       "overwrite": "safe"
     },
     {
@@ -978,6 +988,11 @@
     },
     {
       "path": "Harness/templates/VALIDATION_REPORT.template.md",
+      "kind": "config",
+      "overwrite": "safe"
+    },
+    {
+      "path": "Harness/wf-browser/README.md",
       "kind": "config",
       "overwrite": "safe"
     },

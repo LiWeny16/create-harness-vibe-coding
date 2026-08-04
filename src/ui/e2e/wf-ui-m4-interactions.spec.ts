@@ -28,6 +28,7 @@ type HarnessNetwork = {
   componentCreateRequests: JsonRecord[];
   graphMapRequests: JsonRecord[];
   graphMapPutsBeforePointerUp: JsonRecord[];
+  committedGraph: JsonRecord;
   bridgeMessageRequests: string[];
   edgeGesturePhase: 'idle' | 'dragging';
 };
@@ -38,6 +39,18 @@ function jsonResponse(route: Route, body: unknown, status = 200) {
     contentType: 'application/json',
     body: JSON.stringify(body),
   });
+}
+
+function cloneJson<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T;
+}
+
+function requestJson(route: Route) {
+  try {
+    return route.request().postData() ? route.request().postDataJSON() as JsonRecord : {};
+  } catch {
+    return {};
+  }
 }
 
 function control() {
@@ -154,6 +167,45 @@ function workflowSnapshot() {
   };
 }
 
+function runtimeComponentNode(nodeId: string, payload: JsonRecord) {
+  const type = String(payload.type || 'file');
+  const state = {
+    nodeId,
+    type,
+    title: payload.title || 'M4 file node',
+    revision: 1,
+    file: payload.file,
+    observableInputs: ['file'],
+    observableOutputs: ['file', 'path'],
+    statePath: `Harness/a2a/component-nodes/${nodeId}/state.json`,
+  };
+  return {
+    ok: true,
+    node: {
+      nodeId,
+      kind: type,
+      version: 1,
+      lifecycle: 'ready',
+      status: { state: 'ready', updatedAt: '2026-08-01T00:00:00.000Z' },
+      graph: {
+        position: payload.position || { x: 260, y: 420 },
+        handles: [
+          { id: 'file', role: 'input', type: 'file', label: 'file' },
+          { id: 'path', role: 'output', type: 'path', label: 'path' },
+        ],
+        connections: [],
+      },
+      stateRef: { path: state.statePath, revision: 1 },
+      contentRef: payload.file,
+      settings: { schemaId: `${type}-settings`, values: {}, revision: 0 },
+      capabilities: ['state:read', 'state:update'],
+      ui: { previewKind: type, settingsPanel: `${type}-settings`, testId: `workflow-${type}-node`, labels: { title: state.title } },
+    },
+    state,
+    revision: 1,
+  };
+}
+
 function workspaceEntries(relPath: string) {
   const normalized = relPath.replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
   const table: Record<string, unknown[]> = {
@@ -232,13 +284,34 @@ async function installBrowserCollectors(page: Page): Promise<BrowserSignals> {
 }
 
 async function installWorkflowFixture(page: Page): Promise<HarnessNetwork> {
+  let committedGraph = cloneJson((workflowSnapshot() as JsonRecord).graph) as JsonRecord;
   const network: HarnessNetwork = {
     workspaceTreeRequests: [],
     componentCreateRequests: [],
     graphMapRequests: [],
     graphMapPutsBeforePointerUp: [],
+    committedGraph,
     bridgeMessageRequests: [],
     edgeGesturePhase: 'idle',
+  };
+  const snapshotWithCommittedGraph = () => {
+    const snapshot = workflowSnapshot() as JsonRecord;
+    const graph = cloneJson(committedGraph);
+    snapshot.graph = graph;
+    snapshot.edges = Array.isArray(graph.edges)
+      ? graph.edges.map((edge: JsonRecord) => ({
+          id: edge.id,
+          from: edge.from || edge.source,
+          to: edge.to || edge.target,
+          source: edge.source || edge.from,
+          target: edge.target || edge.to,
+          relation: edge.relation || edge.label || 'wf-bridge',
+          sourceHandle: edge.sourceHandle,
+          targetHandle: edge.targetHandle,
+          offset: edge.offset,
+        }))
+      : [];
+    return snapshot;
   };
 
   await page.route('**/api/debug/report', route => jsonResponse(route, { ok: true }));
@@ -256,8 +329,8 @@ async function installWorkflowFixture(page: Page): Promise<HarnessNetwork> {
     capabilities: ['terminal'],
   }]));
   await page.route('**/api/tasks**', route => jsonResponse(route, [{ taskId: 'task-standardize-workflow-nodes', status: 'open', phase: 'm4-red' }]));
-  await page.route('**/api/a2a/snapshot**', route => jsonResponse(route, workflowSnapshot()));
-  await page.route('**/api/sessions?all=1**', route => jsonResponse(route, workflowSnapshot().sessions));
+  await page.route('**/api/a2a/snapshot**', route => jsonResponse(route, snapshotWithCommittedGraph()));
+  await page.route('**/api/sessions?all=1**', route => jsonResponse(route, snapshotWithCommittedGraph().sessions));
   await page.route('**/api/terminals/**/range**', route => jsonResponse(route, { entries: [{ seq: 1, stream: 'stdout', data: '\r\nM4 terminal fixture ready\r\n' }] }));
   await page.route('**/api/sessions/**/attach-mode', route => jsonResponse(route, { ok: true }));
   await page.route('**/api/sessions/**/input', route => jsonResponse(route, { ok: true }));
@@ -278,16 +351,33 @@ async function installWorkflowFixture(page: Page): Promise<HarnessNetwork> {
     });
   });
   await page.route('**/api/a2a/graph-map**', async route => {
-    const payload = route.request().postDataJSON() as JsonRecord || {};
+    const payload = requestJson(route);
     const record = { method: route.request().method(), url: route.request().url(), payload };
     network.graphMapRequests.push(record);
     if (record.method === 'PUT' && network.edgeGesturePhase === 'dragging') {
       network.graphMapPutsBeforePointerUp.push(record);
     }
+    if (record.method === 'PUT') {
+      committedGraph = {
+        ...committedGraph,
+        ...cloneJson(payload),
+        version: Number(payload.version || committedGraph.version || 1),
+        nodes: Array.isArray(payload.nodes) ? cloneJson(payload.nodes) : committedGraph.nodes,
+        edges: Array.isArray(payload.edges) ? cloneJson(payload.edges) : committedGraph.edges,
+        positions: payload.positions && typeof payload.positions === 'object'
+          ? cloneJson(payload.positions)
+          : committedGraph.positions,
+        graphContextPath: committedGraph.graphContextPath || 'Harness/a2a/workflow-map.json',
+        sourceOfTruth: payload.sourceOfTruth || committedGraph.sourceOfTruth || 'backend',
+        undoStack: [],
+        redoStack: [],
+      };
+      network.committedGraph = committedGraph;
+    }
     return jsonResponse(route, {
       ok: true,
-      revision: network.graphMapRequests.length + 1,
-      graph: workflowSnapshot().graph,
+      revision: Number(committedGraph.version || network.graphMapRequests.length + 1),
+      graph: cloneJson(committedGraph),
       sourceOfTruth: 'backend',
     });
   });
@@ -304,19 +394,22 @@ async function installWorkflowFixture(page: Page): Promise<HarnessNetwork> {
   });
   await page.route('**/api/workspace/text**', route => jsonResponse(route, { text: '{ "name": "m4" }', bytesRead: 16, truncated: false, encoding: 'utf-8' }));
   await page.route('**/api/workspace/file**', route => route.fulfill({ status: 200, contentType: 'application/json', body: '{ "name": "m4" }' }));
-  await page.route('**/api/a2a/component-nodes', async route => {
+  await page.route(/\/api\/workflow\/nodes(?:\?.*)?$/, async route => {
+    if (route.request().method() === 'GET') return jsonResponse(route, { ok: true, nodes: [] });
     const payload = route.request().postDataJSON() as JsonRecord;
     network.componentCreateRequests.push(payload);
     const nodeId = `component-m4-${network.componentCreateRequests.length}`;
-    return jsonResponse(route, {
-      ok: true,
-      nodeId,
-      revision: 1,
-      node: { id: nodeId, label: payload.title || 'M4 file node', kind: 'component-node', componentType: payload.type, type: payload.type, level: 0, status: 'ready', lifecycle: 'stateful', runtimeState: 'ready', managedByCurrentServer: true, control: control(), graphNodeId: nodeId, revision: 1, statePath: `Harness/a2a/component-nodes/${nodeId}.json`, observableInputs: ['file'], observableOutputs: ['file', 'path'] },
-      state: { nodeId, type: payload.type, title: payload.title || 'M4 file node', revision: 1, file: payload.file, observableInputs: ['file'], observableOutputs: ['file', 'path'] },
-    });
+    return jsonResponse(route, runtimeComponentNode(nodeId, payload), 201);
   });
-  await page.route('**/api/a2a/component-nodes/*', route => jsonResponse(route, { ok: true, revision: 2 }));
+  await page.route(/\/api\/workflow\/nodes\/.+/, route => {
+    const nodeId = new URL(route.request().url()).pathname.split('/').filter(Boolean)[3] || 'component-m4-1';
+    return jsonResponse(route, runtimeComponentNode(nodeId, { type: 'file', title: 'M4 file node', file: { source: 'workspace', path: 'package.json' } }));
+  });
+  await page.route(/\/api\/workflow\/edges(?:\?.*)?$/, async route => {
+    const payload = route.request().postDataJSON() as JsonRecord || {};
+    network.graphMapRequests.push({ method: route.request().method(), url: route.request().url(), payload });
+    return jsonResponse(route, { ok: true, edge: { id: `${payload.from}->${payload.to}`, from: payload.from, to: payload.to } }, 201);
+  });
   await page.route('**/api/user-files', route => jsonResponse(route, { ok: true, files: [] }));
 
   return network;
@@ -327,7 +420,16 @@ async function openWorkflow(page: Page) {
   await expect(page.getByTestId('workflow-canvas')).toBeVisible();
   await expect(page.getByTestId('workflow-node').first()).toBeVisible();
   await expect(page.getByTestId('workflow-explorer-shell')).toBeVisible();
-  await page.waitForTimeout(250);
+  await expect(page.getByTestId('workflow-canvas')).toHaveAttribute('data-wf-browser-ready', 'true');
+}
+
+async function waitForWorkflowCanvasSettlement(page: Page) {
+  const canvas = page.getByTestId('workflow-canvas');
+  await expect(canvas).toHaveAttribute('data-wf-browser-ready', 'true');
+  await page.evaluate(() => new Promise<void>(resolve => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+  }));
+  await expect(canvas).toHaveAttribute('data-wf-browser-ready', 'true');
 }
 
 async function expectInViewport(page: Page, locator: Locator) {
@@ -369,7 +471,6 @@ test.describe('WF UI M4 RED interaction acceptance', () => {
     const network = await installWorkflowFixture(page);
     await openWorkflow(page);
 
-    const nodeBefore = await page.getByTestId('workflow-node').first().boundingBox();
     const srcItem = page.locator('[data-testid="workspace-tree-item"][data-path="src"]').first();
     await expect(srcItem).toBeVisible();
     await expect(srcItem).toHaveAttribute('aria-expanded', 'false');
@@ -390,6 +491,9 @@ test.describe('WF UI M4 RED interaction acceptance', () => {
       type: 'file',
       file: expect.objectContaining({ source: 'workspace', path: 'package.json' }),
     }));
+    await expect(page.getByTestId('workflow-file-node').first()).toBeVisible();
+    await waitForWorkflowCanvasSettlement(page);
+    const nodeBefore = await page.getByTestId('workflow-node').first().boundingBox();
 
     const explorer = page.getByTestId('workflow-explorer-shell');
     await explorer.hover();
@@ -476,13 +580,38 @@ test.describe('WF UI M4 RED interaction acceptance', () => {
     await page.waitForTimeout(150);
     expect(network.graphMapPutsBeforePointerUp).toEqual([]);
     await expect(page.getByTestId('workflow-bridge-panel')).toHaveCount(0);
-    await page.mouse.up();
     network.edgeGesturePhase = 'idle';
-    await expect.poll(() => network.graphMapRequests.some(request => request.method === 'PUT')).toBe(true);
+    await page.mouse.up();
+    await expect.poll(() => network.graphMapRequests.filter(request => request.method === 'PUT').length).toBeGreaterThan(0);
+    const committedPut = network.graphMapRequests.filter(request => request.method === 'PUT').at(-1)!;
+    expect(new URL(committedPut.url).pathname).toBe('/api/a2a/graph-map');
+    const committedEdge = (committedPut.payload.edges as JsonRecord[]).find(edge => edge.id === bridgeEdgeId);
+    expect(committedEdge).toEqual(expect.objectContaining({
+      id: bridgeEdgeId,
+      from: mainNodeId,
+      to: workerNodeId,
+      source: mainNodeId,
+      target: workerNodeId,
+      relation: 'delegates',
+      sourceHandle: 'right',
+      targetHandle: 'context',
+    }));
+    expect(Number(committedEdge?.offset)).toBeGreaterThan(8);
+    expect((network.committedGraph.edges as JsonRecord[]).find(edge => edge.id === bridgeEdgeId)).toEqual(
+      expect.objectContaining({ source: mainNodeId, target: workerNodeId, offset: committedEdge?.offset }),
+    );
 
     await label.dblclick();
     await expect(page.getByTestId('workflow-bridge-panel')).toBeVisible();
     await expect.poll(() => network.bridgeMessageRequests.length).toBe(1);
+    await page.reload();
+    await expect(page.getByTestId('workflow-canvas')).toBeVisible();
+    await expect(page.getByTestId('workflow-canvas')).toHaveAttribute('data-wf-browser-ready', 'true');
+    await expect(page.locator(`[data-testid="workflow-edge"][data-source="${mainNodeId}"][data-target="${workerNodeId}"]`)).toHaveCount(1);
+    const reloadedLabel = page.getByTestId('workflow-bridge-label').first();
+    await expect(reloadedLabel).toBeVisible();
+    await reloadedLabel.dblclick();
+    await expect(page.getByTestId('workflow-bridge-panel')).toBeVisible();
     await assertNoBrowserFailures(page, signals);
   });
 
@@ -495,6 +624,9 @@ test.describe('WF UI M4 RED interaction acceptance', () => {
     await expect(page.getByTestId('workflow-create-node-panel')).toBeVisible();
     await page.locator('[data-testid="workspace-tree-item"][data-path="src"]').first().click({ button: 'right' });
     await expect(page.getByTestId('workspace-context-menu')).toBeVisible();
+    await page.evaluate(() => {
+      window.dispatchEvent(new CustomEvent('wf:workflow-toast', { detail: { message: 'M4 layer check' } }));
+    });
 
     const toast = page.getByTestId('workflow-toast');
     await expect(toast).toBeVisible();

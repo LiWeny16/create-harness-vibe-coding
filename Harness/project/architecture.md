@@ -55,6 +55,38 @@ State in this repo should be explicit, serializable, and owned by one layer.
 - Release state lives in `package.json`, npm, git tags, and GitHub; document commands in `README.md`, not `CLAUDE.md`.
 - Long-running agent work records resumable status in `Harness/tasks/<task-id>/PLAN.md#Heartbeat`.
 
+### 3.1 WF-UI Component Node State Contract
+
+WF-UI component nodes have three distinct state shapes. Code, tests, and fixtures
+must keep them separate:
+
+- **Persistent state** lives at `Harness/a2a/component-nodes/<nodeId>/state.json`.
+  It is backend-owned, revisioned, and is the source of truth for user-editable
+  Markdown, Excalidraw, and File component state.
+- **Agent refs** live in `stateRef`, `contentRef`, and `componentStateRefs`.
+  Refs contain only enough metadata for agents to locate state: path, revision,
+  type, title, and small file metadata when needed. Refs are not renderable UI
+  state and must not inline `markdown`, `scene`, or editable file payloads.
+- **UI hydration state** lives in `/api/a2a/snapshot#componentNodes`. The first
+  paint workflow UI must receive full component state here so previews,
+  fullscreen editors, save buttons, and thumbnails hydrate from the same
+  revision the backend will later guard on save.
+
+Invariants:
+
+- `index.json`, `state.json`, `/api/workflow/nodes/:nodeId`,
+  `graph.componentStateRefs`, and `snapshot.componentNodes` must agree on
+  `nodeId`, `type`, `statePath`, and `revision`.
+- `statePath` must use `Harness/a2a/component-nodes/<nodeId>/state.json`; the
+  legacy `Harness/a2a/component-nodes/<nodeId>.json` shape is invalid for new
+  code, tests, and docs.
+- Defaults may seed newly created component nodes only. Existing persisted nodes
+  must not silently hydrate to empty Markdown, empty Excalidraw scenes, or empty
+  file metadata when their state file is missing or malformed.
+- UI tests and Playwright fixtures must either use real backend endpoints or
+  mirror this contract exactly; mocks must not invent alternate handles, paths,
+  revisions, or hydration shapes.
+
 ## 4. Core Components
 
 ### 4.1 CLI Entry
@@ -95,6 +127,77 @@ State in this repo should be explicit, serializable, and owned by one layer.
 - **Location**: root `Harness/**`, `.claude/**`, `CLAUDE.md`, `AGENTS.md`, `MEMORY.md`
 - **Responsibility**: Govern future AI-agent work in this repository.
 - **Does NOT handle**: Changing package output unless edits are made to `templates/**` or source code.
+
+### 4.7 WF-UI Agent-Operable Browser Control Plane
+
+- **Location**: `src/wf-ui-server/wf-browser-store.mjs`, `src/wf-ui-server/ws-wf-browser.mjs`, `src/wf-ui-server/server.mjs`, `src/ui/src/wfBrowserClient.ts`, `src/ui/src/wfBrowserDebug.tsx`, `src/ui/src/wfBrowserRouteCapabilities.ts`, `Harness/scripts/wf-ui-control.mjs`
+- **Template location**: `templates/common/Harness/scripts/wf-ui-control.mjs`, `templates/common/.claude/skills/wf-ui/SKILL.md`
+- **Responsibility**: Provide the backend foundation, launch URL allocator, frontend debug bridge, visible action primitives, first-party route capability maps, and local browser launch/close lifecycle for `wf-browser` run/window/lease/artifact/command control without coupling it to task parsing, terminal PTY state, or the existing task invalidation WebSocket.
+- **Does NOT handle yet**: Trusted screenshot capture from the browser process, browser-process network/AST capture, replay playback UI, automatic close on every closeout path, or deep route-owned capability maps for every nested wf-ui surface.
+
+Data contract:
+
+```text
+Harness/wf-browser/
+  runs/
+    <runId>/
+      manifest.json
+      timeline.jsonl
+      sessions.json
+      windows/
+        <windowId>/
+          window.json
+          leases.json
+          browser-launches.json
+          artifacts.jsonl
+          screenshots/
+          ui-tree/
+          state/
+          logs/
+          network/
+          ast/
+          replay/
+          analysis/
+```
+
+Control rules:
+
+- `POST /api/wf-browser/runs` creates an isolated browser evidence run.
+- `GET /api/wf-browser/runs/:runId/windows` lists a run's current window pool for multi-subagent dispatch and handoff.
+- `POST /api/wf-browser/runs/:runId/windows` creates a logical browser window slot for one agent, route, viewport, and fixture scope.
+- `POST /api/wf-browser/runs/:runId/windows/:windowId/lease` grants `control` or read-only `observe` access.
+- A `control` lease is exclusive per window; conflicting mutating agents receive `LEASE_CONFLICT`.
+- `GET /api/wf-browser/runs/:runId/windows/:windowId/launch-url` returns the local wf-ui URL with `token`, `wfRun`, `wfWindow`, optional `wfLease`, and `wfDebug` parameters.
+- `GET /api/wf-browser/connections` lists currently registered frontend debug clients; `Harness/scripts/wf-ui-control.mjs browser-wait` polls it before command dispatch when a launch URL was just opened or refreshed.
+- `POST /api/wf-browser/runs/:runId/windows/:windowId/commands` validates the lease, dispatches a bounded `observe.*` or `act.*` command over `/ws/wf-browser`, records action evidence, and stores observation artifacts when applicable.
+- `POST /api/wf-browser/runs/:runId/windows/:windowId/artifacts` stores bulky evidence files under the run/window folder and records compact metadata.
+- `Harness/scripts/wf-ui-control.mjs browser-open` launches a visible browser for a launch URL, uses an isolated per-run/window profile when `--context isolated` is set, stores launch metadata as an `analysis` artifact, and records local lifecycle state in `browser-launches.json`.
+- `Harness/scripts/wf-ui-control.mjs browser-launches` lists per-window launch state with process liveness; `browser-close` closes selected or all launches and safely removes per-window profiles under `Harness/wf-browser/tmp/browser-profiles/`.
+- `Harness/scripts/wf-ui-control.mjs browser-release --close true` releases the backend lease and runs local browser cleanup as one closeout command.
+- `POST /api/wf-browser/cleanup` previews or removes non-active run folders by retention policy; `Harness/scripts/wf-ui-control.mjs browser-cleanup` exposes this to agents.
+
+Readiness boundary:
+
+- Current implementation is an L3-minimal bridge for wf-browser: the opt-in frontend runtime registers with `/ws/wf-browser`, returns compact route/capability/UI-tree/state/log/network/replay/diff observations, and executes visible hover/click/focus/type/clear/select/press/drag/scroll/wait operations.
+- `Harness/scripts/wf-ui-control.mjs browser-snapshot` captures a connected
+  window handoff bundle by serially running the standard observation primitives
+  through the current lease and returning artifact paths.
+- `Harness/scripts/wf-ui-control.mjs browser-wait` is the connection-readiness
+  guard: it waits for the requested run/window/agent frontend registration
+  before `observe.*`, `act.*`, or snapshot dispatch.
+- `Harness/scripts/wf-ui-control.mjs browser-open` is the isolated visible
+  launch foundation: it can create a per-window browser profile under
+  `Harness/wf-browser/tmp/browser-profiles/`, launch Chrome/Edge/Chromium,
+  record the exact command/profile metadata as a run/window artifact, and write
+  `browser-launches.json` for later closeout.
+- `Harness/scripts/wf-ui-control.mjs browser-launches`, `browser-close`, and
+  `browser-release --close true` provide the first local process/profile
+  lifecycle layer for visible isolated agent windows.
+- `Harness/scripts/wf-ui-control.mjs browser-allocate` is the window allocator foundation: it creates or reuses a run, creates a window, grants a lease, and returns a launch URL for one visible agent window. `browser-allocate-many` repeats that allocation for a batch of subagents in one run, and `browser-windows` lists allocated windows before dispatch, handoff, or cleanup.
+- The React app shell registers base wf-browser capabilities for `app.shell`, header, navigation routes, theme toggle, and route-specific task/workflow/agents/roles/settings/terminal surfaces. `observe.uiTree` annotates matched DOM nodes with `registeredCapabilityIds`.
+- Claim full L3 only after trusted screenshot/AST coverage and deeper route-owned component maps are implemented.
+- Claim full L4 only after automatic cleanup coverage on all closeout paths and
+  concurrent isolated-window subagent runtime proof are recorded.
 
 ## 5. Data Flow
 

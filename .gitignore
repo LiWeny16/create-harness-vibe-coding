@@ -38,6 +38,9 @@ Harness/.runtime/
 Harness/a2a/workflows.json
 Harness/a2a/sessions/
 Harness/a2a/ui-runs/
+Harness/wf-browser/runs/
+Harness/wf-browser/tmp/
+Harness/wf-browser/cache/
 Harness/tasks/*/sessions/
 
 # Harness UI local launcher and API smoke artifacts

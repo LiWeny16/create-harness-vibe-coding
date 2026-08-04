@@ -1,5 +1,5 @@
 ---
-description: Run AI-driven browser automation and E2E testing via the wf-browser skill
+description: Run agent-operable browser architecture design and runtime control via the wf-browser skill
 ---
 
 # /wf-browser

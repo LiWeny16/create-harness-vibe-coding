@@ -41,7 +41,7 @@ Stack-specific agents can be added after the product shape is known.
 - [wf-max](../.claude/skills/wf-max/SKILL.md) - WF kernel + maximum safe fan-out: WF-Max-Useful by default (fan out only where independent), WF-Max-Strict only on explicit strict request; current runtime subagents first, peer-CLI overflow when available.
 - [wf-auto](../.claude/skills/wf-auto/SKILL.md) - perpetual adaptive auto-optimization: evidence-selected probes, dynamic obligations, intent checkpoints, evidence ledger.
 - [wf-auto-spark](../.claude/skills/wf-auto-spark/SKILL.md) - perpetual inspiration mode: external spark search, long-term roadmap with staged milestones, <=50% deviation guard.
-- [wf-browser](../.claude/skills/wf-browser/SKILL.md) - built-in browser automation/E2E workflow with controllable UI contracts, Browser Use, Playwright, CDP/network evidence, screenshots, traces, and validation matrix.
+- [wf-browser](../.claude/skills/wf-browser/SKILL.md) - built-in agent-operable browser architecture and runtime-control workflow with readiness levels, WebSocket bridge, UI capability contract, observe/act primitives, virtual cursor, multi-window/subagent leases, `Harness/wf-browser/` artifacts, and Playwright/CDP fallback.
 - [wf-ui](../.claude/skills/wf-ui/SKILL.md) - Codex compatibility shim for `$wf-ui` / `/skills wf-ui`; direct command starts the local browser control panel without entering WF.
 - [tdd](../.claude/skills/tdd/SKILL.md) - acceptance-driven TDD: AC-linked RED tests, real UI clicks for browser-visible behavior, Playwright/CDP evidence, and configured coverage gate.
 - [wf-remove](../.claude/skills/wf-remove/SKILL.md) - safely remove Harness framework files (SAFE/MODIFIED/USER classes), auto-prune empty directories, backup option.
