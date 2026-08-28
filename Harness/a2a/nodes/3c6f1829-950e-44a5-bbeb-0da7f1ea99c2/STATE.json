@@ -1,0 +1,48 @@
+{
+  "sessionId": "3c6f1829-950e-44a5-bbeb-0da7f1ea99c2",
+  "peerId": "claude-d01d3c0c",
+  "runtime": "claude",
+  "agentKind": "main",
+  "role": "Main Agent",
+  "objective": "Resume E2E claude attach-case",
+  "taskId": null,
+  "workflowMode": "wf",
+  "parentAgentId": null,
+  "parentNodeId": null,
+  "cwd": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding",
+  "projectRoot": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding",
+  "nodeHomeRel": "Harness/a2a/nodes/3c6f1829-950e-44a5-bbeb-0da7f1ea99c2",
+  "graphContextPath": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding\\Harness\\a2a\\workflow-map.json",
+  "nodeConfig": {
+    "role": "Main Agent",
+    "customRole": "",
+    "prompt": "Resume E2E claude attach-case",
+    "model": "",
+    "provider": "",
+    "cwd": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding",
+    "env": {},
+    "permissions": {},
+    "launchPolicy": {
+      "sandboxMode": "danger-full-access",
+      "approvalPolicy": "never"
+    },
+    "skills": [],
+    "skillPolicy": "auto",
+    "contextSources": [
+      "workflow-map"
+    ],
+    "capabilities": [
+      "terminal"
+    ],
+    "outputRouting": {
+      "markdownDefaultEnabled": false,
+      "markdownTargetNodeId": "",
+      "fallback": "oldest-connected-markdown"
+    }
+  },
+  "restartRequired": false,
+  "restartRequiredFields": [],
+  "configRevision": 0,
+  "createdAt": "2026-08-13T09:14:41.154Z",
+  "updatedAt": "2026-08-13T09:14:41.155Z"
+}

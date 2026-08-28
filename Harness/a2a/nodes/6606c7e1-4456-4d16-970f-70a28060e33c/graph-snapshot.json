@@ -1,0 +1,350 @@
+{
+  "schemaVersion": 1,
+  "version": 366,
+  "nodes": [
+    {
+      "nodeId": "session-ec522ed5-4b33-422e-85f7-e12537223e4e",
+      "sessionId": "389ab5fd-629b-4573-b4e5-04b6a6d54438",
+      "kind": "terminal-session",
+      "agentKind": "main",
+      "runtime": "claude",
+      "taskId": null,
+      "cwd": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding",
+      "status": "running",
+      "label": "claude main agent",
+      "position": {
+        "x": 376.92253521126753,
+        "y": -50.30281690140845
+      },
+      "width": 278,
+      "height": 140
+    },
+    {
+      "nodeId": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+      "sessionId": "87d173dd-874d-455e-a649-a546291038b0",
+      "kind": "terminal-session",
+      "agentKind": "main",
+      "runtime": "codex",
+      "taskId": null,
+      "cwd": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding",
+      "status": "running",
+      "label": "codex main agent",
+      "position": {
+        "x": 138.24231001440194,
+        "y": -91.0824142651401
+      },
+      "width": 278,
+      "height": 140
+    },
+    {
+      "id": "component-m3-diagram-32557d",
+      "nodeId": "component-m3-diagram-32557d",
+      "kind": "component-node",
+      "type": "excalidraw",
+      "title": "Flowchart Demo",
+      "position": {
+        "x": -236.68570344630984,
+        "y": 106.22537418029981
+      },
+      "revision": 3,
+      "statePath": "Harness/a2a/component-nodes/component-m3-diagram-32557d/state.json",
+      "stateRef": {
+        "path": "Harness/a2a/component-nodes/component-m3-diagram-32557d/state.json",
+        "revision": 3
+      },
+      "config": {
+        "componentType": "excalidraw",
+        "editable": true,
+        "backendSourceOfTruth": true
+      }
+    },
+    {
+      "id": "component-markdown-notes-2247a7",
+      "nodeId": "component-markdown-notes-2247a7",
+      "kind": "component-node",
+      "type": "markdown",
+      "title": "Markdown Notes",
+      "position": {
+        "x": -16.121659331890157,
+        "y": 551.0641095306039
+      },
+      "revision": 1,
+      "statePath": "Harness/a2a/component-nodes/component-markdown-notes-2247a7/state.json",
+      "stateRef": {
+        "path": "Harness/a2a/component-nodes/component-markdown-notes-2247a7/state.json",
+        "revision": 1
+      },
+      "config": {
+        "componentType": "markdown",
+        "editable": true,
+        "backendSourceOfTruth": true
+      }
+    },
+    {
+      "id": "component-markdown-notes-d600fe",
+      "nodeId": "component-markdown-notes-d600fe",
+      "kind": "component-node",
+      "type": "markdown",
+      "title": "Markdown Notes",
+      "position": {
+        "x": 260,
+        "y": 220
+      },
+      "revision": 1,
+      "statePath": "Harness/a2a/component-nodes/component-markdown-notes-d600fe/state.json",
+      "stateRef": {
+        "path": "Harness/a2a/component-nodes/component-markdown-notes-d600fe/state.json",
+        "revision": 1
+      },
+      "config": {
+        "componentType": "markdown",
+        "editable": true,
+        "backendSourceOfTruth": true
+      }
+    },
+    {
+      "id": "goal-task-standardize-workflow-nodes",
+      "nodeId": "goal-task-standardize-workflow-nodes",
+      "kind": "goal-node",
+      "type": "goal",
+      "title": "Goal: task-standardize-workflow-nodes",
+      "label": "Goal: task-standardize-workflow-nodes",
+      "level": 1,
+      "position": {
+        "x": 860,
+        "y": 160
+      },
+      "revision": 0,
+      "statePath": "Harness/a2a/goal-nodes/goal-task-standardize-workflow-nodes/state.json",
+      "stateRef": {
+        "path": "Harness/a2a/goal-nodes/goal-task-standardize-workflow-nodes/state.json",
+        "revision": 0
+      },
+      "status": "active",
+      "lifecycle": "goal-anchor",
+      "runtimeState": "active",
+      "config": {
+        "taskId": "task-standardize-workflow-nodes",
+        "backendSourceOfTruth": true
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "manual-component-m3-diagram-32557d-session-0bc880b0-c820-4746-a21c-d843179f3326-1785579462350",
+      "from": "component-m3-diagram-32557d",
+      "to": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+      "source": "component-m3-diagram-32557d",
+      "target": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+      "relation": "wf-bridge/context",
+      "direction": "bidirectional",
+      "sourceHandle": "scene:right",
+      "targetHandle": "context",
+      "offset": 0,
+      "kind": "workflow-link"
+    },
+    {
+      "id": "session-0bc880b0-c820-4746-a21c-d843179f3326->session-ec522ed5-4b33-422e-85f7-e12537223e4e",
+      "from": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+      "to": "session-ec522ed5-4b33-422e-85f7-e12537223e4e",
+      "source": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+      "target": "session-ec522ed5-4b33-422e-85f7-e12537223e4e",
+      "relation": "wf-bridge/context",
+      "direction": "bidirectional",
+      "sourceHandle": "right",
+      "targetHandle": "context",
+      "offset": 0,
+      "kind": "workflow-link"
+    },
+    {
+      "id": "session-0bc880b0-c820-4746-a21c-d843179f3326->component-markdown-notes-2247a7",
+      "from": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+      "to": "component-markdown-notes-2247a7",
+      "source": "session-0bc880b0-c820-4746-a21c-d843179f3326",
+      "target": "component-markdown-notes-2247a7",
+      "relation": "wf-bridge/selection",
+      "direction": "bidirectional",
+      "sourceHandle": "bottom",
+      "targetHandle": "markdown:left",
+      "offset": 0,
+      "kind": "workflow-link"
+    },
+    {
+      "id": "session-ec522ed5-4b33-422e-85f7-e12537223e4e->component-markdown-notes-d600fe",
+      "from": "session-ec522ed5-4b33-422e-85f7-e12537223e4e",
+      "to": "component-markdown-notes-d600fe",
+      "source": "session-ec522ed5-4b33-422e-85f7-e12537223e4e",
+      "target": "component-markdown-notes-d600fe",
+      "relation": "wf-bridge/selection",
+      "direction": "bidirectional",
+      "sourceHandle": "bottom",
+      "targetHandle": "markdown:left",
+      "offset": 0,
+      "kind": "workflow-link"
+    }
+  ],
+  "positions": {
+    "session-0bc880b0-c820-4746-a21c-d843179f3326": {
+      "x": 138.24231001440194,
+      "y": -91.0824142651401
+    },
+    "session-a1b0a9a3-4a50-49e6-9718-52bbb6841c71": {
+      "x": 495.32930137919516,
+      "y": 214.03801556758853
+    },
+    "session-3d0ab2ff-84b8-43c4-b991-edc4fc20a96d": {
+      "x": -86.6717850287908,
+      "y": 167.93857965451056
+    },
+    "session-12d0640d-7720-4984-850a-a31e9f3637c6": {
+      "x": 534.3570057581574,
+      "y": 175.4971209213052
+    },
+    "component-m3-diagram-32557d": {
+      "x": -236.68570344630984,
+      "y": 106.22537418029981
+    },
+    "component-markdown-notes-2247a7": {
+      "x": -16.121659331890157,
+      "y": 551.0641095306039
+    },
+    "component-markdown-notes-d600fe": {
+      "x": 260,
+      "y": 220
+    },
+    "session-ec522ed5-4b33-422e-85f7-e12537223e4e": {
+      "x": 376.92253521126753,
+      "y": -50.30281690140845
+    }
+  },
+  "undoStack": [],
+  "redoStack": [],
+  "deletedNodes": [
+    {
+      "nodeId": "session-178fa9e2-52b4-43ea-8570-782088cfe978",
+      "sessionId": "178fa9e2-52b4-43ea-8570-782088cfe978",
+      "deletedAt": "2026-07-31T11:14:08.621Z"
+    },
+    {
+      "nodeId": "session-e77df9f9-51a6-4888-b595-21222b36cd57",
+      "sessionId": "e77df9f9-51a6-4888-b595-21222b36cd57",
+      "deletedAt": "2026-07-31T11:14:12.538Z"
+    },
+    {
+      "nodeId": "session-e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+      "sessionId": "e7cb4e9a-9ee2-4f26-ada4-46182c5d9a45",
+      "deletedAt": "2026-07-31T11:14:16.571Z"
+    },
+    {
+      "nodeId": "session-fc1c0445-650d-452a-af80-e6c04f08e990",
+      "sessionId": "fc1c0445-650d-452a-af80-e6c04f08e990",
+      "deletedAt": "2026-07-31T11:14:19.944Z"
+    },
+    {
+      "nodeId": "session-87e54b53-b00c-4168-83d7-b13f9fa7e809",
+      "sessionId": "87e54b53-b00c-4168-83d7-b13f9fa7e809",
+      "deletedAt": "2026-07-31T11:14:21.637Z"
+    },
+    {
+      "nodeId": "session-54eb4005-d249-42e0-936d-579ee084ffe1",
+      "sessionId": "54eb4005-d249-42e0-936d-579ee084ffe1",
+      "deletedAt": "2026-07-31T11:14:23.300Z"
+    },
+    {
+      "nodeId": "session-00ed70b9-7953-4388-84cc-873cc9e70491",
+      "sessionId": "00ed70b9-7953-4388-84cc-873cc9e70491",
+      "deletedAt": "2026-07-31T17:12:41.984Z"
+    },
+    {
+      "nodeId": "component-package-json-5c3e60",
+      "sessionId": null,
+      "deletedAt": "2026-08-01T10:17:58.319Z"
+    },
+    {
+      "nodeId": "component-agents-md-676514",
+      "sessionId": null,
+      "deletedAt": "2026-08-01T10:29:29.862Z"
+    },
+    {
+      "nodeId": "component-agents-md-ac19ed",
+      "sessionId": null,
+      "deletedAt": "2026-08-01T10:32:39.711Z"
+    },
+    {
+      "nodeId": "session-3ace78fb-b46e-432e-9e2b-162d4e4134e7",
+      "sessionId": "55adffa8-401c-4073-9ff5-54cfd380e842",
+      "deletedAt": "2026-08-01T13:06:00.116Z"
+    },
+    {
+      "nodeId": "component-architect-md-2a2554",
+      "sessionId": null,
+      "deletedAt": "2026-08-01T13:19:30.394Z"
+    },
+    {
+      "nodeId": "component-m3-notes-754d0d",
+      "sessionId": null,
+      "deletedAt": "2026-08-01T13:19:35.495Z"
+    },
+    {
+      "nodeId": "session-61425c25-c1c6-4bde-b708-fbf46a3f6358",
+      "sessionId": "a19ce25f-3ab1-4390-b57f-dcb86e5c1611",
+      "deletedAt": "2026-08-01T13:19:44.851Z"
+    },
+    {
+      "nodeId": "component-gitignore-7be8ff",
+      "sessionId": null,
+      "deletedAt": "2026-08-03T10:05:59.478Z"
+    },
+    {
+      "nodeId": "component-opencode-22936b",
+      "sessionId": null,
+      "deletedAt": "2026-08-03T10:10:25.428Z"
+    },
+    {
+      "nodeId": "component-opencode-c8e4ba",
+      "sessionId": null,
+      "deletedAt": "2026-08-03T10:10:32.096Z"
+    },
+    {
+      "nodeId": "component-opencode-de113e",
+      "sessionId": null,
+      "deletedAt": "2026-08-03T10:10:33.747Z"
+    },
+    {
+      "nodeId": "component-markdown-notes-0b3349",
+      "sessionId": null,
+      "deletedAt": "2026-08-03T15:09:24.246Z"
+    },
+    {
+      "nodeId": "component-markdown-notes-8ed044",
+      "sessionId": null,
+      "deletedAt": "2026-08-04T13:29:32.127Z"
+    }
+  ],
+  "graphContextPath": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding\\Harness\\a2a\\workflow-map.json",
+  "updatedAt": "2026-08-04T16:40:51.138Z",
+  "sourceOfTruth": "backend",
+  "componentStatePath": "Harness/a2a/component-nodes",
+  "baseVersion": 365,
+  "workflowId": "workflow-task-standardize-workflow-nodes",
+  "componentStateRefs": {
+    "component-m3-diagram-32557d": {
+      "type": "excalidraw",
+      "title": "Flowchart Demo",
+      "statePath": "Harness/a2a/component-nodes/component-m3-diagram-32557d/state.json",
+      "revision": 3
+    },
+    "component-markdown-notes-2247a7": {
+      "type": "markdown",
+      "title": "Markdown Notes",
+      "statePath": "Harness/a2a/component-nodes/component-markdown-notes-2247a7/state.json",
+      "revision": 1
+    },
+    "component-markdown-notes-d600fe": {
+      "type": "markdown",
+      "title": "Markdown Notes",
+      "statePath": "Harness/a2a/component-nodes/component-markdown-notes-d600fe/state.json",
+      "revision": 1
+    }
+  }
+}

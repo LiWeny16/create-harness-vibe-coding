@@ -1,0 +1,10 @@
+{
+  "schemaId": "file-settings",
+  "revision": 1,
+  "values": {
+    "autoRefresh": false,
+    "maxPreviewSize": 256,
+    "defaultView": "preview",
+    "watchChanges": false
+  }
+}

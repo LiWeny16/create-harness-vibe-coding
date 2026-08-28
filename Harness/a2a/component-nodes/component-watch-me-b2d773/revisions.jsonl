@@ -1,0 +1,2 @@
+{"action":"create","nodeId":"component-watch-me-b2d773","type":"file","revision":1,"previousRevision":null,"statePath":"Harness/a2a/component-nodes/component-watch-me-b2d773/state.json","recoverable":true,"createdAt":"2026-08-14T11:43:53.235Z"}
+{"action":"delete","nodeId":"component-watch-me-b2d773","type":"file","revision":1,"previousRevision":1,"statePath":"Harness/a2a/component-nodes/component-watch-me-b2d773/state.json","recoverable":true,"createdAt":"2026-08-14T11:44:08.257Z"}

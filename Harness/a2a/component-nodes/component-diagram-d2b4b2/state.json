@@ -1,0 +1,107 @@
+{
+  "type": "excalidraw",
+  "revision": 7,
+  "uiContract": {
+    "editor": "excalidraw",
+    "modes": [
+      "canvas"
+    ],
+    "defaultMode": "canvas"
+  },
+  "inputs": [
+    {
+      "id": "scene",
+      "type": "excalidraw-scene",
+      "label": "Scene"
+    }
+  ],
+  "outputs": [
+    {
+      "id": "scene",
+      "type": "excalidraw-scene",
+      "label": "Scene"
+    },
+    {
+      "id": "image",
+      "type": "image",
+      "label": "Rendered image"
+    }
+  ],
+  "scene": {
+    "elements": [
+      {
+        "id": "QSugEv__-qByiIxynJ6yk",
+        "type": "diamond",
+        "x": 516.2963256835938,
+        "y": 171.49305725097656,
+        "width": 315.5555419921875,
+        "height": 310.37042236328125,
+        "angle": 0,
+        "strokeColor": "#1e1e1e",
+        "backgroundColor": "transparent",
+        "fillStyle": "solid",
+        "strokeWidth": 2,
+        "strokeStyle": "solid",
+        "roughness": 1,
+        "opacity": 100,
+        "groupIds": [],
+        "frameId": null,
+        "index": "a0",
+        "roundness": {
+          "type": 2
+        },
+        "seed": 247002099,
+        "version": 46,
+        "versionNonce": 292089171,
+        "isDeleted": false,
+        "boundElements": [],
+        "updated": 1787216870845,
+        "link": null,
+        "locked": false
+      },
+      {
+        "id": "OQ21ktUaFgys2VktZ8jJR",
+        "type": "ellipse",
+        "x": 461.55811309814453,
+        "y": 162.66709899902344,
+        "width": 392.66668701171875,
+        "height": 334,
+        "angle": 0,
+        "strokeColor": "#1e1e1e",
+        "backgroundColor": "transparent",
+        "fillStyle": "solid",
+        "strokeWidth": 2,
+        "strokeStyle": "solid",
+        "roughness": 1,
+        "opacity": 100,
+        "groupIds": [],
+        "frameId": null,
+        "index": "a1",
+        "roundness": {
+          "type": 2
+        },
+        "seed": 373730644,
+        "version": 60,
+        "versionNonce": 1282794068,
+        "isDeleted": false,
+        "boundElements": [],
+        "updated": 1787540659838,
+        "link": null,
+        "locked": false
+      }
+    ],
+    "appState": {
+      "viewBackgroundColor": "#ffffff",
+      "theme": "light",
+      "gridSize": 20,
+      "gridStep": 5,
+      "scrollX": -36.558082580566406,
+      "scrollY": -32.33375549316406,
+      "zoom": {
+        "value": 1
+      },
+      "name": "Untitled-2026-08-20-1707"
+    },
+    "files": {}
+  }
+}

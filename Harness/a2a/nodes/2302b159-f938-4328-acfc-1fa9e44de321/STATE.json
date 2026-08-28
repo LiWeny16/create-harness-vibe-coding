@@ -1,0 +1,48 @@
+{
+  "sessionId": "2302b159-f938-4328-acfc-1fa9e44de321",
+  "peerId": "codex-e380fa73",
+  "runtime": "codex",
+  "agentKind": "subagent",
+  "role": "researcher",
+  "objective": "跟踪 2026 年 8 月最新 AI 发展进展",
+  "taskId": null,
+  "workflowMode": "wf",
+  "parentAgentId": "c98f2d85-09e3-4db9-b63d-79709790af5b",
+  "parentNodeId": "session-c98f2d85-09e3-4db9-b63d-79709790af5b",
+  "cwd": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding",
+  "projectRoot": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding",
+  "nodeHomeRel": "Harness/a2a/nodes/2302b159-f938-4328-acfc-1fa9e44de321",
+  "graphContextPath": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding\\Harness\\a2a\\workflow-map.json",
+  "nodeConfig": {
+    "role": "researcher",
+    "customRole": "",
+    "prompt": "跟踪 2026 年 8 月最新 AI 发展进展",
+    "model": "",
+    "provider": "",
+    "cwd": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding",
+    "env": {},
+    "permissions": {},
+    "launchPolicy": {
+      "sandboxMode": "danger-full-access",
+      "approvalPolicy": "never"
+    },
+    "skills": [],
+    "skillPolicy": "auto",
+    "contextSources": [
+      "workflow-map"
+    ],
+    "capabilities": [
+      "terminal"
+    ],
+    "outputRouting": {
+      "markdownDefaultEnabled": false,
+      "markdownTargetNodeId": "",
+      "fallback": "oldest-connected-markdown"
+    }
+  },
+  "restartRequired": false,
+  "restartRequiredFields": [],
+  "configRevision": 0,
+  "createdAt": "2026-08-14T03:49:52.737Z",
+  "updatedAt": "2026-08-14T03:49:52.737Z"
+}

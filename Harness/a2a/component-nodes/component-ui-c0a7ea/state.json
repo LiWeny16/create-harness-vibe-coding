@@ -1,0 +1,39 @@
+{
+  "type": "file",
+  "revision": 1,
+  "uiContract": {
+    "editor": "file-preview",
+    "modes": [
+      "preview",
+      "metadata"
+    ],
+    "defaultMode": "preview"
+  },
+  "inputs": [
+    {
+      "id": "file",
+      "type": "file-ref",
+      "label": "File"
+    }
+  ],
+  "outputs": [
+    {
+      "id": "file",
+      "type": "file-ref",
+      "label": "File reference"
+    },
+    {
+      "id": "path",
+      "type": "path",
+      "label": "Path"
+    }
+  ],
+  "file": {
+    "source": "workspace",
+    "kind": "folder",
+    "path": "src/ui",
+    "name": "ui",
+    "mime": "inode/directory",
+    "size": 0
+  }
+}

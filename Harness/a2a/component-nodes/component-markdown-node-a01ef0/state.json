@@ -1,0 +1,32 @@
+{
+  "type": "markdown",
+  "revision": 4,
+  "uiContract": {
+    "editor": "markdown",
+    "modes": [
+      "wysiwyg",
+      "source"
+    ],
+    "defaultMode": "wysiwyg"
+  },
+  "inputs": [
+    {
+      "id": "markdown",
+      "type": "markdown",
+      "label": "Markdown"
+    }
+  ],
+  "outputs": [
+    {
+      "id": "markdown",
+      "type": "markdown",
+      "label": "Markdown"
+    },
+    {
+      "id": "plainText",
+      "type": "text",
+      "label": "Plain text"
+    }
+  ],
+  "markdown": "# E2E Smoke Notes\n\n## WF-Max Backend API Test\n\n- **Date**: 2026-08-06\n- **Agent**: session-ec522ed5 (claude main agent)\n- **Server**: http://127.0.0.1:56670\n\n## Actions Performed\n\n1. **Read workflow context** — confirmed connected peers (Excalidraw Diagram) and 16 capabilities\n2. **Connect to Goal** — created bidirectional  edge (fixed from  to )\n3. **Update Goal** — wrote updated  and  criteria via \n4. **Create Markdown** — created this node via  with \n5. **Connect & Write Markdown** — connected via  (relation ), wrote this note via \n6. **Save Excalidraw** — wrote 5-step flowchart into connected Diagram via \n\n## Verification\n\n- All actions performed via backend API only (no file edits)\n- Operation audit records generated for each mutation (connectNodes, disconnectNodes, createNode, goal.update, etc.)\n- No token required — local wf-ui server operates without authentication\n\n## W25_E2E\n\n- **Probe**: W25_E2E — Connected Node Capability E2E\n- **Timestamp**: 2026-08-06\n- **Agent Node**: session-ec522ed5-4b33-422e-85f7-e12537223e4e\n- **Actions**: workflow-context → excalidraw.saveScene (5-step flowchart) → markdown.append (this note)\n- **Status**: PASS\n\n## W27_E2E_SUBMIT_AND_CONNECTED_OUTPUT\n\n- **Probe**: W27_E2E — Submit and Connected Output E2E\n- **Timestamp**: 2026-08-06\n- **Agent Node**: session-ec522ed5-4b33-422e-85f7-e12537223e4e\n- **Actions**: workflow-context → excalidraw.saveScene (W27 Connected Output 5-step flowchart) → markdown.append (this note)\n- **Status**: PASS"
+}

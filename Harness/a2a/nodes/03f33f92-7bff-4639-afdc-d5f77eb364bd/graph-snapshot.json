@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "version": 398,
+  "nodes": [
+    {
+      "nodeId": "session-ec522ed5-4b33-422e-85f7-e12537223e4e",
+      "sessionId": "ab084551-cf8a-4647-b4f8-a91382481314",
+      "kind": "terminal-session",
+      "agentKind": "main",
+      "runtime": "claude",
+      "taskId": null,
+      "cwd": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding",
+      "status": "running",
+      "label": "claude main agent",
+      "position": {
+        "x": -42.91182795698924,
+        "y": 100.8731182795699
+      },
+      "width": 278,
+      "height": 140,
+      "restartedFromSessionId": "5727650f-8806-417f-a58c-f937255273d7",
+      "restartedAt": "2026-08-05T10:22:22.764Z"
+    },
+    {
+      "id": "goal-task-standardize-workflow-nodes",
+      "nodeId": "goal-task-standardize-workflow-nodes",
+      "kind": "goal-node",
+      "type": "goal",
+      "title": "Goal: task-standardize-workflow-nodes",
+      "label": "Goal: task-standardize-workflow-nodes",
+      "level": 1,
+      "position": {
+        "x": 860,
+        "y": 160
+      },
+      "revision": 0,
+      "statePath": "Harness/a2a/goal-nodes/goal-task-standardize-workflow-nodes/state.json",
+      "stateRef": {
+        "path": "Harness/a2a/goal-nodes/goal-task-standardize-workflow-nodes/state.json",
+        "revision": 0
+      },
+      "status": "active",
+      "lifecycle": "goal-anchor",
+      "runtimeState": "active",
+      "config": {
+        "taskId": "task-standardize-workflow-nodes",
+        "backendSourceOfTruth": true
+      }
+    }
+  ],
+  "edges": [],
+  "positions": {
+    "session-ec522ed5-4b33-422e-85f7-e12537223e4e": {
+      "x": -42.91182795698924,
+      "y": 100.8731182795699
+    }
+  },
+  "undoStack": [],
+  "redoStack": [],
+  "deletedNodes": [],
+  "graphContextPath": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding\\Harness\\a2a\\workflow-map.json",
+  "updatedAt": "2026-08-05T10:22:22.767Z",
+  "sourceOfTruth": "backend",
+  "componentStatePath": "Harness/a2a/component-nodes",
+  "baseVersion": 395,
+  "workflowId": "workflow-task-standardize-workflow-nodes",
+  "componentStateRefs": {}
+}

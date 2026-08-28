@@ -1,0 +1,48 @@
+{
+  "sessionId": "06631532-20de-4a35-af01-8f0557dd8ebe",
+  "peerId": "claude-cab700ad",
+  "runtime": "claude",
+  "agentKind": "main",
+  "role": "Orchestrator",
+  "objective": "Spawn 3 claude researchers on deepseek-v4-flash for latest AI harness + deepseek news",
+  "taskId": null,
+  "workflowMode": "wf",
+  "parentAgentId": null,
+  "parentNodeId": null,
+  "cwd": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding",
+  "projectRoot": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding",
+  "nodeHomeRel": "Harness/a2a/nodes/06631532-20de-4a35-af01-8f0557dd8ebe",
+  "graphContextPath": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding\\Harness\\a2a\\workflow-map.json",
+  "nodeConfig": {
+    "role": "Orchestrator",
+    "customRole": "",
+    "prompt": "Spawn 3 claude researchers on deepseek-v4-flash for latest AI harness + deepseek news",
+    "model": "deepseek-v4-flash",
+    "provider": "",
+    "cwd": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding",
+    "env": {},
+    "permissions": {},
+    "launchPolicy": {
+      "sandboxMode": "danger-full-access",
+      "approvalPolicy": "never"
+    },
+    "skills": [],
+    "skillPolicy": "auto",
+    "contextSources": [
+      "workflow-map"
+    ],
+    "capabilities": [
+      "terminal"
+    ],
+    "outputRouting": {
+      "markdownDefaultEnabled": false,
+      "markdownTargetNodeId": "",
+      "fallback": "oldest-connected-markdown"
+    }
+  },
+  "restartRequired": false,
+  "restartRequiredFields": [],
+  "configRevision": 0,
+  "createdAt": "2026-08-18T03:55:31.936Z",
+  "updatedAt": "2026-08-18T03:55:31.938Z"
+}

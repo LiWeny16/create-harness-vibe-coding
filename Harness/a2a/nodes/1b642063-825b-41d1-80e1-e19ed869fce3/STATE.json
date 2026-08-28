@@ -1,0 +1,48 @@
+{
+  "sessionId": "1b642063-825b-41d1-80e1-e19ed869fce3",
+  "peerId": "claude-ddca7903",
+  "runtime": "claude",
+  "agentKind": "subagent",
+  "role": "W23 Worker Smoke",
+  "objective": "W23 connected Agent worker smoke. Stay concise.",
+  "taskId": null,
+  "workflowMode": "wf",
+  "parentAgentId": null,
+  "parentNodeId": "session-ec522ed5-4b33-422e-85f7-e12537223e4e",
+  "cwd": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding",
+  "projectRoot": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding",
+  "nodeHomeRel": "Harness/a2a/nodes/1b642063-825b-41d1-80e1-e19ed869fce3",
+  "graphContextPath": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding\\Harness\\a2a\\workflow-map.json",
+  "nodeConfig": {
+    "role": "W23 Worker Smoke",
+    "customRole": "",
+    "prompt": "W23 connected Agent worker smoke. Stay concise.",
+    "model": "",
+    "provider": "",
+    "cwd": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding",
+    "env": {},
+    "permissions": {},
+    "launchPolicy": {
+      "sandboxMode": "danger-full-access",
+      "approvalPolicy": "never"
+    },
+    "skills": [],
+    "skillPolicy": "auto",
+    "contextSources": [
+      "workflow-map"
+    ],
+    "capabilities": [
+      "terminal"
+    ],
+    "outputRouting": {
+      "markdownDefaultEnabled": false,
+      "markdownTargetNodeId": "",
+      "fallback": "oldest-connected-markdown"
+    }
+  },
+  "restartRequired": false,
+  "restartRequiredFields": [],
+  "configRevision": 0,
+  "createdAt": "2026-08-06T04:45:23.890Z",
+  "updatedAt": "2026-08-06T04:45:23.890Z"
+}

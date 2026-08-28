@@ -1,0 +1,11 @@
+{
+  "schemaId": "excalidraw-settings",
+  "revision": 1,
+  "values": {
+    "autoSave": false,
+    "gridSize": 20,
+    "viewBackgroundColor": "#ffffff",
+    "exportScale": 1,
+    "theme": "light"
+  }
+}

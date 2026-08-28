@@ -1,0 +1,218 @@
+{
+  "schemaVersion": 1,
+  "version": 476,
+  "nodes": [
+    {
+      "nodeId": "session-ec522ed5-4b33-422e-85f7-e12537223e4e",
+      "sessionId": "9d8d973a-af2e-40e5-a8ae-db65a8605187",
+      "kind": "terminal-session",
+      "agentKind": "main",
+      "runtime": "claude",
+      "taskId": null,
+      "cwd": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding",
+      "status": "running",
+      "label": "claude main agent",
+      "position": {
+        "x": 326.14408602150536,
+        "y": 172.57204301075268
+      },
+      "width": 278,
+      "height": 140
+    },
+    {
+      "id": "component-diagram-ba22fd",
+      "nodeId": "component-diagram-ba22fd",
+      "kind": "component-node",
+      "type": "excalidraw",
+      "title": "Diagram",
+      "position": {
+        "x": -82.1827956989247,
+        "y": 289.8236559139785
+      },
+      "revision": 5,
+      "statePath": "Harness/a2a/component-nodes/component-diagram-ba22fd/state.json",
+      "stateRef": {
+        "path": "Harness/a2a/component-nodes/component-diagram-ba22fd/state.json",
+        "revision": 5
+      },
+      "config": {
+        "componentType": "excalidraw",
+        "editable": true,
+        "backendSourceOfTruth": true
+      }
+    },
+    {
+      "id": "component-markdown-node-a01ef0",
+      "nodeId": "component-markdown-node-a01ef0",
+      "kind": "component-node",
+      "type": "markdown",
+      "title": "Markdown Node",
+      "position": {
+        "x": 682.3333333333334,
+        "y": 491.7290322580645
+      },
+      "revision": 4,
+      "statePath": "Harness/a2a/component-nodes/component-markdown-node-a01ef0/state.json",
+      "stateRef": {
+        "path": "Harness/a2a/component-nodes/component-markdown-node-a01ef0/state.json",
+        "revision": 4
+      },
+      "config": {
+        "componentType": "markdown",
+        "editable": true,
+        "backendSourceOfTruth": true
+      }
+    },
+    {
+      "id": "capability-workflow-skills-2c93c6",
+      "nodeId": "capability-workflow-skills-2c93c6",
+      "kind": "capability-node",
+      "type": "skill-group",
+      "title": "Workflow skills",
+      "label": "Workflow skills",
+      "position": {
+        "x": -11.079569892473103,
+        "y": 108.45161290322582
+      },
+      "revision": 1,
+      "statePath": "Harness/a2a/capability-nodes/capability-workflow-skills-2c93c6/state.json",
+      "stateRef": {
+        "path": "Harness/a2a/capability-nodes/capability-workflow-skills-2c93c6/state.json",
+        "revision": 1
+      },
+      "status": "ready",
+      "lifecycle": "capability-provider",
+      "runtimeState": "ready",
+      "config": {
+        "capabilityType": "skill-group",
+        "backendSourceOfTruth": true,
+        "executor": "agent"
+      }
+    },
+    {
+      "id": "goal-task-standardize-workflow-nodes",
+      "nodeId": "goal-task-standardize-workflow-nodes",
+      "kind": "goal-node",
+      "type": "goal",
+      "title": "Goal: task-standardize-workflow-nodes",
+      "label": "Goal: task-standardize-workflow-nodes",
+      "level": 1,
+      "position": {
+        "x": 872.2795698924731,
+        "y": 15.212903225806429
+      },
+      "revision": 1,
+      "statePath": "Harness/a2a/goal-nodes/goal-task-standardize-workflow-nodes/state.json",
+      "stateRef": {
+        "path": "Harness/a2a/goal-nodes/goal-task-standardize-workflow-nodes/state.json",
+        "revision": 1
+      },
+      "status": "active",
+      "lifecycle": "goal-anchor",
+      "runtimeState": "active",
+      "config": {
+        "taskId": "task-standardize-workflow-nodes",
+        "backendSourceOfTruth": true
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "session-ec522ed5-4b33-422e-85f7-e12537223e4e->component-diagram-ba22fd",
+      "from": "session-ec522ed5-4b33-422e-85f7-e12537223e4e",
+      "to": "component-diagram-ba22fd",
+      "source": "session-ec522ed5-4b33-422e-85f7-e12537223e4e",
+      "target": "component-diagram-ba22fd",
+      "relation": "wf-bridge/scene",
+      "direction": "bidirectional",
+      "sourceHandle": "right",
+      "targetHandle": "scene:left",
+      "offset": 0,
+      "kind": "workflow-link"
+    },
+    {
+      "id": "session-ec522ed5-4b33-422e-85f7-e12537223e4e->goal-task-standardize-workflow-nodes",
+      "from": "session-ec522ed5-4b33-422e-85f7-e12537223e4e",
+      "to": "goal-task-standardize-workflow-nodes",
+      "source": "session-ec522ed5-4b33-422e-85f7-e12537223e4e",
+      "target": "goal-task-standardize-workflow-nodes",
+      "relation": "goal",
+      "direction": "bidirectional",
+      "targetHandle": "goal:left",
+      "offset": 0,
+      "kind": "workflow-link",
+      "sourceHandle": null
+    },
+    {
+      "id": "session-ec522ed5-4b33-422e-85f7-e12537223e4e->component-markdown-node-a01ef0",
+      "from": "session-ec522ed5-4b33-422e-85f7-e12537223e4e",
+      "to": "component-markdown-node-a01ef0",
+      "source": "session-ec522ed5-4b33-422e-85f7-e12537223e4e",
+      "target": "component-markdown-node-a01ef0",
+      "relation": "context",
+      "direction": "bidirectional",
+      "targetHandle": "markdown:left",
+      "offset": 0,
+      "kind": "workflow-link",
+      "sourceHandle": null
+    }
+  ],
+  "positions": {
+    "session-ec522ed5-4b33-422e-85f7-e12537223e4e": {
+      "x": 326.14408602150536,
+      "y": 172.57204301075268
+    },
+    "goal-task-standardize-workflow-nodes": {
+      "x": 872.2795698924731,
+      "y": 15.212903225806429
+    },
+    "capability-workflow-skills-2c93c6": {
+      "x": -11.079569892473103,
+      "y": 108.45161290322582
+    },
+    "component-diagram-ba22fd": {
+      "x": -82.1827956989247,
+      "y": 289.8236559139785
+    },
+    "component-markdown-node-a01ef0": {
+      "x": 682.3333333333334,
+      "y": 491.7290322580645
+    }
+  },
+  "undoStack": [],
+  "redoStack": [],
+  "deletedNodes": [
+    {
+      "nodeId": "capability-project-codex-skills-743cdf",
+      "sessionId": null,
+      "deletedAt": "2026-08-05T12:30:38.372Z"
+    },
+    {
+      "nodeId": "capability-subagent-skills-decbb7",
+      "sessionId": null,
+      "deletedAt": "2026-08-05T12:30:40.205Z"
+    },
+    {
+      "nodeId": "capability-project-codex-skills-2414da",
+      "sessionId": null,
+      "deletedAt": "2026-08-05T12:30:40.254Z"
+    },
+    {
+      "nodeId": "component-w23-live-smoke-markdown-5dad66",
+      "sessionId": null,
+      "deletedAt": "2026-08-06T04:58:24.058Z"
+    },
+    {
+      "nodeId": "session-61a046d1-7f6e-40ff-a6d8-c54e75b34f06",
+      "sessionId": "61a046d1-7f6e-40ff-a6d8-c54e75b34f06",
+      "deletedAt": "2026-08-06T04:58:24.137Z"
+    }
+  ],
+  "graphContextPath": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding\\Harness\\a2a\\workflow-map.json",
+  "updatedAt": "2026-08-06T13:53:11.673Z",
+  "sourceOfTruth": "backend",
+  "componentStatePath": "Harness/a2a/component-nodes",
+  "baseVersion": 475,
+  "workflowId": "workflow-task-standardize-workflow-nodes",
+  "componentStateRefs": {}
+}

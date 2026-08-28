@@ -1,0 +1,39 @@
+{
+  "type": "file",
+  "revision": 1,
+  "uiContract": {
+    "editor": "file-preview",
+    "modes": [
+      "preview",
+      "metadata"
+    ],
+    "defaultMode": "preview"
+  },
+  "inputs": [
+    {
+      "id": "file",
+      "type": "file-ref",
+      "label": "File"
+    }
+  ],
+  "outputs": [
+    {
+      "id": "file",
+      "type": "file-ref",
+      "label": "File reference"
+    },
+    {
+      "id": "path",
+      "type": "path",
+      "label": "Path"
+    }
+  ],
+  "file": {
+    "source": "user-file",
+    "kind": "file",
+    "path": "Harness/user-files/images/3d5c115d-341a-4331-b35a-df38c52fd4e7.png",
+    "name": "3d5c115d-341a-4331-b35a-df38c52fd4e7.png",
+    "mime": "image/png",
+    "size": 51323
+  }
+}

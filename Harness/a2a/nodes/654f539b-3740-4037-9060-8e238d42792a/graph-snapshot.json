@@ -1,0 +1,111 @@
+{
+  "schemaVersion": 1,
+  "version": 528,
+  "nodes": [
+    {
+      "nodeId": "session-ec522ed5-4b33-422e-85f7-e12537223e4e",
+      "sessionId": "0cc254df-1f3e-4ac5-a02d-ea38f58e5898",
+      "kind": "terminal-session",
+      "agentKind": "main",
+      "runtime": "claude",
+      "taskId": null,
+      "cwd": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding",
+      "status": "running",
+      "label": "claude main agent",
+      "position": {
+        "x": 22.073839662447114,
+        "y": 46.47679324894513
+      },
+      "width": 278,
+      "height": 140
+    }
+  ],
+  "edges": [],
+  "positions": {
+    "session-ec522ed5-4b33-422e-85f7-e12537223e4e": {
+      "x": 22.073839662447114,
+      "y": 46.47679324894513
+    }
+  },
+  "undoStack": [],
+  "redoStack": [],
+  "deletedNodes": [
+    {
+      "nodeId": "capability-project-codex-skills-743cdf",
+      "sessionId": null,
+      "deletedAt": "2026-08-05T12:30:38.372Z"
+    },
+    {
+      "nodeId": "capability-subagent-skills-decbb7",
+      "sessionId": null,
+      "deletedAt": "2026-08-05T12:30:40.205Z"
+    },
+    {
+      "nodeId": "capability-project-codex-skills-2414da",
+      "sessionId": null,
+      "deletedAt": "2026-08-05T12:30:40.254Z"
+    },
+    {
+      "nodeId": "component-w23-live-smoke-markdown-5dad66",
+      "sessionId": null,
+      "deletedAt": "2026-08-06T04:58:24.058Z"
+    },
+    {
+      "nodeId": "session-61a046d1-7f6e-40ff-a6d8-c54e75b34f06",
+      "sessionId": "61a046d1-7f6e-40ff-a6d8-c54e75b34f06",
+      "deletedAt": "2026-08-06T04:58:24.137Z"
+    },
+    {
+      "nodeId": "component-markdown-node-a01ef0",
+      "sessionId": null,
+      "deletedAt": "2026-08-07T04:25:41.235Z"
+    },
+    {
+      "nodeId": "goal-task-standardize-workflow-nodes",
+      "sessionId": null,
+      "deletedAt": "2026-08-07T10:33:16.209Z"
+    },
+    {
+      "nodeId": "component-diagram-ba22fd",
+      "sessionId": null,
+      "deletedAt": "2026-08-07T10:32:20.954Z"
+    },
+    {
+      "nodeId": "component-package-json-adc366",
+      "sessionId": null,
+      "deletedAt": "2026-08-07T10:32:26.487Z"
+    },
+    {
+      "nodeId": "component-ui-c0a7ea",
+      "sessionId": null,
+      "deletedAt": "2026-08-07T10:32:31.976Z"
+    },
+    {
+      "nodeId": "component-app-tsx-4c4b67",
+      "sessionId": null,
+      "deletedAt": "2026-08-07T10:32:37.471Z"
+    },
+    {
+      "nodeId": "component-clipboard-shot-png-387ab6",
+      "sessionId": null,
+      "deletedAt": "2026-08-07T10:32:44.721Z"
+    },
+    {
+      "nodeId": "component-package-json-558388",
+      "sessionId": null,
+      "deletedAt": "2026-08-07T10:32:48.430Z"
+    },
+    {
+      "nodeId": "capability-workflow-skills-2c93c6",
+      "sessionId": null,
+      "deletedAt": "2026-08-07T10:32:55.599Z"
+    }
+  ],
+  "graphContextPath": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding\\Harness\\a2a\\workflow-map.json",
+  "updatedAt": "2026-08-07T10:33:16.212Z",
+  "sourceOfTruth": "backend",
+  "componentStatePath": "Harness/a2a/component-nodes",
+  "baseVersion": 517,
+  "workflowId": "workflow-task-standardize-workflow-nodes",
+  "componentStateRefs": {}
+}

@@ -1,0 +1,33 @@
+{
+  "type": "display",
+  "revision": 2,
+  "uiContract": {
+    "editor": "html-report",
+    "modes": [
+      "report"
+    ],
+    "defaultMode": "report"
+  },
+  "inputs": [
+    {
+      "id": "html",
+      "type": "html-report",
+      "label": "HTML report"
+    }
+  ],
+  "outputs": [
+    {
+      "id": "html",
+      "type": "html-report",
+      "label": "HTML report"
+    },
+    {
+      "id": "plainText",
+      "type": "text",
+      "label": "Plain text"
+    }
+  ],
+  "html": {
+    "bytes": 0
+  }
+}

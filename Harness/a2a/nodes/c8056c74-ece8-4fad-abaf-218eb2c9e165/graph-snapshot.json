@@ -1,0 +1,410 @@
+{
+  "schemaVersion": 1,
+  "version": 890,
+  "nodes": [
+    {
+      "nodeId": "session-77e19cae-fa66-4458-bc0a-47ef085138a6",
+      "sessionId": "49c38fd7-160e-4ccd-bf49-45c92fb94ea1",
+      "kind": "terminal-session",
+      "agentKind": "main",
+      "runtime": "claude",
+      "taskId": null,
+      "cwd": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding",
+      "status": "running",
+      "label": "claude main agent",
+      "position": {
+        "x": 1203.76,
+        "y": -782.78
+      },
+      "width": 278,
+      "height": 178,
+      "restartedFromSessionId": "421cec14-8bca-49d5-b6c3-6b40fceab654",
+      "restartedAt": "2026-08-10T06:53:18.090Z"
+    },
+    {
+      "nodeId": "session-ec522ed5-4b33-422e-85f7-e12537223e4e",
+      "sessionId": "cb6f614f-40ba-432a-ba05-8ecf7453f847",
+      "kind": "terminal-session",
+      "agentKind": "main",
+      "runtime": "claude",
+      "taskId": null,
+      "cwd": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding",
+      "status": "running",
+      "label": "claude main agent",
+      "position": {
+        "x": 997.8780088576159,
+        "y": -480.74236549886814
+      },
+      "width": 278,
+      "height": 178
+    },
+    {
+      "id": "component-package-json-96199f",
+      "nodeId": "component-package-json-96199f",
+      "kind": "component-node",
+      "type": "file",
+      "title": "package.json",
+      "position": {
+        "x": -479.6840007554164,
+        "y": 552.2387797512512
+      },
+      "revision": 1,
+      "statePath": "Harness/a2a/component-nodes/component-package-json-96199f/state.json",
+      "stateRef": {
+        "path": "Harness/a2a/component-nodes/component-package-json-96199f/state.json",
+        "revision": 1
+      },
+      "config": {
+        "componentType": "file",
+        "editable": true,
+        "backendSourceOfTruth": true
+      }
+    },
+    {
+      "id": "component-ui-7c0469",
+      "nodeId": "component-ui-7c0469",
+      "kind": "component-node",
+      "type": "file",
+      "title": "ui",
+      "position": {
+        "x": -413.27425387375285,
+        "y": 210.81322251499788
+      },
+      "revision": 1,
+      "statePath": "Harness/a2a/component-nodes/component-ui-7c0469/state.json",
+      "stateRef": {
+        "path": "Harness/a2a/component-nodes/component-ui-7c0469/state.json",
+        "revision": 1
+      },
+      "config": {
+        "componentType": "file",
+        "editable": true,
+        "backendSourceOfTruth": true
+      }
+    },
+    {
+      "id": "component-app-tsx-932823",
+      "nodeId": "component-app-tsx-932823",
+      "kind": "component-node",
+      "type": "file",
+      "title": "App.tsx",
+      "position": {
+        "x": 480.0981954059612,
+        "y": 169.13477971207607
+      },
+      "revision": 1,
+      "statePath": "Harness/a2a/component-nodes/component-app-tsx-932823/state.json",
+      "stateRef": {
+        "path": "Harness/a2a/component-nodes/component-app-tsx-932823/state.json",
+        "revision": 1
+      },
+      "config": {
+        "componentType": "file",
+        "editable": true,
+        "backendSourceOfTruth": true
+      }
+    },
+    {
+      "id": "component-clipboard-shot-png-512faf",
+      "nodeId": "component-clipboard-shot-png-512faf",
+      "kind": "component-node",
+      "type": "file",
+      "title": "clipboard-shot.png",
+      "position": {
+        "x": 439.87,
+        "y": 627.74
+      },
+      "revision": 1,
+      "statePath": "Harness/a2a/component-nodes/component-clipboard-shot-png-512faf/state.json",
+      "stateRef": {
+        "path": "Harness/a2a/component-nodes/component-clipboard-shot-png-512faf/state.json",
+        "revision": 1
+      },
+      "config": {
+        "componentType": "file",
+        "editable": true,
+        "backendSourceOfTruth": true
+      }
+    },
+    {
+      "id": "component-package-json-de799f",
+      "nodeId": "component-package-json-de799f",
+      "kind": "component-node",
+      "type": "file",
+      "title": "package.json",
+      "position": {
+        "x": 1061.59,
+        "y": 548.31
+      },
+      "revision": 1,
+      "statePath": "Harness/a2a/component-nodes/component-package-json-de799f/state.json",
+      "stateRef": {
+        "path": "Harness/a2a/component-nodes/component-package-json-de799f/state.json",
+        "revision": 1
+      },
+      "config": {
+        "componentType": "file",
+        "editable": true,
+        "backendSourceOfTruth": true
+      }
+    },
+    {
+      "id": "event-timer-node-ed2fc1",
+      "nodeId": "event-timer-node-ed2fc1",
+      "kind": "event-node",
+      "type": "timer",
+      "title": "Timer Node",
+      "label": "Timer Node",
+      "position": {
+        "x": 1493.76,
+        "y": -800.78
+      },
+      "revision": 2,
+      "statePath": "Harness/a2a/event-nodes/event-timer-node-ed2fc1/state.json",
+      "stateRef": {
+        "path": "Harness/a2a/event-nodes/event-timer-node-ed2fc1/state.json",
+        "revision": 2
+      },
+      "status": "ready",
+      "lifecycle": "event-source",
+      "runtimeState": "ready",
+      "config": {
+        "eventType": "timer",
+        "backendSourceOfTruth": true
+      }
+    },
+    {
+      "id": "goal-task-standardize-workflow-nodes",
+      "nodeId": "goal-task-standardize-workflow-nodes",
+      "kind": "goal-node",
+      "type": "goal",
+      "title": "Goal: task-standardize-workflow-nodes",
+      "label": "Goal: task-standardize-workflow-nodes",
+      "level": 1,
+      "position": {
+        "x": 871.7579018066193,
+        "y": -803.7841122558693
+      },
+      "revision": 2,
+      "statePath": "Harness/a2a/goal-nodes/goal-task-standardize-workflow-nodes/state.json",
+      "stateRef": {
+        "path": "Harness/a2a/goal-nodes/goal-task-standardize-workflow-nodes/state.json",
+        "revision": 2
+      },
+      "status": "active",
+      "lifecycle": "goal-anchor",
+      "runtimeState": "active",
+      "config": {
+        "taskId": "task-standardize-workflow-nodes",
+        "backendSourceOfTruth": true
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "event-timer-node-ed2fc1->session-ec522ed5-4b33-422e-85f7-e12537223e4e",
+      "from": "event-timer-node-ed2fc1",
+      "to": "session-ec522ed5-4b33-422e-85f7-e12537223e4e",
+      "source": "event-timer-node-ed2fc1",
+      "target": "session-ec522ed5-4b33-422e-85f7-e12537223e4e",
+      "relation": "event",
+      "direction": "source-to-target",
+      "sourceHandle": "event",
+      "targetHandle": "event.in",
+      "offset": 111.61583579453054,
+      "kind": "event-link"
+    },
+    {
+      "id": "session-ec522ed5-4b33-422e-85f7-e12537223e4e->event-timer-node-ed2fc1",
+      "from": "session-ec522ed5-4b33-422e-85f7-e12537223e4e",
+      "to": "event-timer-node-ed2fc1",
+      "source": "session-ec522ed5-4b33-422e-85f7-e12537223e4e",
+      "target": "event-timer-node-ed2fc1",
+      "relation": "control",
+      "direction": "source-to-target",
+      "sourceHandle": "context",
+      "targetHandle": "config",
+      "offset": 0,
+      "kind": "workflow-link"
+    },
+    {
+      "id": "event-timer-node-ed2fc1->goal-task-standardize-workflow-nodes",
+      "from": "event-timer-node-ed2fc1",
+      "to": "goal-task-standardize-workflow-nodes",
+      "source": "event-timer-node-ed2fc1",
+      "target": "goal-task-standardize-workflow-nodes",
+      "relation": "event",
+      "direction": "source-to-target",
+      "sourceHandle": "event",
+      "targetHandle": "goal:left",
+      "offset": 0,
+      "kind": "event-link"
+    },
+    {
+      "id": "goal-task-standardize-workflow-nodes->session-ec522ed5-4b33-422e-85f7-e12537223e4e",
+      "from": "goal-task-standardize-workflow-nodes",
+      "to": "session-ec522ed5-4b33-422e-85f7-e12537223e4e",
+      "source": "goal-task-standardize-workflow-nodes",
+      "target": "session-ec522ed5-4b33-422e-85f7-e12537223e4e",
+      "relation": "goal",
+      "direction": "bidirectional",
+      "sourceHandle": "goal:right",
+      "targetHandle": "context",
+      "offset": -80.66570584015665,
+      "kind": "workflow-link"
+    },
+    {
+      "id": "goal-task-standardize-workflow-nodes->session-77e19cae-fa66-4458-bc0a-47ef085138a6",
+      "from": "goal-task-standardize-workflow-nodes",
+      "to": "session-77e19cae-fa66-4458-bc0a-47ef085138a6",
+      "source": "goal-task-standardize-workflow-nodes",
+      "target": "session-77e19cae-fa66-4458-bc0a-47ef085138a6",
+      "relation": "goal",
+      "direction": "bidirectional",
+      "sourceHandle": "goal:right",
+      "targetHandle": "context",
+      "offset": 0,
+      "kind": "workflow-link"
+    },
+    {
+      "id": "event-timer-node-ed2fc1->session-77e19cae-fa66-4458-bc0a-47ef085138a6",
+      "from": "event-timer-node-ed2fc1",
+      "to": "session-77e19cae-fa66-4458-bc0a-47ef085138a6",
+      "source": "event-timer-node-ed2fc1",
+      "target": "session-77e19cae-fa66-4458-bc0a-47ef085138a6",
+      "relation": "event",
+      "direction": "source-to-target",
+      "sourceHandle": "event",
+      "targetHandle": "event.in",
+      "offset": 0,
+      "kind": "event-link"
+    },
+    {
+      "id": "session-77e19cae-fa66-4458-bc0a-47ef085138a6->event-timer-node-ed2fc1",
+      "from": "session-77e19cae-fa66-4458-bc0a-47ef085138a6",
+      "to": "event-timer-node-ed2fc1",
+      "source": "session-77e19cae-fa66-4458-bc0a-47ef085138a6",
+      "target": "event-timer-node-ed2fc1",
+      "relation": "control",
+      "direction": "source-to-target",
+      "sourceHandle": "context",
+      "targetHandle": "config",
+      "offset": 0,
+      "kind": "workflow-link"
+    }
+  ],
+  "positions": {
+    "session-ec522ed5-4b33-422e-85f7-e12537223e4e": {
+      "x": 997.8780088576159,
+      "y": -480.74236549886814
+    },
+    "event-timer-node-ed2fc1": {
+      "x": 1493.76,
+      "y": -800.78
+    },
+    "component-ui-7c0469": {
+      "x": -413.27425387375285,
+      "y": 210.81322251499788
+    },
+    "component-package-json-96199f": {
+      "x": -479.6840007554164,
+      "y": 552.2387797512512
+    },
+    "component-app-tsx-932823": {
+      "x": 480.0981954059612,
+      "y": 169.13477971207607
+    },
+    "component-clipboard-shot-png-512faf": {
+      "x": 439.87,
+      "y": 627.74
+    },
+    "component-package-json-de799f": {
+      "x": 1061.59,
+      "y": 548.31
+    },
+    "goal-task-standardize-workflow-nodes": {
+      "x": 871.7579018066193,
+      "y": -803.7841122558693
+    },
+    "session-77e19cae-fa66-4458-bc0a-47ef085138a6": {
+      "x": 1203.76,
+      "y": -782.78
+    }
+  },
+  "undoStack": [],
+  "redoStack": [],
+  "deletedNodes": [
+    {
+      "nodeId": "capability-project-codex-skills-743cdf",
+      "sessionId": null,
+      "deletedAt": "2026-08-05T12:30:38.372Z"
+    },
+    {
+      "nodeId": "capability-subagent-skills-decbb7",
+      "sessionId": null,
+      "deletedAt": "2026-08-05T12:30:40.205Z"
+    },
+    {
+      "nodeId": "capability-project-codex-skills-2414da",
+      "sessionId": null,
+      "deletedAt": "2026-08-05T12:30:40.254Z"
+    },
+    {
+      "nodeId": "component-w23-live-smoke-markdown-5dad66",
+      "sessionId": null,
+      "deletedAt": "2026-08-06T04:58:24.058Z"
+    },
+    {
+      "nodeId": "session-61a046d1-7f6e-40ff-a6d8-c54e75b34f06",
+      "sessionId": "61a046d1-7f6e-40ff-a6d8-c54e75b34f06",
+      "deletedAt": "2026-08-06T04:58:24.137Z"
+    },
+    {
+      "nodeId": "component-markdown-node-a01ef0",
+      "sessionId": null,
+      "deletedAt": "2026-08-07T04:25:41.235Z"
+    },
+    {
+      "nodeId": "component-diagram-ba22fd",
+      "sessionId": null,
+      "deletedAt": "2026-08-07T10:32:20.954Z"
+    },
+    {
+      "nodeId": "component-package-json-adc366",
+      "sessionId": null,
+      "deletedAt": "2026-08-07T10:32:26.487Z"
+    },
+    {
+      "nodeId": "component-ui-c0a7ea",
+      "sessionId": null,
+      "deletedAt": "2026-08-07T10:32:31.976Z"
+    },
+    {
+      "nodeId": "component-app-tsx-4c4b67",
+      "sessionId": null,
+      "deletedAt": "2026-08-07T10:32:37.471Z"
+    },
+    {
+      "nodeId": "component-clipboard-shot-png-387ab6",
+      "sessionId": null,
+      "deletedAt": "2026-08-07T10:32:44.721Z"
+    },
+    {
+      "nodeId": "component-package-json-558388",
+      "sessionId": null,
+      "deletedAt": "2026-08-07T10:32:48.430Z"
+    },
+    {
+      "nodeId": "capability-workflow-skills-2c93c6",
+      "sessionId": null,
+      "deletedAt": "2026-08-07T10:32:55.599Z"
+    }
+  ],
+  "graphContextPath": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding\\Harness\\a2a\\workflow-map.json",
+  "updatedAt": "2026-08-10T06:53:18.133Z",
+  "sourceOfTruth": "backend",
+  "componentStatePath": "Harness/a2a/component-nodes",
+  "baseVersion": 886,
+  "workflowId": "workflow-task-standardize-workflow-nodes",
+  "componentStateRefs": {}
+}

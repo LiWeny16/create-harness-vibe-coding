@@ -1,0 +1,48 @@
+{
+  "sessionId": "06c49a6a-8d75-40eb-b94f-976ca88772cc",
+  "peerId": "codex-c196b4d0",
+  "runtime": "codex",
+  "agentKind": "subagent",
+  "role": "researcher",
+  "objective": "交叉验证 DeepSeek Harness 说法并对比同类工具",
+  "taskId": null,
+  "workflowMode": "wf",
+  "parentAgentId": "c98f2d85-09e3-4db9-b63d-79709790af5b",
+  "parentNodeId": "session-c98f2d85-09e3-4db9-b63d-79709790af5b",
+  "cwd": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding",
+  "projectRoot": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding",
+  "nodeHomeRel": "Harness/a2a/nodes/06c49a6a-8d75-40eb-b94f-976ca88772cc",
+  "graphContextPath": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding\\Harness\\a2a\\workflow-map.json",
+  "nodeConfig": {
+    "role": "researcher",
+    "customRole": "",
+    "prompt": "交叉验证 DeepSeek Harness 说法并对比同类工具",
+    "model": "",
+    "provider": "",
+    "cwd": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding",
+    "env": {},
+    "permissions": {},
+    "launchPolicy": {
+      "sandboxMode": "danger-full-access",
+      "approvalPolicy": "never"
+    },
+    "skills": [],
+    "skillPolicy": "auto",
+    "contextSources": [
+      "workflow-map"
+    ],
+    "capabilities": [
+      "terminal"
+    ],
+    "outputRouting": {
+      "markdownDefaultEnabled": false,
+      "markdownTargetNodeId": "",
+      "fallback": "oldest-connected-markdown"
+    }
+  },
+  "restartRequired": false,
+  "restartRequiredFields": [],
+  "configRevision": 0,
+  "createdAt": "2026-08-14T03:49:57.079Z",
+  "updatedAt": "2026-08-14T03:49:57.079Z"
+}
