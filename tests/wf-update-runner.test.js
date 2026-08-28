@@ -129,7 +129,9 @@ test('runner does not auto-repair against an older remote version', () => {
   writeOldRemoteStubUpdater(project, 'project');
   copyRunner(project);
 
-  const payload = runRunner(project, project);
+  // Isolate discovery: a machine-level global runtime (~/.harness) must not
+  // leak into this project-scope scenario.
+  const payload = runRunner(project, project, { HARNESS_GLOBAL_HOME: path.join(root, 'no-global') });
 
   assert.equal(payload.success, true);
   assert.equal(payload.targets.length, 1);
