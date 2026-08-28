@@ -148,7 +148,6 @@ test('AC-CLEANUP-002 detached wf-ui cleanup defaults to project-local launch log
       apply: true,
       now: new Date('2026-07-31T00:00:00.000Z'),
       currentReadyFile: path.join(currentDir, 'ready.json'),
-      legacyTempRoot: false,
     });
 
     assert.equal(result.tempLogs.eligibleCount, 1);
@@ -156,35 +155,5 @@ test('AC-CLEANUP-002 detached wf-ui cleanup defaults to project-local launch log
     assert.equal(fs.existsSync(currentDir), true);
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
-  }
-});
-
-test('AC-CLEANUP-002 detached wf-ui cleanup includes legacy system-temp launch logs', () => {
-  const root = tmpdir('harness-cleanup-project-legacy-');
-  const legacyTempRoot = tmpdir('harness-cleanup-legacy-temp-root-');
-  try {
-    const oldDir = path.join(legacyTempRoot, 'harness-wf-ui-old');
-    fs.mkdirSync(oldDir, { recursive: true });
-    fs.writeFileSync(path.join(oldDir, 'wf-ui.log'), 'legacy log\n', 'utf8');
-    const oldDate = new Date('2026-07-28T00:00:00.000Z');
-    fs.utimesSync(oldDir, oldDate, oldDate);
-    fs.utimesSync(path.join(oldDir, 'wf-ui.log'), oldDate, oldDate);
-
-    const result = pruneCleanupTargets(root, {
-      stoppedSessionRetentionDays: 7,
-      keepStoppedSessions: 20,
-      includeTaskSessions: false,
-      detachedLogRetentionHours: 24,
-    }, {
-      apply: true,
-      now: new Date('2026-07-31T00:00:00.000Z'),
-      legacyTempRoot,
-    });
-
-    assert.equal(result.tempLogs.eligibleCount, 1);
-    assert.equal(fs.existsSync(oldDir), false);
-  } finally {
-    fs.rmSync(root, { recursive: true, force: true });
-    fs.rmSync(legacyTempRoot, { recursive: true, force: true });
   }
 });

@@ -137,7 +137,7 @@ test('AC-001 GET /api/workspace/tree denies traversal and returns 404 for missin
   assert.equal(missing.body.error.code, 'NOT_FOUND');
 });
 
-test('AC-003 GET /api/workspace/meta enforces auth and returns existing, missing, escaped, and directory metadata states', async () => {
+test('AC-003 GET /api/workspace/meta supports local no-token access and returns existing, missing, escaped, and directory metadata states', async () => {
   const { root, baseUrl, token } = await makeServer();
   fs.mkdirSync(path.join(root, 'docs'), { recursive: true });
   fs.writeFileSync(path.join(root, 'docs', 'guide.md'), '# Guide\n\nWorkspace metadata.\n');
@@ -148,14 +148,15 @@ test('AC-003 GET /api/workspace/meta enforces auth and returns existing, missing
   const linkPath = path.join(root, 'docs', 'outside-link');
   fs.symlinkSync(outsideRoot, linkPath, process.platform === 'win32' ? 'junction' : 'dir');
 
-  const missingAuth = await requestRaw(baseUrl, null, 'GET', workspaceApiPath('/api/workspace/meta', 'docs/guide.md'));
+  const localNoToken = await requestRaw(baseUrl, null, 'GET', workspaceApiPath('/api/workspace/meta', 'docs/guide.md'));
   const existing = await getJson(baseUrl, token, workspaceApiPath('/api/workspace/meta', 'docs/guide.md'));
   const missing = await getJson(baseUrl, token, workspaceApiPath('/api/workspace/meta', 'docs/missing.md'));
   const traversal = await getJson(baseUrl, token, '/api/workspace/meta?path=..%2Fescape.md');
   const symlinkEscape = await getJson(baseUrl, token, workspaceApiPath('/api/workspace/meta', 'docs/outside-link/secret.txt'));
   const directory = await getJson(baseUrl, token, workspaceApiPath('/api/workspace/meta', 'docs'));
 
-  assert.equal(missingAuth.status, 401);
+  assert.equal(localNoToken.status, 200);
+  assert.equal(JSON.parse(localNoToken.text).path, 'docs/guide.md');
   assert.equal(existing.status, 200);
   assert.equal(existing.body.ok, true);
   assert.equal(existing.body.path, 'docs/guide.md');

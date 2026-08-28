@@ -1,6 +1,7 @@
 import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 import { makeHarnessTempRoot } from './support/temp-root.js';
@@ -35,6 +36,39 @@ async function waitForPathGone(target, timeoutMs = 8000) {
   }
 }
 
+function reservePort(port) {
+  return new Promise((resolve, reject) => {
+    const server = net.createServer();
+    server.once('error', reject);
+    server.listen(port, '127.0.0.1', () => resolve(server));
+  });
+}
+
+function closeServer(server) {
+  return new Promise((resolve, reject) => {
+    server.close(err => (err ? reject(err) : resolve()));
+  });
+}
+
+async function reservePortWithFreeNext() {
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    const blocker = await reservePort(0);
+    const port = blocker.address().port;
+    if (port >= 65535) {
+      await closeServer(blocker);
+      continue;
+    }
+    try {
+      const next = await reservePort(port + 1);
+      await closeServer(next);
+      return { blocker, port };
+    } catch {
+      await closeServer(blocker);
+    }
+  }
+  throw new Error('could not find a reserved port with the next port free');
+}
+
 test('wf-ui --detach prints URL and leaves server running after launcher exits', async () => {
   const root = tmpdir();
   fs.mkdirSync(path.join(root, 'Harness', 'tasks'), { recursive: true });
@@ -59,7 +93,9 @@ test('wf-ui --detach prints URL and leaves server running after launcher exits',
     );
     const output = `${result.stdout}\n${result.stderr}`;
     assert.equal(result.status, 0, output);
-    assert.match(result.stdout, /\[wf-ui\] http:\/\/127\.0\.0\.1:\d+\/\?token=/);
+    const stdoutUrl = result.stdout.trim().match(/\[wf-ui\] (http:\/\/127\.0\.0\.1:\d+\/)$/)?.[1];
+    assert.ok(stdoutUrl, result.stdout);
+    assert.equal(new URL(stdoutUrl).searchParams.has('token'), false);
     const launchDirs = fs.readdirSync(launchRoot).filter(name => name.startsWith('harness-wf-ui-'));
     assert.equal(launchDirs.length, 1, 'detached launcher should use a project-local launch dir');
     launchDir = path.join(launchRoot, launchDirs[0]);
@@ -74,8 +110,8 @@ test('wf-ui --detach prints URL and leaves server running after launcher exits',
 
     ready = JSON.parse(fs.readFileSync(readyFile, 'utf8'));
     const startedUrl = new URL(ready.url);
+    assert.equal(startedUrl.searchParams.has('token'), false);
     const healthUrl = new URL('/api/health', startedUrl);
-    healthUrl.searchParams.set('token', startedUrl.searchParams.get('token'));
     const response = await fetch(healthUrl);
     assert.equal(response.status, 200);
     assert.equal((await response.json()).status, 'ok');
@@ -84,6 +120,101 @@ test('wf-ui --detach prints URL and leaves server running after launcher exits',
       try { process.kill(ready.pid, 'SIGTERM'); } catch {}
     }
     if (launchDir) await waitForPathGone(launchDir);
+  }
+});
+
+test('AC-001 wf-ui without --port defaults to 56670 and falls forward when occupied', async () => {
+  let blocker = null;
+  let exactExpectedPort = '56671';
+  try {
+    blocker = await reservePort(56670);
+  } catch (err) {
+    if (err?.code === 'EADDRINUSE') {
+      exactExpectedPort = null;
+    } else {
+      throw err;
+    }
+  }
+  const root = tmpdir();
+  fs.mkdirSync(path.join(root, 'Harness', 'tasks'), { recursive: true });
+  const launchRoot = path.join(root, 'Harness', '.temp', 'wf-ui-launch');
+  let ready = null;
+  let launchDir = null;
+
+  try {
+    const env = { ...process.env };
+    delete env.HARNESS_WF_UI_READY_FILE;
+    const result = spawnSync(
+      process.execPath,
+      [bin, 'wf-ui', '--project', root, '--host', '127.0.0.1', '--no-open', '--detach'],
+      {
+        encoding: 'utf8',
+        timeout: 20000,
+        env,
+      },
+    );
+    const output = `${result.stdout}\n${result.stderr}`;
+    assert.equal(result.status, 0, output);
+    const stdoutUrl = result.stdout.trim().match(/\[wf-ui\] (http:\/\/127\.0\.0\.1:\d+\/)$/)?.[1];
+    assert.ok(stdoutUrl, result.stdout);
+    const selectedPort = new URL(stdoutUrl).port;
+    if (exactExpectedPort) {
+      assert.equal(selectedPort, exactExpectedPort);
+    } else {
+      assert.ok(Number(selectedPort) >= 56671, `expected fallback port >= 56671, got ${selectedPort}`);
+    }
+
+    const launchDirs = fs.readdirSync(launchRoot).filter(name => name.startsWith('harness-wf-ui-'));
+    assert.equal(launchDirs.length, 1, 'detached launcher should use a project-local launch dir');
+    launchDir = path.join(launchRoot, launchDirs[0]);
+    ready = JSON.parse(fs.readFileSync(path.join(launchDir, 'ready.json'), 'utf8'));
+    assert.equal(new URL(ready.url).port, selectedPort);
+  } finally {
+    if (ready?.pid) {
+      try { process.kill(ready.pid, 'SIGTERM'); } catch {}
+    }
+    if (launchDir) await waitForPathGone(launchDir);
+    if (blocker) await closeServer(blocker);
+  }
+});
+
+test('AC-002 wf-ui explicit nonzero occupied port falls forward to the next free port', async () => {
+  const { blocker, port } = await reservePortWithFreeNext();
+  const root = tmpdir();
+  fs.mkdirSync(path.join(root, 'Harness', 'tasks'), { recursive: true });
+  const launchRoot = path.join(root, 'Harness', '.temp', 'wf-ui-launch');
+  let ready = null;
+  let launchDir = null;
+
+  try {
+    const env = { ...process.env };
+    delete env.HARNESS_WF_UI_READY_FILE;
+    const result = spawnSync(
+      process.execPath,
+      [bin, 'wf-ui', '--project', root, '--host', '127.0.0.1', '--port', String(port), '--no-open', '--detach'],
+      {
+        encoding: 'utf8',
+        timeout: 20000,
+        env,
+      },
+    );
+    const output = `${result.stdout}\n${result.stderr}`;
+    assert.equal(result.status, 0, output);
+    const stdoutUrl = result.stdout.trim().match(/\[wf-ui\] (http:\/\/127\.0\.0\.1:\d+\/)$/)?.[1];
+    assert.ok(stdoutUrl, result.stdout);
+    assert.equal(new URL(stdoutUrl).port, String(port + 1));
+
+    const launchDirs = fs.readdirSync(launchRoot).filter(name => name.startsWith('harness-wf-ui-'));
+    assert.equal(launchDirs.length, 1, 'detached launcher should use a project-local launch dir');
+    launchDir = path.join(launchRoot, launchDirs[0]);
+    ready = JSON.parse(fs.readFileSync(path.join(launchDir, 'ready.json'), 'utf8'));
+    assert.equal(new URL(ready.url).port, String(port + 1));
+  } finally {
+    if (ready?.pid) {
+      try { process.kill(ready.pid, 'SIGTERM'); } catch {}
+    }
+    if (launchDir) await waitForPathGone(launchDir);
+    await closeServer(blocker);
   }
 });
 

@@ -88,6 +88,20 @@ function assertSameStrings(actual, expected, message) {
   assert.deepEqual([...(actual || [])].sort(), [...expected].sort(), message);
 }
 
+function agentGraphNode(session, position = { x: 20, y: 40 }) {
+  return {
+    nodeId: session.graphNodeId,
+    sessionId: session.sessionId,
+    kind: 'terminal-session',
+    agentKind: session.agentKind || 'main',
+    runtime: session.runtime || 'codex',
+    status: session.status || 'running',
+    role: session.role || '',
+    cwd: session.cwd || '',
+    position,
+  };
+}
+
 function assertComponentNodeResponse(root, result, expected) {
   assert.equal(result.status, expected.status || 201);
   assert.equal(result.body.ok, true);
@@ -352,6 +366,40 @@ test('AC-008 AC-012 PUT /api/a2a/graph-map uses If-Match as an optional graph ve
   assert.deepEqual(afterStale.body.positions.guarded, { x: 12, y: 34 });
 });
 
+test('AC-007 PUT /api/a2a/graph-map rejects reverse duplicate bidirectional edges', async () => {
+  const { baseUrl, token } = await makeServer();
+  const markdown = await postJson(baseUrl, token, '/api/a2a/component-nodes', {
+    type: 'markdown',
+    title: 'Reverse Notes',
+    position: { x: 140, y: 120 },
+    markdown: '# Reverse\n',
+  });
+  const fileNode = await postJson(baseUrl, token, '/api/a2a/component-nodes', {
+    type: 'file',
+    title: 'reverse.txt',
+    position: { x: 420, y: 120 },
+    file: {
+      source: 'workspace',
+      path: 'reverse.txt',
+      name: 'reverse.txt',
+      mime: 'text/plain',
+      size: 7,
+    },
+  });
+  assert.equal(markdown.status, 201);
+  assert.equal(fileNode.status, 201);
+
+  const duplicate = await putJson(baseUrl, token, '/api/a2a/graph-map', {
+    edges: [
+      { id: 'edge-notes-file', from: markdown.body.node.nodeId, to: fileNode.body.node.nodeId, relation: 'wf-bridge/markdown', sourceHandle: 'markdown', targetHandle: 'file' },
+      { id: 'edge-file-notes', from: fileNode.body.node.nodeId, to: markdown.body.node.nodeId, relation: 'wf-bridge/file', sourceHandle: 'file', targetHandle: 'markdown' },
+    ],
+  });
+
+  assert.equal(duplicate.status, 409, JSON.stringify(duplicate.body));
+  assert.equal(duplicate.body.error.code, 'DUPLICATE_EDGE');
+});
+
 test('AC-006 /api/a2a/snapshot includes component nodes as refs alongside terminal sessions and preserves graph edges/positions', async () => {
   const { baseUrl, token, registry } = await makeServer();
   const session = registry.create({
@@ -371,7 +419,8 @@ test('AC-006 /api/a2a/snapshot includes component nodes as refs alongside termin
   const componentNodeId = markdown.body.node.nodeId;
 
   const graphUpdate = await putJson(baseUrl, token, '/api/a2a/graph-map', {
-    edges: [{ id: 'edge-main-to-markdown', from: 'session-main-node', to: componentNodeId, relation: 'observes' }],
+    nodes: [agentGraphNode(session, { x: 20, y: 40 })],
+    edges: [{ id: 'edge-main-to-markdown', from: 'session-main-node', to: componentNodeId, relation: 'observes', sourceHandle: 'output', targetHandle: 'markdown' }],
     positions: {
       'session-main-node': { x: 20, y: 40 },
       [componentNodeId]: { x: 260, y: 140 },
@@ -401,6 +450,12 @@ test('AC-006 /api/a2a/snapshot includes component nodes as refs alongside termin
   assert.deepEqual(snapshot.body.graph.positions[componentNodeId], { x: 260, y: 140 });
   assert.ok(snapshot.body.graph.nodes.some(node => node.nodeId === componentNodeId && node.kind === 'component-node'));
   assert.ok(snapshot.body.graph.edges.some(edge => edge.id === 'edge-main-to-markdown' && edge.from === 'session-main-node' && edge.to === componentNodeId));
+  assert.ok(snapshot.body.edges.some(edge => (
+    edge.id === 'edge-main-to-markdown'
+    && edge.sourceHandle === 'bottom'
+    && edge.targetHandle === 'markdown:left'
+    && edge.direction === 'bidirectional'
+  )));
 });
 
 test('AC-006 /api/a2a/snapshot includes full componentNodes state for Excalidraw preview hydration', async () => {
@@ -529,6 +584,10 @@ test('AC-006 agent-readable workflow map context references component node state
     scene: { elements: [], appState: {}, files: {} },
   });
   assert.equal(diagram.status, 201);
+  const graphUpdate = await putJson(baseUrl, token, '/api/a2a/graph-map', {
+    nodes: [agentGraphNode(session, { x: 120, y: 220 })],
+  });
+  assert.equal(graphUpdate.status, 200);
 
   const snapshot = await getJson(baseUrl, token, `/api/a2a/snapshot?fresh=1&actorSessionId=${session.sessionId}`);
 
@@ -573,6 +632,7 @@ test('AC-003 graph context exposes connected File and Markdown resources for an 
   });
 
   const graphUpdate = await putJson(baseUrl, token, '/api/a2a/graph-map', {
+    nodes: [agentGraphNode(session, { x: 220, y: 260 })],
     edges: [
       { id: 'edge-file-main', from: fileNode.body.node.nodeId, to: 'session-main-context', relation: 'context', sourceHandle: 'file', targetHandle: 'context' },
       { id: 'edge-main-md', from: 'session-main-context', to: markdownNode.body.node.nodeId, relation: 'default-output', sourceHandle: 'output', targetHandle: 'markdown' },
@@ -638,6 +698,7 @@ test('AC-004 graph context exposes connected File Markdown and Diagram refs with
   for (const result of [fileNode, markdownNode, diagramNode]) assert.equal(result.status, 201);
 
   const graphUpdate = await putJson(baseUrl, token, '/api/a2a/graph-map', {
+    nodes: [agentGraphNode(session, { x: 360, y: 320 })],
     edges: [
       { id: 'edge-file-agent', from: fileNode.body.node.nodeId, to: 'session-resource-context', relation: 'context', sourceHandle: 'file', targetHandle: 'context' },
       { id: 'edge-agent-markdown', from: 'session-resource-context', to: markdownNode.body.node.nodeId, relation: 'default-output', sourceHandle: 'output', targetHandle: 'markdown' },
@@ -655,7 +716,7 @@ test('AC-004 graph context exposes connected File Markdown and Diagram refs with
   const fileRef = refsByNodeId.get(fileNode.body.node.nodeId);
   assert.equal(fileRef.direction, 'bidirectional');
   assert.equal(fileRef.endpointRole, 'target');
-  assert.equal(fileRef.sourceHandle, 'file');
+  assert.equal(fileRef.sourceHandle, 'file:right');
   assert.equal(fileRef.targetHandle, 'context');
   assert.deepEqual(fileRef.stateRef, {
     path: fileNode.body.node.statePath,
@@ -673,17 +734,20 @@ test('AC-004 graph context exposes connected File Markdown and Diagram refs with
       text: '/api/workspace/text',
     },
   });
-  assertSameStrings(fileRef.capabilities, ['meta:read', 'bytes:read', 'text:read']);
+  assertSameStrings(fileRef.capabilities, ['meta:read', 'bytes:read', 'text:read', 'file.preview', 'file.writeText']);
   assert.deepEqual(fileRef.handles, {
-    inputs: ['file'],
-    outputs: ['file', 'path'],
+    inputs: [],
+    outputs: [],
+    bidirectional: ['file'],
+    ports: ['file'],
+    physical: ['file:left', 'file:right', 'file:top', 'file:bottom'],
   });
 
   const markdownRef = refsByNodeId.get(markdownNode.body.node.nodeId);
   assert.equal(markdownRef.direction, 'bidirectional');
   assert.equal(markdownRef.endpointRole, 'source');
-  assert.equal(markdownRef.sourceHandle, 'output');
-  assert.equal(markdownRef.targetHandle, 'markdown');
+  assert.equal(markdownRef.sourceHandle, 'bottom');
+  assert.equal(markdownRef.targetHandle, 'markdown:left');
   assert.deepEqual(markdownRef.contentRef, {
     kind: 'component-state',
     statePath: markdownNode.body.node.statePath,
@@ -691,17 +755,20 @@ test('AC-004 graph context exposes connected File Markdown and Diagram refs with
     field: 'markdown',
     mime: 'text/markdown',
   });
-  assertSameStrings(markdownRef.capabilities, ['state:read', 'state:update', 'markdown:append', 'markdown:replace']);
+  assertSameStrings(markdownRef.capabilities, ['state:read', 'state:update', 'markdown:append', 'markdown:replace', 'markdown.find', 'markdown.acquireLock', 'markdown.releaseLock']);
   assert.deepEqual(markdownRef.handles, {
-    inputs: ['markdown'],
-    outputs: ['markdown', 'plainText'],
+    inputs: [],
+    outputs: [],
+    bidirectional: ['markdown'],
+    ports: ['markdown'],
+    physical: ['markdown:left', 'markdown:right', 'markdown:top', 'markdown:bottom'],
   });
 
   const diagramRef = refsByNodeId.get(diagramNode.body.node.nodeId);
   assert.equal(diagramRef.type, 'excalidraw');
   assert.equal(diagramRef.direction, 'bidirectional');
   assert.equal(diagramRef.endpointRole, 'target');
-  assert.equal(diagramRef.sourceHandle, 'scene');
+  assert.equal(diagramRef.sourceHandle, 'scene:right');
   assert.equal(diagramRef.targetHandle, 'context');
   assert.deepEqual(diagramRef.contentRef, {
     kind: 'component-state',
@@ -712,8 +779,11 @@ test('AC-004 graph context exposes connected File Markdown and Diagram refs with
   });
   assertSameStrings(diagramRef.capabilities, ['state:read', 'state:update', 'excalidraw:read', 'excalidraw:update']);
   assert.deepEqual(diagramRef.handles, {
-    inputs: ['scene'],
-    outputs: ['scene', 'image'],
+    inputs: [],
+    outputs: [],
+    bidirectional: ['scene'],
+    ports: ['scene'],
+    physical: ['scene:left', 'scene:right', 'scene:top', 'scene:bottom'],
   });
 });
 
@@ -751,6 +821,7 @@ test('AC-005 Markdown output routing falls back to earliest connected Markdown w
   assert.equal(newerMarkdown.status, 201);
 
   const graphUpdate = await putJson(baseUrl, token, '/api/a2a/graph-map', {
+    nodes: [agentGraphNode(session, { x: 220, y: 120 })],
     edges: [
       { id: 'edge-output-newer', from: 'session-markdown-output', to: newerMarkdown.body.node.nodeId, relation: 'default-output', sourceHandle: 'output', targetHandle: 'markdown' },
       { id: 'edge-output-older', from: 'session-markdown-output', to: olderMarkdown.body.node.nodeId, relation: 'default-output', sourceHandle: 'output', targetHandle: 'markdown' },

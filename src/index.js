@@ -10,6 +10,7 @@ import { generate, getOptionalCatalog } from './generator.js';
 const UPDATE_SUCCESS_STATUSES = new Set(['up-to-date', 'update-available', 'partial-update']);
 const UPDATE_FAILURE_STATUSES = new Set(['error', 'offline', 'template-remote', 'downgrade-refused']);
 const CANONICAL_UPDATE_SOURCE_BASE = 'https://raw.githubusercontent.com/LiWeny16/create-harness-vibe-coding/main/templates/common/';
+const DEFAULT_WF_UI_PORT = 56670;
 
 // ── CLI flags ──────────────────────────────────────────────
 const raw = process.argv.slice(2);
@@ -390,7 +391,7 @@ function printResult(result, targetDir) {
 async function runWfUi(args) {
   const projectRoot = extractFlag(args, '--project') || process.cwd();
   const host = extractFlag(args, '--host') || '127.0.0.1';
-  const rawPort = extractFlag(args, '--port') || '0';
+  const rawPort = extractFlag(args, '--port') || String(DEFAULT_WF_UI_PORT);
   const port = Number.parseInt(rawPort, 10);
   const openBrowser = !hasFlag(args, '--no-open');
   const detach = hasFlag(args, '--detach');
@@ -418,7 +419,6 @@ async function runWfUi(args) {
   try {
     const serverModule = await import('./wf-ui-server/server.mjs');
     const { SessionRegistry } = await import('./wf-ui-server/session-registry.mjs');
-    const { attachEventsWs } = await import('./wf-ui-server/ws-events.mjs');
     const { attachTerminalWs } = await import('./wf-ui-server/ws-terminal.mjs');
     const { attachWfBrowserWs } = await import('./wf-ui-server/ws-wf-browser.mjs');
     const { warmRuntimeCache } = await import('./wf-ui-server/runtime-detector.mjs');
@@ -427,7 +427,7 @@ async function runWfUi(args) {
     const registry = new SessionRegistry();
     const terminalHub = {};
     const wfBrowserHub = {};
-    const started = await serverModule.startServer({
+    const started = await startWfUiServerWithPortFallback(serverModule, {
       projectRoot,
       host,
       port,
@@ -435,7 +435,6 @@ async function runWfUi(args) {
       terminalHub,
       wfBrowserHub,
     });
-    attachEventsWs(started.server, started.token, projectRoot);
     Object.assign(wfBrowserHub, attachWfBrowserWs(started.server, started.token, projectRoot));
     Object.assign(terminalHub, attachTerminalWs(started.server, started.token, registry, {
       onTerminalInput(session, data) {
@@ -467,6 +466,23 @@ async function runWfUi(args) {
   } catch (err) {
     console.error(`[wf-ui] ${err.message}`);
     process.exit(1);
+  }
+}
+
+async function startWfUiServerWithPortFallback(serverModule, options) {
+  const requestedPort = options.port;
+  let candidatePort = requestedPort;
+
+  while (true) {
+    try {
+      return await serverModule.startServer({ ...options, port: candidatePort });
+    } catch (err) {
+      if (requestedPort === 0 || err?.code !== 'EADDRINUSE') throw err;
+      if (candidatePort >= 65535) {
+        throw new Error(`ports ${requestedPort}-65535 are occupied`);
+      }
+      candidatePort += 1;
+    }
   }
 }
 

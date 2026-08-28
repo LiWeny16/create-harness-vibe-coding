@@ -1,9 +1,23 @@
 import crypto from 'node:crypto';
-import fs from 'node:fs';
 import path from 'node:path';
+import {
+  appendStoreJsonl,
+  isPlainObject,
+  nodeRevisionLogPath,
+  nodeStatePath,
+  nodeStateRelPath,
+  nodeStoreIndexPath,
+  normalizePosition,
+  readNodeIndex,
+  readStoreJson,
+  slugPart,
+  writeNodeIndex,
+  writeStoreJson,
+} from './node-store-utils.mjs';
 
-const COMPONENT_TYPES = new Set(['markdown', 'excalidraw', 'file']);
+const COMPONENT_TYPES = new Set(['markdown', 'excalidraw', 'file', 'display']);
 const NODE_ID_RE = /^component-[a-z0-9][a-z0-9-]*$/;
+const STORE_DIR = 'component-nodes';
 
 export class ComponentNodeError extends Error {
   constructor(message, { statusCode = 400, code = 'BAD_REQUEST' } = {}) {
@@ -14,58 +28,20 @@ export class ComponentNodeError extends Error {
   }
 }
 
-function componentRoot(projectRoot) {
-  return path.join(projectRoot, 'Harness', 'a2a', 'component-nodes');
-}
-
 export function componentNodesIndexPath(projectRoot) {
-  return path.join(componentRoot(projectRoot), 'index.json');
+  return nodeStoreIndexPath(projectRoot, STORE_DIR);
 }
 
 export function componentNodeRevisionLogPath(projectRoot, nodeId) {
-  assertNodeId(nodeId);
-  return path.join(componentRoot(projectRoot), nodeId, 'revisions.jsonl');
-}
-
-function readJson(filePath, fallback) {
-  try {
-    if (!fs.existsSync(filePath)) return fallback;
-    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
-  } catch {
-    return fallback;
-  }
-}
-
-function writeJson(filePath, data) {
-  fs.mkdirSync(path.dirname(filePath), { recursive: true });
-  fs.writeFileSync(filePath, `${JSON.stringify(data, null, 2)}\n`, 'utf8');
-}
-
-function appendJsonl(filePath, row) {
-  fs.mkdirSync(path.dirname(filePath), { recursive: true });
-  fs.appendFileSync(filePath, `${JSON.stringify(row)}\n`, 'utf8');
-}
-
-function isPlainObject(value) {
-  return value !== null && typeof value === 'object' && !Array.isArray(value);
+  return nodeRevisionLogPath(projectRoot, { storeDir: STORE_DIR, nodeId, assertNodeId });
 }
 
 function normalizeType(type) {
   const value = String(type || '').trim().toLowerCase();
   if (!COMPONENT_TYPES.has(value)) {
-    throw new ComponentNodeError('Invalid component type; expected markdown, excalidraw, or file');
+    throw new ComponentNodeError('Invalid component type; expected markdown, excalidraw, file, or display');
   }
   return value;
-}
-
-function slugPart(value, fallback) {
-  const slug = String(value || '')
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 32);
-  return slug || fallback;
 }
 
 function generateNodeId(type, title) {
@@ -88,36 +64,22 @@ function normalizeTitle(title, type) {
   const value = String(title || '').trim();
   if (value) return value;
   if (type === 'file') return 'File Node';
+  if (type === 'display') return 'Report Node';
   return value || (type === 'markdown' ? 'Markdown Node' : 'Excalidraw Node');
 }
 
-function normalizePosition(position) {
-  const source = isPlainObject(position) ? position : {};
-  return {
-    x: Number.isFinite(Number(source.x)) ? Number(source.x) : 0,
-    y: Number.isFinite(Number(source.y)) ? Number(source.y) : 0,
-  };
-}
-
 function relStatePath(nodeId) {
-  return `Harness/a2a/component-nodes/${nodeId}/state.json`;
+  return nodeStateRelPath(STORE_DIR, nodeId);
 }
 
 function absoluteStatePath(projectRoot, statePath, nodeId) {
-  const expected = relStatePath(nodeId);
-  const normalized = String(statePath || '').replace(/\\/g, '/');
-  if (normalized !== expected) {
-    throw new ComponentNodeError('Invalid component state path; traversal or mutable statePath is not allowed');
-  }
-  const absolute = path.resolve(projectRoot, normalized);
-  const root = path.resolve(componentRoot(projectRoot));
-  if (absolute !== path.resolve(componentRoot(projectRoot), nodeId, 'state.json')) {
-    throw new ComponentNodeError('Invalid component state path; escaped component root');
-  }
-  if (!(absolute === root || absolute.startsWith(`${root}${path.sep}`))) {
-    throw new ComponentNodeError('Invalid component state path; escaped component root');
-  }
-  return absolute;
+  return nodeStatePath(projectRoot, {
+    storeDir: STORE_DIR,
+    statePath,
+    nodeId,
+    ErrorClass: ComponentNodeError,
+    label: 'component',
+  });
 }
 
 function uiContractForType(type) {
@@ -135,6 +97,13 @@ function uiContractForType(type) {
       defaultMode: 'preview',
     };
   }
+  if (type === 'display') {
+    return {
+      editor: 'html-report',
+      modes: ['report'],
+      defaultMode: 'report',
+    };
+  }
   return {
     editor: 'excalidraw',
     modes: ['canvas'],
@@ -145,6 +114,7 @@ function uiContractForType(type) {
 function inputsForType(type) {
   if (type === 'markdown') return [{ id: 'markdown', type: 'markdown', label: 'Markdown' }];
   if (type === 'file') return [{ id: 'file', type: 'file-ref', label: 'File' }];
+  if (type === 'display') return [{ id: 'html', type: 'html-report', label: 'HTML report' }];
   return [{ id: 'scene', type: 'excalidraw-scene', label: 'Scene' }];
 }
 
@@ -159,6 +129,12 @@ function outputsForType(type) {
     return [
       { id: 'file', type: 'file-ref', label: 'File reference' },
       { id: 'path', type: 'path', label: 'Path' },
+    ];
+  }
+  if (type === 'display') {
+    return [
+      { id: 'html', type: 'html-report', label: 'HTML report' },
+      { id: 'plainText', type: 'text', label: 'Plain text' },
     ];
   }
   return [
@@ -212,6 +188,10 @@ function stateFor(projectRoot, type, payload, revision) {
     state.scene = isPlainObject(payload.scene)
       ? payload.scene
       : { elements: [], appState: {}, files: {} };
+  } else if (type === 'display') {
+    // The report lives in <nodeDir>/report.html (written by display.write);
+    // state only tracks the metadata.
+    state.html = { bytes: 0 };
   } else {
     state.file = normalizeFileState(projectRoot, payload.file || payload);
   }
@@ -239,19 +219,11 @@ function nodeFor({ nodeId, type, title, position, revision }) {
 }
 
 function readIndex(projectRoot) {
-  const index = readJson(componentNodesIndexPath(projectRoot), { schemaVersion: 1, nodes: [] });
-  return {
-    schemaVersion: 1,
-    nodes: Array.isArray(index.nodes) ? index.nodes : [],
-  };
+  return readNodeIndex(componentNodesIndexPath(projectRoot));
 }
 
 function writeIndex(projectRoot, index) {
-  writeJson(componentNodesIndexPath(projectRoot), {
-    schemaVersion: 1,
-    nodes: Array.isArray(index.nodes) ? index.nodes : [],
-    updatedAt: new Date().toISOString(),
-  });
+  writeNodeIndex(componentNodesIndexPath(projectRoot), index);
 }
 
 function validatedIndexNode(projectRoot, node) {
@@ -307,8 +279,8 @@ export function createComponentNode(projectRoot, payload = {}) {
   });
   const state = stateFor(projectRoot, type, payload, node.revision);
   const stateFile = absoluteStatePath(projectRoot, node.statePath, node.nodeId);
-  writeJson(stateFile, state);
-  appendJsonl(componentNodeRevisionLogPath(projectRoot, node.nodeId), revisionRow('create', node));
+  writeStoreJson(stateFile, state);
+  appendStoreJsonl(componentNodeRevisionLogPath(projectRoot, node.nodeId), revisionRow('create', node));
   writeIndex(projectRoot, { nodes: [...index.nodes, node] });
   return { ok: true, node, state, revision: node.revision };
 }
@@ -324,7 +296,7 @@ export function getComponentNode(projectRoot, nodeId) {
     });
   }
   const node = validatedIndexNode(projectRoot, raw);
-  const state = readJson(absoluteStatePath(projectRoot, node.statePath, node.nodeId), null);
+  const state = readStoreJson(absoluteStatePath(projectRoot, node.statePath, node.nodeId), null);
   if (!state || state.type !== node.type || Number(state.revision) !== node.revision) {
     throw new ComponentNodeError('Component state file is missing or out of sync', {
       statusCode: 409,
@@ -360,9 +332,18 @@ export function updateComponentNode(projectRoot, nodeId, payload = {}) {
     scene: payload.scene !== undefined ? payload.scene : current.state.scene,
     file: payload.file !== undefined ? payload.file : current.state.file,
   }, nextRevision);
+  // F18/D15: a successful write implies no live lock (the markdown write gate
+  // rejects writes under a valid foreign lock), so the new state drops any
+  // stale/expired persisted lock record.
+  if (current.node.type === 'markdown') state.lock = null;
+  // File nodes keep their persisted lease across metadata updates (refresh and
+  // UI edits): the write gate runs before every write, so an update is never a
+  // write itself and must not drop a live holder's lock. releaseLock is the
+  // only clearing path (AC-2, restart-preserved).
+  if (current.node.type === 'file' && current.state.lock) state.lock = current.state.lock;
   const stateFile = absoluteStatePath(projectRoot, node.statePath, node.nodeId);
-  writeJson(stateFile, state);
-  appendJsonl(componentNodeRevisionLogPath(projectRoot, node.nodeId), revisionRow('update', node, current.node.revision));
+  writeStoreJson(stateFile, state);
+  appendStoreJsonl(componentNodeRevisionLogPath(projectRoot, node.nodeId), revisionRow('update', node, current.node.revision));
 
   const index = readIndex(projectRoot);
   const nodes = index.nodes.map(item => ((item.nodeId || item.id) === node.nodeId ? node : item));
@@ -370,9 +351,194 @@ export function updateComponentNode(projectRoot, nodeId, payload = {}) {
   return { ok: true, node, state, revision: node.revision };
 }
 
+// ---------------------------------------------------------------------------
+// Markdown blackboard lock / lease registry (F18/D15: persisted + mandatory
+// exclusion while held). The lock lives in the markdown node's backend-owned
+// state file ({ lockId, holder, acquiredAt, expiresAt } on the state JSON), so
+// a server restart keeps the lease; TTL expiry is honored on every read. The
+// in-memory map is only a per-process cache seeded from the persisted lock.
+// ---------------------------------------------------------------------------
+
+const markdownLocks = new Map(); // nodeId -> { lockId, holder, acquiredAt, expiresAt }
+
+function lockNow() {
+  return Date.now();
+}
+
+// Read the persisted lock record from the node's backend-owned state file.
+// Returns null when absent, not a markdown node, or expired (TTL honored on
+// read). `projectRoot` is optional: without it the store behaves as a pure
+// in-memory registry (unit-level usage, legacy behavior).
+function persistedMarkdownLock(projectRoot, nodeId) {
+  if (!projectRoot) return null;
+  const key = assertNodeId(String(nodeId || ''));
+  let state;
+  try {
+    state = readStoreJson(absoluteStatePath(projectRoot, relStatePath(key), key), null);
+  } catch {
+    return null;
+  }
+  const lock = state && state.lock && typeof state.lock === 'object' ? state.lock : null;
+  if (!lock) return null;
+  if (Number(lock.expiresAt) <= Date.now()) return null;
+  return {
+    lockId: String(lock.lockId || ''),
+    holder: String(lock.holder || ''),
+    acquiredAt: Number(lock.acquiredAt) || 0,
+    expiresAt: Number(lock.expiresAt) || 0,
+  };
+}
+
+// Persist (or clear) the lock on the node's state file. Never mutates the
+// state revision, so getComponentNode validation stays intact.
+function writePersistedMarkdownLock(projectRoot, nodeId, lock) {
+  if (!projectRoot) return;
+  const key = assertNodeId(String(nodeId || ''));
+  const statePath = absoluteStatePath(projectRoot, relStatePath(key), key);
+  let state;
+  try {
+    state = readStoreJson(statePath, null);
+  } catch {
+    return;
+  }
+  if (!state || typeof state !== 'object') return;
+  writeStoreJson(statePath, { ...state, lock: lock || null });
+}
+
+function liveLock(nodeId, now, projectRoot = null) {
+  const key = assertNodeId(String(nodeId || ''));
+  const cached = markdownLocks.get(key);
+  if (cached) {
+    if (cached.expiresAt <= now) {
+      markdownLocks.delete(key);
+      return null;
+    }
+    return cached;
+  }
+  // Seed the cache from the persisted lease so restarts keep the lock (F18).
+  const persisted = persistedMarkdownLock(projectRoot, key);
+  if (persisted) {
+    markdownLocks.set(key, persisted);
+    return persisted;
+  }
+  return null;
+}
+
+function lockConflictError(lock) {
+  const err = new ComponentNodeError(
+    `Markdown node is locked by ${lock.holder} until ${new Date(lock.expiresAt).toISOString()}`,
+    { statusCode: 409, code: 'markdown_locked' },
+  );
+  err.holder = lock.holder;
+  err.expiresAt = lock.expiresAt;
+  return err;
+}
+
+// Acquire or renew a lease. `options.now` overrides the clock (test injection);
+// `options.lockId` renews an existing lease owned by the same holder; when
+// `options.projectRoot` is supplied the lease is persisted into the node's
+// backend-owned state file so restarts keep it (F18). TTL is clamped to
+// [1ms, 300s].
+export function acquireLock(nodeId, holder, ttlMs = 30000, options = {}) {
+  const key = assertNodeId(String(nodeId || ''));
+  const owner = String(holder || '').trim();
+  if (!owner) {
+    throw new ComponentNodeError('Lock holder is required', { statusCode: 400, code: 'BAD_REQUEST' });
+  }
+  const ttl = Math.min(Math.max(Number(ttlMs) || 0, 1), 300000);
+  const now = Number(options.now) || lockNow();
+  const existing = liveLock(key, now, options.projectRoot);
+  if (existing && existing.holder !== owner) {
+    throw lockConflictError(existing);
+  }
+  if (existing) {
+    const lockId = options.lockId !== undefined && options.lockId !== null
+      ? String(options.lockId).trim()
+      : existing.lockId;
+    if (lockId !== existing.lockId) throw lockConflictError(existing);
+    existing.expiresAt = now + ttl;
+    markdownLocks.set(key, existing);
+    if (options.projectRoot) writePersistedMarkdownLock(options.projectRoot, key, existing);
+    return { ...existing };
+  }
+  const lock = {
+    lockId: options.lockId !== undefined && options.lockId !== null
+      ? String(options.lockId).trim()
+      : `lock-${crypto.randomBytes(8).toString('hex')}`,
+    holder: owner,
+    acquiredAt: now,
+    expiresAt: now + ttl,
+  };
+  markdownLocks.set(key, lock);
+  if (options.projectRoot) writePersistedMarkdownLock(options.projectRoot, key, lock);
+  return { ...lock };
+}
+
+// Release a lease; only the holder may release. Missing/expired locks (or a
+// lockId that no longer matches) are a no-op. `options.now` overrides the clock;
+// `options.projectRoot` clears the persisted lease too (F18).
+export function releaseLock(nodeId, holder, options = {}) {
+  const key = assertNodeId(String(nodeId || ''));
+  const owner = String(holder || '').trim();
+  if (!owner) {
+    throw new ComponentNodeError('Lock holder is required', { statusCode: 400, code: 'BAD_REQUEST' });
+  }
+  const now = Number(options.now) || lockNow();
+  const requestedLockId = options.lockId !== undefined && options.lockId !== null
+    ? String(options.lockId).trim()
+    : null;
+  const existing = liveLock(key, now, options.projectRoot);
+  if (!existing) return { ok: true, released: false, nodeId: key, lockId: requestedLockId };
+  if (existing.holder !== owner) throw lockConflictError(existing);
+  if (requestedLockId !== null && requestedLockId !== existing.lockId) {
+    return { ok: true, released: false, nodeId: key, lockId: requestedLockId };
+  }
+  markdownLocks.delete(key);
+  if (options.projectRoot) writePersistedMarkdownLock(options.projectRoot, key, null);
+  return { ok: true, released: true, nodeId: key, lockId: existing.lockId, holder: existing.holder, expiresAt: existing.expiresAt };
+}
+
+// Live lock record ({ lockId, holder, acquiredAt, expiresAt }) or null when
+// absent/expired. `now` overrides the clock (test injection); `options.projectRoot`
+// includes the persisted lease (read on load, F18).
+export function isLocked(nodeId, now, options = {}) {
+  const key = assertNodeId(String(nodeId || ''));
+  const projectRoot = options && options.projectRoot ? options.projectRoot : null;
+  return liveLock(key, Number(now) || lockNow(), projectRoot);
+}
+
+// Optimistic-concurrency compare for guarded markdown writes. Returns null
+// when no expectedRevision is supplied or it matches; otherwise returns a
+// recoverable markdown_conflict error carrying currentRevision/expectedRevision.
+export function assertRevision(currentRevision, expectedRevision) {
+  if (expectedRevision === undefined || expectedRevision === null) return null;
+  const expected = Number(expectedRevision);
+  const current = Number(currentRevision);
+  if (Number.isFinite(expected) && expected !== current) {
+    const err = new ComponentNodeError(
+      `Markdown changed since read (revision ${expected} -> ${current}). Reread, merge your changes, and retry.`,
+      { statusCode: 409, code: 'markdown_conflict' },
+    );
+    err.currentRevision = current;
+    err.expectedRevision = expected;
+    return err;
+  }
+  return null;
+}
+
 export function deleteComponentNode(projectRoot, nodeId) {
-  const current = getComponentNode(projectRoot, nodeId);
-  appendJsonl(componentNodeRevisionLogPath(projectRoot, current.node.nodeId), revisionRow('delete', current.node, current.node.revision));
+  const key = assertNodeId(decodeURIComponent(String(nodeId || '')));
+  let current = null;
+  try {
+    current = getComponentNode(projectRoot, key);
+  } catch (error) {
+    if (!isRecoverableComponentNodeStateError(error)) throw error;
+    const index = readIndex(projectRoot);
+    const raw = index.nodes.find(node => (node.nodeId || node.id) === key);
+    if (!raw) throw error;
+    current = { node: validatedIndexNode(projectRoot, raw), state: null, revision: Number(raw.revision || 0) };
+  }
+  appendStoreJsonl(componentNodeRevisionLogPath(projectRoot, current.node.nodeId), revisionRow('delete', current.node, current.node.revision));
   const index = readIndex(projectRoot);
   writeIndex(projectRoot, {
     nodes: index.nodes.filter(item => (item.nodeId || item.id) !== current.node.nodeId),
@@ -380,15 +546,55 @@ export function deleteComponentNode(projectRoot, nodeId) {
   return { ok: true, nodeId: current.node.nodeId, removed: current.node };
 }
 
+export function restoreComponentNode(projectRoot, snapshot = {}) {
+  const rawNode = snapshot.node || snapshot;
+  const nodeId = assertNodeId(rawNode?.nodeId || rawNode?.id);
+  const index = readIndex(projectRoot);
+  const existing = index.nodes.find(node => (node.nodeId || node.id) === nodeId);
+  if (existing) return getComponentNode(projectRoot, nodeId);
+  const node = validatedIndexNode(projectRoot, { ...rawNode, nodeId });
+  const state = snapshot.state || readStoreJson(absoluteStatePath(projectRoot, node.statePath, node.nodeId), null);
+  if (!state || state.type !== node.type) {
+    throw new ComponentNodeError('Cannot restore component node without its state', { statusCode: 409, code: 'RESTORE_STATE_MISSING' });
+  }
+  writeStoreJson(absoluteStatePath(projectRoot, node.statePath, node.nodeId), state);
+  appendStoreJsonl(componentNodeRevisionLogPath(projectRoot, node.nodeId), revisionRow('restore', node, node.revision));
+  writeIndex(projectRoot, { nodes: [...index.nodes, node] });
+  return getComponentNode(projectRoot, nodeId);
+}
+
 export function listComponentNodes(projectRoot) {
   const index = readIndex(projectRoot);
   return index.nodes.map(node => validatedIndexNode(projectRoot, node));
 }
 
+export function isRecoverableComponentNodeStateError(error) {
+  return error instanceof ComponentNodeError
+    && ['NOT_FOUND', 'STATE_MISMATCH'].includes(error.code);
+}
+
+export function listLiveComponentNodeEntries(projectRoot) {
+  const entries = [];
+  for (const node of listComponentNodes(projectRoot)) {
+    try {
+      const current = getComponentNode(projectRoot, node.nodeId);
+      requiredStatePayload(current.node, current.state);
+      entries.push(current);
+    } catch (error) {
+      if (!isRecoverableComponentNodeStateError(error)) throw error;
+    }
+  }
+  return entries;
+}
+
+export function listLiveComponentNodes(projectRoot) {
+  return listLiveComponentNodeEntries(projectRoot).map(entry => entry.node);
+}
+
 export function componentStateRefs(projectRoot) {
   const refs = {};
-  for (const node of listComponentNodes(projectRoot)) {
-    const current = getComponentNode(projectRoot, node.nodeId);
+  for (const current of listLiveComponentNodeEntries(projectRoot)) {
+    const node = current.node;
     refs[node.nodeId] = {
       type: node.type,
       title: node.title,
@@ -433,6 +639,32 @@ export function componentNodeStates(projectRoot) {
   for (const listedNode of listComponentNodes(projectRoot)) {
     const { node, state: raw } = getComponentNode(projectRoot, listedNode.nodeId);
     requiredStatePayload(node, raw);
+    const inputs = Array.isArray(raw.inputs) ? raw.inputs : inputsForType(node.type);
+    const outputs = Array.isArray(raw.outputs) ? raw.outputs : outputsForType(node.type);
+    const state = {
+      nodeId: node.nodeId,
+      type: node.type,
+      title: node.title,
+      revision: node.revision,
+      observableInputs: portIds(inputs, inputsForType(node.type)),
+      observableOutputs: portIds(outputs, outputsForType(node.type)),
+      statePath: node.statePath,
+    };
+    if (node.type === 'markdown') {
+      state.markdown = raw.markdown;
+    } else if (node.type === 'excalidraw') {
+      state.scene = raw.scene;
+    } else if (node.type === 'file') {
+      state.file = raw.file;
+    }
+    states[node.nodeId] = state;
+  }
+  return states;
+}
+
+export function componentNodeStatesForSnapshot(projectRoot) {
+  const states = {};
+  for (const { node, state: raw } of listLiveComponentNodeEntries(projectRoot)) {
     const inputs = Array.isArray(raw.inputs) ? raw.inputs : inputsForType(node.type);
     const outputs = Array.isArray(raw.outputs) ? raw.outputs : outputsForType(node.type);
     const state = {

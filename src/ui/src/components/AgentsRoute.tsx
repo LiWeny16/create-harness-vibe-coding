@@ -107,6 +107,7 @@ export default function AgentsRoute({ onSelectSession }: Props) {
   const [creating, setCreating] = useState(false);
   const [stoppingIds, setStoppingIds] = useState<Set<string>>(() => new Set());
   const stoppingIdsRef = useRef<Set<string>>(new Set());
+  const graphChangedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [cleanupSummary, setCleanupSummary] = useState<CleanupSummary | null>(null);
   const [workflowConsistency, setWorkflowConsistency] = useState<AgentsConsistency | null>(null);
   const [cleanupBusy, setCleanupBusy] = useState(false);
@@ -173,7 +174,7 @@ export default function AgentsRoute({ onSelectSession }: Props) {
       if (refresh) invalidateApiCache('/api/runtimes');
       const [runtimeRows, sessionRows, allRows, cleanup, workflowSnapshot] = await Promise.all([
         apiJsonCached<RuntimeInfo[]>(refresh ? '/api/runtimes?refresh=1' : '/api/runtimes', { ttlMs: 12000, refresh }),
-        apiJson<Session[]>('/api/sessions'),
+        apiJsonCached<Session[]>('/api/sessions', { ttlMs: 3000 }),
         apiJsonCached<Session[]>('/api/sessions?all=1', { ttlMs: refresh ? 0 : 3000, refresh }).catch(() => []),
         apiJsonCached<CleanupSummary>('/api/cleanup/summary', { ttlMs: refresh ? 0 : 5000, refresh }).catch(() => null),
         apiJsonCached<WorkflowSnapshot>('/api/a2a/snapshot', { ttlMs: refresh ? 0 : 1200, refresh }).catch(() => null),
@@ -202,7 +203,11 @@ export default function AgentsRoute({ onSelectSession }: Props) {
 
   useEffect(() => {
     loadControlPlane();
-    const interval = setInterval(() => loadControlPlane(false), 1200);
+    const interval = setInterval(() => loadControlPlane(false), 4000);
+    const onGraphChanged = () => {
+      if (graphChangedTimerRef.current) clearTimeout(graphChangedTimerRef.current);
+      graphChangedTimerRef.current = setTimeout(() => loadControlPlane(true), 250);
+    };
     const onSessionsChanged = (event: Event) => {
       const detail = (event as CustomEvent<{ sessionId?: string; state?: string }>).detail;
       if (detail?.sessionId && detail.state === 'stopping') {
@@ -221,9 +226,12 @@ export default function AgentsRoute({ onSelectSession }: Props) {
       loadControlPlane(true);
     };
     window.addEventListener('harness:sessions-changed', onSessionsChanged);
+    window.addEventListener('harness:graph-changed', onGraphChanged);
     return () => {
       clearInterval(interval);
       window.removeEventListener('harness:sessions-changed', onSessionsChanged);
+      window.removeEventListener('harness:graph-changed', onGraphChanged);
+      if (graphChangedTimerRef.current) clearTimeout(graphChangedTimerRef.current);
     };
   }, [showSaved]);
 
@@ -288,7 +296,7 @@ export default function AgentsRoute({ onSelectSession }: Props) {
           model: launchModel.trim(),
           role: 'terminal-agent',
           objective: t('Manual Harness agent terminal'),
-          subagentMode: 'wf-subagents',
+          subagentMode: 'built-in-subagents',
         }),
       });
       invalidateApiCache('/api/sessions');

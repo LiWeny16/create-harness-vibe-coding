@@ -9,10 +9,14 @@ const root = rootArgIndex !== -1 && process.argv[rootArgIndex + 1]
   : process.cwd();
 const json = args.has('--json');
 
+// maxBytes baselines track the current generated doc sizes (measured via
+// --json at the last re-baseline) plus ~10% headroom. Growth is intentional
+// as registry/manual discovery content is added; re-baseline by updating the
+// constants when a route is deliberately extended.
 const routes = [
   {
     id: 'thin-startup',
-    maxBytes: 12500,
+    maxBytes: 16000,
     paths: [
       'CLAUDE.md',
       'Harness/memory/startup-hints.md',
@@ -20,7 +24,7 @@ const routes = [
   },
   {
     id: 'wf-router-prefix',
-    maxBytes: 43000,
+    maxBytes: 50000,
     paths: [
       'CLAUDE.md',
       'Harness/MEMORY.md',
@@ -29,7 +33,7 @@ const routes = [
   },
   {
     id: 'wf-light-prefix',
-    maxBytes: 58000,
+    maxBytes: 66500,
     paths: [
       'CLAUDE.md',
       'Harness/MEMORY.md',

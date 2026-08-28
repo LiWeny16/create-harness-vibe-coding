@@ -4,7 +4,7 @@ Global task index. Load at session start to see what is active and what was done
 
 ## Active Task
 
-- None
+- task-add-web-agent-node
 
 ## Task Index
 
@@ -12,11 +12,10 @@ Non-archived tasks only (max 5). Archived tasks are listed in `Harness/tasks/_ar
 
 | ID | Goal | Phase | Closed |
 |----|------|-------|--------|
+| task-add-web-agent-node | 新增原生 web chat agent node（非 PTY）：参考 agentre 的 claude stream-json / codex app-server 接入模式，结构化事件流+工具卡片+审批环 | Intake | - |
+| task-fix-wf-ui-ux-issues | Fix 7 wf-ui UX issues: single settings panel, black cursor, skills hub consolidation + compose/drag to skills group, responsive create-node panel, remove dead config button, magnet drift, node creation loading animation | Intake | - |
 | task-homepage-act1-flat-layout | Redesign Act 1 opening: 5 flat staggered boxes, zero tilt, no float, no singled-out openable box | Implementation | - |
-| task-release-0819-formal | Formally release 0.8.19 across npm, canonical GitHub, and legacy mirror | Blocked | - |
-| task-standardize-workflow-nodes | Standardize Workflow nodes as first-class typed resources with File/Markdown/Diagram/Agent creation, agent-readable connections, file previews, and productized agent settings | Implementation | - |
-| task-terminal-input-control | Control WF UI terminal input, copy/paste, and file drag/drop behavior | Implementation | - |
-| task-wf-ui-control-260729 | Design the $wf-ui control-plane architecture and first MVP slice before implementation. | Intake | - |
+| task-simplify-skills-hub-pack-prompt | Attempt native subagent fan-out (W0 explore + W1 architect), then W2 implementation waves | Implementation | - |
 
 ## Cross-Task Decisions
 

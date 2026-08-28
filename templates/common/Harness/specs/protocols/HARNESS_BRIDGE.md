@@ -129,12 +129,96 @@ Observation payloads must distinguish references from renderable state:
   dedicated state collection such as `componentNodes`. A route that paints
   previews or editors from a snapshot must not infer persisted content from refs.
 - If a persisted component node is present but its hydration state is missing,
-  malformed, or revision-mismatched, the backend should fail the observation or
-  expose an explicit error. It must not silently replace persisted content with
-  empty Markdown, empty Excalidraw scenes, or empty file metadata.
+  malformed, or revision-mismatched, global route observations should omit that
+  component and dangling edges while direct component reads expose the mismatch
+  error. The backend must not crash the whole observation and must not silently
+  replace persisted content with empty Markdown, empty Excalidraw scenes, or
+  empty file metadata.
 - Tests that mock observations must mirror the production state contract:
   `Harness/a2a/component-nodes/<nodeId>/state.json`, matching revisions across
   refs and hydration state, and type-specific handles from the backend model.
+- Connection refs in observations must mirror production graph semantics:
+  default workflow links use `direction: "bidirectional"` plus
+  endpoint-specific `endpointRole`, while persisted `from`/`to` or
+  `source`/`target` fields remain endpoint-order metadata for rendering and
+  handles.
+- Mocked graph snapshots must include `edgeId`, `localHandle`, `peerHandle`,
+  `sourceHandle`, `targetHandle`, semantic `relation`, and reverse-duplicate
+  rejection behavior. Display labels such as `markdown <-> context` are UI text
+  and must not be reused as `relation`.
+- Resource-node observations must distinguish semantic ports from physical
+  handles. Markdown exposes semantic port `markdown`; Excalidraw exposes
+  semantic port `scene`. The browser may expose side handles such as
+  `markdown:left`/`markdown:right` or `scene:left`/`scene:right` for geometry,
+  but observations, labels, and agent context must report the semantic resource
+  port. Markdown and Excalidraw must not be mocked as separate input/output
+  ports. A bidirectional physical side must appear as one DOM/UI-tree handle;
+  hidden overlapping source/target handles for the same side are invalid because
+  they make drag hit-testing ambiguous.
+- Event-node observations may expose explicit directed event edges. Timer uses
+  `direction: "source-to-target"`, relation `event`, a local `event` output, a
+  `config` input, and event refs such as `eventStateRefs` and
+  `connectedEventRefs`. This directed contract is limited to event emission and
+  must not be inferred for resource or capability links.
+- Advanced Timer observations may include base heartbeat, watchdog heartbeat,
+  once/interval/cron/loop/adaptive/watchdog/while/task cadence metadata, task
+  binding, and control policy. Agent-observed Timer control actions require an
+  Agent-to-Timer relation `control` edge. While/loop/task/adaptive metadata is
+  declarative only; UI and runtime bridges must not evaluate user-authored code
+  from Timer settings.
+- Double-clicking a Timer node opens `workflow-timer-expanded-node`; schedule
+  saves go through typed `timer.configure` actions rather than direct state-file
+  edits.
+- Goal-node observations expose active Harness task state as `workflow-goal-node`
+  plus `goalNodes`/`connectedGoalRefs`. Agent completion is two-phase:
+  `goal.requestCompletion` writes a proposal sidecar and must not directly mark
+  task `STATE.json` complete. WDT acknowledgement is tracked separately from
+  task completion state.
+- Double-clicking a Goal node opens `workflow-goal-expanded-node`; user edits
+  go through `goal.update` without `actorNodeId`, while Agent-authored
+  `goal.update` calls require a bidirectional `goal` edge and must reject
+  unlinked actors with `GOAL_EDGE_REQUIRED`. `goal.update` edits title,
+  objective, next action, acceptance, and WDT metadata only; task status,
+  phase, gate, and completion transitions are outside this action.
+- Browser tests must exercise real drag/connect behavior for resource ports.
+  Intent-only graph actions are not sufficient proof that ReactFlow hit targets
+  can receive a manual connection on the requested physical side.
+  Tests must assert both the semantic edge payload and the actual DOM handle
+  count for bidirectional resource nodes.
+- Agent capability observations must expose config-attached Skills as
+  `connectedCapabilityRefs`, `effectiveSkills`, and `skillPolicy`. Skill refs
+  are metadata only, use relation `capability`, preserve
+  `direction: "bidirectional"`, and must not include skill bodies, absolute
+  local paths, command output, secrets, or MCP credential probes.
+- Agent context observations must expose self `identity`, self `workspace`, and
+  `skillTriggers` in addition to connected refs. `workflow-context` and
+  `agent.readContext` must return the same canonical context fields so Agents
+  do not reason from a reduced terminal-only view.
+- Skill group capability-node observations must expose the node as
+  `workflow-capability-node` with `data-skill-count`, one semantic bidirectional
+  `capability` port, and physical side handles `capability:left` and
+  `capability:right`. Connected Agent observations must include
+  `connectedCapabilityNodeRefs`, merged `connectedCapabilityRefs`, and
+  `effectiveSkills` without skill bodies, absolute local paths, command output,
+  secrets, or MCP credential probes.
+- Skills Hub group creation uses `workflow-capability-hub-group` plus
+  `workflow-capability-create-node`. The resulting edge to an Agent, when a
+  target Agent exists, is relation `capability`, direction `bidirectional`, and
+  executor `agent`; group creation from a no-target Hub creates only the
+  capability node.
+- MCP Hub observations are metadata-only. They may expose project-scoped server
+  names, transports, command names, arg counts, redacted URLs, env key names,
+  source summaries, and safety flags. They must not expose secret values, spawn
+  MCP servers, or probe credentials.
+- MCP connector creation uses `workflow-capability-create-node` from an MCP Hub
+  item and sends only `mcpServerId`. The resulting node must render as
+  `workflow-capability-node` with `data-capability-type="mcp-connector"`,
+  `data-server-count`, one semantic bidirectional `capability` port, and
+  physical side handles `capability:left` and `capability:right`. If a target
+  Agent exists, creation also writes a relation `capability`, direction
+  `bidirectional` edge to that Agent.
+- MCP direct attach, credential checks, tool-list discovery, and tool invocation
+  remain gated and must not be enabled by the Hub create path.
 
 The default UI tree is compressed. Full DOM, full AST, large screenshots, videos,
 and network bodies must be artifact files, not chat content.
@@ -156,10 +240,48 @@ result with before/after observation ids.
 | `act.scroll` | scroll viewport, element, or region |
 | `act.hover` | move virtual cursor and show hover state |
 | `act.drag` | drag target to target, point, or path |
+| `act.doubleClick` | open the target node's primary workbench without opening lightweight settings |
 | `act.select` | choose menu/listbox/combobox option |
 | `act.upload` | file chooser fallback when supported |
 | `act.wait` | wait for route, state, network, selector, or event |
 | `act.replay` | replay a recorded action sequence |
+
+Semantic workflow graph intents:
+
+| Intent | Meaning |
+|---|---|
+| `graph.createNode` | create one workflow runtime node through the typed node API |
+| `graph.connectNodes` | create one semantic workflow edge |
+| `graph.disconnectNodes` | remove one semantic workflow edge |
+| `graph.moveNode` | persist one node position change |
+| `graph.deleteNode` | delete or hide one workflow node through the typed node API |
+| `graph.deleteNodes` | delete or hide multiple workflow nodes through the typed node API |
+
+Rules:
+
+- A semantic graph intent performs one semantic mutation request. It must not
+  combine a node/edge API mutation with a second full graph-map PUT for the same
+  intent.
+- Successful graph intents return operation metadata with at least
+  `{ id, kind }`.
+- When an Agent is the actor, the implementation should use the matching
+  `agent.*` graph action and the resulting operation record should drive canvas
+  aura, controlled-node glow, and edge data-flow animation.
+- Agent node-map skills and CLI commands must route graph mutations through the
+  typed backend Agent actions at
+  `POST /api/workflow/nodes/:actor/actions/agent.*`. `Harness/a2a/workflow-map.json`,
+  component state, event/capability/goal state, and node-home files are
+  backend-owned storage. Agents may inspect them only as diagnostic context and
+  must not edit/delete them to control the canvas.
+- Compatibility commands such as `wf-ui-control.mjs connect` and
+  `wf-ui-control.mjs delete-node` must delegate to `agent.connectNodes` and
+  `agent.deleteNode`; they must not perform whole-map PUTs or call legacy
+  graph-node delete routes directly.
+- Agent delete intents use `agent.deleteNode` or `agent.deleteNodes`; they must
+  not delete the actor itself, and bulk delete skips the actor and live Agents by
+  default unless a future explicit permission model says otherwise.
+- Visual control state must be derived from operation metadata, not from DOM
+  gestures, edge direction, node type, or handle geometry.
 
 Result shape:
 

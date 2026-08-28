@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-agent-team-cooperation-layer",
+  "status": "archived",
+  "mode": "wf",
+  "defaultRuntime": "codex",
+  "defaultAgentRuntime": "codex",
+  "tier": "none",
+  "phase": "archived",
+  "gate": "VERIFY2",
+  "updatedAt": "2026-08-28T02:36:16.475Z",
+  "activeQuestion": null,
+  "nextAction": "re-verify -> re-reflect -> commit decision",
+  "acceptance": [],
+  "queues": {
+    "ready": [],
+    "running": [],
+    "blocked": [],
+    "done": [
+      "re-reflector",
+      "commit pending user OK",
+      "re-verifier"
+    ]
+  },
+  "dispatchLedger": [],
+  "decisions": [
+    "D1: Timer wakeup = message-queue + in-session check; backend timer dispatches wakeup messages (with Goal node refs) into agent message store; agent reads them when active/next turn. No resident/infinite background scheduler.",
+    "D2: Delivery scope = FULL (Spec + Backend + Prompt + UI + Tests), incl. UI agent node card displayName/roleTitle (ROLE-3/T5), collaboration audit view (UX-4), T12 frontend rejection of second Goal, Playwright coverage.",
+    "D3: Role profiles fully support runtime/provider fields + query filtering; tests only spawn real agent sessions on current runtime (claude); codex/opencode covered via metadata + injected scenarios.",
+    "D4: Builds directly on current working tree (contains standardize W41 code: agent.sendMessage/broadcastMessage/readMessages, node manuals, Timer/Goal nodes). Owns Timer wakeup / Goal actions / team routing / role profile slices. Standardize open follow-ups F2/F4-F7 do not block. links.dependsOn = [] (code already merged; no gate wait).",
+    "D5 task-local agent-cap override to 20 approved by user (2026-08-12); WF-MAX total cap 15 insufficient for full delivery",
+    "review-manager fanout degraded (2026-08-12): manager spawned 3 reviewers but their results never returned to its context across 3 resumes (nested chain unreliable in this session). Fallback: CEO dispatched 3 direct independent reviewer agents per WF-MAX degradation chain. fanoutAttempted: true, channel: native subagent, failure: manager child-result delivery, fallback: direct leaf dispatch.",
+    "D6 AC-025 audit: backend-derived endpoint + client timeout derivation + spec 4.5 amendment (FX)",
+    "D7 budget: user accepts ~24 agents (3 wasted by manager-chain failure); continue with verifier+reflector",
+    "D8 commit: after verify+reflector PASS, commit ONLY this task deliverable files to a NEW branch (exclude standardize uncommitted code)",
+    "D9 gaps: accept known gaps (e2e toast paths, settings save, T3 full-flow) recorded in PROGRESS; no extra test worker",
+    "D10 wakeup set = magnetic group ∪ graph-edge-connected agents (user review H2)",
+    "D11 scheduler honors loop.maxIterations/stopOnFailure; server-lifetime bounded; no global daemon (user review M3)",
+    "D12 role profile written BEFORE init prompt assembly; init text carries identity (user review M4)",
+    "D13 manual injection covers ALL manual-having node types; schema test covers all 15 (user review M5)",
+    "D14 structured request input = compact envelope prefix + text; manuals teach reply-with-requestId (user review M6)",
+    "D15 markdown lock persisted to node state; foreign active lock rejects writes even without expectedRevision (user review M7)",
+    "D16 connectNodes graph-action path enforced with assertSingleGoalPerGroup (user review H1)",
+    "D17 T3 full-flow integration test added (user review M8)",
+    "FX2 write-set deviation APPROVED: workflow-agent-cooperation-permissions.test.mjs:264 assertion synced markdown_conflict->markdown_locked (encodes D15 semantics)"
+  ],
+  "risks": [
+    "M1: full-suite Playwright environment flakiness tracked on standardize task; keep focused specs small"
+  ],
+  "artifacts": [],
+  "links": {
+    "dependsOn": [],
+    "blocks": [],
+    "related": []
+  },
+  "workItems": []
+}

@@ -1,5 +1,4 @@
 import crypto from 'node:crypto';
-import { validateToken } from './token.mjs';
 
 const KEEPALIVE_INTERVAL = 15000;
 const PING_TIMEOUT = 5000;
@@ -10,6 +9,13 @@ const WS_GUID = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
 // Maps sessionId to ptyProcess for writing input, resizing, or killing.
 /** @type {Map<string, object>} */
 const ptyRegistry = new Map();
+
+// ── Revived session records ──
+// Sessions revived from disk (backend restarted while the PTY session
+// survived) are keyed here with minimal info so WS clients can reattach
+// even though the in-memory registry does not know them.
+/** @type {Map<string, object>} */
+const revivedSessions = new Map();
 
 /**
  * Register a PTY process for a session so ws-terminal can write/resize/kill it.
@@ -41,6 +47,77 @@ export function killPtyProcess(sessionId) {
   ptyProcess.kill();
   unregisterPtyProcess(sessionId);
   return true;
+}
+
+// ── Graceful stop ──
+// claude-code only persists its conversation transcript on graceful exit
+// (the /exit TUI path writes ~/.claude/projects/<encoded-cwd>/<uuid>.jsonl);
+// a hard PTY kill loses it and --resume <uuid> then fails with "No
+// conversation found". codex persists its fs rollout continuously and
+// opencode writes its SQLite session rows during the session, so a hard kill
+// is safe for both — graceful exit applies to claude/cc ONLY.
+const GRACEFUL_STOP_TIMEOUT_MS = 3000;
+const GRACEFUL_STOP_RUNTIMES = new Set(['claude', 'cc']);
+
+/**
+ * Resolve true when the registered PTY process exits (or when nothing is
+ * attached), false when it is still alive after timeoutMs.
+ * @param {string} sessionId
+ * @param {number} timeoutMs
+ * @returns {Promise<boolean>}
+ */
+function waitForPtyExit(sessionId, timeoutMs) {
+  return new Promise((resolve) => {
+    const ptyProcess = ptyRegistry.get(sessionId);
+    if (!ptyProcess) return resolve(true);
+    if (typeof ptyProcess.onExit !== 'function') return resolve(false);
+    const timer = setTimeout(() => resolve(false), timeoutMs);
+    ptyProcess.onExit(() => {
+      clearTimeout(timer);
+      resolve(true);
+    });
+  });
+}
+
+/**
+ * Stop a PTY process, preferring a graceful runtime exit so the runtime can
+ * persist its session state (claude/cc transcript files).
+ *
+ * claude/cc sequence: write `/exit\r` and wait up to GRACEFUL_STOP_TIMEOUT_MS;
+ * if the process is still alive write Ctrl+C (`\x03`) and wait again; if it
+ * still has not exited, fall back to killPtyProcess. Total wait is bounded
+ * (2 × 3s) so the stop API contract — the process always ends within a
+ * bounded time — is preserved. All other runtimes (codex, opencode, …) go
+ * straight to killPtyProcess.
+ *
+ * Never rejects; the hard-kill fallback guarantees termination.
+ * @param {string} sessionId
+ * @param {{ runtime?: string }} [options]
+ * @returns {Promise<{ killed: boolean, graceful: boolean }>}
+ */
+export function gracefulStopPty(sessionId, { runtime } = {}) {
+  if (!GRACEFUL_STOP_RUNTIMES.has(String(runtime || '').toLowerCase())) {
+    return Promise.resolve({ killed: killPtyProcess(sessionId), graceful: false });
+  }
+  const ptyProcess = ptyRegistry.get(sessionId);
+  if (!ptyProcess || typeof ptyProcess.write !== 'function') {
+    return Promise.resolve({ killed: false, graceful: false });
+  }
+  return (async () => {
+    ptyProcess.write('/exit');
+    ptyProcess.write('\r');
+    let exited = await waitForPtyExit(sessionId, GRACEFUL_STOP_TIMEOUT_MS);
+    if (!exited) {
+      ptyProcess.write('\x03');
+      exited = await waitForPtyExit(sessionId, GRACEFUL_STOP_TIMEOUT_MS);
+    }
+    if (!exited) {
+      killPtyProcess(sessionId);
+      return { killed: true, graceful: false };
+    }
+    unregisterPtyProcess(sessionId);
+    return { killed: false, graceful: true };
+  })();
 }
 
 // ── Frame helpers ──
@@ -162,17 +239,19 @@ function sendHttpError(sock, statusCode, message) {
 /**
  * Attach a WebSocket /ws/terminal/:sessionId endpoint to an existing http.Server.
  *
- * On upgrade: validates `?token=` query param, validates sessionId exists in
- * registry, performs WS upgrade, sends `session:state` handshake, and
+ * On upgrade: validates sessionId exists in registry, performs WS upgrade,
+ * sends `session:state` handshake, and
  * broadcasts PTY data to all WS clients for that session.
  *
  * Default mode is watch (read-only). pty:input is rejected unless
  * session.attachMode === true.
  *
  * @param {import('http').Server} httpServer
- * @param {string} expectedToken - The token clients must present.
+ * @param {string} expectedToken - Compatibility parameter; no token validation is performed.
  * @param {import('./session-registry.mjs').SessionRegistry} sessionRegistry
- * @param {{ keepaliveInterval?: number, pingTimeout?: number }} [options]
+ * @param {{ keepaliveInterval?: number, pingTimeout?: number, reviveSession?: (sessionId: string) => object|null }} [options]
+ *   reviveSession: optional disk lookup for sessions missing from the registry
+ *   (falls back to sessionRegistry.reviveSession when set by the server).
  * @returns {{ close: () => Promise<void>, broadcastToSession: (sessionId: string, msg: object) => void }}
  */
 export function attachTerminalWs(httpServer, expectedToken, sessionRegistry, options = {}) {
@@ -199,13 +278,13 @@ export function attachTerminalWs(httpServer, expectedToken, sessionRegistry, opt
 
     const sessionId = match[1];
 
-    if (!validateToken(url.searchParams.get('token'), expectedToken)) {
-      sendHttpError(socket, 401, 'Invalid or missing token');
-      return;
+    // Validate session exists. Sessions not in the in-memory registry (e.g.
+    // the backend restarted while the PTY session survived on disk) are
+    // revived from the persisted session record so the WS can reattach.
+    let session = sessionRegistry.get(sessionId);
+    if (!session) {
+      session = reviveDiskSession(sessionId);
     }
-
-    // Validate session exists
-    const session = sessionRegistry.get(sessionId);
     if (!session) {
       sendHttpError(socket, 404, `Session "${sessionId}" not found`);
       return;
@@ -237,7 +316,7 @@ export function attachTerminalWs(httpServer, expectedToken, sessionRegistry, opt
     sessionClients.get(sessionId).add(client);
 
     // Increment wsClientCount
-    sessionRegistry.update(sessionId, { wsClientCount: (session.wsClientCount || 0) + 1 });
+    adjustWsClientCount(sessionId, session, 1);
 
     // Send session:state handshake
     sendFrame(socket, JSON.stringify({
@@ -301,7 +380,7 @@ export function attachTerminalWs(httpServer, expectedToken, sessionRegistry, opt
    * @param {import('net').Socket} socket
    */
   function handleMessage(sessionId, msg, socket) {
-    const session = sessionRegistry.get(sessionId);
+    const session = sessionRegistry.get(sessionId) || revivedSessions.get(sessionId);
     if (!session) return;
 
     switch (msg.type) {
@@ -309,7 +388,7 @@ export function attachTerminalWs(httpServer, expectedToken, sessionRegistry, opt
         const cols = typeof msg.cols === 'number' ? msg.cols : session.cols;
         const rows = typeof msg.rows === 'number' ? msg.rows : session.rows;
         if (cols === session.cols && rows === session.rows) break;
-        sessionRegistry.update(sessionId, { cols, rows });
+        storeSessionPatch(sessionId, { cols, rows });
 
         // If a real PTY process exists, resize it
         const ptyProcess = ptyRegistry.get(sessionId);
@@ -353,7 +432,7 @@ export function attachTerminalWs(httpServer, expectedToken, sessionRegistry, opt
 
       case 'control:attach-mode': {
         const attachMode = Boolean(msg.attachMode);
-        sessionRegistry.update(sessionId, { attachMode });
+        storeSessionPatch(sessionId, { attachMode });
         if (typeof options.onAttachModeChange === 'function') {
           options.onAttachModeChange(sessionRegistry.get(sessionId), attachMode);
         }
@@ -374,7 +453,7 @@ export function attachTerminalWs(httpServer, expectedToken, sessionRegistry, opt
           sessionId,
           state: 'exited',
         }));
-        sessionRegistry.update(sessionId, { status: 'exited' });
+        storeSessionPatch(sessionId, { status: 'exited' });
         if (typeof options.onSessionState === 'function') {
           options.onSessionState(sessionRegistry.get(sessionId), 'exited');
         }
@@ -405,10 +484,74 @@ export function attachTerminalWs(httpServer, expectedToken, sessionRegistry, opt
       }
     }
 
-    const session = sessionRegistry.get(sessionId);
+    const session = sessionRegistry.get(sessionId) || revivedSessions.get(sessionId);
     if (session) {
-      const count = Math.max(0, (session.wsClientCount || 1) - 1);
-      sessionRegistry.update(sessionId, { wsClientCount: count });
+      adjustWsClientCount(sessionId, session, -1);
+    }
+  }
+
+  /**
+   * Revive a session that is not in the in-memory registry from its
+   * persisted record (Harness/a2a/sessions/<id>/STATE.json). The PTY process
+   * may still be alive after a backend restart; a WS client can reattach to
+   * watch it (input stays disabled — no live PTY handle). Returns the record
+   * or null when the session is unknown or already exited.
+   * @param {string} sessionId
+   * @returns {object|null}
+   */
+  function reviveDiskSession(sessionId) {
+    const cached = revivedSessions.get(sessionId);
+    if (cached) return cached;
+
+    const revive = (typeof options.reviveSession === 'function' && options.reviveSession)
+      || (typeof sessionRegistry.reviveSession === 'function' && sessionRegistry.reviveSession.bind(sessionRegistry));
+    if (typeof revive !== 'function') return null;
+
+    let record = null;
+    try {
+      record = revive(sessionId);
+    } catch {
+      record = null;
+    }
+    if (!record || !record.sessionId || record.status === 'exited') return null;
+
+    record = { ...record, status: record.status || 'starting' };
+    revivedSessions.set(sessionId, record);
+    return record;
+  }
+
+  /**
+   * Apply a patch to a session record, preferring the in-memory registry and
+   * falling back to a revived disk record.
+   * @param {string} sessionId
+   * @param {object} patch
+   */
+  function storeSessionPatch(sessionId, patch) {
+    if (sessionRegistry.get(sessionId)) {
+      sessionRegistry.update(sessionId, patch);
+      return;
+    }
+    const current = revivedSessions.get(sessionId);
+    if (current) {
+      revivedSessions.set(sessionId, { ...current, ...patch, updatedAt: new Date().toISOString() });
+    }
+  }
+
+  /**
+   * Adjust wsClientCount by delta in whichever store owns the session.
+   * @param {string} sessionId
+   * @param {object} session
+   * @param {number} delta
+   */
+  function adjustWsClientCount(sessionId, session, delta) {
+    const next = Math.max(0, (session?.wsClientCount || 0) + delta);
+    if (sessionRegistry.get(sessionId)) {
+      sessionRegistry.update(sessionId, { wsClientCount: next });
+      return;
+    }
+    const current = revivedSessions.get(sessionId);
+    if (current) {
+      revivedSessions.set(sessionId, { ...current, wsClientCount: next });
     }
   }
 
@@ -434,14 +577,14 @@ export function attachTerminalWs(httpServer, expectedToken, sessionRegistry, opt
   // ── keepalive timer ──
   keepaliveTimer = setInterval(() => {
     const now = Date.now();
-    for (const [, clients] of sessionClients) {
+    for (const [sessionId, clients] of sessionClients) {
       for (const c of [...clients]) {
         try {
           if (c.waitingPong) {
             if (now - c.pingSentAt >= pingTimeoutMs) {
               sendCloseFrame(c.socket, 1001);
               c.socket.end();
-              clients.delete(c);
+              cleanupClient(sessionId, c);
             }
           } else if (now - c.lastActivity >= keepaliveInterval) {
             sendFrame(c.socket, '', 0x9);
@@ -449,7 +592,7 @@ export function attachTerminalWs(httpServer, expectedToken, sessionRegistry, opt
             c.pingSentAt = now;
           }
         } catch {
-          clients.delete(c);
+          cleanupClient(sessionId, c);
         }
       }
     }

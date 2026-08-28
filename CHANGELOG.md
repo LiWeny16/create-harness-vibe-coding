@@ -1,7 +1,15 @@
 # Changelog
 
-## [0.8.20] - 2026-07-31
+## [0.8.20] - 2026-08-28
 
+- Ship the wf-ui workflow canvas as a full agent-team surface: goal, event, timer, display, and capability node types with typed action surfaces, skills hub, magnetic docking, and undoable versioned graph edits.
+- Add agent team cooperation: structured peer requests with request ids, timer wakeup delivery, runtime-aware role profiles, and a subagent strategy matrix covering built-in helpers and visible wf-node agents with depth resume docking.
+- Consolidate all agent actions into a single `Harness/a2a/action-registry.json` source of truth (72 actions) with loader validation, derived `help --json`/`manuals` surfaces, and structural anti-drift tests against ghost/phantom actions.
+- Upgrade the file node with xlsx/pdf/zip format adapters, preview caching, write locks, `file.changed` watch broadcasts, and security hardening (Zip Slip guards, entry/size clamps, per-page PDF reads).
+- Rebuild markdown rendering on a shared markdown-it pipeline with lazy CDN mermaid (SRI-pinned, offline fallback), KaTeX, GFM task lists, and preview toggles for node cards, file big view, and the fullscreen editor.
+- Add task capsule groups with `--group`/`--by-group` filtering and whole-group batch archive, plus a task group index for grouped overviews.
+- Add real PTY-backed chat sessions (chat driver, Claude stream-json support, WS chat events) alongside terminal-based agent control.
+- Harden wf-ui terminal orchestration: full terminal input control, Codex rollout-id capture via PTY scan and sessions-dir polling, PTY resource usage reporting, and per-session terminal transcript ranges.
 - Fix `/wf-ui` direct command startup by adding detached server handoff, so OpenCode command timeouts do not stop the local control panel.
 - Preserve Agent terminal output when the drawer is minimized and restored by keeping the xterm instance mounted and replaying only missing terminal history.
 - Harden Windows PTY launch under detached UI servers by using the bundled ConPTY cleanup path by default, avoiding `AttachConsole failed` noise from the Homebridge PTY helper.

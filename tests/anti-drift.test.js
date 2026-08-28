@@ -242,6 +242,32 @@ test('wf-ui agent control protocol is generated and main-agent gated', () => {
   for (const rel of [
     'Harness/scripts/wf-ui-control.mjs',
     'templates/common/Harness/scripts/wf-ui-control.mjs',
+    'Harness/a2a/skills/workflow-node-map.json',
+    'templates/common/Harness/a2a/skills/workflow-node-map.json',
+    'Harness/a2a/skills/workflow-ontology.json',
+    'templates/common/Harness/a2a/skills/workflow-ontology.json',
+    'Harness/a2a/skills/workflow-context.json',
+    'templates/common/Harness/a2a/skills/workflow-context.json',
+    'Harness/a2a/skills/workflow-node-actions.json',
+    'templates/common/Harness/a2a/skills/workflow-node-actions.json',
+    'Harness/a2a/skills/workflow-timer-node.json',
+    'templates/common/Harness/a2a/skills/workflow-timer-node.json',
+    'Harness/a2a/skills/workflow-goal-node.json',
+    'templates/common/Harness/a2a/skills/workflow-goal-node.json',
+    'Harness/a2a/skills/workflow-agent-node.json',
+    'templates/common/Harness/a2a/skills/workflow-agent-node.json',
+    'Harness/a2a/skills/workflow-resource-node.json',
+    'templates/common/Harness/a2a/skills/workflow-resource-node.json',
+    'Harness/a2a/skills/workflow-markdown-node.json',
+    'templates/common/Harness/a2a/skills/workflow-markdown-node.json',
+    'Harness/a2a/skills/workflow-diagram-node.json',
+    'templates/common/Harness/a2a/skills/workflow-diagram-node.json',
+    'Harness/a2a/skills/workflow-file-node.json',
+    'templates/common/Harness/a2a/skills/workflow-file-node.json',
+    'Harness/a2a/skills/workflow-skill-group-node.json',
+    'templates/common/Harness/a2a/skills/workflow-skill-group-node.json',
+    'Harness/a2a/skills/workflow-mcp-connector-node.json',
+    'templates/common/Harness/a2a/skills/workflow-mcp-connector-node.json',
     'Harness/a2a/skills/wf-ui-map.json',
     'templates/common/Harness/a2a/skills/wf-ui-map.json',
   ]) {
@@ -249,10 +275,24 @@ test('wf-ui agent control protocol is generated and main-agent gated', () => {
   }
 
   assert.equal(read('Harness/scripts/wf-ui-control.mjs'), read('templates/common/Harness/scripts/wf-ui-control.mjs'));
+  assert.equal(read('Harness/a2a/skills/workflow-node-map.json'), read('templates/common/Harness/a2a/skills/workflow-node-map.json'));
+  assert.equal(read('Harness/a2a/skills/workflow-ontology.json'), read('templates/common/Harness/a2a/skills/workflow-ontology.json'));
+  assert.equal(read('Harness/a2a/skills/workflow-context.json'), read('templates/common/Harness/a2a/skills/workflow-context.json'));
+  assert.equal(read('Harness/a2a/skills/workflow-node-actions.json'), read('templates/common/Harness/a2a/skills/workflow-node-actions.json'));
+  assert.equal(read('Harness/a2a/skills/workflow-timer-node.json'), read('templates/common/Harness/a2a/skills/workflow-timer-node.json'));
+  assert.equal(read('Harness/a2a/skills/workflow-goal-node.json'), read('templates/common/Harness/a2a/skills/workflow-goal-node.json'));
+  assert.equal(read('Harness/a2a/skills/workflow-agent-node.json'), read('templates/common/Harness/a2a/skills/workflow-agent-node.json'));
+  assert.equal(read('Harness/a2a/skills/workflow-resource-node.json'), read('templates/common/Harness/a2a/skills/workflow-resource-node.json'));
+  assert.equal(read('Harness/a2a/skills/workflow-markdown-node.json'), read('templates/common/Harness/a2a/skills/workflow-markdown-node.json'));
+  assert.equal(read('Harness/a2a/skills/workflow-diagram-node.json'), read('templates/common/Harness/a2a/skills/workflow-diagram-node.json'));
+  assert.equal(read('Harness/a2a/skills/workflow-file-node.json'), read('templates/common/Harness/a2a/skills/workflow-file-node.json'));
+  assert.equal(read('Harness/a2a/skills/workflow-skill-group-node.json'), read('templates/common/Harness/a2a/skills/workflow-skill-group-node.json'));
+  assert.equal(read('Harness/a2a/skills/workflow-mcp-connector-node.json'), read('templates/common/Harness/a2a/skills/workflow-mcp-connector-node.json'));
   assert.equal(read('Harness/a2a/skills/wf-ui-map.json'), read('templates/common/Harness/a2a/skills/wf-ui-map.json'));
 
   const controlBody = read('Harness/scripts/wf-ui-control.mjs');
   const ptyBody = read('src/wf-ui-server/pty-adapter.mjs');
+  const harnessEnvBody = read('src/wf-ui-server/harness-env.mjs');
   const runtimeBody = read('src/wf-ui-server/runtime-detector.mjs');
   const roleGraph = read('Harness/a2a/role-graph.json');
   const templateRoleGraph = read('templates/common/Harness/a2a/role-graph.json');
@@ -268,19 +308,100 @@ test('wf-ui agent control protocol is generated and main-agent gated', () => {
   assert.match(controlBody, /\$\{text\}\\r/, 'wf-ui-control send-input should submit text with Enter by default');
   assert.match(controlBody, /fromSessionId/, 'wf-ui-control send-input should include actor session metadata for bridge records');
   assert.match(controlBody, /bridge-messages/, 'wf-ui-control should expose bridge message reads');
+  assert.match(controlBody, /node-map/, 'wf-ui-control should expose API-only node-map graph control');
+  assert.match(controlBody, /workflow-node-map/, 'wf-ui-control should expose canonical workflow-node-map graph control');
+  assert.match(controlBody, /workflow-ontology/, 'wf-ui-control should expose canonical workflow-ontology reads');
+  assert.match(controlBody, /workflow-context/, 'wf-ui-control should expose canonical workflow-context reads');
+  assert.match(controlBody, /workflow-node-action/, 'wf-ui-control should expose canonical workflow-node-action execution');
+  assert.match(controlBody, /cp\.token \|\| cp\.readToken/, 'workflow-context should support read-only graph tokens');
+  assert.match(controlBody, /\/api\/workflow\/ontology/, 'workflow-ontology should call the backend ontology API');
+  assert.match(controlBody, /\/api\/workflow\/context\/\$\{encodeURIComponent\(targetNodeId\)\}/, 'workflow-context should call the backend workflow context API');
+  assert.match(controlBody, /actorSessionId: process\.env\.HARNESS_PEER_SESSION_ID/, 'workflow-context read-token calls should identify the actor session');
+  assert.match(controlBody, /\/api\/workflow\/nodes\/\$\{encodeURIComponent\(targetNodeId\)\}\/actions\/\$\{encodeURIComponent\(actionName\)\}/, 'workflow-node-action should call typed backend node actions');
+  assert.match(controlBody, /X-Harness-Workflow-Node-Id/, 'workflow-node-action should identify the actor node in headers');
+  assert.match(controlBody, /X-Harness-Actor-Type/, 'workflow-node-action should identify Agent-authored actions in headers');
+  assert.match(controlBody, /payload\.actorType = 'agent'/, 'workflow-node-action should mark env-authored calls as Agent actions');
+  assert.match(controlBody, /agent\.\$\{actionName\}/, 'node-map control should invoke typed agent.* workflow actions');
   assert.match(controlBody, /connectNodes/, 'wf-ui-control should expose graph connection edits for Main Agents');
   assert.match(controlBody, /deleteNode/, 'wf-ui-control should expose stopped node deletion for Main Agents');
-  assert.match(ptyBody, /HARNESS_WF_UI_URL/, 'PTY agent env should include the control-plane URL');
-  assert.match(ptyBody, /HARNESS_WF_UI_TOKEN/, 'PTY agent env should include the control token for main agents');
-  assert.match(ptyBody, /HARNESS_WF_UI_READ_TOKEN/, 'PTY agent env should include a read-only graph token for all managed nodes');
-  assert.match(ptyBody, /HARNESS_NODE_HOME/, 'PTY agent env should include the node home directory');
-  assert.match(ptyBody, /HARNESS_NODE_INIT/, 'PTY agent env should include the node init file');
-  assert.match(ptyBody, /agentKind === 'main'/, 'control token should be scoped to main agents');
-  assert.match(serverBody, /validateGraphReadToken/, 'server should accept read-only graph tokens only for snapshot reads');
+  assert.doesNotMatch(controlBody, /\/api\/a2a\/nodes\/\$\{encodeURIComponent\(node\)\}/, 'delete-node must not call the legacy graph-node delete route directly');
+  assert.doesNotMatch(controlBody, /\/api\/a2a\/graph-map/, 'agent graph edits must not bypass typed workflow actions with whole-map PUTs');
+  const workflowNodeMapSkill = read('Harness/a2a/skills/workflow-node-map.json');
+  const workflowOntologySkill = read('Harness/a2a/skills/workflow-ontology.json');
+  const workflowContextSkill = read('Harness/a2a/skills/workflow-context.json');
+  const workflowNodeActionsSkill = read('Harness/a2a/skills/workflow-node-actions.json');
+  const workflowTimerNodeSkill = read('Harness/a2a/skills/workflow-timer-node.json');
+  const workflowGoalNodeSkill = read('Harness/a2a/skills/workflow-goal-node.json');
+  const workflowAgentNodeSkill = read('Harness/a2a/skills/workflow-agent-node.json');
+  const workflowResourceNodeSkill = read('Harness/a2a/skills/workflow-resource-node.json');
+  const workflowMarkdownNodeSkill = read('Harness/a2a/skills/workflow-markdown-node.json');
+  const workflowDiagramNodeSkill = read('Harness/a2a/skills/workflow-diagram-node.json');
+  const workflowFileNodeSkill = read('Harness/a2a/skills/workflow-file-node.json');
+  const workflowSkillGroupNodeSkill = read('Harness/a2a/skills/workflow-skill-group-node.json');
+  const workflowMcpConnectorNodeSkill = read('Harness/a2a/skills/workflow-mcp-connector-node.json');
+  assert.match(workflowNodeMapSkill, /workflow-node-map/, 'canonical node-map skill should document workflow-node-map');
+  assert.match(workflowNodeMapSkill, /api-only-node-map-control/, 'canonical node-map skill should mark graph control as API-only');
+  assert.match(workflowOntologySkill, /workflow-ontology/, 'workflow-ontology skill should document semantic model reads');
+  assert.match(workflowOntologySkill, /GET \/api\/workflow\/ontology/, 'workflow-ontology skill should document the ontology endpoint');
+  assert.match(workflowOntologySkill, /read-action-affordances/, 'workflow-ontology skill should teach action affordance reads');
+  assert.match(workflowOntologySkill, /invented-node-actions/, 'workflow-ontology skill should forbid invented node actions');
+  assert.match(workflowContextSkill, /workflow-context/, 'workflow-context skill should document connected context reads');
+  assert.match(workflowContextSkill, /GET \/api\/workflow\/context\/:node/, 'workflow-context skill should document the context endpoint');
+  assert.match(workflowNodeActionsSkill, /workflow-node-action/, 'workflow-node-actions skill should document typed action execution');
+  assert.match(workflowNodeActionsSkill, /POST \/api\/workflow\/nodes\/:node\/actions\/:action/, 'workflow-node-actions skill should document the typed action endpoint');
+  assert.match(workflowNodeActionsSkill, /timer\.fire, timer\.tick, and timer\.dispatchWakeup are backend-internal; the backend rejects Agent invocations\./, 'workflow-node-actions skill should mark wakeup actions as backend-internal');
+  assert.match(workflowNodeActionsSkill, /Markdown writes honor the lock lease and expectedRevision; on markdown_conflict, reread, merge, and retry\./, 'workflow-node-actions skill should teach revision-guarded Markdown writes');
+  assert.match(workflowNodeActionsSkill, /timer-typed-actions/, 'workflow-node-actions skill should route Timer control through typed actions');
+  assert.match(workflowNodeActionsSkill, /direct-event-node-state-file-edit/, 'workflow-node-actions skill should forbid direct Timer state edits');
+  assert.match(workflowNodeActionsSkill, /prefer-connected-resource-output/, 'workflow-node-actions skill should prefer connected writable resources');
+  assert.match(workflowContextSkill, /event-state-file-mutation/, 'workflow-context skill should forbid event-node state mutation');
+  assert.match(workflowContextSkill, /direct-json-state-mutation/, 'workflow-context skill should forbid direct JSON state mutation');
+  assert.match(workflowTimerNodeSkill, /workflow-timer-node/, 'timer node skill should exist as an on-demand skill');
+  assert.match(workflowTimerNodeSkill, /timer\.setInterval/, 'timer node skill should document timer.setInterval');
+  assert.match(workflowTimerNodeSkill, /Timer -> Agent relation=event only delivers events/, 'timer node skill should distinguish event delivery from control');
+  assert.match(workflowTimerNodeSkill, /direct-event-node-state-file-edit/, 'timer node skill should forbid direct event state edits');
+  assert.match(workflowGoalNodeSkill, /direct-goal-node-state-file-edit/, 'goal node skill should forbid direct goal state edits');
+  assert.match(workflowAgentNodeSkill, /Send structured requests with a requestId, wait via Timer wakeup messages, and aggregate replies per request\./, 'agent node skill should document structured delegation with request ids');
+  assert.match(workflowResourceNodeSkill, /component-nodes\/\*\*\/state\.json is backend-owned/, 'resource node skill should forbid component state edits');
+  assert.match(workflowMarkdownNodeSkill, /workflow-markdown-node/, 'markdown node skill should exist as an on-demand skill');
+  assert.match(workflowMarkdownNodeSkill, /markdown\.append/, 'markdown node skill should expose append');
+  assert.match(workflowDiagramNodeSkill, /workflow-diagram-node/, 'diagram node skill should exist as an on-demand skill');
+  assert.match(workflowDiagramNodeSkill, /excalidraw\.saveScene/, 'diagram node skill should expose Excalidraw writes');
+  assert.match(workflowFileNodeSkill, /workflow-file-node/, 'file node skill should exist as an on-demand skill');
+  assert.match(workflowFileNodeSkill, /file\.readText/, 'file node skill should expose bounded text reads');
+  assert.match(workflowSkillGroupNodeSkill, /workflow-skill-group-node/, 'skill group node skill should exist as an on-demand skill');
+  assert.match(workflowSkillGroupNodeSkill, /independent-skill-execution/, 'skill group node skill should deny independent execution');
+  assert.match(workflowMcpConnectorNodeSkill, /workflow-mcp-connector-node/, 'MCP connector node skill should exist as an on-demand skill');
+  assert.match(workflowMcpConnectorNodeSkill, /mcp-tool-invocation-without-permission/, 'MCP connector skill should deny direct tool invocation');
+  const wfUiMapSkill = read('Harness/a2a/skills/wf-ui-map.json');
+  assert.match(wfUiMapSkill, /compatibilityAliasFor/, 'legacy wf-ui-map skill should be an explicit compatibility alias');
+  assert.match(wfUiMapSkill, /workflow-node-map/, 'legacy wf-ui-map skill should point to canonical workflow-node-map');
+  assert.match(wfUiMapSkill, /node-map/, 'default wf-ui-map skill should document the node-map command');
+  assert.match(wfUiMapSkill, /api-only-node-map-control/, 'default wf-ui-map skill should mark graph control as API-only');
+  assert.match(wfUiMapSkill, /no-direct-workflow-map-writes/, 'default wf-ui-map skill should forbid direct workflow-map writes');
+  assert.match(wfUiMapSkill, /agent\.deleteNodes/, 'default wf-ui-map skill should expose bulk delete through typed Agent actions');
+  assert.match(harnessEnvBody, /HARNESS_WF_UI_URL/, 'PTY agent env should include the control-plane URL');
+  assert.doesNotMatch(harnessEnvBody, /HARNESS_WF_UI_TOKEN:/, 'PTY agent env should not expose a control token');
+  assert.doesNotMatch(harnessEnvBody, /HARNESS_WF_UI_READ_TOKEN:/, 'PTY agent env should not expose a read token');
+  assert.match(harnessEnvBody, /HARNESS_NODE_HOME/, 'PTY agent env should include the node home directory');
+  assert.match(harnessEnvBody, /HARNESS_NODE_INIT/, 'PTY agent env should include the node init file');
+  assert.doesNotMatch(harnessEnvBody, /graphReadToken/, 'PTY agent env should not derive graph read tokens');
+  assert.match(ptyBody, /buildHarnessEnvSession\(/, 'PTY spawn should inject the shared harness identity env');
+  assert.doesNotMatch(ptyBody, /HARNESS_WF_UI_TOKEN:/, 'PTY adapter should not expose a control token');
+  assert.doesNotMatch(ptyBody, /HARNESS_WF_UI_READ_TOKEN:/, 'PTY adapter should not expose a read token');
+  assert.doesNotMatch(serverBody, /validateGraphReadToken/, 'server API should not require graph read tokens');
   assert.match(runtimeBody, /dangerously-skip-permissions/, 'Claude launch should support yolo permissions');
   assert.match(runtimeBody, /dangerously-bypass-approvals-and-sandbox/, 'Codex launch should support bypass mode');
-  assert.match(roleGraph, /wf-ui-map/, 'dogfood role graph should advertise wf-ui-map');
-  assert.match(templateRoleGraph, /wf-ui-map/, 'template role graph should advertise wf-ui-map');
+  assert.match(roleGraph, /workflow-node-map/, 'dogfood role graph should advertise canonical workflow-node-map');
+  assert.match(roleGraph, /workflow-ontology/, 'dogfood role graph should advertise canonical workflow-ontology');
+  assert.match(roleGraph, /workflow-context/, 'dogfood role graph should advertise canonical workflow-context');
+  assert.match(roleGraph, /workflow-node-actions/, 'dogfood role graph should advertise canonical workflow-node-actions');
+  assert.doesNotMatch(roleGraph, /"wf-ui-map"/, 'dogfood default roles should not use legacy wf-ui-map as their default language');
+  assert.match(templateRoleGraph, /workflow-node-map/, 'template role graph should advertise canonical workflow-node-map');
+  assert.match(templateRoleGraph, /workflow-ontology/, 'template role graph should advertise canonical workflow-ontology');
+  assert.match(templateRoleGraph, /workflow-context/, 'template role graph should advertise canonical workflow-context');
+  assert.match(templateRoleGraph, /workflow-node-actions/, 'template role graph should advertise canonical workflow-node-actions');
+  assert.doesNotMatch(templateRoleGraph, /"wf-ui-map"/, 'template default roles should not use legacy wf-ui-map as their default language');
   assert.match(serverBody, /\/api\/a2a\/snapshot/, 'server should expose workflow graph snapshot to agents');
   assert.match(serverBody, /startWorkflowGraphNode/, 'server should support starting stopped workflow graph session nodes');
   assert.match(serverBody, /\/start\$/, 'server should expose a graph-node start route');
@@ -288,6 +409,10 @@ test('wf-ui agent control protocol is generated and main-agent gated', () => {
   assert.match(serverBody, /writePtyInput\(session\.sessionId, data\)/, 'session input API should write to the attached PTY');
   assert.match(runtimeBody, /initialPrompt/, 'runtime launch args should support CLI-native initial prompts');
   assert.doesNotMatch(serverBody, /function agentBootstrapPrompt/, 'runtime sessions should not inject a default bootstrap prompt into terminal input');
+  assert.doesNotMatch(serverBody, /graphAgentBootstrapInput/, 'graph Agent nodes should not synthesize terminal bootstrap input');
+  assert.doesNotMatch(serverBody, /graph-bootstrap/, 'graph Agent nodes should not record a terminal bootstrap input mode');
+  assert.doesNotMatch(serverBody, /Bootstrap: quietly read HARNESS_NODE_INIT/, 'graph Agent nodes should rely on env/node-init instead of visible terminal bootstrap text');
+  assert.doesNotMatch(serverBody, /short bootstrap prompt/i, 'node init should not tell agents to expect a bootstrap prompt');
   assert.match(serverBody, /bootstrapMode: 'env-node-init'/, 'runtime sessions should record env/node-init bootstrap mode');
   assert.match(serverBody, /nodeInitMarkdown/, 'runtime sessions should write durable node init files');
   assert.match(serverBody, /Harness\/a2a\/nodes/, 'runtime sessions should allocate per-node homes');
@@ -295,9 +420,20 @@ test('wf-ui agent control protocol is generated and main-agent gated', () => {
   assert.match(serverBody, /INITIAL_INPUT_FALLBACK_DELAY_MS/, 'initial input should have a delayed fallback for slow TUI startup');
   assert.match(serverBody, /scheduleInitialInput/, 'initial input should wait for PTY output before submission');
   assert.match(serverBody, /HARNESS_NODE_INIT/, 'node init path should be exposed through env-driven bootstrap');
-  assert.match(serverBody, /Do not print this file/, 'node init should stay quiet instead of flooding the terminal');
-  assert.match(serverBody, /wf-ui-control\.mjs describe/, 'node init file should teach graph inspection');
+  assert.match(serverBody, /## Working Method — discovery first/, 'node init file should label the methodology-only discovery-first working method');
+  assert.match(serverBody, /You control the workflow canvas ONLY through typed interfaces\. Never edit Harness\/a2a\/\*\*\/state\.json or workflow-map\.json directly\./, 'node init file should forbid direct graph and state file edits');
+  assert.match(serverBody, /Discover in this order before acting:/, 'node init file should prescribe a discovery order');
+  assert.match(serverBody, /wf-ui-control\.mjs help --json/, 'node init file should teach command discovery');
+  assert.match(serverBody, /wf-ui-control\.mjs workflow-ontology/, 'node init file should teach ontology reads before context/action use');
+  assert.match(serverBody, /wf-ui-control\.mjs workflow-context --project \./, 'node init file should teach self-context reads without an explicit node id');
+  assert.match(serverBody, /hydrate EVERY turn, mandatory/, 'node init file should mark context hydration as mandatory every turn');
+  assert.match(serverBody, /wf-ui-control\.mjs manuals <nodeType>/, 'node init file should teach on-demand node manuals');
+  assert.match(serverBody, /wf-ui-control\.mjs snapshot --project \./, 'node init file should teach canvas snapshot reads');
+  assert.match(serverBody, /## Invariant Rules/, 'node init file should label invariant rules');
+  assert.match(serverBody, /The Timer is the only wakeup source; the Goal node never wakes agents\./, 'node init file should state the Timer-only wakeup rule');
   assert.match(serverBody, /Subagent must not create nodes/, 'node init file should enforce managed PTY delegation limits');
+  assert.match(serverBody, /## Subagent Strategy/, 'node init file should include the runtime-aware Subagent Strategy section');
+  assert.match(serverBody, /subagentMode: <built-in-subagents\|wf-node-subagents>/, 'node init file should carry the subagent mode placeholder');
   assert.match(serverBody, /\$\{command\}\\r\$\{ceoPrompt\.trim\(\)\}\\r/, 'workflow startup should submit CLI input with carriage return');
 });
 
@@ -313,6 +449,7 @@ test('AC-001 workflow create-agent panel exposes the new agent vocabulary', () =
   assert.match(workflowBody, /testId="workflow-agent-runtime"/, 'Create Agent panel should expose runtime selection');
   assert.match(workflowBody, /data-testid="workflow-agent-mode"/, 'Create Agent panel should expose workflow mode selection');
   assert.match(workflowBody, /data-testid="workflow-create-agent-submit"/, 'Create Agent panel should expose an explicit submit action');
+  assert.match(read('src/ui/src/components/workflow/nodeRegistry.tsx'), /kind: 'goal'[\s\S]*createMode: 'goal'[\s\S]*label: 'Goal node'/, 'Create Node catalog should include a ready Goal node entry');
   assert.match(workflowBody, /Main Agent/, 'agent vocabulary should say Main Agent');
   assert.match(workflowBody, /Subagent/, 'agent vocabulary should say Subagent');
   assert.doesNotMatch(workflowBody, /data-testid="workflow-add-router"/, 'Router should be absent from the default toolbar');
@@ -321,6 +458,7 @@ test('AC-001 workflow create-agent panel exposes the new agent vocabulary', () =
 
 test('AC-003 AC-004 workflow terminal mode uses explicit attach controls without detached input', () => {
   const workflowBody = read('src/ui/src/components/WorkflowRoute.tsx');
+  const componentNodeBody = read('src/ui/src/components/WorkflowComponentNode.tsx');
   const cssBody = read('src/ui/src/index.css');
 
   assert.match(workflowBody, /data-testid="workflow-open-terminal"/, 'card mode should expose Open Terminal');
@@ -334,11 +472,13 @@ test('AC-003 AC-004 workflow terminal mode uses explicit attach controls without
   assert.match(workflowBody, /Position\.Left/, 'workflow node handles should include left-side connection points');
   assert.match(workflowBody, /Position\.Right/, 'workflow node handles should include right-side connection points');
   assert.match(workflowBody, /const handleSize = 12/, 'workflow connection handles should keep compact constant visual targets after canvas zoom');
+  assert.match(componentNodeBody, /const handleSize = 12/, 'workflow component connection handles should use the same compact visual target');
   assert.match(workflowBody, /const handleScale = 1 \/ safeZoom/, 'workflow connection handles should counter-scale with canvas zoom');
   assert.match(workflowBody, /connectionMode=\{ConnectionMode\.Loose\}/, 'workflow handles should support bidirectional single-dot connections');
   assert.match(workflowBody, /isConnectableStart[\s\S]*isConnectableEnd/, 'each visible workflow handle should be both a source and a target');
   assert.doesNotMatch(workflowBody, /targetStyle:[\s\S]*sourceStyle:/, 'workflow should not render split source/target handle dots per side');
-  assert.match(cssBody, /\.react-flow__handle\.wf-flow-handle[\s\S]*width:\s*1[0-2]px/, 'workflow connection handles should override React Flow defaults');
+  assert.match(cssBody, /\.react-flow__handle\.wf-flow-handle[\s\S]*width:\s*12px/, 'workflow connection handles should override React Flow defaults with the compact target');
+  assert.match(cssBody, /\.workflow-agent-context-handle[\s\S]*width:\s*12px/, 'workflow context handles should not override the compact target');
   assert.match(cssBody, /\.wf-flow \.react-flow__edge-textbg[\s\S]*pointer-events:\s*none/, 'workflow bridge label backgrounds should not block clicks');
   assert.match(cssBody, /\.wf-flow \.react-flow__edge-interaction[\s\S]*cursor:\s*pointer/, 'workflow bridge hit paths should present as clickable');
   assert.match(workflowBody, /window\.addEventListener\('pointermove'/, 'workflow bridge lines should keep dragging after the pointer leaves the SVG stroke');
@@ -420,8 +560,6 @@ test('workflow nodes keep tactile hover styling', () => {
 
   assert.match(workflowBody, /className="wf-node-card"/, 'workflow nodes should use a stable visual class');
   assert.match(workflowBody, /data-testid="workflow-create-node"/, 'workflow should expose a canvas node creation action');
-  assert.match(workflowBody, /data-testid="workflow-canvas-settings"/, 'workflow canvas settings should be opt-in');
-  assert.match(workflowBody, /data-testid="workflow-canvas-config"/, 'workflow canvas config should be a disclosed panel');
   assert.match(workflowBody, /data-testid="workflow-open-terminal"/, 'workflow session nodes should have an explicit terminal mode control');
   assert.match(workflowBody, /data-testid="workflow-node-start"/, 'stopped workflow session nodes should expose a start action');
   assert.match(workflowBody, /data-testid="workflow-node-stop"/, 'workflow session nodes should expose a stop action');

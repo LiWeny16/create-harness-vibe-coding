@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "generator": "0.8.20",
   "source": "https://raw.githubusercontent.com/LiWeny16/create-harness-vibe-coding/main/templates/common/",
-  "generated": "2026-08-03T14:20:00.568Z",
+  "generated": "2026-08-28T02:30:50.833Z",
   "preserve": [
     "Harness/PROGRESS.md",
     "Harness/tasks/**",
@@ -742,6 +742,11 @@
       "overwrite": "safe"
     },
     {
+      "path": "Harness/a2a/action-registry.json",
+      "kind": "config",
+      "overwrite": "safe"
+    },
+    {
       "path": "Harness/a2a/role-graph.json",
       "kind": "config",
       "overwrite": "safe"
@@ -758,6 +763,81 @@
     },
     {
       "path": "Harness/a2a/skills/wf-ui-map.json",
+      "kind": "config",
+      "overwrite": "safe"
+    },
+    {
+      "path": "Harness/a2a/skills/workflow-agent-node.json",
+      "kind": "config",
+      "overwrite": "safe"
+    },
+    {
+      "path": "Harness/a2a/skills/workflow-context.json",
+      "kind": "config",
+      "overwrite": "safe"
+    },
+    {
+      "path": "Harness/a2a/skills/workflow-diagram-node.json",
+      "kind": "config",
+      "overwrite": "safe"
+    },
+    {
+      "path": "Harness/a2a/skills/workflow-display-node.json",
+      "kind": "config",
+      "overwrite": "safe"
+    },
+    {
+      "path": "Harness/a2a/skills/workflow-file-node.json",
+      "kind": "config",
+      "overwrite": "safe"
+    },
+    {
+      "path": "Harness/a2a/skills/workflow-goal-node.json",
+      "kind": "config",
+      "overwrite": "safe"
+    },
+    {
+      "path": "Harness/a2a/skills/workflow-markdown-node.json",
+      "kind": "config",
+      "overwrite": "safe"
+    },
+    {
+      "path": "Harness/a2a/skills/workflow-mcp-connector-node.json",
+      "kind": "config",
+      "overwrite": "safe"
+    },
+    {
+      "path": "Harness/a2a/skills/workflow-node-actions.json",
+      "kind": "config",
+      "overwrite": "safe"
+    },
+    {
+      "path": "Harness/a2a/skills/workflow-node-map.json",
+      "kind": "config",
+      "overwrite": "safe"
+    },
+    {
+      "path": "Harness/a2a/skills/workflow-ontology.json",
+      "kind": "config",
+      "overwrite": "safe"
+    },
+    {
+      "path": "Harness/a2a/skills/workflow-resource-node.json",
+      "kind": "config",
+      "overwrite": "safe"
+    },
+    {
+      "path": "Harness/a2a/skills/workflow-skill-group-node.json",
+      "kind": "config",
+      "overwrite": "safe"
+    },
+    {
+      "path": "Harness/a2a/skills/workflow-timer-node.json",
+      "kind": "config",
+      "overwrite": "safe"
+    },
+    {
+      "path": "Harness/a2a/workflows.json",
       "kind": "config",
       "overwrite": "safe"
     },

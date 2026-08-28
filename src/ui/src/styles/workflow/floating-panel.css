@@ -1,0 +1,129 @@
+.wf-floating-panel {
+  overscroll-behavior: contain;
+}
+
+.workflow-floating-panel {
+  min-width: 0;
+  border: 1px solid rgba(15,23,42,0.10);
+  border-radius: var(--wf-floating-radius);
+  background: var(--wf-floating-bg);
+  color: var(--fg);
+  box-shadow: var(--wf-floating-shadow);
+  backdrop-filter: blur(16px);
+  pointer-events: auto;
+}
+
+.workflow-floating-panel-header,
+.workflow-floating-panel-footer {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--wf-floating-header-bg);
+}
+
+.workflow-floating-panel-footer {
+  border-top: 1px solid var(--border);
+  border-bottom: 0;
+}
+
+.workflow-floating-panel-title {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.workflow-floating-panel-title-icon {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  border: 1px solid rgba(15,23,42,0.08);
+  border-radius: var(--wf-floating-inner-radius);
+  background: #fff;
+  color: #334155;
+}
+
+.workflow-floating-panel-title > div {
+  min-width: 0;
+  display: grid;
+  gap: 1px;
+}
+
+.workflow-floating-panel-title strong,
+.workflow-floating-panel-title span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workflow-floating-panel-title strong {
+  color: var(--fg);
+  font-size: 14px;
+  font-weight: 850;
+  line-height: 1.15;
+  text-wrap: balance;
+}
+
+.workflow-floating-panel-title span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 760;
+  font-variant-numeric: tabular-nums;
+}
+
+.workflow-floating-panel-actions {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.workflow-floating-panel-button {
+  min-width: 40px;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--wf-floating-inner-radius);
+  background: #fff;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  transition-property: background-color, border-color, color, transform, box-shadow;
+  transition-duration: 140ms;
+  transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+}
+
+.workflow-floating-panel-button:hover {
+  border-color: rgba(15,23,42,0.22);
+  color: var(--fg);
+  box-shadow: 0 4px 12px rgba(15,23,42,0.08);
+}
+
+.workflow-floating-panel-button:active {
+  transform: scale(0.96);
+}
+
+.workflow-floating-panel-body {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  padding: 12px;
+}
+
+.wf-floating-panel input,
+.wf-floating-panel select,
+.wf-floating-panel textarea {
+  width: 100%;
+  min-width: 0;
+}

@@ -30,27 +30,26 @@ Do not paste full API responses, accessibility trees, or terminal transcripts.
 Run from the project root:
 
 ```text
-create-harness-vibe-coding wf-ui --project . --host 127.0.0.1 --port 0 --open --detach
+create-harness-vibe-coding wf-ui --project . --host 127.0.0.1 --port 56670 --open --detach
 ```
 
 If you are inside the generator source repository and the global binary is not
 available, use:
 
 ```text
-node bin/create-harness-vibe-coding.js wf-ui --project . --host 127.0.0.1 --port 0 --open --detach
+node bin/create-harness-vibe-coding.js wf-ui --project . --host 127.0.0.1 --port 56670 --open --detach
 ```
 
 Otherwise use:
 
 ```text
-npx create-harness-vibe-coding@0.8.20 wf-ui --project . --host 127.0.0.1 --port 0 --open --detach
+npx create-harness-vibe-coding@0.8.20 wf-ui --project . --host 127.0.0.1 --port 56670 --open --detach
 ```
 
 Rules:
 - Bind only to `127.0.0.1`; never `0.0.0.0`.
-- Default port `0` for an OS-assigned free port.
-- Generate a random one-time token.
-- Open `http://127.0.0.1:<port>/?token=<token>`.
+- Default port `56670`; if occupied, wf-ui tries the next port upward until one opens. Use `--port 0` only when you explicitly want an OS-assigned free port.
+- Open the local URL printed by the command; frontend/API token auth is not required for this trusted loopback UI.
 - Detach the server so command timeouts do not stop the control panel.
 
 ## Relationship To WF-Browser
@@ -109,7 +108,8 @@ Browser UI (React + TypeScript + Motion for React + Lucide)
 ## Agent Commands
 
 After `/wf-ui` starts, agents can use the control script when
-`HARNESS_WF_UI_URL` and `HARNESS_WF_UI_TOKEN` are available:
+`HARNESS_WF_UI_URL` is available. `HARNESS_WF_UI_TOKEN` is accepted only as a
+legacy optional value:
 
 ```text
 node Harness/scripts/wf-ui-control.mjs browser-allocate --mode runtime --route /workflow
@@ -205,7 +205,7 @@ Current wf-ui target:
 ## Security
 
 - Loopback-only binding (`127.0.0.1`).
-- One-time token auth on HTTP and WebSocket.
+- Trusted local no-token HTTP and WebSocket access on loopback.
 - Path traversal prevention on all task capsule reads.
 - Command allowlist for PTY: `claude`, `codex`, `opencode`.
 - Terminal default mode: watch/read-only; attach mode is explicit.

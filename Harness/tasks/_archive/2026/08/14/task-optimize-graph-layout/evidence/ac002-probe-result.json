@@ -1,0 +1,197 @@
+{
+  "button": {
+    "visible": true,
+    "enabled": true,
+    "label": "Tidy layout"
+  },
+  "layoutRequests": [
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:43299/api/workflow/nodes/layout-agent-main/actions/agent.layout",
+      "body": {
+        "mode": "tidy",
+        "sizes": {
+          "layout-agent-main": {
+            "width": 278,
+            "height": 178
+          },
+          "layout-goal": {
+            "width": 320,
+            "height": 220
+          },
+          "layout-resource-file": {
+            "width": 352,
+            "height": 314
+          }
+        }
+      }
+    }
+  ],
+  "graphMapRequests": [
+    {
+      "method": "PUT",
+      "url": "http://127.0.0.1:43299/api/a2a/graph-map",
+      "body": {
+        "schemaVersion": 1,
+        "version": 2,
+        "expectedVersion": 1,
+        "baseVersion": 1,
+        "positions": {
+          "layout-agent-main": {
+            "x": 260,
+            "y": 500
+          },
+          "layout-resource-file": {
+            "x": 260,
+            "y": 900
+          },
+          "layout-goal": {
+            "x": 260,
+            "y": 220
+          },
+          "mystery-goal-1": {
+            "x": 860,
+            "y": 160
+          },
+          "mystery-goal-2": {
+            "x": 1629,
+            "y": -1063
+          }
+        },
+        "nodes": [
+          {
+            "nodeId": "layout-agent-main",
+            "sessionId": "layout-session-main",
+            "kind": "terminal-session",
+            "agentKind": "main",
+            "runtime": "codex",
+            "taskId": "task-m9-layout",
+            "cwd": "D:\\MyFile\\sample\\synchronous-github\\zingspark\\create-harness-vibe-coding",
+            "status": "running",
+            "label": "M9 Agent",
+            "position": {
+              "x": 260,
+              "y": 500
+            },
+            "width": 278,
+            "height": 178
+          },
+          {
+            "nodeId": "layout-goal",
+            "kind": "goal-node",
+            "type": "goal",
+            "status": "active",
+            "label": "M9 Goal",
+            "statePath": "Harness/tasks/task-m9-layout/STATE.json",
+            "revision": 1,
+            "position": {
+              "x": 260,
+              "y": 220
+            },
+            "width": 320,
+            "height": 220
+          },
+          {
+            "nodeId": "layout-resource-file",
+            "kind": "component-node",
+            "componentType": "file",
+            "type": "file",
+            "status": "ready",
+            "label": "M9 File",
+            "statePath": "Harness/a2a/component-nodes/layout-resource-file/state.json",
+            "revision": 1,
+            "observableInputs": [
+              "file"
+            ],
+            "observableOutputs": [
+              "file",
+              "path"
+            ],
+            "position": {
+              "x": 260,
+              "y": 900
+            },
+            "width": 352,
+            "height": 314
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge-goal-agent",
+            "from": "layout-goal",
+            "to": "layout-agent-main",
+            "source": "layout-goal",
+            "target": "layout-agent-main",
+            "relation": "delegates",
+            "direction": "source-to-target",
+            "sourceHandle": "goal:right",
+            "targetHandle": "left",
+            "uiSourceHandle": "goal:right",
+            "uiTargetHandle": "left",
+            "offset": 0
+          },
+          {
+            "id": "edge-agent-file",
+            "from": "layout-agent-main",
+            "to": "layout-resource-file",
+            "source": "layout-agent-main",
+            "target": "layout-resource-file",
+            "relation": "delegates",
+            "direction": "source-to-target",
+            "sourceHandle": "right",
+            "uiSourceHandle": "right",
+            "offset": 0
+          }
+        ],
+        "capsuleDockLinks": [],
+        "sourceOfTruth": "backend",
+        "componentStatePath": "Harness/a2a/component-nodes",
+        "undoStack": [],
+        "redoStack": []
+      }
+    }
+  ],
+  "pageErrors": [],
+  "consoleErrors": [],
+  "failedResponses": [],
+  "boxesBefore": {
+    "layout-agent-main": {
+      "x": 514.2999877929688,
+      "y": 130.00001525878906,
+      "width": 324.91253662109375,
+      "height": 208.03749084472656
+    },
+    "layout-resource-file": {
+      "x": 514.2999877929688,
+      "y": 363.7500305175781,
+      "width": 411.4000244140625,
+      "height": 366.9875183105469
+    },
+    "layout-goal": {
+      "x": 514.2999877929688,
+      "y": 620.875,
+      "width": 374.00006103515625,
+      "height": 257.12506103515625
+    }
+  },
+  "boxesAfter": {
+    "layout-agent-main": {
+      "x": 514.2999877929688,
+      "y": 130.00001525878906,
+      "width": 324.91253662109375,
+      "height": 208.03749084472656
+    },
+    "layout-resource-file": {
+      "x": 514.2999877929688,
+      "y": 363.7500305175781,
+      "width": 411.4000244140625,
+      "height": 366.9875183105469
+    },
+    "layout-goal": {
+      "x": 514.2999877929688,
+      "y": 620.875,
+      "width": 374.00006103515625,
+      "height": 257.12506103515625
+    }
+  }
+}

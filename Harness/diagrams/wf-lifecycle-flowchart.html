@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Harness WF — 状态机 & 调度引擎流程图</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --border: #30363d;
+    --text: #c9d1d9;
+    --muted: #8b949e;
+    --accent: #58a6ff;
+    --green: #3fb950;
+    --yellow: #d29922;
+    --red: #f85149;
+    --purple: #a371f7;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+  }
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  header h1 { font-size: 1.25rem; font-weight: 600; }
+  header .badge { font-size: 0.75rem; padding: 2px 10px; border-radius: 999px; background: var(--purple); color: #fff; }
+  .tabs {
+    display: flex;
+    gap: 4px;
+    padding: 12px 32px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+  }
+  .tabs button {
+    background: none;
+    border: 1px solid transparent;
+    color: var(--muted);
+    padding: 6px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+  .tabs button:hover { color: var(--text); background: rgba(255,255,255,.04); }
+  .tabs button.active { color: var(--accent); border-color: var(--border); background: var(--bg); }
+  main { padding: 24px 32px; max-width: 1400px; margin: 0 auto; }
+  .diagram { display: none; }
+  .diagram.active { display: block; }
+  .mermaid {
+    display: flex;
+    justify-content: center;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 24px;
+    overflow-x: auto;
+  }
+  .legend {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+  .legend span { display: flex; align-items: center; gap: 6px; }
+  .legend .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  footer {
+    text-align: center;
+    padding: 16px;
+    color: var(--muted);
+    font-size: 0.75rem;
+    border-top: 1px solid var(--border);
+    margin-top: 32px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Harness WF — 状态机 & 调度引擎</h1>
+    <span style="color:var(--muted);font-size:0.8rem;">基于 WF-STATE.md / WF-KERNEL.md · 2026-08-05</span>
+  </div>
+  <span class="badge">agent/wf-ui-state-checkpoint</span>
+</header>
+
+<nav class="tabs">
+  <button class="active" onclick="switchTab('state')">🔄 状态机生命周期</button>
+  <button onclick="switchTab('orchestration')">⚡ 调度引擎</button>
+  <button onclick="switchTab('wf-max')">🚀 WF-MAX 角色协作</button>
+  <button onclick="switchTab('resume')">📌 恢复协议</button>
+</nav>
+
+<main>
+  <!-- Tab 1: State Machine -->
+  <div id="tab-state" class="diagram active">
+    <div class="mermaid">
+flowchart TD
+    INTK(["🔍 intake<br/>用户输入 / 命令触发"])
+    CLAR["❓ clarify<br/>澄清需求 · 收集上下文"]
+    REQ["📋 requirements<br/>定义验收标准"]
+    PRD["📄 prd<br/>产品需求文档"]
+    ACC["✅ acceptance<br/>验收条件确认"]
+    PLAN["📐 plan<br/>任务分解 · 依赖 · writeSet"]
+    EXPL["🔎 explore<br/>代码探索 · 研究"]
+    IMPL["🔧 implement<br/>按 writeSet 实现"]
+    VER["🧪 verify<br/>运行测试 · 收集证据"]
+    REV["👁 review<br/>代码 / 安全 / 架构审查"]
+    FIX["🔨 fix<br/>修复审查发现的问题"]
+    REFL["🪞 reflect<br/>综合 · PASS / BLOCKED"]
+    CLOSE["📦 closeout<br/>归档 · 记忆提取 · 清理"]
+
+    BLK(["🚫 blocked<br/>依赖未满足 · 等待用户"])
+
+    INTK --> CLAR --> REQ --> PRD --> ACC --> PLAN --> EXPL --> IMPL --> VER --> REV
+
+    REV -->|"发现缺陷"| FIX --> VER
+    REV -->|"通过"| REFL --> CLOSE
+
+    INTK --> BLK
+    CLAR --> BLK
+    REQ --> BLK
+    PRD --> BLK
+    ACC --> BLK
+    PLAN --> BLK
+    EXPL --> BLK
+    IMPL --> BLK
+    VER --> BLK
+    REV --> BLK
+    FIX --> BLK
+
+    BLK -->|"解除阻塞"| CLAR
+
+    style INTK fill:#a371f7,stroke:#c0a0ff,color:#fff
+    style CLAR fill:#3fb950,stroke:#5cdb6e,color:#fff
+    style REQ fill:#3fb950,stroke:#5cdb6e,color:#fff
+    style PRD fill:#3fb950,stroke:#5cdb6e,color:#fff
+    style ACC fill:#d29922,stroke:#e6b74a,color:#000
+    style PLAN fill:#d29922,stroke:#e6b74a,color:#000
+    style EXPL fill:#58a6ff,stroke:#7ab8ff,color:#fff
+    style IMPL fill:#58a6ff,stroke:#7ab8ff,color:#fff
+    style VER fill:#f0883e,stroke:#f4a460,color:#fff
+    style REV fill:#f0883e,stroke:#f4a460,color:#fff
+    style FIX fill:#f85149,stroke:#ff6b6b,color:#fff
+    style REFL fill:#a371f7,stroke:#c0a0ff,color:#fff
+    style CLOSE fill:#a371f7,stroke:#c0a0ff,color:#fff
+    style BLK fill:#30363d,stroke:#484f58,color:#8b949e
+    </div>
+    <div class="legend">
+      <span><span class="dot" style="background:#a371f7"></span> 入口/出口</span>
+      <span><span class="dot" style="background:#3fb950"></span> 需求阶段</span>
+      <span><span class="dot" style="background:#d29922"></span> 门控节点</span>
+      <span><span class="dot" style="background:#58a6ff"></span> 执行阶段</span>
+      <span><span class="dot" style="background:#f0883e"></span> 验证阶段</span>
+      <span><span class="dot" style="background:#f85149"></span> 修复循环</span>
+      <span><span class="dot" style="background:#30363d"></span> 阻塞</span>
+    </div>
+  </div>
+
+  <!-- Tab 2: Orchestration Engine -->
+  <div id="tab-orchestration" class="diagram">
+    <div class="mermaid">
+flowchart TD
+    subgraph INIT["🎬 启动"]
+        LOAD["加载 CLAUDE.md + PROGRESS.md"]
+        ACTIVE["查找 Active Task"]
+        S_JSON["读取 STATE.json<br/>phase · gate · tier · queues"]
+    end
+
+    subgraph READY["📊 Ready Queue (依赖驱动)"]
+        DEP["解析 links.dependsOn"]
+        ITEMS["检查 workItems[]<br/>ready / running"]
+        Q_READY["🟢 ready 队列 — 可立即派发"]
+        Q_RUN["🟡 running 队列 — 等待返回"]
+        Q_BLOCK["🔴 blocked 队列 — 等待解除"]
+        Q_DONE["✅ done 队列 — 已完成"]
+    end
+
+    subgraph DISPATCH["📡 并行派发 (无写入冲突即可并行)"]
+        direction LR
+        R1["codebase-explorer<br/>🔍 代码搜索"]
+        R2["docs-researcher<br/>📚 文档查询"]
+        R3["researcher<br/>🌐 市场调研"]
+        R4["planner<br/>📐 计划分解"]
+        R5["architect<br/>🏗 架构分析"]
+    end
+
+    subgraph WRITE_GATE["🚪 写入门控 (AC + 合同 + 测试计划就绪)"]
+        direction LR
+        W1["implementer A<br/>💾 writeSet A"]
+        W2["implementer B<br/>💾 writeSet B"]
+        W3["implementer C<br/>💾 writeSet C"]
+    end
+
+    subgraph VERIFY_GATE["🧪 验证门控 (每波次独立)"]
+        VFY["verifier<br/>运行测试 · 收集证据"]
+        REVW["reviewer × 3-4<br/>spec / code / security / perf"]
+    end
+
+    subgraph DECIDE["⚖️ 裁决"]
+        PASS["🟢 PASS → reflect → closeout"]
+        FIX_LOOP["🟡 FIX → 回到 implement"]
+        BLOCKED["🔴 BLOCKED → 等待用户"]
+    end
+
+    LOAD --> ACTIVE --> S_JSON
+    S_JSON --> DEP --> ITEMS
+    ITEMS --> Q_READY
+    ITEMS --> Q_RUN
+    ITEMS --> Q_BLOCK
+    ITEMS --> Q_DONE
+
+    Q_READY --> DISPATCH
+    Q_RUN -->|"返回结果"| Q_DONE
+    Q_BLOCK -->|"依赖解除"| Q_READY
+
+    DISPATCH -->|"read-only 结果汇总"| WRITE_GATE
+    WRITE_GATE -->|"波次完成"| VERIFY_GATE
+    VERIFY_GATE --> DECIDE
+
+    DECIDE -->|"PASS"| CLOSE(["📦 closeout"])
+    DECIDE -->|"FIX"| WRITE_GATE
+    DECIDE -->|"BLOCKED"| Q_BLOCK
+
+    style INIT fill:#161b22,stroke:#30363d,color:#c9d1d9
+    style READY fill:#161b22,stroke:#d29922,color:#c9d1d9
+    style DISPATCH fill:#161b22,stroke:#58a6ff,color:#c9d1d9
+    style WRITE_GATE fill:#161b22,stroke:#f85149,color:#c9d1d9
+    style VERIFY_GATE fill:#161b22,stroke:#f0883e,color:#c9d1d9
+    style DECIDE fill:#161b22,stroke:#a371f7,color:#c9d1d9
+    style CLOSE fill:#a371f7,stroke:#c0a0ff,color:#fff
+    </div>
+    <div class="legend">
+      <span><span class="dot" style="background:#58a6ff"></span> 只读探索 (可并行)</span>
+      <span><span class="dot" style="background:#f85149"></span> 写入门控 (串行，每波独立)</span>
+      <span><span class="dot" style="background:#f0883e"></span> 验证门控 (证据驱动)</span>
+      <span><span class="dot" style="background:#d29922"></span> 队列管理</span>
+      <span><span class="dot" style="background:#a371f7"></span> 最终裁决</span>
+    </div>
+  </div>
+
+  <!-- Tab 3: WF-MAX -->
+  <div id="tab-wf-max" class="diagram">
+    <div class="mermaid">
+flowchart TD
+    CEO("👑 CEO<br/>任务框架 · 分解 · 派发 · 审查<br/>❌ 不直接编辑源码")
+
+    subgraph W0["🌊 W0: 探索"]
+        EM["explore-manager"]
+        E1["explorer"]
+        E2["explorer"]
+        E3["explorer"]
+        E4["explorer"]
+        E5["explorer"]
+    end
+
+    subgraph W1["🌊 W1: 架构"]
+        AM["architect-manager"]
+        A1["boundary"]
+        A2["interface"]
+        A3["data-flow"]
+    end
+
+    subgraph W2["🌊 W2: 实现"]
+        IM["implement-manager"]
+        I1["implementer<br/>file_claim A"]
+        I2["implementer<br/>file_claim B"]
+        I3["implementer<br/>file_claim C"]
+        I4["implementer<br/>file_claim D"]
+        I5["implementer<br/>file_claim E"]
+    end
+
+    subgraph W2R["🌊 W2R: 审查"]
+        RM["review-manager"]
+        RV1["spec reviewer"]
+        RV2["code reviewer"]
+        RV3["security reviewer"]
+        RV4["perf reviewer"]
+    end
+
+    subgraph FINAL["🏁 最终验收"]
+        RF["reflector<br/>综合 · PASS/BLOCKED"]
+        MM["memory-master<br/>记忆提取"]
+        TS["task-scribe<br/>状态更新"]
+    end
+
+    CEO -->|"派发"| EM
+    EM --> E1 & E2 & E3 & E4 & E5
+    E1 & E2 & E3 & E4 & E5 -->|"综合报告"| EM
+    EM -->|"发现"| CEO
+
+    CEO -->|"派发"| AM
+    AM --> A1 & A2 & A3
+    A1 & A2 & A3 -->|"接口合同"| AM
+    AM -->|"合同"| CEO
+
+    CEO -->|"派发 + writeSet"| IM
+    IM --> I1 & I2 & I3 & I4 & I5
+    I1 & I2 & I3 & I4 & I5 -->|"实现"| IM
+    IM -->|"合并结果"| CEO
+
+    CEO -->|"派发 diff"| RM
+    RM --> RV1 & RV2 & RV3 & RV4
+    RV1 & RV2 & RV3 & RV4 -->|"发现"| RM
+    RM -->|"去重 · 严重性"| CEO
+
+    CEO --> RF
+    RF -->|"PASS"| MM
+    RF -->|"BLOCKED"| CEO
+    MM --> TS
+
+    style CEO fill:#a371f7,stroke:#c0a0ff,color:#fff
+    style EM fill:#58a6ff,stroke:#7ab8ff,color:#fff
+    style AM fill:#d29922,stroke:#e6b74a,color:#000
+    style IM fill:#3fb950,stroke:#5cdb6e,color:#fff
+    style RM fill:#f0883e,stroke:#f4a460,color:#fff
+    style RF fill:#f85149,stroke:#ff6b6b,color:#fff
+    style MM fill:#a371f7,stroke:#c0a0ff,color:#fff
+    style TS fill:#a371f7,stroke:#c0a0ff,color:#fff
+    style W0 fill:#0d2b1e,stroke:#238636,color:#c9d1d9
+    style W1 fill:#1a1a0d,stroke:#6e5b00,color:#c9d1d9
+    style W2 fill:#0d1f2b,stroke:#1a6e9e,color:#c9d1d9
+    style W2R fill:#2b1a0d,stroke:#9e5a1a,color:#c9d1d9
+    style FINAL fill:#1a0d2b,stroke:#6e1a9e,color:#c9d1d9
+    </div>
+    <div class="legend">
+      <span><span class="dot" style="background:#a371f7"></span> CEO (不写源码)</span>
+      <span><span class="dot" style="background:#58a6ff"></span> 探索 (5-10 并行)</span>
+      <span><span class="dot" style="background:#d29922"></span> 架构 (3 并行)</span>
+      <span><span class="dot" style="background:#3fb950"></span> 实现 (5-7 并行)</span>
+      <span><span class="dot" style="background:#f0883e"></span> 审查 (3-4 并行)</span>
+      <span><span class="dot" style="background:#f85149"></span> 裁决</span>
+    </div>
+  </div>
+
+  <!-- Tab 4: Resume Protocol -->
+  <div id="tab-resume" class="diagram">
+    <div class="mermaid">
+flowchart TD
+    START(["🖥 新会话 / 新窗口启动"])
+    C1{"用户说 continue / resume<br/>或非简单任务?"}
+
+    DIRECT["⚡ 直接模式<br/>跳过 Harness 路由<br/>只读所需文件 · 直接执行"]
+
+    READ_PROG["📖 读 Harness/PROGRESS.md<br/>找 Active Task"]
+    NO_TASK["无活跃任务 → 等待用户输入"]
+    HAS_TASK["找到 Active Task"]
+
+    READ_STATE["📖 读 STATE.json"]
+    CHK_DEPS{"links.dependsOn<br/>非空?"}
+    CHK_ITEMS{"workItems[]<br/>非空?"}
+
+    RPT_BLOCK["🚫 报告阻塞依赖给用户"]
+    FIND_CAND["🔍 查找 ready / running<br/>并行派发候选项"]
+
+    READ_PROG2["📖 读 PROGRESS.md"]
+    READ_PLAN{"需要审查<br/>决策/范围?"}
+    SKIP_PLAN["跳过 PLAN.md"]
+    READ_PLAN2["📖 读 PLAN.md"]
+
+    RECOVER["🔄 恢复状态:<br/>phase · gate · tier<br/>ready · running · blocked · done<br/>activeQuestion · nextAction"]
+
+    ACTION["▶ 执行 nextAction"]
+
+    START --> C1
+    C1 -->|"否"| DIRECT
+    C1 -->|"是"| READ_PROG
+    READ_PROG -->|"无"| NO_TASK
+    READ_PROG -->|"有"| HAS_TASK
+    HAS_TASK --> READ_STATE
+    READ_STATE --> CHK_DEPS
+    CHK_DEPS -->|"是"| RPT_BLOCK
+    CHK_DEPS -->|"否"| CHK_ITEMS
+    RPT_BLOCK --> CHK_ITEMS
+    CHK_ITEMS -->|"是"| FIND_CAND
+    CHK_ITEMS -->|"否"| READ_PROG2
+    FIND_CAND --> READ_PROG2
+    READ_PROG2 --> READ_PLAN
+    READ_PLAN -->|"是"| READ_PLAN2
+    READ_PLAN -->|"否"| SKIP_PLAN
+    READ_PLAN2 --> RECOVER
+    SKIP_PLAN --> RECOVER
+    RECOVER --> ACTION
+
+    style START fill:#a371f7,stroke:#c0a0ff,color:#fff
+    style DIRECT fill:#3fb950,stroke:#5cdb6e,color:#fff
+    style NO_TASK fill:#30363d,stroke:#484f58,color:#8b949e
+    style HAS_TASK fill:#58a6ff,stroke:#7ab8ff,color:#fff
+    style RPT_BLOCK fill:#f85149,stroke:#ff6b6b,color:#fff
+    style FIND_CAND fill:#d29922,stroke:#e6b74a,color:#000
+    style RECOVER fill:#3fb950,stroke:#5cdb6e,color:#fff
+    style ACTION fill:#a371f7,stroke:#c0a0ff,color:#fff
+    </div>
+    <div class="legend">
+      <span><span class="dot" style="background:#a371f7"></span> 入口/出口</span>
+      <span><span class="dot" style="background:#3fb950"></span> 快速路径</span>
+      <span><span class="dot" style="background:#58a6ff"></span> 状态恢复</span>
+      <span><span class="dot" style="background:#f85149"></span> 阻塞报告</span>
+      <span><span class="dot" style="background:#d29922"></span> 并行候选项</span>
+      <span><span class="dot" style="background:#30363d"></span> 终止</span>
+    </div>
+  </div>
+</main>
+
+<footer>
+  Harness WF Flowcharts · 基于 WF-STATE.md v1 · WF-KERNEL.md v1 · 点击标签页切换视图
+</footer>
+
+<script>
+mermaid.initialize({
+  startOnLoad: true,
+  theme: 'dark',
+  themeVariables: {
+    primaryColor: '#30363d',
+    primaryTextColor: '#c9d1d9',
+    primaryBorderColor: '#484f58',
+    lineColor: '#58a6ff',
+    secondaryColor: '#21262d',
+    tertiaryColor: '#161b22',
+    fontSize: '14px',
+  },
+  flowchart: {
+    useMaxWidth: true,
+    htmlLabels: true,
+    curve: 'basis',
+    padding: 20,
+    nodeSpacing: 50,
+    rankSpacing: 60,
+  },
+  securityLevel: 'sandbox',
+});
+
+function switchTab(name) {
+  document.querySelectorAll('.diagram').forEach(d => d.classList.remove('active'));
+  document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+</body>
+</html>

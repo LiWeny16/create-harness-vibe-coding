@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "skillId": "workflow-ontology",
+  "name": "Workflow Ontology",
+  "source": "Harness/a2a/skills/workflow-ontology.json",
+  "description": "Canonical read-only semantic model for Agent nodes. Uses GET /api/workflow/ontology so Agents understand node classes, relations, and action affordances before acting.",
+  "triggers": [
+    "workflow semantics",
+    "node ontology",
+    "node classes",
+    "relation semantics",
+    "action affordances",
+    "choose capability",
+    "choose connected node",
+    "before acting",
+    "语义",
+    "节点能力"
+  ],
+  "environment": [
+    "HARNESS_PEER_SESSION_ID",
+    "HARNESS_PEER_RUNTIME",
+    "HARNESS_AGENT_KIND",
+    "HARNESS_WORKFLOW_MODE",
+    "HARNESS_WORKFLOW_NODE_ID",
+    "HARNESS_WORKFLOW_MAP",
+    "HARNESS_NODE_HOME",
+    "HARNESS_NODE_INIT",
+    "HARNESS_WF_UI_URL"
+  ],
+  "policy": {
+    "mainAgent": [
+      "workflow-ontology",
+      "read-semantic-node-model",
+      "read-action-affordances",
+      "read-before-acting",
+      "prefer-connected-resource-output",
+      "prefer-typed-backend-actions"
+    ],
+    "subagent": [
+      "workflow-ontology",
+      "read-semantic-node-model",
+      "return-evidence"
+    ],
+    "denied": [
+      "workflow-map-file-mutation",
+      "component-state-file-mutation",
+      "event-state-file-mutation",
+      "capability-state-file-mutation",
+      "goal-state-file-mutation",
+      "task-state-mutation",
+      "invented-node-actions"
+    ]
+  }
+}

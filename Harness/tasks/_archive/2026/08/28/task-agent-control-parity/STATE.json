@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-agent-control-parity",
+  "status": "archived",
+  "mode": "wf-max",
+  "defaultRuntime": "claude",
+  "tier": "full",
+  "phase": "archived",
+  "gate": "D-GATE",
+  "updatedAt": "2026-08-28T02:35:58.922Z",
+  "activeQuestion": null,
+  "nextAction": "W1 parallel: P1 data layer, P4 store+CLI, P6 zIndex, P5 undo design",
+  "acceptance": [
+    "P1: identity model simplified — all agents equal permissions; spawn depth-gated (root-only, depth=1 max)",
+    "P2: resume wired — restart continues session history",
+    "P3: dock typed actions (attach/detach/set-side) + UI-through-backend sync",
+    "P4: updateEdge wired (HTTP + CLI)",
+    "P5: undo design doc + server-side graph-op revert",
+    "P6: click-node communication panel + zIndex fix (no node above others)",
+    "E2E: real-terminal end-to-end control test passes"
+  ],
+  "queues": {
+    "ready": [
+      "W1-P1-data",
+      "W1-P4-store",
+      "W1-P6-zindex",
+      "W1-P5-design"
+    ],
+    "running": [],
+    "blocked": [],
+    "done": []
+  },
+  "dispatchLedger": [],
+  "decisions": [
+    "D-A: no backend auth, no CLI identity checks (user decision)",
+    "D-B: main/subagent permission distinction removed — equal permissions, identity is a role label only",
+    "D-C: only spawn is depth-gated — root agent (no parent) spawns canvas agents; depth-1 agents rejected for canvas spawn; runtime built-in subagents unrestricted",
+    "D-D: resume required",
+    "D-E: dock typed actions + UI-backend single semantics",
+    "D-F: updateEdge required",
+    "D-G: undo design incomplete — design first, then implement",
+    "D-H: click-node communication visibility + zIndex must not elevate above other nodes",
+    "D-I: no exec mode (user decision)",
+    "D-J: all implementation via haiku workers; final E2E control test with real terminals"
+  ],
+  "risks": [
+    "M1: server.mjs is contended (P1 gates + P2 resume + P3 dock + P4 route) — single-owner wave W2",
+    "M2: depth rule needs actor resolution from env/headers — anonymous calls have no depth (treated as root? decided: anonymous actor = depth unknown → allow spawn as before, since no auth by design)",
+    "M3: E2E test costs real API calls — bounded, opt-in"
+  ],
+  "artifacts": [],
+  "links": {
+    "dependsOn": [
+      "task-action-registry-consolidation"
+    ],
+    "blocks": [],
+    "related": [
+      "task-terminal-full-control",
+      "task-subagent-strategy-2x2-matrix"
+    ]
+  },
+  "defaultAgentRuntime": "claude"
+}

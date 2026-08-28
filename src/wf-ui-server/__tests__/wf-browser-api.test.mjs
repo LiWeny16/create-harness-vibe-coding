@@ -149,7 +149,7 @@ test('wf-browser capabilities and run/window/lease/artifact APIs expose backend 
   assert.equal(launchUrl.status, 200);
   assert.equal(launchUrl.body.leaseId, lease.body.lease.leaseId);
   assert.match(launchUrl.body.launchUrl, /^http:\/\/127\.0\.0\.1:\d+\/workflow\?/);
-  assert.match(launchUrl.body.launchUrl, /token=/);
+  assert.doesNotMatch(launchUrl.body.launchUrl, /token=/);
 
   const conflict = await postJson(baseUrl, token, `/api/wf-browser/runs/${run.body.run.runId}/windows/${win.body.window.windowId}/lease`, {
     type: 'control',

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { CSSProperties, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import {
   Check,
   ChevronLeft,
@@ -24,10 +24,10 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import { motion } from 'motion/react';
 import { apiJson, invalidateApiCache } from '../api';
 import type { WorkflowNode, WorkflowNodeConfig, WorkflowNodeSkillPolicy } from '../types';
 import { useT } from '../i18n/index';
+import WorkflowFloatingPanel from './workflow/WorkflowFloatingPanel';
 
 type NodeConfigPatchResponse = {
   ok?: boolean;
@@ -79,6 +79,7 @@ type Props = {
   starting: boolean;
   stopping: boolean;
   deleting: boolean;
+  loading?: boolean;
   onClose: () => void;
   onOpenTerminal: () => void;
   onOpenDrawer: () => void;
@@ -96,14 +97,6 @@ type Props = {
 type PermissionMode = 'full-access' | 'workspace-write' | 'read-only';
 type SettingsCategory = 'core' | 'runtime' | 'routing' | 'skills' | 'context' | 'advanced';
 type ActiveSettingsCategory = SettingsCategory | 'all';
-
-const panelStyle: CSSProperties = {
-  border: '1px solid var(--border)',
-  borderRadius: 'var(--radius)',
-  background: 'rgba(255,255,255,0.96)',
-  boxShadow: '0 18px 46px rgba(15,23,42,0.14)',
-  backdropFilter: 'blur(16px)',
-};
 
 const defaultRecommendedSkills = ['wf-max', 'tdd', 'wf-browser'];
 const defaultContextSources = ['workflow-map', 'task-capsule', 'terminal-transcript'];
@@ -240,18 +233,27 @@ function cwdFromWorkspacePath(path: string, projectRoot?: string, fallback?: str
 function TipButton({ id, label, onHover }: { id: string; label: string; onHover: (label: string) => void }) {
   const t = useT();
   const translatedLabel = t(label);
+  const tooltipId = `${id}-tooltip`;
+  const show = () => {
+    onHover(translatedLabel);
+  };
   return (
-    <button
-      type="button"
-      data-testid={`${id}-tip`}
-      className="workflow-node-settings-tip"
-      aria-label={t('Help')}
-      title={translatedLabel}
-      onMouseEnter={() => onHover(translatedLabel)}
-      onFocus={() => onHover(translatedLabel)}
-    >
-      ?
-    </button>
+    <span className="workflow-node-settings-tip-wrap">
+      <button
+        type="button"
+        data-testid={`${id}-tip`}
+        className="workflow-node-settings-tip"
+        aria-label={t('Help')}
+        aria-describedby={tooltipId}
+        onMouseEnter={show}
+        onFocus={show}
+      >
+        ?
+      </button>
+      <span id={tooltipId} role="tooltip" className="workflow-node-settings-tooltip-popover">
+        {translatedLabel}
+      </span>
+    </span>
   );
 }
 
@@ -313,6 +315,7 @@ export default function WorkflowNodeSettingsPanel({
   starting,
   stopping,
   deleting,
+  loading = false,
   onClose,
   onOpenTerminal,
   onOpenDrawer,
@@ -600,18 +603,11 @@ export default function WorkflowNodeSettingsPanel({
   const cwdPickerAtRoot = normalizedCwdPickerPath === workspaceRootPath;
 
   return (
-    <motion.aside
-      data-canvas-control="true"
-      data-testid="workflow-node-settings"
-      className="workflow-node-settings wf-floating-panel nodrag nopan nowheel"
-      style={panelStyle}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ type: 'spring', stiffness: 230, damping: 30, mass: 0.86 }}
-      onPointerDown={event => event.stopPropagation()}
-      onMouseDown={event => event.stopPropagation()}
-      onWheel={event => event.stopPropagation()}
+    <WorkflowFloatingPanel
+      dataTestId="workflow-node-settings"
+      className="workflow-node-settings"
+      layer="settings"
+      bare
     >
       <div className="workflow-node-settings-header">
         <div className="workflow-node-settings-title">
@@ -634,6 +630,17 @@ export default function WorkflowNodeSettingsPanel({
         </div>
       </div>
 
+      {loading && (
+        <div className="workflow-node-settings-body" style={{ padding: 14, display: 'grid', gap: 10, color: 'var(--muted)', fontSize: 12 }}>
+          <div className="workflow-node-settings-skeleton" style={{ height: 14, borderRadius: 6 }} />
+          <div className="workflow-node-settings-skeleton" style={{ height: 14, borderRadius: 6, width: '70%' }} />
+          <div className="workflow-node-settings-skeleton" style={{ height: 14, borderRadius: 6, width: '85%' }} />
+          <div className="workflow-node-settings-skeleton" style={{ height: 14, borderRadius: 6, width: '55%' }} />
+        </div>
+      )}
+
+      {!loading && (
+      <>
       <div className="workflow-node-settings-search">
         <Search size={13} />
         <input
@@ -1056,6 +1063,8 @@ export default function WorkflowNodeSettingsPanel({
           </span>
         </div>
       )}
-    </motion.aside>
+      </>
+      )}
+    </WorkflowFloatingPanel>
   );
 }

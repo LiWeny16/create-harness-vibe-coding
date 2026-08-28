@@ -1,0 +1,291 @@
+{
+  "button": {
+    "visible": true,
+    "enabled": true
+  },
+  "layoutResponses": [
+    {
+      "ok": true,
+      "action": "layout",
+      "positions": {
+        "goal-task-standardize-workflow-nodes": {
+          "x": 1629.7267805184913,
+          "y": -1063.788504758784
+        },
+        "goal-task-agent-team-cooperation-layer": {
+          "x": 860,
+          "y": 160
+        },
+        "goal-task-terminal-full-control": {
+          "x": 860,
+          "y": 160
+        },
+        "session-65d8e1c7-0b61-4ed5-932a-e5918e386814": {
+          "x": 260,
+          "y": 220
+        },
+        "session-2ee8e972-5df9-4ef8-9417-031b03ae2fa8": {
+          "x": 1656,
+          "y": 220
+        },
+        "session-02b84544-e6e9-4f48-ae6e-7d06ad8e55dd": {
+          "x": 2354,
+          "y": 220
+        },
+        "session-91fc68f5-6772-4da0-8c5d-79beef5f3a5f": {
+          "x": 958,
+          "y": 220
+        },
+        "component-changelog-md-a4eda7": {
+          "x": 3052,
+          "y": 220
+        },
+        "component-deepseek-ai-harness-report-c5290e": {
+          "x": 3824,
+          "y": 220
+        },
+        "goal-task-fix-wf-ui-ux-issues": {
+          "x": 730.0268199233716,
+          "y": -48.73563218390804
+        },
+        "component-deepseek-ai-harness-report-aa250a": {
+          "x": 4596,
+          "y": 220
+        },
+        "goal-task-optimize-graph-layout": {
+          "x": 5368,
+          "y": 220
+        }
+      }
+    }
+  ],
+  "before": {
+    "nodeCount": 8,
+    "overlapPairs": [
+      {
+        "a": "session-65d8e1c7-0b61-4ed5-932a-e5918e386814",
+        "b": "component-deepseek-ai-harness-report-aa250a",
+        "iw": 140.55722045898438,
+        "ih": 107.84133911132812
+      },
+      {
+        "a": "goal-task-optimize-graph-layout",
+        "b": "session-91fc68f5-6772-4da0-8c5d-79beef5f3a5f",
+        "iw": 59.37335205078125,
+        "ih": 48.468017578125
+      },
+      {
+        "a": "component-changelog-md-a4eda7",
+        "b": "component-deepseek-ai-harness-report-aa250a",
+        "iw": 64.2200927734375,
+        "ih": 158.73269653320312
+      }
+    ],
+    "overlapCount": 3,
+    "crossingCount": 0,
+    "crossings": [],
+    "rects": [
+      {
+        "nodeId": "session-65d8e1c7-0b61-4ed5-932a-e5918e386814",
+        "x": 350.7411193847656,
+        "y": 356.4939880371094,
+        "w": 168.42630004882812,
+        "h": 107.84133911132812
+      },
+      {
+        "nodeId": "goal-task-optimize-graph-layout",
+        "x": 799.0701293945312,
+        "y": 380.7279968261719,
+        "w": 193.8720703125,
+        "h": 133.28701782226562
+      },
+      {
+        "nodeId": "session-91fc68f5-6772-4da0-8c5d-79beef5f3a5f",
+        "x": 690.0171508789062,
+        "y": 465.5469970703125,
+        "w": 168.42633056640625,
+        "h": 107.84130859375
+      },
+      {
+        "nodeId": "session-2ee8e972-5df9-4ef8-9417-031b03ae2fa8",
+        "x": 719.1558837890625,
+        "y": 621.781005859375,
+        "w": 168.42626953125,
+        "h": 107.84130859375
+      },
+      {
+        "nodeId": "session-02b84544-e6e9-4f48-ae6e-7d06ad8e55dd",
+        "x": 493.895263671875,
+        "y": 517.7349243164062,
+        "w": 168.42626953125,
+        "h": 107.84130859375
+      },
+      {
+        "nodeId": "component-changelog-md-a4eda7",
+        "x": 129.00001525878906,
+        "y": 315.29620361328125,
+        "w": 213.2592010498047,
+        "h": 190.23690795898438
+      },
+      {
+        "nodeId": "component-deepseek-ai-harness-report-c5290e",
+        "x": 1097.74072265625,
+        "y": 278.3776550292969,
+        "w": 213.25927734375,
+        "h": 190.23690795898438
+      },
+      {
+        "nodeId": "component-deepseek-ai-harness-report-aa250a",
+        "x": 278.03912353515625,
+        "y": 283.7919921875,
+        "w": 213.25921630859375,
+        "h": 190.23690795898438
+      }
+    ]
+  },
+  "after": {
+    "nodeCount": 8,
+    "overlapPairs": [],
+    "overlapCount": 0,
+    "crossingCount": 0,
+    "crossings": [],
+    "rects": [
+      {
+        "nodeId": "session-65d8e1c7-0b61-4ed5-932a-e5918e386814",
+        "x": 41.5,
+        "y": 464.75,
+        "w": 69.5,
+        "h": 44.5
+      },
+      {
+        "nodeId": "goal-task-optimize-graph-layout",
+        "x": 1318.5,
+        "y": 464.75,
+        "w": 80,
+        "h": 55
+      },
+      {
+        "nodeId": "session-91fc68f5-6772-4da0-8c5d-79beef5f3a5f",
+        "x": 216,
+        "y": 464.75,
+        "w": 69.5,
+        "h": 44.5
+      },
+      {
+        "nodeId": "session-2ee8e972-5df9-4ef8-9417-031b03ae2fa8",
+        "x": 390.5,
+        "y": 464.75,
+        "w": 69.5,
+        "h": 44.5
+      },
+      {
+        "nodeId": "session-02b84544-e6e9-4f48-ae6e-7d06ad8e55dd",
+        "x": 565,
+        "y": 464.75,
+        "w": 69.5,
+        "h": 44.5
+      },
+      {
+        "nodeId": "component-changelog-md-a4eda7",
+        "x": 739.5,
+        "y": 464.75,
+        "w": 88,
+        "h": 78.5
+      },
+      {
+        "nodeId": "component-deepseek-ai-harness-report-c5290e",
+        "x": 932.5,
+        "y": 464.75,
+        "w": 88,
+        "h": 78.5
+      },
+      {
+        "nodeId": "component-deepseek-ai-harness-report-aa250a",
+        "x": 1125.5,
+        "y": 464.75,
+        "w": 88,
+        "h": 78.5
+      }
+    ]
+  },
+  "screenshots": {
+    "before": "real-before.png",
+    "after": "real-after.png"
+  },
+  "uiText": {
+    "cands": [],
+    "tidyLines": [
+      "AC-002: top-right Tidy button re-lays out the graph hierarchically (edge direction defines layers, same-layer no overlap, crossings minimized); positions persisted via server; button has visible state (idle/busy) and i18n label",
+      "- Harden Windows PTY launch under detached UI servers by using the bundled ConPTY cleanup path by default, avoiding `AttachConsole failed` noise from the Homebridge PTY helper."
+    ]
+  },
+  "lsAfter": {
+    "harness:wf-ui:workflow-graph:v2": "{\"schemaVersion\":1,\"version\":2093,\"positions\":{\"goal-task-standardize-workflow-nodes\":{\"x\":1629.7267805184913,\"y\":-1063.788504758784},\"goal-task-agent-team-cooperation-layer\":{\"x\":860,\"y\":160},\"goal-task-terminal-full-control\":{\"x\":860,\"y\":160},\"session-65d8e1c7-0b61-4ed5-932a-e5918e386814\":{\"x\":260,\"y\":220},\"session-2ee8e972-5df9-4ef8-9417-031b03ae2fa8\":{\"x\":1656,\"y\":220},\"session-02b84544-e6e9-4f48-ae6e-7d06ad8e55dd\":{\"x\":2354,\"y\":220},\"session-91fc68f5-6772-4da0-8c5d-79beef5f3a5f\":{\"x\":958,\"y\":220},\"component-changelog-md-a4eda7\":{\"x\":3052,\"y\":220},\"component-deepseek-ai-harness-report-c529"
+  },
+  "pageErrors": [],
+  "consoleErrors": [],
+  "netLog": [
+    "GET http://127.0.0.1:43298/workflow",
+    "GET http://127.0.0.1:43298/assets/index-Kp2vbW20.js",
+    "GET http://127.0.0.1:43298/assets/index-BdAiz9yk.css",
+    "GET http://127.0.0.1:43298/assets/WorkflowRoute-C4JbflXj.js",
+    "GET http://127.0.0.1:43298/assets/terminalControl-7DFTh1V7.js",
+    "GET http://127.0.0.1:43298/assets/terminalControl-6GBZ9nXN.css",
+    "GET http://127.0.0.1:43298/assets/RuntimePicker-B20aJOt7.js",
+    "GET http://127.0.0.1:43298/assets/runtimeBrand-DzEDEyFi.js",
+    "GET http://127.0.0.1:43298/assets/index-BxuqOfGJ.js",
+    "GET http://127.0.0.1:43298/assets/proxy-DJe1w3He.js",
+    "GET http://127.0.0.1:43298/assets/x-SCebCM2P.js",
+    "GET http://127.0.0.1:43298/assets/settings-2-CqgzVnYg.js",
+    "GET http://127.0.0.1:43298/assets/shield-check-BwGAEy39.js",
+    "GET http://127.0.0.1:43298/assets/save-Ce5ZK3Gl.js",
+    "GET http://127.0.0.1:43298/assets/terminal-BuLzPRuW.js",
+    "GET http://127.0.0.1:43298/assets/useReducedMotion-DsTKhRh7.js",
+    "GET http://127.0.0.1:43298/assets/refresh-cw-DUV9n3Lh.js",
+    "GET http://127.0.0.1:43298/assets/WorkflowRoute-BnuhLJ6X.css",
+    "GET http://127.0.0.1:43298/api/project",
+    "GET http://127.0.0.1:43298/api/workflow",
+    "GET http://127.0.0.1:43298/api/settings",
+    "GET http://127.0.0.1:43298/api/settings",
+    "POST http://127.0.0.1:43298/api/debug/report",
+    "POST http://127.0.0.1:43298/api/debug/report",
+    "GET http://127.0.0.1:43298/api/a2a/snapshot",
+    "GET http://127.0.0.1:43298/api/runtimes",
+    "GET http://127.0.0.1:43298/api/tasks",
+    "POST http://127.0.0.1:43298/api/debug/report",
+    "POST http://127.0.0.1:43298/api/debug/report",
+    "GET http://127.0.0.1:43298/api/workspace/tree?path=",
+    "POST http://127.0.0.1:43298/api/workflow/nodes/component-changelog-md-a4eda7/actions/file.preview",
+    "GET http://127.0.0.1:43298/api/workspace/text?path=CHANGELOG.md&offset=0&limit=8192",
+    "GET http://127.0.0.1:43298/api/a2a/snapshot?since=2092%7C320%7C2026-08-14T07%3A02%3A58.237Z",
+    "POST http://127.0.0.1:43298/api/workflow/nodes/session-65d8e1c7-0b61-4ed5-932a-e5918e386814/actions/agent.layout",
+    "GET http://127.0.0.1:43298/api/a2a/snapshot?since=2092%7C320%7C2026-08-14T07%3A02%3A58.237Z",
+    "GET http://127.0.0.1:43298/api/project"
+  ],
+  "fetchLog": [
+    {
+      "url": "/api/a2a/snapshot",
+      "method": "GET",
+      "status": 200,
+      "body": "{\"schemaVersion\":1,\"snapshotVersion\":2092,\"generatedAt\":\"2026-08-14T11:01:45.642Z\",\"workflowId\":\"workflow-task-optimize-graph-layout\",\"taskId\":\"task-optimize-graph-layout\",\"mode\":\"wf\",\"phase\":\"exploration\",\"gate\":null,\"rootAgentId\":\"ceo\",\"subagentModes\":[{\"id\":\"built-in-subagents\",\"label\":\"Built-in Subagents\"},{\"id\":\"wf-node-subagents\",\"label\":\"WF Node Subagents\"}],\"availableWorkflows\":[{\"id\":\"wf-"
+    },
+    {
+      "url": "/api/a2a/snapshot?since=2092%7C320%7C2026-08-14T07%3A02%3A58.237Z",
+      "method": "GET",
+      "status": 200,
+      "body": "{\"unchanged\":true,\"fingerprint\":\"2092|320|2026-08-14T07:02:58.237Z\"}"
+    },
+    {
+      "url": "/api/workflow/nodes/session-65d8e1c7-0b61-4ed5-932a-e5918e386814/actions/agent.layout",
+      "method": "POST",
+      "status": 200,
+      "body": "{\"ok\":true,\"action\":\"layout\",\"positions\":{\"goal-task-standardize-workflow-nodes\":{\"x\":1629.7267805184913,\"y\":-1063.788504758784},\"goal-task-agent-team-cooperation-layer\":{\"x\":860,\"y\":160},\"goal-task-terminal-full-control\":{\"x\":860,\"y\":160},\"session-65d8e1c7-0b61-4ed5-932a-e5918e386814\":{\"x\":260,\"y\":220},\"session-2ee8e972-5df9-4ef8-9417-031b03ae2fa8\":{\"x\":1656,\"y\":220},\"session-02b84544-e6e9-4f48-a"
+    },
+    {
+      "url": "/api/a2a/snapshot?since=2092%7C320%7C2026-08-14T07%3A02%3A58.237Z",
+      "method": "GET",
+      "status": 200,
+      "body": "{\"schemaVersion\":1,\"snapshotVersion\":2093,\"generatedAt\":\"2026-08-14T11:01:54.674Z\",\"workflowId\":\"workflow-task-optimize-graph-layout\",\"taskId\":\"task-optimize-graph-layout\",\"mode\":\"wf\",\"phase\":\"exploration\",\"gate\":null,\"rootAgentId\":\"ceo\",\"subagentModes\":[{\"id\":\"built-in-subagents\",\"label\":\"Built-in Subagents\"},{\"id\":\"wf-node-subagents\",\"label\":\"WF Node Subagents\"}],\"availableWorkflows\":[{\"id\":\"wf-"
+    }
+  ]
+}

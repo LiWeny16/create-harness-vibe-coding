@@ -2,7 +2,6 @@ import { expect, test, type Page, type Route } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const token = process.env.WF_UI_E2E_TOKEN || 'playwright-m1-red';
 const repoRoot = process.env.WF_UI_E2E_PROJECT_ROOT
   || path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const sessionId = 'e2e-session-m1';
@@ -120,6 +119,47 @@ function workflowSnapshot() {
   };
 }
 
+function runtimeComponentNode(nodeId: string, payload: JsonRecord) {
+  const type = String(payload.type || 'file');
+  const statePath = `Harness/a2a/component-nodes/${nodeId}/state.json`;
+  const title = payload.title || payload.file?.name || 'File Node';
+  const state = {
+    nodeId,
+    type,
+    title,
+    revision: 1,
+    file: payload.file,
+    observableInputs: ['file'],
+    observableOutputs: ['file', 'path'],
+    statePath,
+  };
+  return {
+    ok: true,
+    node: {
+      nodeId,
+      kind: type,
+      version: 1,
+      lifecycle: 'ready',
+      status: { state: 'ready', updatedAt: '2026-08-01T00:00:00.000Z' },
+      graph: {
+        position: payload.position || { x: 260, y: 420 },
+        handles: [
+          { id: 'file', role: 'input', type: 'file', label: 'file' },
+          { id: 'path', role: 'output', type: 'path', label: 'path' },
+        ],
+        connections: [],
+      },
+      stateRef: { path: statePath, revision: 1 },
+      contentRef: payload.file,
+      settings: { schemaId: `${type}-settings`, values: {}, revision: 0 },
+      capabilities: ['state:read', 'state:update'],
+      ui: { previewKind: type, settingsPanel: `${type}-settings`, testId: `workflow-${type}-node`, labels: { title } },
+    },
+    state,
+    revision: 1,
+  };
+}
+
 function workspaceEntries(relPath: string) {
   const normalized = relPath.replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
   const table: Record<string, unknown[]> = {
@@ -229,6 +269,21 @@ async function installWorkflowFixture(page: Page): Promise<HarnessNetwork> {
       revision: 3,
     });
   });
+  await page.route(/\/api\/workflow\/nodes(?:\?.*)?$/, async route => {
+    if (route.request().method() === 'GET') return jsonResponse(route, { ok: true, nodes: [] });
+    const payload = route.request().postDataJSON() as JsonRecord;
+    network.componentCreateRequests.push(payload);
+    const nodeId = `component-file-${network.componentCreateRequests.length}`;
+    return jsonResponse(route, runtimeComponentNode(nodeId, payload), 201);
+  });
+  await page.route(/\/api\/workflow\/nodes\/.+/, route => {
+    const nodeId = new URL(route.request().url()).pathname.split('/').filter(Boolean)[3] || 'component-file-1';
+    return jsonResponse(route, runtimeComponentNode(nodeId, {
+      type: 'file',
+      title: 'File Node',
+      file: { source: 'workspace', path: 'package.json', name: 'package.json' },
+    }));
+  });
   await page.route('**/api/a2a/component-nodes', async route => {
     const payload = route.request().postDataJSON() as JsonRecord;
     network.componentCreateRequests.push(payload);
@@ -310,7 +365,7 @@ async function installWorkflowFixture(page: Page): Promise<HarnessNetwork> {
 }
 
 async function openWorkflow(page: Page) {
-  await page.goto(`/workflow?token=${encodeURIComponent(token)}`);
+  await page.goto('/workflow');
   await expect(page.getByTestId('workflow-canvas')).toBeVisible();
   await expect(page.getByTestId('workflow-node').first()).toBeVisible();
 }

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState, useEffect, useMemo } from 'react';
+import { lazy, Suspense, useState, useEffect, useMemo, useCallback } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -8,6 +8,10 @@ import { apiFetch, apiJson } from './api';
 import { I18nProvider } from './i18n';
 import { WfBrowserDebugRuntime, useWfBrowserCapabilities, type WfBrowserCapability } from './wfBrowserDebug';
 import { useWfBrowserRouteCapabilities } from './wfBrowserRouteCapabilities';
+
+// Persisted across refreshes so the terminal drawer reattaches to the same
+// backend session (the backend keeps the PTY alive; only the UI state dies).
+const ACTIVE_TERMINAL_SESSION_KEY = 'wf-ui.activeTerminalSession';
 
 const TaskList = lazy(() => import('./components/TaskList'));
 const WorkflowRoute = lazy(() => import('./components/WorkflowRoute'));
@@ -43,7 +47,19 @@ function loadingLabel(pathname: string) {
 export default function App() {
   const location = useLocation();
   const { connState, eventSeq, lastSync, lastError } = useServerConnection();
-  const [activeTerminalSession, setActiveTerminalSession] = useState<string | null>(null);
+  const [activeTerminalSession, setActiveTerminalSessionState] = useState<string | null>(null);
+  const setActiveTerminalSession = useCallback((value: string | null) => {
+    setActiveTerminalSessionState(value);
+    try {
+      if (value) {
+        sessionStorage.setItem(ACTIVE_TERMINAL_SESSION_KEY, value);
+      } else {
+        sessionStorage.removeItem(ACTIVE_TERMINAL_SESSION_KEY);
+      }
+    } catch {
+      // Storage may be unavailable (private mode / quota); persistence is best-effort.
+    }
+  }, []);
   const [errors, setErrors] = useState<string[]>([]);
   const [routePulse, setRoutePulse] = useState(false);
   const fullCanvas = location.pathname === '/workflow';
@@ -115,6 +131,20 @@ export default function App() {
     const handler = (e: ErrorEvent) => setErrors(prev => [...prev, e.message].slice(-20));
     window.addEventListener('error', handler);
     return () => window.removeEventListener('error', handler);
+  }, []);
+
+  useEffect(() => {
+    // Re-open the terminal drawer after a refresh so it reconnects to the
+    // same backend session. Only restores when a sessionId was persisted;
+    // an explicit close clears it and stays closed.
+    try {
+      const stored = sessionStorage.getItem(ACTIVE_TERMINAL_SESSION_KEY);
+      if (typeof stored === 'string' && stored) {
+        setActiveTerminalSessionState(stored);
+      }
+    } catch {
+      // Best-effort restore.
+    }
   }, []);
 
   useEffect(() => {

@@ -1,5 +1,18 @@
 {
   "schemaVersion": 1,
+  "roleVocabulary": {
+    "note": "Canonical roleTitle vocabulary for session role profiles (spec §3.1/§3.2). roleTitle is the session/profile vocabulary; this file remains the role graph vocabulary (agentId, kind, skills, permissions).",
+    "canonical": ["ceo", "manager", "implementer", "reviewer", "verifier", "planner", "terminal-controller"],
+    "kindToRoleTitle": {
+      "controller": "ceo",
+      "planner": "planner",
+      "architecture": "architect",
+      "implementer": "implementer",
+      "review": "reviewer",
+      "validation": "verifier",
+      "runtime": "terminal-controller"
+    }
+  },
   "rootAgentId": "ceo",
   "agents": [
     {
@@ -7,7 +20,7 @@
       "role": "CEO Leader",
       "level": 0,
       "kind": "controller",
-      "skills": ["wf", "subagent-orchestrator", "terminal-control", "wf-ui-map"],
+      "skills": ["wf", "subagent-orchestrator", "terminal-control", "workflow-node-map", "workflow-ontology", "workflow-context", "workflow-node-actions"],
       "permissions": ["plan", "dispatch", "read-terminals", "send-terminal-input"]
     },
     {
@@ -31,7 +44,7 @@
       "role": "Backend Expert",
       "level": 1,
       "kind": "implementer",
-      "skills": ["runtime-detection", "terminal-control", "wf-ui-map", "a2a-files"],
+      "skills": ["runtime-detection", "terminal-control", "workflow-node-map", "workflow-ontology", "workflow-context", "workflow-node-actions", "a2a-files"],
       "permissions": ["read-code", "write-backend", "terminal-io"]
     },
     {
@@ -63,7 +76,7 @@
       "role": "Terminal Controller",
       "level": 1,
       "kind": "runtime",
-      "skills": ["terminal-control", "wf-ui-map"],
+      "skills": ["terminal-control", "workflow-node-map", "workflow-ontology", "workflow-context", "workflow-node-actions"],
       "permissions": ["read-terminals", "send-terminal-input"]
     }
   ],

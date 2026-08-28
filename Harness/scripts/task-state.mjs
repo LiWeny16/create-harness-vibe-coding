@@ -72,7 +72,7 @@ const STATUS_ALIASES = new Map([
   ['close-out', 'closeout'],
 ]);
 const OPEN_TASK_STATUSES = new Set(['active', 'blocked', 'in_progress', 'running', 'pending', 'needs-user-decision']);
-const VALUE_FLAGS = new Set(['--keep', '--mode', '--phase', '--status', '--task', '--text', '--title', '--note', '--context']);
+const VALUE_FLAGS = new Set(['--keep', '--mode', '--phase', '--status', '--task', '--text', '--title', '--note', '--context', '--group']);
 
 function hasFlag(name) {
   return args.includes(name);
@@ -111,10 +111,20 @@ function print(payload) {
   if (payload.command === 'list') {
     console.log(`Active Task: ${payload.activeTask || 'None'}`);
     console.log(`Tasks: ${payload.taskCount}`);
-    for (const task of payload.tasks || []) {
+    const renderTask = (task) => {
       const deps = task.dependsOn?.length ? `  dependsOn: [${task.dependsOn.join(', ')}]` : '';
       const blocks = task.blocks?.length ? `  blocks: [${task.blocks.join(', ')}]` : '';
       console.log(`- ${task.id}: status=${task.status || '-'} phase=${task.phase || '-'}${deps}${blocks}`);
+    };
+    if (payload.groups) {
+      console.log('');
+      console.log('=== Task Groups ===');
+      for (const group of payload.groups) {
+        console.log(`${group.group} (${group.tasks.length} task${group.tasks.length === 1 ? '' : 's'}):`);
+        for (const task of group.tasks) renderTask(task);
+      }
+    } else {
+      for (const task of payload.tasks || []) renderTask(task);
     }
 
     // Render graph
@@ -154,6 +164,7 @@ function print(payload) {
     for (const op of payload.operations) console.log(`- ${op.action}: ${op.taskId || op.path} (${op.reason})`);
   } else if (payload.command === 'archive') {
     if (payload.dryRun) console.log('[DRY RUN] No files moved. Use --apply to execute.');
+    if (payload.group) console.log(`Group: ${payload.group}`);
     console.log(`Scanned: ${payload.scanned}, Archiveable: ${payload.archiveable}, To archive: ${payload.toArchive}, Kept: ${payload.kept}, Skipped: ${payload.skipped}`);
     for (const r of payload.results) {
       const suffix = r.path ? ` -> _archive/${r.path}` : '';
@@ -179,22 +190,27 @@ function usage() {
     message: `Usage: node Harness/scripts/task-state.mjs <command> [options]
 
 Commands:
-  list [--json]                         List task state with dependency/resume info.
+  list [--json] [--group <tag>] [--by-group]   List task state with dependency/resume info.
+                                        --group filters by tag; --by-group prints sections.
   validate [--strict] [--json]          Validate state consistency (includes link checks).
   reconcile [--dry-run|--apply] [--json] Normalize STATE.json and root PROGRESS.md.
   set-active <task-id> [--dry-run]       Set the single active task.
   transition <task-id> --status <s> --phase <p> [--dry-run]
-  archive [--dry-run|--apply] [--keep n] [--task id] [--json]
+  archive [--dry-run|--apply] [--keep n] [--task id] [--group <tag>] [--json]
                                         Archive eligible tasks to _archive/YYYY/MM/DD/.
-                                        Explicit --apply (no --task filter) archives ALL.
+                                        Explicit --apply (no --task/--group filter) archives ALL.
+                                        --group archives a whole tag (batch op, no confirmation;
+                                        it implies --apply unless --dry-run is given).
   history list [--year YYYY] [--month MM] [--json]
                                         List archived tasks, optional year/month filter.
   history search <keyword> [--json]      Full-text search archived PLAN/PROGRESS/PROBLEM/REFERENCES.
   history load <task-id> [--json]        Load one archived task's full record.
   history delete <task-id> [--dry-run|--apply] [--json]
                                         Delete an archived task (audit trail written).
-  record <task-id> [--create] [--text "description"] [--status <s>] [--mode <m>] [--dry-run|--apply] [--json]
+  record <task-id> [--create] [--text "description"] [--status <s>] [--mode <m>] [--group <tag>] [--dry-run|--apply] [--json]
                                         Create or update a task record.
+                                        --group writes the optional group tag; missing/empty
+                                        renders as "default" at read time (no migration needed).
   open [--json]                         List open (non-archived, active-status) tasks.
 
 Archive defaults to dry-run and keeps ${OUTER_TASK_CAP} non-archived task capsules.`,
@@ -858,8 +874,13 @@ function buildListGraph(expandedTasks) {
   return graph;
 }
 
+function taskGroupFor(state) {
+  return String(state?.group || '').trim() || 'default';
+}
+
 function runList() {
   const { rootProgress, tasks } = collectTasks();
+  const groupFilter = flagValue('--group');
 
   const expandedTasks = tasks.map(task => {
     const state = task.state || {};
@@ -871,6 +892,7 @@ function runList() {
       phase: normalizePhase(state.phase) || task.phase,
       rootPhase: task.rootPhase,
       progressPhase: task.progressPhase,
+      group: taskGroupFor(state),
       dependsOn: Array.isArray(links.dependsOn) ? links.dependsOn : [],
       blocks: Array.isArray(links.blocks) ? links.blocks : [],
       statusDisplay: status || '-',
@@ -880,14 +902,32 @@ function runList() {
     };
   });
 
-  const graph = buildListGraph(expandedTasks);
+  const selectedTasks = groupFilter
+    ? expandedTasks.filter(task => task.group === groupFilter)
+    : expandedTasks;
+
+  let groups = null;
+  if (hasFlag('--by-group')) {
+    const byName = new Map();
+    for (const task of selectedTasks) {
+      if (!byName.has(task.group)) byName.set(task.group, []);
+      byName.get(task.group).push(task);
+    }
+    groups = [...byName.entries()]
+      .map(([group, groupTasks]) => ({ group, tasks: groupTasks }))
+      .sort((a, b) => (a.group === 'default' ? 1 : 0) - (b.group === 'default' ? 1 : 0) || a.group.localeCompare(b.group));
+  }
+
+  const graph = buildListGraph(selectedTasks);
 
   const payload = {
     ok: true,
     command: 'list',
-    taskCount: expandedTasks.length,
+    taskCount: selectedTasks.length,
     activeTask: rootProgress.activeTask,
-    tasks: expandedTasks,
+    groupFilter: groupFilter || null,
+    tasks: selectedTasks,
+    groups,
     graph: {
       roots: graph.roots.map(t => t.id),
       depEdges: graph.depEdges,
@@ -959,10 +999,22 @@ function buildArchivePlan() {
     }
   }
 
+  const groupFilter = flagValue('--group');
+  if (taskFilter && groupFilter) {
+    return { ok: false, command: 'archive', errors: ['archive accepts either --task <id> or --group <tag>, not both'], warnings: [], results: [] };
+  }
+
   const { rootProgress, tasks } = collectTasks();
-  const selectedTasks = taskFilter ? tasks.filter(task => task.id === taskFilter) : tasks;
+  const selectedTasks = taskFilter
+    ? tasks.filter(task => task.id === taskFilter)
+    : groupFilter
+    ? tasks.filter(task => taskGroupFor(task.state) === groupFilter)
+    : tasks;
   if (taskFilter && selectedTasks.length === 0) {
     return { ok: false, command: 'archive', errors: [`Task "${taskFilter}" not found in Harness/tasks/`], warnings: [], results: [] };
+  }
+  if (groupFilter && selectedTasks.length === 0) {
+    return { ok: false, command: 'archive', errors: [`Group "${groupFilter}" not found in Harness/tasks/`], warnings: [], results: [] };
   }
 
   const archiveable = [];
@@ -974,13 +1026,14 @@ function buildArchivePlan() {
   }
 
   const dryRun = !hasFlag('--apply');
-  const explicitTrigger = dryRun === false && !taskFilter;
+  const explicitTrigger = dryRun === false && !taskFilter && !groupFilter;
   archiveable.sort((a, b) => a.mtimeMs - b.mtimeMs || a.id.localeCompare(b.id));
 
-  // Explicit user trigger (no --task filter, with --apply): archive ALL eligible tasks.
+  // Explicit user trigger (no --task/--group filter, with --apply): archive ALL eligible tasks.
   // Explicit --task targets the selected eligible task in both dry-run and apply.
+  // Explicit --group is a batch op that archives every eligible task in the tag (implies apply).
   // Auto/scheduled/dry-run: only archive tasks exceeding --keep cap.
-  const toArchiveCount = taskFilter
+  const toArchiveCount = taskFilter || groupFilter
     ? archiveable.length
     : explicitTrigger
     ? archiveable.length
@@ -1019,8 +1072,8 @@ function buildArchivePlan() {
       ...dateParts(task.mtimeMs),
       action: hasFlag('--apply') ? 'archived' : 'would-archive',
       status: hasFlag('--apply')
-        ? (explicitTrigger ? 'explicit --apply: all eligible' : 'moved')
-        : (taskFilter ? 'dry-run' : `dry-run (${toArchiveCount} of ${archiveable.length} eligible)`),
+        ? (groupFilter ? `group "${groupFilter}": batch archive` : explicitTrigger ? 'explicit --apply: all eligible' : 'moved')
+        : (taskFilter ? 'dry-run' : groupFilter ? `dry-run (group "${groupFilter}")` : `dry-run (${toArchiveCount} of ${archiveable.length} eligible)`),
     })),
     ...keptArchiveable.map(task => ({
       dir: task.id,
@@ -1043,6 +1096,7 @@ function buildArchivePlan() {
     ok: true,
     command: 'archive',
     dryRun: !hasFlag('--apply'),
+    group: groupFilter || null,
     keep: keepValue,
     scanned: selectedTasks.length,
     archiveable: archiveable.length,
@@ -1247,6 +1301,8 @@ function appendArchiveIndex(entries, graphContent) {
 }
 
 function runArchive() {
+  // --group is a confirmation-less batch op: it implies --apply unless --dry-run is given.
+  if (hasFlag('--group') && !hasFlag('--apply') && !hasFlag('--dry-run')) args.push('--apply');
   const plan = buildArchivePlan();
   if (!plan.ok) finish(plan, 1);
 
@@ -1425,6 +1481,7 @@ function runRecord() {
   const text = flagValue('--text');
   const statusRaw = flagValue('--status');
   const modeRaw = flagValue('--mode');
+  const groupRaw = flagValue('--group');
 
   if (!existing.state && isCreate) {
     const now = new Date().toISOString();
@@ -1439,6 +1496,7 @@ function runRecord() {
     const mode = modeRaw || 'direct';
     const newState = defaultState(taskId, status, 'intake', now);
     newState.mode = mode;
+    if (groupRaw) newState.group = String(groupRaw).trim();
     if (text) newState.nextAction = text;
   if (modeRaw) {
     const normalizedMode = normalizeMode(modeRaw);
@@ -1518,6 +1576,7 @@ function runRecord() {
       }
       updated.mode = normalizedMode;
     }
+    if (groupRaw) updated.group = String(groupRaw).trim();
     if (text) updated.nextAction = text;
 
     if (actuallyApply) {

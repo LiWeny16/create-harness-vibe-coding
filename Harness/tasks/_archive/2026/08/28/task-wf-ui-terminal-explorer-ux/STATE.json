@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-wf-ui-terminal-explorer-ux",
+  "status": "archived",
+  "mode": "direct",
+  "defaultRuntime": "codex",
+  "defaultAgentRuntime": "codex",
+  "tier": "none",
+  "phase": "archived",
+  "gate": null,
+  "updatedAt": "2026-08-28T02:35:58.916Z",
+  "activeQuestion": null,
+  "nextAction": "全部落地并验证：m8 8/8 + m4 6/6 + m7 7/7 e2e、reveal 后端单测 4/4、typecheck+build 通过。已知项：m2 settings 面板回归经 stash 二分实证为本任务外预存在问题；m4/m7 fixture 补了 ops/reveal/a2a-nodes mock（防御真实文件写入）。",
+  "acceptance": [],
+  "queues": {
+    "ready": [],
+    "running": [],
+    "blocked": [],
+    "done": []
+  },
+  "dispatchLedger": [],
+  "decisions": [],
+  "risks": [],
+  "artifacts": [],
+  "links": {
+    "dependsOn": [],
+    "blocks": [],
+    "related": []
+  },
+  "closedBy": "goal-complete",
+  "preCompletePhase": "closeout"
+}

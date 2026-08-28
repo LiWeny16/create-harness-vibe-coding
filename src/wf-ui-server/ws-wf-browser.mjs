@@ -1,5 +1,4 @@
 import crypto from 'node:crypto';
-import { validateToken } from './token.mjs';
 
 const KEEPALIVE_INTERVAL = 15000;
 const PING_TIMEOUT = 5000;
@@ -152,11 +151,6 @@ export function attachWfBrowserWs(httpServer, expectedToken, projectRoot, option
   httpServer.on('upgrade', (req, socket, head) => {
     const url = new URL(req.url, `http://${req.headers.host || '127.0.0.1'}`);
     if (url.pathname !== '/ws/wf-browser') return;
-
-    if (!validateToken(url.searchParams.get('token'), expectedToken)) {
-      sendHttpError(socket, 401, 'Invalid or missing token');
-      return;
-    }
 
     const key = req.headers['sec-websocket-key'];
     const digest = crypto.createHash('sha1').update(key + WS_GUID).digest('base64');

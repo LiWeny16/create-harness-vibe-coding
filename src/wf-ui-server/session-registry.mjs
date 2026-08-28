@@ -88,12 +88,17 @@ export class SessionRegistry {
     runtime,
     agentKind = '',
     role = 'terminal-agent',
+    roleTitle = '',
+    displayName = '',
+    responsibility = '',
+    roleProfileRef = null,
     objective = '',
     cols = 120,
     rows = 32,
+    uiMode = 'pty',
     projectRoot = '',
     cwd = '',
-    subagentMode = 'wf-subagents',
+    subagentMode = 'built-in-subagents',
     workflowMode = null,
     model = '',
     provider = '',
@@ -126,6 +131,18 @@ export class SessionRegistry {
       throw new Error(`Invalid runtime '${runtime}'. Must be one of: ${[...ALLOWED_RUNTIMES].join(', ')}`);
     }
     const resolvedAgentKind = resolveAgentKind(agentKind, role);
+    // Role identity (agent-team-cooperation-spec §3.2): roleTitle is the
+    // session/profile role vocabulary; 'terminal-agent' remains only as the
+    // legacy default for manually spawned PTYs with no role profile.
+    const resolvedRoleTitle = String(roleTitle || '').trim()
+      || (String(role || '').trim() && String(role).trim() !== 'terminal-agent' ? String(role).trim() : 'terminal-agent');
+    const resolvedDisplayName = String(displayName || '').trim() || resolvedRoleTitle;
+    // Backward compat: pre-rename callers send the legacy 'wf-subagents' id;
+    // normalize it to the canonical 'wf-node-subagents' value before storing.
+    const resolvedSubagentMode = subagentMode === 'wf-subagents' ? 'wf-node-subagents' : subagentMode;
+    // Chat mode swaps the PTY transport for structured stdio drivers on the
+    // same node semantics; unknown values fall back to the PTY default.
+    const resolvedUiMode = String(uiMode || '').trim().toLowerCase() === 'chat' ? 'chat' : 'pty';
 
     const now = new Date().toISOString();
     const sessionId = generateSessionId();
@@ -138,10 +155,14 @@ export class SessionRegistry {
       runtime,
       agentKind: resolvedAgentKind,
       role,
+      roleTitle: resolvedRoleTitle,
+      displayName: resolvedDisplayName,
+      responsibility: String(responsibility || '').trim(),
+      roleProfileRef: roleProfileRef || null,
       objective,
       projectRoot,
       cwd: cwd || projectRoot || '',
-      subagentMode,
+      subagentMode: resolvedSubagentMode,
       workflowMode,
       model,
       provider,
@@ -172,6 +193,8 @@ export class SessionRegistry {
       status: 'starting',
       cols,
       rows,
+      uiMode: resolvedUiMode,
+      providerSessionId: null,
       attachMode: false,
       startedAt: now,
       updatedAt: now,

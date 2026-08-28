@@ -95,7 +95,7 @@ function workflowCapabilities(pathname: string): WfBrowserCapability[] {
         edges: count('[data-testid="workflow-edge"], .react-flow__edge'),
         selectedNodes: count('.react-flow__node.selected, [aria-selected="true"]'),
         contextMenuOpen: exists('[data-testid="workflow-context-menu"], [data-testid="workflow-node-context-menu"]'),
-        configOpen: exists('[data-testid="workflow-canvas-config"], [data-testid="workflow-node-config"]'),
+        configOpen: exists('[data-testid="workflow-node-config"]'),
       }),
       actions: {
         'act.intent': { label: 'Run semantic workflow graph command' },

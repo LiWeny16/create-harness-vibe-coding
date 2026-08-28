@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "skills": {
+    "improve-codebase-architecture": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/engineering/improve-codebase-architecture/SKILL.md",
+      "computedHash": "3929c6892605b67b60503ced451876e9b313d1a909ab7066fbcd9967c56ed226"
+    },
+    "make-interfaces-feel-better": {
+      "source": "jakubkrehel/make-interfaces-feel-better",
+      "sourceType": "github",
+      "skillPath": "skills/make-interfaces-feel-better/SKILL.md",
+      "computedHash": "ee95073d274bd8f792f917a2b2c2963d46c1b31c81723e6ef3c63ffe33bd681c"
+    }
+  }
+}

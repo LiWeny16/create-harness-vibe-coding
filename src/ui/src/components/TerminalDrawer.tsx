@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ClipboardEvent, DragEvent, PointerEvent } from 'react';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import { Terminal as XTerm } from '@xterm/xterm';
 import '@xterm/xterm/css/xterm.css';
-import { Clipboard, Copy, Eye, EyeOff, Maximize2, Minimize2, Square, Terminal, Trash2, X } from 'lucide-react';
+import { Clipboard, Copy, Eye, EyeOff, Maximize2, Minimize2, Square, Terminal, Trash2, Users, X } from 'lucide-react';
 import { motion } from 'motion/react';
 import { apiJson, wsUrl } from '../api';
 import { useT } from '../i18n/index';
@@ -16,6 +16,7 @@ import {
   handleTerminalDrop,
   handleTerminalPaste,
   installTerminalResponseGuards,
+  loadTerminalWebglAddon,
   pasteClipboardToTerminal,
   stripTerminalResponseInput,
   terminalShouldHandleKey as terminalControlShouldHandleKey,
@@ -29,6 +30,39 @@ type Props = {
 type Point = { x: number; y: number };
 type Size = { width: number; height: number };
 type TerminalSize = { cols: number; rows: number };
+
+// Bridge message envelope (src/wf-ui-server/bridge-store.mjs). Cooperation
+// audit entries are sourced from the bridge messages API, grouped by requestId
+// for structured requests; legacy entries and wakeup dispatches render as-is.
+// Timed-out is DERIVED client-side from real timestamps only (spec §4.5): an
+// ask entry with no reply entry whose last ask is older than the threshold.
+const AUDIT_TIMEOUT_THRESHOLD_MS = 5 * 60 * 1000;
+type BridgeEntry = {
+  seq?: number;
+  ts?: string;
+  bridgeId?: string;
+  messageId?: string;
+  threadId?: string;
+  topic?: string;
+  replyTo?: string;
+  requestId?: string;
+  toRole?: string;
+  deliveryMode?: string;
+  fromSessionId?: string;
+  toSessionId?: string;
+  fromNodeId?: string;
+  toNodeId?: string;
+  source?: string;
+  data?: string;
+};
+
+type AuditSessionInfo = {
+  sessionId: string;
+  displayName: string;
+  roleTitle: string;
+  runtime: string;
+  agentKind: string;
+};
 
 const RUNTIME_LABELS: Record<string, string> = {
   claude: 'Claude Code',
@@ -75,9 +109,32 @@ function initialSize(): Size {
   };
 }
 
+// 全屏模式四周留边，避免终端完全贴死显示器边缘（仍可看到画布背景）。
+const FULLSCREEN_MARGIN = 16;
+
 function shortId(value: string | undefined | null) {
   if (!value) return '';
   return value.length > 18 ? `${value.slice(0, 8)}...${value.slice(-6)}` : value;
+}
+
+function shortTime(value: string | undefined) {
+  if (!value) return '';
+  const time = Date.parse(value);
+  if (!Number.isFinite(time)) return String(value);
+  const date = new Date(time);
+  if (!Number.isFinite(date.getTime())) return String(value);
+  const hh = String(date.getHours()).padStart(2, '0');
+  const mm = String(date.getMinutes()).padStart(2, '0');
+  return `${hh}:${mm}`;
+}
+
+// Session identity for audit lines: displayName + roleTitle when the session
+// record carries them (role profile fields, spec §3.3), else the short id.
+function identityFor(sessions: Record<string, AuditSessionInfo>, sessionId: string | undefined) {
+  const info = sessionId ? sessions[sessionId] : undefined;
+  if (!info) return shortId(sessionId);
+  const name = info.displayName || shortId(info.sessionId);
+  return info.roleTitle ? `${name} (${info.roleTitle})` : name;
 }
 
 function titleForSession(session: Session | null, sessionId: string | null, t: (key: string, ...args: string[]) => string) {
@@ -107,11 +164,18 @@ export default function TerminalDrawer({ sessionId, onClose }: Props) {
   const [terminalReady, setTerminalReady] = useState(false);
   const [stopping, setStopping] = useState(false);
   const [minimized, setMinimized] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
   const [controlRequest, setControlRequest] = useState<ControlRequest | null>(null);
   const [respondingControl, setRespondingControl] = useState<string | null>(null);
   const [terminalSize, setTerminalSize] = useState<TerminalSize>({ cols: 0, rows: 0 });
   const [position, setPosition] = useState<Point>(() => typeof window === 'undefined' ? { x: 40, y: 80 } : initialPosition());
   const [size, setSize] = useState<Size>(() => typeof window === 'undefined' ? { width: 760, height: 480 } : initialSize());
+  const [auditOpen, setAuditOpen] = useState(false);
+  const [auditLoading, setAuditLoading] = useState(false);
+  const [auditError, setAuditError] = useState('');
+  const [auditEntries, setAuditEntries] = useState<BridgeEntry[]>([]);
+  const [auditSessions, setAuditSessions] = useState<Record<string, AuditSessionInfo>>({});
+  const auditLoadedRef = useRef(false);
   const reducedMotion = useReducedMotion();
   const terminalHostRef = useRef<HTMLDivElement>(null);
   const terminalRef = useRef<XTerm | null>(null);
@@ -126,9 +190,48 @@ export default function TerminalDrawer({ sessionId, onClose }: Props) {
   const lastResizeSentRef = useRef<TerminalSize>({ cols: 0, rows: 0 });
   const lastSeqRef = useRef(0);
   const dragRef = useRef<{ mode: 'move' | 'resize'; start: Point; position: Point; size: Size } | null>(null);
+  // 全屏前的位置/尺寸，用于退出全屏时精确还原。
+  const fullscreenRectRef = useRef<{ position: Point; size: Size } | null>(null);
 
   const interactive = attachMode && isLiveState(sessionState);
   const title = titleForSession(sessionMeta, sessionId, t);
+
+  // Cooperation audit grouping: structured requests keyed by requestId,
+  // wakeup dispatches (deliveryMode 'wakeup'), and legacy messages rendered
+  // as-is. Replies are the entries that echo the request's requestId with a
+  // replyTo set; the first entry in a request is the "asked whom" line.
+  // timedOut is derived from real timestamps only (spec §4.5): no reply entry
+  // exists and the last ask is older than AUDIT_TIMEOUT_THRESHOLD_MS.
+  const auditGroups = useMemo(() => {
+    const requests = new Map<string, BridgeEntry[]>();
+    const wakeups: BridgeEntry[] = [];
+    const legacy: BridgeEntry[] = [];
+    for (const entry of auditEntries) {
+      if (entry.deliveryMode === 'wakeup' || entry.source === 'timer.wakeup') {
+        wakeups.push(entry);
+        continue;
+      }
+      if (entry.requestId) {
+        const list = requests.get(entry.requestId) || [];
+        list.push(entry);
+        requests.set(entry.requestId, list);
+      } else {
+        legacy.push(entry);
+      }
+    }
+    const requestGroups: Array<{ requestId: string; entries: BridgeEntry[]; timedOut: boolean }> = [];
+    for (const [requestId, entries] of requests) {
+      const hasReply = entries.some(entry => Boolean(entry.replyTo));
+      const ask = entries.find(entry => !entry.replyTo) || entries[entries.length - 1];
+      const askMs = Date.parse(String(ask?.ts || ''));
+      const timedOut = !hasReply
+        && Number.isFinite(askMs)
+        && askMs > 0
+        && Date.now() - askMs > AUDIT_TIMEOUT_THRESHOLD_MS;
+      requestGroups.push({ requestId, entries, timedOut });
+    }
+    return { requests: requestGroups, wakeups, legacy };
+  }, [auditEntries]);
 
   const sendMessage = useCallback((msg: object) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
@@ -211,6 +314,60 @@ export default function TerminalDrawer({ sessionId, onClose }: Props) {
       // Metadata is helpful, but the terminal can still render without it.
     }
   }, []);
+
+  // Cooperation audit (UX-4 / AC-025): session identity + bridge messages for
+  // this session's bridges. Loaded lazily the first time the audit panel is
+  // opened; per-peer bridge reads are non-fatal so a missing bridge file never
+  // blanks the whole view.
+  const loadAudit = useCallback(async (sid: string) => {
+    setAuditLoading(true);
+    setAuditError('');
+    try {
+      const sessions = await apiJson<Array<Session & { displayName?: string; roleTitle?: string }>>('/api/sessions?all=1');
+      const info: Record<string, AuditSessionInfo> = {};
+      for (const session of sessions) {
+        info[session.sessionId] = {
+          sessionId: session.sessionId,
+          displayName: String(session.displayName || session.role || ''),
+          roleTitle: String(session.roleTitle || session.role || ''),
+          runtime: String(session.runtime || ''),
+          agentKind: String(session.agentKind || ''),
+        };
+      }
+      const peers = sessions.filter(session => session.sessionId !== sid).slice(0, 8);
+      const collected: BridgeEntry[] = [];
+      await Promise.all(peers.map(async (peer) => {
+        try {
+          const body = await apiJson<{ entries?: BridgeEntry[] }>(
+            `/api/a2a/bridge-messages?fromSessionId=${encodeURIComponent(sid)}&toSessionId=${encodeURIComponent(peer.sessionId)}&limit=200`,
+          );
+          if (Array.isArray(body?.entries)) collected.push(...body.entries);
+        } catch {
+          // per-peer bridge read failure is non-fatal
+        }
+      }));
+      collected.sort((a, b) => {
+        const ta = String(a.ts || '');
+        const tb = String(b.ts || '');
+        return ta === tb ? Number(a.seq || 0) - Number(b.seq || 0) : ta.localeCompare(tb);
+      });
+      setAuditEntries(collected);
+      setAuditSessions(info);
+    } catch (error) {
+      setAuditError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setAuditLoading(false);
+    }
+  }, []);
+
+  const toggleAudit = () => {
+    const next = !auditOpen;
+    setAuditOpen(next);
+    if (next && sessionId && !auditLoadedRef.current) {
+      auditLoadedRef.current = true;
+      void loadAudit(sessionId);
+    }
+  };
 
   const loadHistory = useCallback(async (sid: string, { reset = true }: { reset?: boolean } = {}) => {
     try {
@@ -336,6 +493,10 @@ export default function TerminalDrawer({ sessionId, onClose }: Props) {
     setPtyTitle('');
     setControlRequest(null);
     setRespondingControl(null);
+    setAuditOpen(false);
+    auditLoadedRef.current = false;
+    setAuditEntries([]);
+    setAuditError('');
     lastResizeSentRef.current = { cols: 0, rows: 0 };
     lastSeqRef.current = 0;
     setPosition(initialPosition());
@@ -382,6 +543,7 @@ export default function TerminalDrawer({ sessionId, onClose }: Props) {
     term.loadAddon(fit);
     term.loadAddon(new WebLinksAddon());
     term.open(terminalHostRef.current);
+    const webglDisposable = loadTerminalWebglAddon(term);
     const responseGuardDisposables = installTerminalResponseGuards(term);
     const titleDisposable = term.onTitleChange(title => setPtyTitle(title));
     const dataDisposable = term.onData(data => {
@@ -406,6 +568,7 @@ export default function TerminalDrawer({ sessionId, onClose }: Props) {
       dataDisposable.dispose();
       resizeDisposable.dispose();
       responseGuardDisposables.forEach(disposable => disposable.dispose());
+      webglDisposable?.dispose();
       fit.dispose();
       if (resizeSyncTimerRef.current) window.clearTimeout(resizeSyncTimerRef.current);
       term.dispose();
@@ -538,12 +701,14 @@ export default function TerminalDrawer({ sessionId, onClose }: Props) {
   };
 
   const startMove = (event: PointerEvent<HTMLDivElement>) => {
+    if (fullscreen) return;
     if ((event.target as HTMLElement).closest('button')) return;
     dragRef.current = { mode: 'move', start: { x: event.clientX, y: event.clientY }, position, size };
     event.currentTarget.setPointerCapture(event.pointerId);
   };
 
   const startResize = (event: PointerEvent<HTMLDivElement>) => {
+    if (fullscreen) return;
     event.stopPropagation();
     dragRef.current = { mode: 'resize', start: { x: event.clientX, y: event.clientY }, position, size };
     event.currentTarget.setPointerCapture(event.pointerId);
@@ -575,6 +740,71 @@ export default function TerminalDrawer({ sessionId, onClose }: Props) {
     }
   };
 
+  // 全屏切换：进入时保存当前矩形并铺满视口（留边）；退出时精确还原。
+  const toggleFullscreen = useCallback(() => {
+    setFullscreen(current => {
+      const next = !current;
+      if (next) {
+        fullscreenRectRef.current = { position, size };
+        setPosition({
+          x: FULLSCREEN_MARGIN,
+          y: FULLSCREEN_MARGIN,
+        });
+        setSize({
+          width: Math.max(500, window.innerWidth - FULLSCREEN_MARGIN * 2),
+          height: Math.max(360, window.innerHeight - FULLSCREEN_MARGIN * 2),
+        });
+      } else {
+        const rect = fullscreenRectRef.current;
+        fullscreenRectRef.current = null;
+        if (rect) {
+          setPosition(clampPosition(rect.position, rect.size));
+          setSize(rect.size);
+        }
+      }
+      return next;
+    });
+    requestAnimationFrame(() => fitAndSync());
+  }, [position, size, fitAndSync]);
+
+  // 全屏期间跟随窗口尺寸变化；Esc 退出全屏（不冒泡到画布）。
+  useEffect(() => {
+    if (!fullscreen) return;
+    const onResize = () => {
+      setSize({
+        width: Math.max(500, window.innerWidth - FULLSCREEN_MARGIN * 2),
+        height: Math.max(360, window.innerHeight - FULLSCREEN_MARGIN * 2),
+      });
+      requestAnimationFrame(() => fitAndSync());
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+        setFullscreen(false);
+        const rect = fullscreenRectRef.current;
+        fullscreenRectRef.current = null;
+        if (rect) {
+          setPosition(clampPosition(rect.position, rect.size));
+          setSize(rect.size);
+        }
+        requestAnimationFrame(() => fitAndSync());
+      }
+    };
+    window.addEventListener('resize', onResize);
+    window.addEventListener('keydown', onKeyDown, true);
+    return () => {
+      window.removeEventListener('resize', onResize);
+      window.removeEventListener('keydown', onKeyDown, true);
+    };
+  }, [fullscreen, fitAndSync]);
+
+  // 全屏时禁用窗口拖动与缩放手柄——全屏的"最大"语义不应被意外破坏。
+  useEffect(() => {
+    if (!fullscreen) return;
+    dragRef.current = null;
+  }, [fullscreen]);
+
   if (!open) return null;
 
   return (
@@ -587,7 +817,7 @@ export default function TerminalDrawer({ sessionId, onClose }: Props) {
           position: 'fixed',
           left: 16,
           bottom: 10,
-          zIndex: 90,
+          zIndex: 'var(--wf-z-panel)',
           width: 390,
           maxWidth: 'calc(100vw - 32px)',
           height: 36,
@@ -611,6 +841,7 @@ export default function TerminalDrawer({ sessionId, onClose }: Props) {
 
     <motion.div
       data-testid="terminal-window"
+      data-fullscreen={fullscreen ? 'true' : 'false'}
       initial={reducedMotion ? undefined : { opacity: 0, scale: 0.98 }}
       animate={{ opacity: minimized ? 0 : 1, scale: minimized ? 0.98 : 1 }}
       aria-hidden={minimized}
@@ -623,7 +854,7 @@ export default function TerminalDrawer({ sessionId, onClose }: Props) {
         top: position.y,
         width: size.width,
         height: size.height,
-        zIndex: 88,
+        zIndex: 'var(--wf-z-panel)',
         display: 'flex',
         flexDirection: 'column',
         border: '1px solid var(--border)',
@@ -664,6 +895,15 @@ export default function TerminalDrawer({ sessionId, onClose }: Props) {
         </span>
         <span style={{ flex: 1 }} />
         <button
+          data-testid="terminal-audit-toggle"
+          title={t('Cooperation audit')}
+          onClick={toggleAudit}
+          style={{ fontSize: 10, color: auditOpen ? 'var(--success)' : 'var(--muted)', display: 'flex', alignItems: 'center', gap: 4, border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '3px 7px', flexShrink: 0 }}
+        >
+          <Users size={10} />
+          {t('Cooperation')}
+        </button>
+        <button
           data-testid="terminal-attach-toggle"
           title={attachMode ? t('Attach mode') : t('Watch mode')}
           onClick={() => setAttach(!attachMode)}
@@ -674,6 +914,15 @@ export default function TerminalDrawer({ sessionId, onClose }: Props) {
         </button>
         <button title={t('Clear terminal')} onClick={clearOutput} style={{ color: 'var(--muted)', display: 'grid', placeItems: 'center', width: 26, height: 26, border: '1px solid var(--border)', borderRadius: 'var(--radius)' }}>
           <Trash2 size={11} />
+        </button>
+        <button
+          data-testid="terminal-fullscreen-toggle"
+          aria-pressed={fullscreen ? 'true' : 'false'}
+          title={fullscreen ? t('Exit fullscreen') : t('Fullscreen')}
+          onClick={toggleFullscreen}
+          style={{ color: fullscreen ? 'var(--success)' : 'var(--muted)', display: 'grid', placeItems: 'center', width: 26, height: 26, border: '1px solid var(--border)', borderRadius: 'var(--radius)' }}
+        >
+          {fullscreen ? <Minimize2 size={11} /> : <Maximize2 size={11} />}
         </button>
         <button title={t('Minimize terminal')} onClick={minimizeTerminal} style={{ color: 'var(--muted)', display: 'grid', placeItems: 'center', width: 26, height: 26, border: '1px solid var(--border)', borderRadius: 'var(--radius)' }}>
           <Minimize2 size={11} />
@@ -756,6 +1005,110 @@ export default function TerminalDrawer({ sessionId, onClose }: Props) {
         </div>
       )}
 
+      {auditOpen && (
+        <div
+          data-testid="terminal-audit-panel"
+          role="region"
+          aria-label={t('Cooperation audit')}
+          style={{
+            position: 'absolute',
+            left: 10,
+            right: 10,
+            top: 50,
+            bottom: 40,
+            zIndex: 2,
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius)',
+            background: '#ffffff',
+            boxShadow: '0 16px 46px rgba(0,0,0,0.2)',
+          }}
+        >
+          <header style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderBottom: '1px solid var(--border)', fontSize: 12, fontWeight: 800 }}>
+            <Users size={13} />
+            <span>{t('Cooperation audit')}</span>
+            <span style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 600 }}>{auditEntries.length} {t('message(s)')}</span>
+            <span style={{ flex: 1 }} />
+            {auditLoading && <span style={{ fontSize: 10, color: 'var(--muted)', fontWeight: 600 }}>{t('Loading...')}</span>}
+          </header>
+          <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: 8, display: 'grid', gap: 8, fontSize: 11 }}>
+            {auditError && (
+              <div style={{ color: '#b91c1c', padding: 6 }}>{auditError}</div>
+            )}
+            {!auditError && !auditLoading && auditEntries.length === 0 && (
+              <div style={{ color: 'var(--muted)', padding: 6 }}>{t('No cooperation messages yet')}</div>
+            )}
+            {Object.keys(auditSessions).length > 0 && (
+              <section data-testid="audit-sessions" style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: 8, display: 'grid', gap: 4 }}>
+                <div style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', color: 'var(--muted)' }}>{t('Agents')}</div>
+                {Object.values(auditSessions).map(session => (
+                  <div key={session.sessionId} data-testid="audit-session-identity" style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <strong>{session.displayName || shortId(session.sessionId)}</strong>
+                    {session.roleTitle && <span style={{ color: 'var(--muted)' }}>· {session.roleTitle}</span>}
+                    {session.runtime && <span style={{ color: 'var(--muted)' }}>· {RUNTIME_LABELS[session.runtime] || session.runtime}</span>}
+                  </div>
+                ))}
+              </section>
+            )}
+            {auditGroups.requests.map(({ requestId, entries, timedOut }) => (
+              <section key={requestId} data-testid="audit-request" data-request-id={requestId} style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: 8, display: 'grid', gap: 5 }}>
+                <div style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', color: 'var(--muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  {t('Request')} {shortId(requestId)}
+                  {timedOut && (
+                    <span data-testid="audit-timed-out" style={{ color: '#b91c1c', fontWeight: 800, textTransform: 'uppercase', fontSize: 9, letterSpacing: 0.4, border: '1px solid #fecaca', borderRadius: 999, padding: '0 6px', lineHeight: '14px' }}>
+                      {t('timed-out')}
+                    </span>
+                  )}
+                </div>
+                {entries.map((entry, index) => {
+                  const isReply = Boolean(entry.replyTo);
+                  const peerId = isReply ? entry.fromSessionId : entry.toSessionId;
+                  return (
+                    <div key={`${requestId}-${index}-${entry.messageId || entry.seq}`} data-testid="audit-request-entry" data-kind={isReply ? 'reply' : 'ask'}>
+                      <span>
+                        {isReply
+                          ? `${t('replied')} ${identityFor(auditSessions, entry.fromSessionId)}`
+                          : `${t('asked')} ${identityFor(auditSessions, peerId)}`}
+                      </span>
+                      <span style={{ color: 'var(--muted)', marginLeft: 6 }}>{shortTime(entry.ts)}</span>
+                      {entry.toRole && !isReply && <span style={{ color: 'var(--muted)', marginLeft: 4 }}>· {entry.toRole}</span>}
+                      <div style={{ color: 'var(--muted)', whiteSpace: 'pre-wrap', wordBreak: 'break-word', marginTop: 2 }}>
+                        {String(entry.data || '').slice(0, 240)}
+                      </div>
+                    </div>
+                  );
+                })}
+              </section>
+            ))}
+            {auditGroups.wakeups.length > 0 && (
+              <section data-testid="audit-wakeups" style={{ border: '1px solid #e9d5ff', borderRadius: 'var(--radius)', padding: 8, display: 'grid', gap: 4 }}>
+                <div style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', color: 'var(--muted)' }}>{t('Timer wakeups')}</div>
+                {auditGroups.wakeups.map((entry, index) => (
+                  <div key={`wakeup-${index}-${entry.messageId || entry.seq}`} data-testid="audit-wakeup-entry">
+                    <span style={{ color: '#7c3aed', fontWeight: 700 }}>{t('wakeup dispatched')}</span>
+                    {entry.fromNodeId && <span style={{ marginLeft: 6 }}>{shortId(entry.fromNodeId)}</span>}
+                    <span style={{ color: 'var(--muted)', marginLeft: 6 }}>{shortTime(entry.ts)}</span>
+                  </div>
+                ))}
+              </section>
+            )}
+            {auditGroups.legacy.map((entry, index) => (
+              <div key={`legacy-${index}-${entry.messageId || entry.seq}`} data-testid="audit-legacy-entry" style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: 8 }}>
+                <span>
+                  {identityFor(auditSessions, entry.fromSessionId)}
+                  <span style={{ color: 'var(--muted)' }}> → </span>
+                  {identityFor(auditSessions, entry.toSessionId)}
+                </span>
+                <span style={{ color: 'var(--muted)', marginLeft: 6 }}>{shortTime(entry.ts)}</span>
+                <div style={{ color: 'var(--muted)', whiteSpace: 'pre-wrap', wordBreak: 'break-word', marginTop: 2 }}>{String(entry.data || '')}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div style={{ height: 34, padding: '4px 10px', borderTop: '1px solid var(--border)', display: 'flex', gap: 6, fontSize: 10, color: 'var(--muted)', alignItems: 'center', flexShrink: 0 }}>
         <button onClick={fitAndSync} title={t('Fit terminal viewport')} style={{ fontSize: 10, display: 'flex', alignItems: 'center', gap: 3, border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '2px 6px' }}>
           <Maximize2 size={9} /> {t('Fit')}
@@ -774,6 +1127,7 @@ export default function TerminalDrawer({ sessionId, onClose }: Props) {
       <div
         onPointerDown={startResize}
         title={t('Resize terminal')}
+        data-testid="terminal-resize-handle"
         style={{
           position: 'absolute',
           right: 0,
@@ -781,6 +1135,7 @@ export default function TerminalDrawer({ sessionId, onClose }: Props) {
           width: 18,
           height: 18,
           cursor: 'nwse-resize',
+          display: fullscreen ? 'none' : 'block',
           background: 'linear-gradient(135deg, transparent 45%, rgba(107,114,128,0.35) 46%, rgba(107,114,128,0.35) 55%, transparent 56%)',
         }}
       />

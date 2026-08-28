@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-subagent-strategy-2x2-matrix",
+  "status": "archived",
+  "mode": "wf-max",
+  "defaultRuntime": "claude",
+  "tier": "full",
+  "phase": "archived",
+  "gate": "REFLECTOR",
+  "updatedAt": "2026-08-28T02:35:58.939Z",
+  "activeQuestion": null,
+  "nextAction": "template mirrors + cleanup → re-reflect → commit",
+  "acceptance": [
+    "AC-MATRIX-001: CC main + built-in-subagents — no canvas workers, native subagent path, fanout evidence",
+    "AC-MATRIX-002: CC main + wf-node-subagents — create/connect WF Agent nodes, mailbox 1:1/1:many, reply aggregation",
+    "AC-MATRIX-003: Codex main + built-in-subagents — native subagent/tool/role path OR clear degradation evidence",
+    "AC-MATRIX-004: Codex main + wf-node-subagents — create/connect Claude Code implementer, send task, reply, aggregate",
+    "AC-UI-001: Agent node settings shows both subagentMode options, default built-in-subagents",
+    "AC-UI-002: Session/graph/context/init prompt all carry consistent subagentMode",
+    "AC-NL-001: NL phrases '内部助手/内置子代理' route to built-in-subagents",
+    "AC-NL-002: NL phrases '画布节点/WF node协作' route to wf-node-subagents",
+    "AC-NL-003: Unspecified defaults to built-in-subagents",
+    "AC-BASE-001: All existing 55/55 tests continue to pass",
+    "AC-BASE-002: Markdown/Excalidraw/Timer/Goal node invariants preserved",
+    "AC-BASE-003: No direct state.json/workflow-map.json edits; typed actions only"
+  ],
+  "queues": {
+    "ready": [],
+    "running": [],
+    "blocked": [],
+    "done": [
+      "W1-backend",
+      "W2-UI",
+      "W3-CLI",
+      "W4-docs",
+      "W5a-backend-tests",
+      "W5b-e2e-tests",
+      "W5c-codex-coverage"
+    ]
+  },
+  "dispatchLedger": [],
+  "decisions": [
+    "D1: Rename wf-subagents → wf-node-subagents everywhere; add built-in-subagents as new default",
+    "D2: subagentMode flows into session, graph node, snapshot, workflow context, init prompt, and HARNESS_SUBAGENT_MODE env var",
+    "D3: NL trigger detection lives in init prompt / CLAUDE.md — agent decides mode, not backend middleware",
+    "D4: Write sets: W1 backend, W2 UI, W3 CLI, W4 docs/templates, W5 tests. W1 first, then W2+W3+W4 parallel, W5 last",
+    "D5: Tests must use typed wf-ui-control.mjs commands, not internal APIs (writeWorkflowGraphMap/capsuleDockLinks)",
+    "D6: Extends task-agent-team-cooperation-layer (VERIFY2, 55/55 pass). links.dependsOn = [] (no gate wait — code already merged)"
+  ],
+  "risks": [
+    "M1: Many files reference 'wf-subagents' string — rename must be exhaustive",
+    "M2: E2E tests mock subagentModes as [{id:'none'}] — masks real UI behavior",
+    "M3: Codex native subagent availability uncertain — need runtime probe or clear degradation",
+    "M4: 55/55 regression risk from default change"
+  ],
+  "artifacts": [],
+  "links": {
+    "dependsOn": [],
+    "blocks": [],
+    "related": [
+      "task-agent-team-cooperation-layer"
+    ]
+  },
+  "defaultAgentRuntime": "claude"
+}

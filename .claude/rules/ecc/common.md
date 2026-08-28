@@ -41,6 +41,15 @@ alwaysApply: true
 - If the runtime cannot spawn subagents, emulate the same role pack in a separate bounded pass.
 - Main agent owns integration and final verification.
 
+## Agent Team Cooperation (WF / WF-MAX)
+
+- On `/wf` / `$wf` / `/wf-max` / `$wf-max`, the main Agent node autonomously: understands the task, decides whether team collaboration is needed, finds existing agents by role/capability, connects or creates sub-agents (role profile: displayName + roleTitle), shares context via Markdown nodes (nodeId only), sends structured requests, waits via Timer wakeup messages (checked on next turn), aggregates replies, ticks Goal items, and completes when done.
+- Ambiguous target → ask the user; never blindly create/connect.
+- Never edit `Harness/a2a/**/state.json` directly; use typed actions only.
+- Timer is the only wakeup source; the Goal node never wakes agents.
+- Subagent mode comes from node settings (built-in-subagents default = native helpers, no canvas nodes; wf-node-subagents = visible canvas agents); natural language "内部助手"/"内置子代理" → built-in, "画布节点"/"WF node协作" → wf-node. Discover everything at runtime: help --json, workflow-context, manuals <type>, snapshot, workflow-ontology.
+- No jargon for users: no broadcast/A2A/thread/shared-context terminology.
+
 ## Memory
 
 - Detect memory candidates when user says: `remember`, `next time`, `don't`, `do not`, `never`, `always`, `I prefer`, `I want you to`, `记住`, `下次`, `以后`, `不要再`, `总是`, `永远不要`, `我偏好`, `我希望你以后`.

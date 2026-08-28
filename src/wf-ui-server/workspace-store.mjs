@@ -178,6 +178,98 @@ function etagForStat(stat) {
   return `"${stat.size.toString(16)}-${Math.trunc(stat.mtimeMs).toString(16)}"`;
 }
 
+// ── Preview read cache (task-upgrade-file-node AC-1) ──
+// In-memory cache for getWorkspaceMeta / readWorkspaceTextPreview results. Key
+// = kind + canonical root + workspace-relative path (+ offset/limit for text).
+// An entry is a hit only while the file's stat key (size + truncated mtimeMs)
+// is unchanged and the entry is younger than the TTL, so a stat change is an
+// automatic miss that re-reads the disk; explicit invalidation drops both the
+// meta and text entries for the path. The Map is bounded (~200 entries, LRU by
+// insertion age when full).
+export const PREVIEW_CACHE_TTL_MS = 5000;
+const PREVIEW_CACHE_MAX_ENTRIES = 200;
+const previewCache = new Map(); // key -> { statKey, cachedAt, value }
+
+function previewCacheKey(kind, root, relPath) {
+  return `${kind}\u0000${root}\u0000${relPath}`;
+}
+
+function previewStatKey(stat) {
+  return stat ? `${stat.size}:${Math.trunc(stat.mtimeMs)}` : 'missing';
+}
+
+function cachedPreviewValue(key, statKey) {
+  const entry = previewCache.get(key);
+  if (!entry) return null;
+  if (entry.statKey !== statKey || entry.cachedAt + PREVIEW_CACHE_TTL_MS <= Date.now()) {
+    previewCache.delete(key);
+    return null;
+  }
+  return entry.value;
+}
+
+function setPreviewCache(key, statKey, value) {
+  previewCache.set(key, { statKey, cachedAt: Date.now(), value });
+  if (previewCache.size > PREVIEW_CACHE_MAX_ENTRIES) {
+    let oldestKey = null;
+    let oldestAt = Infinity;
+    for (const [entryKey, entry] of previewCache) {
+      if (entry.cachedAt < oldestAt) {
+        oldestAt = entry.cachedAt;
+        oldestKey = entryKey;
+      }
+    }
+    if (oldestKey !== null) previewCache.delete(oldestKey);
+  }
+}
+
+/**
+ * Return the cached preview value for a workspace path, or undefined on miss.
+ * The stat is re-checked like every internal read, so a changed file (or an
+ * expired TTL entry) reports as a miss instead of serving stale content.
+ */
+export function getPreviewCached(projectRoot, rawPath = '') {
+  const resolved = resolveWorkspacePath(projectRoot, rawPath);
+  const stat = fs.existsSync(resolved.absolutePath) ? fs.statSync(resolved.absolutePath) : null;
+  const statKey = previewStatKey(stat);
+  const metaKey = previewCacheKey('meta', resolved.root, resolved.path);
+  const meta = cachedPreviewValue(metaKey, statKey);
+  if (meta) return meta;
+  const textBase = previewCacheKey('text', resolved.root, resolved.path);
+  for (const [key, entry] of previewCache) {
+    if (key.startsWith(`${textBase}\u0000`) && entry.statKey === statKey) {
+      if (entry.cachedAt + PREVIEW_CACHE_TTL_MS <= Date.now()) {
+        previewCache.delete(key);
+        continue;
+      }
+      return entry.value;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Drop every cached entry (meta and text) for a workspace path so the next
+ * read re-reads the disk. Unresolvable paths are a no-op.
+ */
+export function invalidateFileCache(projectRoot, rawPath = '') {
+  let resolved;
+  try {
+    resolved = resolveWorkspacePath(projectRoot, rawPath);
+  } catch {
+    return;
+  }
+  const prefixes = [
+    previewCacheKey('meta', resolved.root, resolved.path),
+    previewCacheKey('text', resolved.root, resolved.path),
+  ];
+  for (const key of [...previewCache.keys()]) {
+    if (prefixes.some(prefix => key === prefix || key.startsWith(`${prefix}\u0000`))) {
+      previewCache.delete(key);
+    }
+  }
+}
+
 export function workspaceMimeForPath(filePath) {
   return WORKSPACE_MIME[path.extname(String(filePath || '')).toLowerCase()] || 'application/octet-stream';
 }
@@ -231,9 +323,17 @@ function workspaceMetaFromStat(resolved, stat, absolutePath) {
 
 export function getWorkspaceMeta(projectRoot, rawPath = '') {
   const resolved = resolveWorkspacePath(projectRoot, rawPath);
-  if (!fs.existsSync(resolved.absolutePath)) {
+  const key = previewCacheKey('meta', resolved.root, resolved.path);
+  const stat = fs.existsSync(resolved.absolutePath)
+    ? statExistingInside(projectRoot, resolved.absolutePath)
+    : null;
+  const statKey = previewStatKey(stat);
+  const cached = cachedPreviewValue(key, statKey);
+  if (cached) return cached;
+  let meta;
+  if (!stat) {
     assertParentInsideWorkspace(projectRoot, resolved.absolutePath);
-    return {
+    meta = {
       ok: true,
       path: resolved.path,
       name: path.basename(resolved.path || resolved.root),
@@ -245,9 +345,11 @@ export function getWorkspaceMeta(projectRoot, rawPath = '') {
       etag: null,
       previewKind: 'missing',
     };
+  } else {
+    meta = workspaceMetaFromStat(resolved, stat, resolved.absolutePath);
   }
-  const stat = statExistingInside(projectRoot, resolved.absolutePath);
-  return workspaceMetaFromStat(resolved, stat, resolved.absolutePath);
+  setPreviewCache(key, statKey, meta);
+  return meta;
 }
 
 export function getWorkspaceFileInfo(projectRoot, rawPath = '') {
@@ -291,6 +393,14 @@ export function readWorkspaceTextPreview(projectRoot, options = {}) {
   }
   const offset = boundedInteger(options.offset, 0);
   const limit = boundedInteger(options.limit, WORKSPACE_TEXT_PREVIEW_MAX_BYTES, WORKSPACE_TEXT_PREVIEW_MAX_BYTES);
+  // Cache the (path, offset, limit) slice against the file's stat key so
+  // repeated identical previews skip the disk read (AC-1). The 64KB text
+  // preview cap is unchanged — the cached value IS the bounded slice.
+  const resolved = resolveWorkspacePath(projectRoot, options.path || '');
+  const key = `${previewCacheKey('text', resolved.root, info.path)}\u0000${offset}\u0000${limit}`;
+  const statKey = previewStatKey({ size: info.size, mtimeMs: new Date(info.mtime).getTime() });
+  const cached = cachedPreviewValue(key, statKey);
+  if (cached) return cached;
   const start = Math.min(offset, info.size);
   const readLength = Math.min(limit, Math.max(info.size - start, 0));
   const buffer = Buffer.alloc(readLength);
@@ -308,7 +418,7 @@ export function readWorkspaceTextPreview(projectRoot, options = {}) {
       code: 'UNSUPPORTED_MEDIA_TYPE',
     });
   }
-  return {
+  const result = {
     ok: true,
     path: info.path,
     text: body.toString('utf8'),
@@ -316,6 +426,8 @@ export function readWorkspaceTextPreview(projectRoot, options = {}) {
     truncated: start + bytesRead < info.size,
     encoding: 'utf-8',
   };
+  setPreviewCache(key, statKey, result);
+  return result;
 }
 
 function requireExisting(projectRoot, rawPath) {
@@ -686,6 +798,43 @@ export function undoWorkspaceOperation(projectRoot, options = {}) {
     revision,
     undoneOpId: row.opId,
     entriesChanged,
+  };
+}
+
+// ── "Open in OS file manager" reveal (task-wf-ui-terminal-explorer-ux AC-009) ──
+// Pure plan builder: validates containment + existence, returns the spawn plan.
+// The HTTP route executes the plan; tests assert the plan without spawning.
+export function planRevealWorkspacePath(projectRoot, rawPath = '') {
+  const resolved = resolveWorkspacePath(projectRoot, rawPath);
+  if (!fs.existsSync(resolved.absolutePath)) {
+    throw new WorkspaceStoreError(`Path does not exist on disk: ${resolved.path}`, {
+      statusCode: 404,
+      code: 'NOT_FOUND',
+    });
+  }
+  const isDirectory = fs.statSync(resolved.absolutePath).isDirectory();
+  const platform = process.platform;
+  let command;
+  let args;
+  if (platform === 'win32') {
+    command = 'explorer.exe';
+    // Directories open in place; files open with the item pre-selected.
+    // explorer.exe takes the flag and path joined in one argument.
+    args = isDirectory ? [resolved.absolutePath] : [`/select,${resolved.absolutePath}`];
+  } else if (platform === 'darwin') {
+    command = 'open';
+    args = isDirectory ? [resolved.absolutePath] : ['-R', resolved.absolutePath];
+  } else {
+    command = 'xdg-open';
+    args = [isDirectory ? resolved.absolutePath : path.dirname(resolved.absolutePath)];
+  }
+  return {
+    path: resolved.path,
+    absolutePath: resolved.absolutePath,
+    isDirectory,
+    platform,
+    command,
+    args,
   };
 }
 

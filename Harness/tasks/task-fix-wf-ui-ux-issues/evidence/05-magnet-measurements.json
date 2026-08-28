@@ -1,0 +1,552 @@
+{
+  "magnet": {
+    "top": {
+      "side": "top",
+      "targetClamped": false,
+      "viewport": {
+        "scale": 1.42067,
+        "panX": -609.75,
+        "panY": -80.7548,
+        "raw": "matrix(1.42067, 0, 0, 1.42067, -609.75, -80.7548)"
+      },
+      "anchorScreen": {
+        "x": 129,
+        "y": 464.5,
+        "w": 394.9,
+        "h": 252.9
+      },
+      "peerScreen": {
+        "x": 76.4,
+        "y": -1.5,
+        "w": 500.1,
+        "h": 446.1
+      },
+      "anchorCanvas": {
+        "x": 520,
+        "y": 383.8,
+        "w": 278,
+        "h": 178
+      },
+      "peerCanvas": {
+        "x": 483,
+        "y": 55.8,
+        "w": 352,
+        "h": 314
+      },
+      "gapScreenPx": 19.9,
+      "gapCanvasPx": 14,
+      "centerOffsetCanvasPx": 0,
+      "sharedEdgeMidpointCanvas": {
+        "x": 326.5,
+        "y": 464.5
+      },
+      "dockedClassCount": 0,
+      "graphPuts": [
+        {
+          "positions": {
+            "measure-agent": {
+              "x": 520,
+              "y": 350
+            },
+            "measure-markdown": {
+              "x": 503.20906928369425,
+              "y": 19.88310032537889
+            }
+          },
+          "dockLinks": []
+        }
+      ],
+      "pillCenter": null
+    },
+    "bottom": {
+      "side": "bottom",
+      "targetClamped": false,
+      "viewport": {
+        "scale": 1.42067,
+        "panX": -609.75,
+        "panY": -314.005,
+        "raw": "matrix(1.42067, 0, 0, 1.42067, -609.75, -314.005)"
+      },
+      "anchorScreen": {
+        "x": 129,
+        "y": 231.2,
+        "w": 394.9,
+        "h": 252.9
+      },
+      "peerScreen": {
+        "x": 112.9,
+        "y": 689.7,
+        "w": 500.1,
+        "h": 446.1
+      },
+      "anchorCanvas": {
+        "x": 520,
+        "y": 383.8,
+        "w": 278,
+        "h": 178
+      },
+      "peerCanvas": {
+        "x": 508.7,
+        "y": 706.5,
+        "w": 352,
+        "h": 314
+      },
+      "gapScreenPx": 205.6,
+      "gapCanvasPx": 144.7,
+      "centerOffsetCanvasPx": 25.7,
+      "sharedEdgeMidpointCanvas": {
+        "x": 326.5,
+        "y": 484.1
+      },
+      "dockedClassCount": 0,
+      "graphPuts": [
+        {
+          "positions": {
+            "measure-agent": {
+              "x": 520,
+              "y": 350
+            },
+            "measure-markdown": {
+              "x": 503.20906928369425,
+              "y": 19.88310032537889
+            }
+          },
+          "dockLinks": []
+        },
+        {
+          "positions": {
+            "measure-agent": {
+              "x": 520,
+              "y": 350
+            },
+            "measure-markdown": {
+              "x": 508.68358714044007,
+              "y": 672.6971235194585
+            }
+          },
+          "dockLinks": []
+        }
+      ],
+      "pillCenter": null
+    },
+    "left": {
+      "side": "left",
+      "targetClamped": false,
+      "viewport": {
+        "scale": 1.42067,
+        "panX": -427.5,
+        "panY": -314.005,
+        "raw": "matrix(1.42067, 0, 0, 1.42067, -427.5, -314.005)"
+      },
+      "anchorScreen": {
+        "x": 311.3,
+        "y": 231.2,
+        "w": 394.9,
+        "h": 252.9
+      },
+      "peerScreen": {
+        "x": -328.1,
+        "y": 341.7,
+        "w": 500.1,
+        "h": 446.1
+      },
+      "anchorCanvas": {
+        "x": 520,
+        "y": 383.8,
+        "w": 278,
+        "h": 178
+      },
+      "peerCanvas": {
+        "x": 70,
+        "y": 461.5,
+        "w": 352,
+        "h": 314
+      },
+      "gapScreenPx": 139.2,
+      "gapCanvasPx": 98,
+      "centerOffsetCanvasPx": 145.7,
+      "sharedEdgeMidpointCanvas": {
+        "x": 311.3,
+        "y": 412.9
+      },
+      "dockedClassCount": 0,
+      "graphPuts": [
+        {
+          "positions": {
+            "measure-agent": {
+              "x": 520,
+              "y": 350
+            },
+            "measure-markdown": {
+              "x": 503.20906928369425,
+              "y": 19.88310032537889
+            }
+          },
+          "dockLinks": []
+        },
+        {
+          "positions": {
+            "measure-agent": {
+              "x": 520,
+              "y": 350
+            },
+            "measure-markdown": {
+              "x": 508.68358714044007,
+              "y": 672.6971235194585
+            }
+          },
+          "dockLinks": []
+        },
+        {
+          "positions": {
+            "measure-agent": {
+              "x": 520,
+              "y": 350
+            },
+            "measure-markdown": {
+              "x": 69.98307952622682,
+              "y": 427.74280879864637
+            }
+          },
+          "dockLinks": []
+        }
+      ],
+      "pillCenter": null
+    },
+    "right": {
+      "side": "right",
+      "targetClamped": false,
+      "viewport": {
+        "scale": 1.42067,
+        "panX": -609.75,
+        "panY": -314.005,
+        "raw": "matrix(1.42067, 0, 0, 1.42067, -609.75, -314.005)"
+      },
+      "anchorScreen": {
+        "x": 129,
+        "y": 231.2,
+        "w": 394.9,
+        "h": 252.9
+      },
+      "peerScreen": {
+        "x": 552.9,
+        "y": 341.7,
+        "w": 500.1,
+        "h": 446.1
+      },
+      "anchorCanvas": {
+        "x": 520,
+        "y": 383.8,
+        "w": 278,
+        "h": 178
+      },
+      "peerCanvas": {
+        "x": 818.4,
+        "y": 461.5,
+        "w": 352,
+        "h": 314
+      },
+      "gapScreenPx": 29,
+      "gapCanvasPx": 20.4,
+      "centerOffsetCanvasPx": 145.7,
+      "sharedEdgeMidpointCanvas": {
+        "x": 523.9,
+        "y": 412.9
+      },
+      "dockedClassCount": 0,
+      "graphPuts": [
+        {
+          "positions": {
+            "measure-agent": {
+              "x": 520,
+              "y": 350
+            },
+            "measure-markdown": {
+              "x": 503.20906928369425,
+              "y": 19.88310032537889
+            }
+          },
+          "dockLinks": []
+        },
+        {
+          "positions": {
+            "measure-agent": {
+              "x": 520,
+              "y": 350
+            },
+            "measure-markdown": {
+              "x": 508.68358714044007,
+              "y": 672.6971235194585
+            }
+          },
+          "dockLinks": []
+        },
+        {
+          "positions": {
+            "measure-agent": {
+              "x": 520,
+              "y": 350
+            },
+            "measure-markdown": {
+              "x": 69.98307952622682,
+              "y": 427.74280879864637
+            }
+          },
+          "dockLinks": []
+        },
+        {
+          "positions": {
+            "measure-agent": {
+              "x": 520,
+              "y": 350
+            },
+            "measure-markdown": {
+              "x": 818.3959390862943,
+              "y": 427.74280879864637
+            }
+          },
+          "dockLinks": []
+        }
+      ],
+      "pillCenter": null
+    }
+  },
+  "fileScenario": {
+    "realHeightChangePx": 0,
+    "heights": {
+      "t0": 446.1,
+      "t1": 446.1
+    },
+    "simulatedHeightPx": 446.1,
+    "topDock": {
+      "side": "top",
+      "targetClamped": false,
+      "viewport": {
+        "scale": 1.42067,
+        "panX": -609.75,
+        "panY": -95.7548,
+        "raw": "matrix(1.42067, 0, 0, 1.42067, -609.75, -95.7548)"
+      },
+      "anchorScreen": {
+        "x": 129,
+        "y": 449.5,
+        "w": 394.9,
+        "h": 252.9
+      },
+      "peerScreen": {
+        "x": 76.4,
+        "y": -16.5,
+        "w": 500.1,
+        "h": 446.1
+      },
+      "anchorCanvas": {
+        "x": 520,
+        "y": 383.8,
+        "w": 278,
+        "h": 178
+      },
+      "peerCanvas": {
+        "x": 483,
+        "y": 55.8,
+        "w": 352,
+        "h": 314
+      },
+      "gapScreenPx": 19.9,
+      "gapCanvasPx": 14,
+      "centerOffsetCanvasPx": 0,
+      "sharedEdgeMidpointCanvas": {
+        "x": 326.5,
+        "y": 449.5
+      },
+      "dockedClassCount": 0,
+      "graphPuts": [
+        {
+          "positions": {
+            "measure-agent": {
+              "x": 520,
+              "y": 350
+            },
+            "measure-markdown": {
+              "x": 503.20906928369425,
+              "y": 19.88310032537889
+            }
+          },
+          "dockLinks": []
+        },
+        {
+          "positions": {
+            "measure-agent": {
+              "x": 520,
+              "y": 350
+            },
+            "measure-markdown": {
+              "x": 508.68358714044007,
+              "y": 672.6971235194585
+            }
+          },
+          "dockLinks": []
+        },
+        {
+          "positions": {
+            "measure-agent": {
+              "x": 520,
+              "y": 350
+            },
+            "measure-markdown": {
+              "x": 69.98307952622682,
+              "y": 427.74280879864637
+            }
+          },
+          "dockLinks": []
+        },
+        {
+          "positions": {
+            "measure-agent": {
+              "x": 520,
+              "y": 350
+            },
+            "measure-markdown": {
+              "x": 818.3959390862943,
+              "y": 427.74280879864637
+            }
+          },
+          "dockLinks": []
+        },
+        {
+          "positions": {
+            "measure-agent": {
+              "x": 520,
+              "y": 350
+            },
+            "measure-markdown": {
+              "x": 502.8397769537322,
+              "y": -29.014328645112585
+            }
+          },
+          "dockLinks": []
+        }
+      ]
+    }
+  },
+  "midDrag": {
+    "draggedClass": true,
+    "anchorClass": true,
+    "barDisplay": "block",
+    "pill": {
+      "cx": 268,
+      "cy": 542.4807739257812
+    },
+    "anchorRect": {
+      "x": 129,
+      "y": 554.4807739257812,
+      "w": 394.9471435546875,
+      "h": 252.87982177734375
+    },
+    "draggedRect": {
+      "x": 112.923095703125,
+      "y": 9.67788314819336,
+      "w": 500.076904296875,
+      "h": 446.0913391113281
+    },
+    "pillOffsetVsAnchorEdgeMidpoint": {
+      "dxPx": -58.5,
+      "dyPx": -12
+    },
+    "mouseAtTarget": {
+      "x": 326,
+      "y": -8
+    },
+    "expectedRect": {
+      "x": 76.4,
+      "y": -22.8
+    },
+    "actualRect": {
+      "x": 112.9,
+      "y": 9.7
+    },
+    "trackErrorX": 36.5,
+    "trackErrorY": 32.5
+  },
+  "layout": {
+    "nodeCount": 0,
+    "nodes": [],
+    "overlapPairs": [],
+    "edgePathBboxCount": 0,
+    "edgeNodeCrossingsApprox": 0,
+    "minPairwiseGapPx": null,
+    "minPairwiseGapPair": null,
+    "paneTransform": "none",
+    "source": "server snapshot (graph-layout.mjs positions)"
+  },
+  "pageErrors": [
+    "undefined"
+  ],
+  "summary": {
+    "method": "real mouse drags (page.mouse), rects via getBoundingClientRect, canvas units via .react-flow__viewport transform; layout from the real harness snapshot over the live server",
+    "unitsNote": "canvas px unless noted; viewport is auto-fitView-ed at load (scale ~0.9-1.42 depending on graph bounds)",
+    "topDock": {
+      "gapCanvasPx": 14,
+      "centerOffsetCanvasPx": 0,
+      "expectation": "14 (CAPSULE_DOCK_GAP) +- 2",
+      "verdict": "PASS"
+    },
+    "fileNodeTopDock": {
+      "gapCanvasPx": 14,
+      "centerOffsetCanvasPx": 0,
+      "asyncHeightChangePx": 0,
+      "simulatedResizeApplied": false,
+      "verdict": "PASS (no drift in the reported file-node scenario; async height change not reproducible in e2e - text preview loads instantly; simulated resize injected outside the card and did not change the measured size)"
+    },
+    "m4ReplicaFullCommit": {
+      "run1": {
+        "committedPosition": {
+          "x": 463,
+          "y": -128
+        },
+        "exactSnap": {
+          "x": 463,
+          "y": -128
+        },
+        "gapCanvas": 14,
+        "dockLinkSide": "top",
+        "dockedAny": 2
+      },
+      "run2": {
+        "committedPosition": {
+          "x": 453.4,
+          "y": -159
+        },
+        "dockLinkSide": null,
+        "note": "dock commit is timing-dependent (flaky) - same script, no link committed"
+      }
+    },
+    "bottomLeftRight": {
+      "status": "NOT VERIFIED",
+      "note": "mirrored drag patterns did not produce a dock in repeated runs; the e2e suite (wf-ui-m4-magnetic.spec.ts) covers only top-side docking (resource->agent top, timer->agent top); candidate thresholds are symmetric so adjacent real-user drags should dock, but no bottom/left/right dock was observed end-to-end"
+    },
+    "midDragPreview": {
+      "draggedClass": true,
+      "anchorClass": true,
+      "indicatorBar": "block",
+      "pillDyVsAnchorEdgePx": -12,
+      "pillDxVsAnchorEdgeMidpointPx": -58.5,
+      "note": "dx is computed-style-derived and may be a parsing artifact (reported raw)"
+    },
+    "layoutRealGraph": {
+      "source": "real /api/a2a/snapshot over the live server (positions from server graph-layout.mjs; no client dagre in src/ui)",
+      "nodes": 6,
+      "edges": 3,
+      "overlapPairs": 2,
+      "overlapPairAreasPx2": [
+        5387,
+        17755
+      ],
+      "edgePathBboxNodeCrossingsApprox": "6 of 6 edge path bboxes intersect >= 1 node rect (bbox approximation)",
+      "minPairwiseGapPx": 0,
+      "screenPxAtFittedZoom": true
+    },
+    "pageErrorsDuringMeasurement": [
+      "undefined (my fixture only - unmocked backend dock-action route hitting the real server; the fully-mocked m4 replica ran pageErrors: [])"
+    ]
+  }
+}

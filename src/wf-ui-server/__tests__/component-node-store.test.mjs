@@ -330,6 +330,32 @@ test('AC-006 componentNodeStates rejects corrupt persisted state instead of hydr
   }
 });
 
+test('AC-006 deleteComponentNode removes stale index entries when state files are missing', async () => {
+  const projectRoot = makeProject();
+  try {
+    const { createComponentNode, deleteComponentNode, getComponentNode, listComponentNodes } = await loadComponentNodeStore();
+    const created = createComponentNode(projectRoot, {
+      type: 'markdown',
+      title: 'Stale Markdown',
+      position: { x: 10, y: 10 },
+      markdown: 'stale',
+    });
+    fs.rmSync(path.join(projectRoot, created.node.statePath), { force: true });
+
+    assert.throws(
+      () => getComponentNode(projectRoot, created.node.nodeId),
+      /missing|out of sync|STATE_MISMATCH/i,
+    );
+    const deleted = deleteComponentNode(projectRoot, created.node.nodeId);
+
+    assert.equal(deleted.ok, true);
+    assert.equal(deleted.nodeId, created.node.nodeId);
+    assert.equal(listComponentNodes(projectRoot).some(node => node.nodeId === created.node.nodeId), false);
+  } finally {
+    fs.rmSync(projectRoot, { recursive: true, force: true });
+  }
+});
+
 test('AC-006 component node store rejects invalid types, traversal ids, and escaped mutable state paths', async () => {
   const projectRoot = makeProject();
   try {

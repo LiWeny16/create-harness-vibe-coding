@@ -20,13 +20,36 @@ export async function apiJson<T = any>(path: string, init: RequestInit = {}): Pr
   const res = await apiFetch(path, init);
   if (!res.ok) {
     let message = `${path}: ${res.status}`;
+    let detail: Record<string, unknown> | undefined;
     try {
       const body = await res.json();
-      message = body?.error?.message || message;
+      // Typed rejection bodies (agent-team-cooperation-spec §6.2/§7/§8): the
+      // error field may be a string code with a sibling `message` + detail
+      // fields (goal_already_bound) or an object { code, message } with
+      // sibling detail fields (goal_items_pending, markdown_conflict). Keep
+      // the backend message and attach the detail fields for typed consumers.
+      if (body && typeof body === 'object' && !Array.isArray(body)) {
+        const record = body as Record<string, unknown>;
+        const errorPart = record.error;
+        if (errorPart && typeof errorPart === 'object') {
+          const err = errorPart as Record<string, unknown>;
+          if (typeof err.message === 'string') message = err.message;
+        } else if (typeof record.message === 'string') {
+          message = record.message;
+        }
+        for (const field of ['remaining', 'existingGoalNodeId', 'timerNodeId', 'currentRevision', 'expectedRevision', 'holder', 'expiresAt']) {
+          if (Object.prototype.hasOwnProperty.call(record, field)) {
+            detail = detail || {};
+            detail[field] = record[field];
+          }
+        }
+      }
     } catch {
       // keep status message
     }
-    throw new Error(message);
+    const error = new Error(message) as Error & { detail?: Record<string, unknown> };
+    if (detail) error.detail = detail;
+    throw error;
   }
   return res.json();
 }
@@ -56,7 +79,19 @@ export async function apiJsonCached<T = any>(
           });
         jsonCache.set(key, { ...cached, promise });
       }
-      return cached.value as T;
+      // Stale entry: await the refresh instead of serving stale data that is
+      // about to be replaced. Cap the wait at 1500ms; on timeout or refresh
+      // failure fall back to the stale value (never throw when one exists).
+      try {
+        return await Promise.race([
+          cached.promise as Promise<T>,
+          new Promise<never>((_, reject) => {
+            setTimeout(() => reject(new Error('refresh timeout')), 1500);
+          }),
+        ]);
+      } catch {
+        return cached.value as T;
+      }
     }
     if (cached.promise) return cached.promise as Promise<T>;
   }

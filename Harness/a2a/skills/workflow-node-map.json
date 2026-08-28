@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "skillId": "workflow-node-map",
+  "name": "Workflow Node Map",
+  "source": "Harness/a2a/skills/workflow-node-map.json",
+  "description": "Canonical API-only workflow node-map read and mutation commands for Main Agent nodes.",
+  "triggers": [
+    "read graph",
+    "create node",
+    "connect nodes",
+    "disconnect nodes",
+    "move node",
+    "delete node",
+    "spawn agent node",
+    "delegate worker",
+    "control canvas",
+    "arrange workflow",
+    "控制画布",
+    "连接节点",
+    "删除节点",
+    "连接状态",
+    "连线",
+    "谁连着"
+  ],
+  "environment": [
+    "HARNESS_PEER_SESSION_ID",
+    "HARNESS_PEER_RUNTIME",
+    "HARNESS_AGENT_KIND",
+    "HARNESS_WORKFLOW_MODE",
+    "HARNESS_WORKFLOW_NODE_ID",
+    "HARNESS_WORKFLOW_MAP",
+    "HARNESS_NODE_HOME",
+    "HARNESS_NODE_INIT",
+    "HARNESS_WF_UI_URL"
+  ],
+  "policy": {
+    "mainAgent": [
+      "api-only-node-map-control",
+      "no-direct-workflow-map-writes",
+      "workflow-node-map",
+      "read-workflow-map-diagnostic-only",
+      "agent.readGraph",
+      "agent.createNode",
+      "agent.connectNodes",
+      "agent.disconnectNodes",
+      "agent.moveNode",
+      "agent.deleteNode",
+      "agent.deleteNodes",
+      "create-subagent-node",
+      "connect-agent-worker",
+      "connect-managed-nodes",
+      "delete-saved-node",
+      "stop-managed-node"
+    ],
+    "subagent": [
+      "read-workflow-map-diagnostic-only",
+      "return-evidence"
+    ],
+    "subagentDenied": [
+      "create-agent-node",
+      "create-task-node",
+      "workflow-node-map-control",
+      "node-map-control",
+      "workflow-map-file-mutation",
+      "spawn-pty-subagents"
+    ],
+    "denied": [
+      "no-source-file-reads-for-graph-state"
+    ]
+  }
+}

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { DragEvent, KeyboardEvent, MouseEvent, PointerEvent } from 'react';
+import type { ClipboardEvent, DragEvent, KeyboardEvent, MouseEvent, PointerEvent } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronDown, ChevronRight, File, Folder, FolderOpen, PanelLeftClose, PanelLeftOpen, Pin, PinOff, Plus, X } from 'lucide-react';
+import { ChevronDown, ChevronRight, Copy, ExternalLink, File, FilePlus, Folder, FolderOpen, FolderPlus, PanelLeftClose, PanelLeftOpen, Pin, PinOff, Plus, Trash2, X } from 'lucide-react';
 import { apiFetch, apiJson } from '../api';
 import { useT } from '../i18n/index';
 
@@ -49,10 +49,12 @@ type ExplorerActivation = {
 };
 
 const rootKey = '';
-const contextMenuWidth = 180;
-const contextMenuHeight = 160;
+const contextMenuWidth = 200;
+const contextMenuHeight = 300;
 const viewportMargin = 8;
 const clickMoveThreshold = 6;
+// 拖入/粘贴上传的单文件上限（服务端 ops body 亦有上限，前端先行拦截）。
+const MAX_UPLOAD_BYTES = 20 * 1024 * 1024;
 
 function normalizedPath(value: string | undefined | null) {
   return String(value || '').replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
@@ -67,6 +69,20 @@ function parentPath(path: string) {
 function depthOf(path: string) {
   const normalized = normalizedPath(path);
   return normalized ? normalized.split('/').length - 1 : 0;
+}
+
+// 默认名冲突时递增：file-1.txt → file-1-2.txt；New Folder → New Folder-2。
+function makeUniqueName(existingNames: string[], desired: string): string {
+  const lower = existingNames.map(name => name.toLowerCase());
+  if (!lower.includes(desired.toLowerCase())) return desired;
+  const dot = desired.lastIndexOf('.');
+  const stem = dot > 0 ? desired.slice(0, dot) : desired;
+  const ext = dot > 0 ? desired.slice(dot) : '';
+  for (let i = 2; i < 1000; i += 1) {
+    const candidate = `${stem}-${i}${ext}`;
+    if (!lower.includes(candidate.toLowerCase())) return candidate;
+  }
+  return `${stem}-${Date.now()}${ext}`;
 }
 
 function filePreviewPath(path: string) {
@@ -115,11 +131,6 @@ function stopExplorerGesture(event: { stopPropagation: () => void }) {
   event.stopPropagation();
 }
 
-function stopExplorerDrop(event: DragEvent<HTMLElement>) {
-  event.preventDefault();
-  stopExplorerGesture(event);
-}
-
 export default function WorkspaceExplorerPanel({ root, onInsertFile, onGestureStart, onGestureEnd }: Props) {
   const t = useT();
   const [collapsed, setCollapsed] = useState(false);
@@ -135,7 +146,17 @@ export default function WorkspaceExplorerPanel({ root, onInsertFile, onGestureSt
   const [previewError, setPreviewError] = useState('');
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const [renamingPath, setRenamingPath] = useState('');
+  // 浮动模式的拖拽偏移（默认 18,18 对应 CSS 基线）。
+  const [floatOffset, setFloatOffset] = useState<{ x: number; y: number }>({ x: 18, y: 18 });
+  const [opsError, setOpsError] = useState('');
+  const [uploadingCount, setUploadingCount] = useState(0);
+  // reveal 关闭菜单后无可见落点；在状态条短暂展示“正在打开”反馈。
+  const [revealPending, setRevealPending] = useState(false);
   const explorerShellRef = useRef<HTMLElement | null>(null);
+  const floatOffsetRef = useRef(floatOffset);
+  const floatingRef = useRef(floating);
+  const headerDragRef = useRef<{ startX: number; startY: number; base: { x: number; y: number } } | null>(null);
+  const renamingPathRef = useRef('');
   const explorerGestureActive = useRef(false);
   const entriesByPathRef = useRef<Map<string, WorkspaceTreeEntry>>(new Map());
   const pendingActivationRef = useRef<ExplorerActivation | null>(null);
@@ -253,13 +274,63 @@ export default function WorkspaceExplorerPanel({ root, onInsertFile, onGestureSt
   }, [finishPendingActivation, onGestureEnd]);
 
   useEffect(() => {
+    floatOffsetRef.current = floatOffset;
+  }, [floatOffset]);
+
+  useEffect(() => {
+    floatingRef.current = floating;
+  }, [floating]);
+
+  useEffect(() => {
+    renamingPathRef.current = renamingPath;
+  }, [renamingPath]);
+
+  // Esc 关闭右键菜单与详情预览（重命名输入态由输入框自身处理）。不阻断
+  // 画布的其它 Esc 语义（不 stopPropagation）。
+  useEffect(() => {
+    const onEscape = (event: globalThis.KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      setContextMenu(null);
+      if (!renamingPathRef.current) setPreviewEntry(null);
+    };
+    window.addEventListener('keydown', onEscape, true);
+    return () => window.removeEventListener('keydown', onEscape, true);
+  }, []);
+
+  useEffect(() => {
     const startExplorerGesture = (event: Event) => {
+      // 2.1/2.2: 任何按下（Explorer 内外的任意目标）先处理「弹层外部点击关闭」。
+      // 必须早于 explorer-surface 早退——画布等区域也应关闭菜单/预览。
+      if (event.type === 'pointerdown' || event.type === 'mousedown') {
+        const element = event.target instanceof Element
+          ? event.target
+          : event.target instanceof Node ? event.target.parentElement : null;
+        const inPreview = Boolean(element?.closest('[data-testid="workspace-preview-panel"]'));
+        const inMenu = Boolean(element?.closest('[data-testid="workspace-context-menu"]'));
+        const inRename = Boolean(element?.closest('[data-testid="workspace-rename-input"]'));
+        if (!inPreview && !inMenu && !inRename) setPreviewEntry(current => (current ? null : current));
+        if (!inMenu) setContextMenu(null);
+      }
       if (!isExplorerSurfaceTarget(event.target)) return;
       if (event.type === 'pointerdown' || (event.type === 'mousedown' && !pendingActivationRef.current)) {
         beginPendingActivation(event);
       }
       explorerGestureActive.current = true;
       onGestureStart?.();
+
+      // 2.3: 浮动模式下按住 header 空白区开始拖拽移动。
+      const headerElement = event.target instanceof Element
+        ? event.target.closest('.workflow-explorer-header')
+        : null;
+      if (floatingRef.current && headerElement && !(event.target instanceof Element ? event.target.closest('button') : null) && event.type === 'pointerdown') {
+        const mouseEvent = event as globalThis.MouseEvent;
+        headerDragRef.current = {
+          startX: Number(mouseEvent.clientX) || 0,
+          startY: Number(mouseEvent.clientY) || 0,
+          base: floatOffsetRef.current,
+        };
+      }
+
       event.stopPropagation();
       event.stopImmediatePropagation?.();
     };
@@ -274,6 +345,20 @@ export default function WorkspaceExplorerPanel({ root, onInsertFile, onGestureSt
         )) {
           pending.cancelled = true;
         }
+        // 2.3: header 拖拽中更新浮动偏移并钳制在视口内。
+        const drag = headerDragRef.current;
+        if (drag) {
+          const panelWidth = explorerShellRef.current?.offsetWidth || 292;
+          const panelHeight = explorerShellRef.current?.offsetHeight || 560;
+          const dx = (Number(mouseEvent.clientX) || 0) - drag.startX;
+          const dy = (Number(mouseEvent.clientY) || 0) - drag.startY;
+          const maxX = Math.max(viewportMargin, window.innerWidth - panelWidth - viewportMargin);
+          const maxY = Math.max(viewportMargin, window.innerHeight - panelHeight - viewportMargin);
+          setFloatOffset({
+            x: Math.min(Math.max(viewportMargin, drag.base.x + dx), maxX),
+            y: Math.min(Math.max(viewportMargin, drag.base.y + dy), maxY),
+          });
+        }
       }
       event.stopPropagation();
       event.stopImmediatePropagation?.();
@@ -284,6 +369,7 @@ export default function WorkspaceExplorerPanel({ root, onInsertFile, onGestureSt
       } else if (event.type === 'dragend' || event.type === 'drop') {
         cancelPendingActivation();
       }
+      if (event.type === 'pointerup' || event.type === 'mouseup') headerDragRef.current = null;
       stopActiveExplorerGesture(event);
       explorerGestureActive.current = false;
       onGestureEnd?.();
@@ -308,7 +394,7 @@ export default function WorkspaceExplorerPanel({ root, onInsertFile, onGestureSt
       window.removeEventListener('dragend', finishActiveExplorerGesture, true);
       window.removeEventListener('drop', finishActiveExplorerGesture, true);
     };
-  }, [beginPendingActivation, cancelPendingActivation, finishPendingActivation, isExplorerSurfaceTarget, onGestureEnd, onGestureStart]);
+  }, [beginPendingActivation, cancelPendingActivation, finishPendingActivation, floating, isExplorerSurfaceTarget, onGestureEnd, onGestureStart]);
 
   useEffect(() => () => {
     if (suppressNextClickTimerRef.current !== null) {
@@ -316,9 +402,7 @@ export default function WorkspaceExplorerPanel({ root, onInsertFile, onGestureSt
     }
   }, []);
 
-  const loadPath = useCallback(async (path: string) => {
-    const relPath = normalizedPath(path);
-    if (childrenByPath[relPath] || loadingByPath.has(relPath)) return;
+  const fetchPath = useCallback(async (relPath: string) => {
     setLoadingByPath(current => new Set(current).add(relPath));
     try {
       const data = await apiJson<TreeResponse>(`/api/workspace/tree?path=${encodeURIComponent(relPath)}`);
@@ -336,7 +420,25 @@ export default function WorkspaceExplorerPanel({ root, onInsertFile, onGestureSt
         return next;
       });
     }
-  }, [childrenByPath, loadingByPath]);
+  }, []);
+
+  const loadPath = useCallback(async (path: string) => {
+    const relPath = normalizedPath(path);
+    if (childrenByPath[relPath] || loadingByPath.has(relPath)) return;
+    await fetchPath(relPath);
+  }, [childrenByPath, loadingByPath, fetchPath]);
+
+  // ops 之后：清缓存并强制重取（loadPath 的缓存守卫对旧闭包不生效）。
+  const reloadPath = useCallback((path: string) => {
+    const rel = normalizedPath(path);
+    setChildrenByPath(current => {
+      if (!(rel in current)) return current;
+      const next = { ...current };
+      delete next[rel];
+      return next;
+    });
+    void fetchPath(rel);
+  }, [fetchPath]);
 
   useEffect(() => {
     loadPath(rootKey).catch(() => {
@@ -442,6 +544,177 @@ export default function WorkspaceExplorerPanel({ root, onInsertFile, onGestureSt
     activateEntryRef.current = activateEntry;
   }, [activateEntry]);
 
+  // ── workspace ops (2.2: VSCode 式右键菜单 + 拖入/粘贴上传) ──
+  const postOps = useCallback(async (op: Record<string, unknown>) => {
+    setOpsError('');
+    try {
+      await apiJson('/api/workspace/ops', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(op),
+      });
+      return true;
+    } catch (e: any) {
+      setOpsError(String(e?.message || 'workspace op failed'));
+      return false;
+    }
+  }, []);
+
+  // 右键条目的创建目标目录：文件夹→其内部；文件→其父目录；空→根。
+  const targetDirFor = useCallback((pathValue: string) => {
+    const entry = entriesByPathRef.current.get(normalizedPath(pathValue));
+    if (!entry) return rootKey;
+    return entry.type === 'directory' ? entry.path : parentPath(entry.path);
+  }, []);
+
+  const createEntryFromMenu = useCallback(async (pathValue: string, kind: 'file' | 'folder') => {
+    const dir = targetDirFor(pathValue);
+    const siblings = childrenByPath[dir] || [];
+    const name = kind === 'folder'
+      ? makeUniqueName(siblings.map(e => e.name), 'New Folder')
+      : makeUniqueName(siblings.map(e => e.name), 'file-1.txt');
+    const target = dir ? `${dir}/${name}` : name;
+    const ok = await postOps(kind === 'folder'
+      ? { op: 'create-folder', target }
+      : { op: 'create-file', target, contentBase64: '' });
+    if (!ok) return;
+    setContextMenu(null);
+    setPreviewEntry(null);
+    if (dir) setExpanded(current => new Set(current).add(dir));
+    reloadPath(dir);
+    setRenamingPath(target);
+  }, [childrenByPath, postOps, reloadPath, targetDirFor]);
+
+  const commitRename = useCallback(async (newNameRaw: string) => {
+    const oldPath = renamingPath;
+    if (!oldPath) return;
+    const raw = newNameRaw.trim();
+    const currentName = oldPath.split(/[\\/]+/).pop() || '';
+    if (!raw || raw === currentName) {
+      setRenamingPath('');
+      return;
+    }
+    if (/[\\/]/.test(raw)) {
+      setOpsError(t('Name cannot contain / or \\'));
+      return;
+    }
+    const parent = parentPath(oldPath);
+    const target = parent ? `${parent}/${raw}` : raw;
+    const ok = await postOps({ op: 'rename', source: oldPath, target });
+    if (ok) {
+      reloadPath(parent);
+      setRenamingPath('');
+    }
+  }, [postOps, reloadPath, renamingPath, t]);
+
+  const duplicateEntry = useCallback(async (pathValue: string) => {
+    const entry = entriesByPathRef.current.get(normalizedPath(pathValue));
+    if (!entry) return;
+    const dir = parentPath(entry.path);
+    const siblings = childrenByPath[dir] || [];
+    const targetName = makeUniqueName(siblings.map(e => e.name), entry.name);
+    const target = dir ? `${dir}/${targetName}` : targetName;
+    const ok = await postOps({ op: 'copy', source: entry.path, target });
+    if (ok) reloadPath(dir);
+    setContextMenu(null);
+  }, [childrenByPath, postOps, reloadPath]);
+
+  const deleteEntry = useCallback(async (pathValue: string) => {
+    const dir = parentPath(pathValue);
+    const ok = await postOps({ op: 'delete', source: pathValue });
+    setContextMenu(null);
+    setPreviewEntry(current => (current && current.path === pathValue ? null : current));
+    if (ok) reloadPath(dir);
+  }, [postOps, reloadPath]);
+
+  const copyEntryPath = useCallback(async (pathValue: string) => {
+    const absolute = root ? `${String(root).replace(/[\\/]+$/, '')}/${normalizedPath(pathValue)}` : normalizedPath(pathValue);
+    try {
+      await navigator.clipboard.writeText(absolute);
+    } catch {
+      setOpsError(t('Clipboard unavailable'));
+    }
+    setContextMenu(null);
+  }, [root, t]);
+
+  const revealEntryPath = useCallback(async (pathValue: string) => {
+    setContextMenu(null);
+    setRevealPending(true);
+    try {
+      await apiJson('/api/workspace/reveal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: normalizedPath(pathValue) }),
+      });
+    } catch (e: any) {
+      setOpsError(String(e?.message || 'reveal failed'));
+    } finally {
+      // 资源管理器窗口约 1s 后弹出，反馈保底展示一段时间再撤。
+      window.setTimeout(() => setRevealPending(false), 1200);
+    }
+  }, []);
+
+  const uploadFiles = useCallback(async (files: Iterable<File>, targetDirRaw: string) => {
+    const list = Array.from(files).filter(file => file.size > 0);
+    if (!list.length) return;
+    const dir = normalizedPath(targetDirRaw);
+    setOpsError('');
+    // 本地维护 siblings 副本防重名：上传中 reload 还没回来时也能递增。
+    const siblings = [...(childrenByPath[dir] || [])];
+    let lastError = '';
+    if (dir) setExpanded(current => new Set(current).add(dir));
+    for (const file of list) {
+      if (file.size > MAX_UPLOAD_BYTES) {
+        lastError = `${file.name}: ${t('file too large')}`;
+        continue;
+      }
+      setUploadingCount(current => current + 1);
+      try {
+        const buffer = await file.arrayBuffer();
+        const bytes = new Uint8Array(buffer);
+        const parts: string[] = [];
+        const CHUNK = 0x8000;
+        for (let offset = 0; offset < bytes.length; offset += CHUNK) {
+          parts.push(String.fromCharCode(...bytes.subarray(offset, offset + CHUNK)));
+          // 大文件分片间让出主线程，避免长任务卡 UI。
+          if (bytes.length > CHUNK * 4) await new Promise(resolve => setTimeout(resolve, 0));
+        }
+        const contentBase64 = btoa(parts.join(''));
+        const name = makeUniqueName(siblings.map(e => e.name), file.name);
+        const target = dir ? `${dir}/${name}` : name;
+        const ok = await postOps({ op: 'create-file', target, contentBase64 });
+        if (ok) siblings.push({ name, path: target, type: 'file' } as WorkspaceTreeEntry);
+      } catch (e: any) {
+        lastError = `${file.name}: ${String(e?.message || e)}`;
+      } finally {
+        setUploadingCount(current => Math.max(0, current - 1));
+      }
+    }
+    reloadPath(dir);
+    if (lastError) setOpsError(lastError);
+  }, [childrenByPath, postOps, reloadPath, t]);
+
+  const handleWorkspaceDrop = (event: DragEvent<HTMLElement>) => {
+    event.preventDefault();
+    stopExplorerGesture(event);
+    const files = Array.from(event.dataTransfer?.files || []);
+    if (!files.length) return;
+    // 悬停目标：条目上→文件夹内部或文件父目录；空白处→工作区根。
+    const entry = getEntryFromTarget(event.target);
+    const dir = entry ? (entry.type === 'directory' ? entry.path : parentPath(entry.path)) : rootKey;
+    void uploadFiles(files, dir);
+  };
+
+  const handleWorkspacePaste = (event: ClipboardEvent<HTMLElement>) => {
+    const files = Array.from(event.clipboardData?.files || []);
+    if (!files.length) return;
+    event.preventDefault();
+    const selectedEntries = [...selected].map(path => entriesByPathRef.current.get(path)).filter(Boolean) as WorkspaceTreeEntry[];
+    const anchor = selectedEntries[0];
+    const dir = anchor ? (anchor.type === 'directory' ? anchor.path : parentPath(anchor.path)) : rootKey;
+    void uploadFiles(files, dir);
+  };
+
   const selectEntry = (event: MouseEvent, entry: WorkspaceTreeEntry) => {
     stopExplorerGesture(event);
     if (suppressNextClickRef.current) {
@@ -516,12 +789,17 @@ export default function WorkspaceExplorerPanel({ root, onInsertFile, onGestureSt
       onDoubleClick={stopExplorerGesture}
       onContextMenu={stopExplorerGesture}
       onDragEnter={stopExplorerGesture}
-      onDragOver={stopExplorerGesture}
+      onDragOver={event => {
+        event.preventDefault();
+        stopExplorerGesture(event);
+      }}
       onDragLeave={stopExplorerGesture}
-      onDrop={stopExplorerDrop}
+      onDrop={handleWorkspaceDrop}
+      onPaste={handleWorkspacePaste}
       onWheel={event => event.stopPropagation()}
+      style={floating ? { transform: `translate(${floatOffset.x}px, ${floatOffset.y}px)` } : undefined}
     >
-      <div className="workflow-explorer-header">
+      <div className="workflow-explorer-header" style={{ cursor: floating ? 'move' : 'default' }}>
         <div className="workflow-explorer-title">
           <Folder size={14} />
           <span>Explorer</span>
@@ -586,7 +864,13 @@ export default function WorkspaceExplorerPanel({ root, onInsertFile, onGestureSt
                       autoFocus
                       onClick={event => event.stopPropagation()}
                       onKeyDown={event => {
-                        if (event.key === 'Escape' || event.key === 'Enter') setRenamingPath('');
+                        if (event.key === 'Escape') {
+                          event.stopPropagation();
+                          setRenamingPath('');
+                        } else if (event.key === 'Enter') {
+                          event.stopPropagation();
+                          void commitRename(event.currentTarget.value);
+                        }
                       }}
                     />
                   ) : (
@@ -597,6 +881,13 @@ export default function WorkspaceExplorerPanel({ root, onInsertFile, onGestureSt
             })}
             {loadingByPath.size > 0 && <div className="workspace-tree-loading">Loading...</div>}
           </div>
+          {(uploadingCount > 0 || revealPending || opsError) && (
+            <div className="workspace-explorer-status" data-testid="workspace-explorer-status">
+              {revealPending && <span data-testid="workspace-revealing" role="status">{t('Opening')}</span>}
+              {uploadingCount > 0 && <span data-testid="workspace-uploading">{t('Uploading {n} file(s)…', String(uploadingCount))}</span>}
+              {opsError && <span data-testid="workspace-explorer-error" style={{ color: 'var(--danger)' }}>{opsError}</span>}
+            </div>
+          )}
         </>
       )}
       {contextMenu && createPortal(
@@ -609,9 +900,7 @@ export default function WorkspaceExplorerPanel({ root, onInsertFile, onGestureSt
             top: contextMenu.y,
             zIndex: 60,
             width: contextMenuWidth,
-            height: contextMenuHeight,
             boxSizing: 'border-box',
-            overflow: 'hidden',
           }}
           onPointerDownCapture={stopExplorerGesture}
           onPointerDown={stopExplorerGesture}
@@ -623,10 +912,29 @@ export default function WorkspaceExplorerPanel({ root, onInsertFile, onGestureSt
             stopExplorerGesture(event);
           }}
         >
-          <button type="button" onClick={() => setRenamingPath(contextMenu.path)}>Rename</button>
-          <button type="button">New File</button>
-          <button type="button">Delete</button>
-          <div title={parentPath(contextMenu.path)}>Parent: {parentPath(contextMenu.path) || '/'}</div>
+          <button type="button" data-testid="workspace-context-new-file" onClick={() => void createEntryFromMenu(contextMenu.path, 'file')}>
+            <FilePlus size={12} /> {t('New File')}
+          </button>
+          <button type="button" data-testid="workspace-context-new-folder" onClick={() => void createEntryFromMenu(contextMenu.path, 'folder')}>
+            <FolderPlus size={12} /> {t('New Folder')}
+          </button>
+          <div className="workspace-context-sep" />
+          <button type="button" data-testid="workspace-context-rename" onClick={() => { setRenamingPath(contextMenu.path); setContextMenu(null); }}>
+            {t('Rename')}
+          </button>
+          <button type="button" data-testid="workspace-context-duplicate" onClick={() => void duplicateEntry(contextMenu.path)}>
+            {t('Duplicate')}
+          </button>
+          <button type="button" data-testid="workspace-context-delete" onClick={() => void deleteEntry(contextMenu.path)}>
+            <Trash2 size={12} /> {t('Delete')}
+          </button>
+          <div className="workspace-context-sep" />
+          <button type="button" data-testid="workspace-context-copy-path" onClick={() => void copyEntryPath(contextMenu.path)}>
+            <Copy size={12} /> {t('Copy Path')}
+          </button>
+          <button type="button" data-testid="workspace-context-reveal" onClick={() => void revealEntryPath(contextMenu.path)}>
+            <ExternalLink size={12} /> {t('Open in Explorer')}
+          </button>
         </div>,
         document.body,
       )}
@@ -655,7 +963,7 @@ export default function WorkspaceExplorerPanel({ root, onInsertFile, onGestureSt
               </div>
             ) : previewIsImage ? (
               previewObjectUrl ? (
-                <img src={previewObjectUrl} alt={previewEntry.name} />
+                <img src={previewObjectUrl} alt={previewEntry.name} draggable={false} />
               ) : (
                 <div className="workspace-preview-empty">
                   <File size={28} />

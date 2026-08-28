@@ -5,7 +5,6 @@ import { fileURLToPath } from 'node:url';
 const configDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(configDir, '..', '..');
 const port = Number(process.env.WF_UI_E2E_PORT || 43173);
-const token = process.env.WF_UI_E2E_TOKEN || 'playwright-m1-red';
 
 export default defineConfig({
   testDir: './e2e',
@@ -28,10 +27,9 @@ export default defineConfig({
     cwd: configDir,
     env: {
       WF_UI_E2E_PORT: String(port),
-      WF_UI_E2E_TOKEN: token,
       WF_UI_E2E_PROJECT_ROOT: repoRoot,
     },
-    url: `http://127.0.0.1:${port}/api/health?token=${encodeURIComponent(token)}`,
+    url: `http://127.0.0.1:${port}/api/health`,
     reuseExistingServer: false,
     timeout: 120_000,
   },

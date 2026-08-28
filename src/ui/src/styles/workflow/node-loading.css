@@ -1,0 +1,55 @@
+/* Node loading placeholder: same-size shell while a node initializes */
+.workflow-node-loading {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: rgba(255,255,255,0.97);
+  color: var(--fg);
+  box-shadow: 0 14px 34px rgba(15,23,42,0.11);
+  overflow: hidden;
+}
+
+/* Bigger thinking orb: reuse .workflow-toast-orb base + its pulse keyframes */
+.workflow-node-loading-orb {
+  width: 18px;
+  height: 18px;
+  box-shadow: 0 0 0 6px rgba(29,78,216,0.10);
+}
+
+.workflow-node-loading-orb::after {
+  content: "";
+  position: absolute;
+  inset: -7px;
+  border: 1px solid currentColor;
+  border-radius: inherit;
+  opacity: 0.34;
+  animation: workflow-toast-orb-pulse 1100ms cubic-bezier(0.2, 0, 0, 1) infinite;
+}
+
+.workflow-node-loading-label {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.workflow-node-loading-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workflow-node-loading-orb::after {
+    animation: none;
+  }
+}

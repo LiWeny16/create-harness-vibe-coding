@@ -1,12 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import MarkdownIt from 'markdown-it';
 import { Archive, ChevronRight, FileText, FolderOpen, Search, Terminal, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { apiJson, apiJsonCached, invalidateApiCache } from '../api';
 import LoadingView from './LoadingView';
 import { useT } from '../i18n/index';
 import { RuntimeBrandMark } from '../runtimeBrand';
+import { renderMarkdown } from './markdown/renderMarkdown';
+import { renderMermaidDiagrams } from './markdown/mermaidLoader';
 
 type ACItem = { id: string; text: string; status: string };
 type Task = {
@@ -19,6 +20,7 @@ type Task = {
   nextAction: string | null;
   tier: string | null;
   mode: string | null;
+  group?: string | null;
   acceptance: ACItem[];
   dependsOn: string[];
   blocks: string[];
@@ -36,12 +38,6 @@ type Props = { onSelectSession?: (sessionId: string) => void };
 type StateView = 'visual' | 'json';
 type StateRecord = Record<string, unknown>;
 
-const md = new MarkdownIt({
-  html: false,
-  linkify: true,
-  typographer: false,
-});
-
 function statusColor(status: string) {
   if (status === 'active' || status === 'in_progress') return { bg: '#dcfce7', fg: '#166534' };
   if (status === 'verified' || status === 'passed') return { bg: '#dbeafe', fg: '#1e40af' };
@@ -58,6 +54,49 @@ function acStatusStyle(status: string) {
 
 function ellipsis(value: string, max: number) {
   return value.length > max ? `${value.slice(0, max)}...` : value;
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+const STALE_COMPLETED_DAYS = 3;
+const STALE_ACTIVE_DAYS = 7;
+// Mirrors the completed kinds used by Harness/scripts/task-group-index.mjs.
+const COMPLETED_KINDS = new Set([
+  'complete',
+  'completed',
+  'verified',
+  'archived',
+  'abandoned',
+  'obsolete',
+  'done',
+  'closed',
+  'closeout',
+  'skipped',
+  'failed',
+]);
+
+function taskGroup(task: Task) {
+  return (task.group || '').trim() || 'default';
+}
+
+function sanitizeGroupName(name: string) {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'default';
+}
+
+// Client-side stale check, same rules as the generated GROUPS.md:
+// (a) completed and not archived, updatedAt older than 3 days -> needs archive;
+// (b) status active, updatedAt older than 7 days -> no heartbeat.
+function isStaleTask(task: Task) {
+  if (!task.updatedAt) return false;
+  const ageMs = Date.now() - new Date(task.updatedAt).getTime();
+  if (ageMs < 0) return false;
+  const days = Math.floor(ageMs / DAY_MS);
+  const status = task.status.toLowerCase();
+  const phase = (task.phase || '').toLowerCase();
+  if (COMPLETED_KINDS.has(status) || COMPLETED_KINDS.has(phase)) {
+    return !task.archivedYear && status !== 'archived' && phase !== 'archived' && days > STALE_COMPLETED_DAYS;
+  }
+  if (status === 'active') return days > STALE_ACTIVE_DAYS;
+  return false;
 }
 
 function isRecord(value: unknown): value is StateRecord {
@@ -112,9 +151,11 @@ export default function TaskList({ onSelectSession }: Props) {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<TabName>('active');
   const [search, setSearch] = useState('');
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [archiving, setArchiving] = useState<string | null>(null);
   const [startingTerminal, setStartingTerminal] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const markdownRef = useRef<HTMLDivElement>(null);
   const t = useT();
 
   const loadTasks = async (refresh = false) => {
@@ -139,7 +180,27 @@ export default function TaskList({ onSelectSession }: Props) {
 
   useEffect(() => {
     loadTasks();
+    let graphChangedTimer: ReturnType<typeof setTimeout> | null = null;
+    const onGraphChanged = () => {
+      if (graphChangedTimer) clearTimeout(graphChangedTimer);
+      graphChangedTimer = setTimeout(() => loadTasks(true), 250);
+    };
+    window.addEventListener('harness:graph-changed', onGraphChanged);
+    return () => {
+      window.removeEventListener('harness:graph-changed', onGraphChanged);
+      if (graphChangedTimer) clearTimeout(graphChangedTimer);
+    };
   }, []);
+
+  // After the markdown preview container lands its innerHTML, run the async
+  // mermaid pass from the shared pipeline. The loader never rejects and does
+  // no React state writes, so no unmount cleanup is needed (it degrades
+  // placeholders in place; a detached container is simply left as-is).
+  useEffect(() => {
+    const container = markdownRef.current;
+    if (!container || !fileData?.filename.endsWith('.md')) return;
+    void renderMermaidDiagrams(container).catch(() => {});
+  }, [fileData]);
 
   const displayList = useMemo(() => {
     const list = tab === 'active' ? tasks : archived;
@@ -152,6 +213,36 @@ export default function TaskList({ onSelectSession }: Props) {
       (task.nextAction || '').toLowerCase().includes(q)
     );
   }, [tasks, archived, tab, search]);
+
+  // Group rows by their group tag; missing/empty tag renders as "default".
+  // Non-default groups are alphabetical, "default" is last.
+  const grouped = useMemo(() => {
+    const byName = new Map<string, Task[]>();
+    for (const task of displayList) {
+      const name = taskGroup(task);
+      const list = byName.get(name);
+      if (list) list.push(task);
+      else byName.set(name, [task]);
+    }
+    const groups = [...byName.entries()].map(([name, nameTasks]) => ({
+      name,
+      tasks: nameTasks,
+      staleCount: nameTasks.filter(isStaleTask).length,
+    }));
+    groups.sort(
+      (a, b) => (a.name === 'default' ? 1 : 0) - (b.name === 'default' ? 1 : 0) || a.name.localeCompare(b.name),
+    );
+    return groups;
+  }, [displayList]);
+
+  const toggleGroup = (name: string) => {
+    setCollapsedGroups(prev => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+  };
 
   const loadTaskFile = async (task: Task, filename: string) => {
     try {
@@ -188,7 +279,7 @@ export default function TaskList({ onSelectSession }: Props) {
           runtime: task.defaultRuntime || task.runtimeHistory?.[0] || undefined,
           role: 'task-terminal',
           objective: t('Continue {taskId}', task.taskId),
-          subagentMode: 'wf-subagents',
+          subagentMode: 'built-in-subagents',
         }),
       });
       invalidateApiCache('/api/sessions');
@@ -228,8 +319,9 @@ export default function TaskList({ onSelectSession }: Props) {
     if (fileData.filename.endsWith('.md')) {
       return (
         <div
+          ref={markdownRef}
           className="markdown-body"
-          dangerouslySetInnerHTML={{ __html: md.render(fileData.content.slice(0, 40000)) }}
+          dangerouslySetInnerHTML={{ __html: renderMarkdown(fileData.content.slice(0, 40000)) }}
         />
       );
     }
@@ -290,48 +382,90 @@ export default function TaskList({ onSelectSession }: Props) {
               {search ? t('No matching tasks.') : t('No {tab} task capsules.', tab)}
             </div>
           ) : (
-            <AnimatePresence>
-              {displayList.map(task => {
-                const color = statusColor(task.status);
-                return (
-                  <motion.div
-                    key={task.taskId}
-                    data-testid="task-row"
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.12 }}
-                    onClick={() => openInspector(task)}
+            grouped.map(group => {
+              const collapsed = collapsedGroups.has(group.name);
+              const isDefault = group.name === 'default';
+              return (
+                <div key={group.name} style={{ marginBottom: 6 }}>
+                  <button
+                    data-testid={`task-group-${sanitizeGroupName(group.name)}`}
+                    onClick={() => toggleGroup(group.name)}
                     style={{
-                      padding: '7px 10px',
-                      border: '1px solid var(--border)',
-                      borderRadius: 'var(--radius)',
-                      marginBottom: 4,
-                      cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'space-between',
-                      background: selected?.taskId === task.taskId ? 'var(--surface)' : 'var(--bg)',
-                      borderLeft: `3px solid ${color.fg}`,
+                      gap: 4,
+                      width: '100%',
+                      textAlign: 'left',
+                      padding: '5px 8px',
+                      fontSize: 10,
+                      fontWeight: 600,
+                      color: isDefault ? 'var(--muted)' : 'var(--fg)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius)',
+                      background: isDefault ? 'transparent' : 'var(--surface)',
+                      marginBottom: 4,
+                      cursor: 'pointer',
                     }}
                   >
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 11, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {task.archivedYear && <span style={{ fontSize: 9, color: 'var(--muted)', marginRight: 4 }}>[{task.archivedYear}]</span>}
-                        <TaskRuntimeMarks runtimes={taskRuntimes(task)} size={13} />
-                        {task.taskId}
-                      </div>
-                      <div style={{ fontSize: 9, color: 'var(--muted)', marginTop: 1 }}>
-                        <span style={{ background: color.bg, color: color.fg, padding: '0 5px', borderRadius: 99, fontSize: 9, marginRight: 4 }}>{task.status}</span>
-                        {task.phase && <span>{task.phase}</span>}
-                        {task.updatedAt && <span> / {new Date(task.updatedAt).toLocaleDateString()}</span>}
-                      </div>
-                    </div>
-                    <ChevronRight size={12} style={{ color: 'var(--muted)', flexShrink: 0 }} />
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
+                    <ChevronRight
+                      size={11}
+                      style={{ color: 'var(--muted)', transform: collapsed ? 'rotate(0deg)' : 'rotate(90deg)', transition: 'transform 0.12s', flexShrink: 0 }}
+                    />
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{group.name}</span>
+                    <span style={{ color: 'var(--muted)', fontWeight: 400 }}>({group.tasks.length})</span>
+                    {group.staleCount > 0 && (
+                      <span title={t('Stale')} style={{ color: '#b45309', fontWeight: 600, marginLeft: 'auto' }}>
+                        ⚠ {group.staleCount}
+                      </span>
+                    )}
+                  </button>
+                  {!collapsed && (
+                    <AnimatePresence>
+                      {group.tasks.map(task => {
+                        const color = statusColor(task.status);
+                        return (
+                          <motion.div
+                            key={task.taskId}
+                            data-testid="task-row"
+                            initial={{ opacity: 0, y: 4 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.12 }}
+                            onClick={() => openInspector(task)}
+                            style={{
+                              padding: '7px 10px',
+                              border: '1px solid var(--border)',
+                              borderRadius: 'var(--radius)',
+                              marginBottom: 4,
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              background: selected?.taskId === task.taskId ? 'var(--surface)' : 'var(--bg)',
+                              borderLeft: `3px solid ${color.fg}`,
+                            }}
+                          >
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: 11, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {task.archivedYear && <span style={{ fontSize: 9, color: 'var(--muted)', marginRight: 4 }}>[{task.archivedYear}]</span>}
+                                <TaskRuntimeMarks runtimes={taskRuntimes(task)} size={13} />
+                                {task.taskId}
+                              </div>
+                              <div style={{ fontSize: 9, color: 'var(--muted)', marginTop: 1 }}>
+                                <span style={{ background: color.bg, color: color.fg, padding: '0 5px', borderRadius: 99, fontSize: 9, marginRight: 4 }}>{task.status}</span>
+                                {task.phase && <span>{task.phase}</span>}
+                                {task.updatedAt && <span> / {new Date(task.updatedAt).toLocaleDateString()}</span>}
+                              </div>
+                            </div>
+                            <ChevronRight size={12} style={{ color: 'var(--muted)', flexShrink: 0 }} />
+                          </motion.div>
+                        );
+                      })}
+                    </AnimatePresence>
+                  )}
+                </div>
+              );
+            })
           )}
         </div>
       </div>

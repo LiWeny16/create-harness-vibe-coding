@@ -1,0 +1,191 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-upgrade-file-node",
+  "status": "archived",
+  "mode": "wf",
+  "tier": "standard",
+  "phase": "archived",
+  "gate": null,
+  "updatedAt": "2026-08-28T02:35:58.910Z",
+  "activeQuestion": null,
+  "nextAction": "归档前等待用户提交决策；浏览器级 UI 验收待用户",
+  "acceptance": [
+    "AC-1",
+    "AC-2",
+    "AC-3",
+    "AC-4",
+    "AC-5",
+    "AC-6",
+    "AC-7",
+    "AC-8",
+    "AC-9",
+    "AC-10"
+  ],
+  "links": {
+    "dependsOn": [],
+    "blocks": [],
+    "related": [
+      "task-agent-control-parity"
+    ]
+  },
+  "queues": {
+    "ready": [],
+    "running": [],
+    "blocked": [],
+    "done": []
+  },
+  "workItems": [],
+  "dispatchLedger": [
+    {
+      "id": "EX-1",
+      "role": "researcher",
+      "objective": "Excel/PDF/ZIP 轻量库选型（许可/体积/原生依赖/API 核实）",
+      "status": "done",
+      "wave": "W0",
+      "summary": "库选型完成：read-excel-file/unpdf/yauzl+iconv-lite；fs.watch 父目录+stat复核+轮询兜底；组件级锁+陈旧回收"
+    },
+    {
+      "id": "EX-2",
+      "role": "codebase-explorer",
+      "objective": "file node 现状地图（actions/路由/前端渲染/锁/同步/测试/文档）",
+      "status": "done",
+      "wave": "W0",
+      "summary": "file node 现状地图完成：读/写/ETag/Range/undo/防御已有；缺口=读缓存、file锁、变更监听WS推送、xlsx/pdf文本/zip读取、>64KB分页、客户端封装"
+    },
+    {
+      "id": "W1T",
+      "role": "test-writer",
+      "objective": "AC-1..AC-7 RED 测试（cache/lock/watch/paging + formats）",
+      "status": "done",
+      "wave": "W1T",
+      "summary": "15 测试就位：12 RED + 3 守卫；契约面：getPreviewCached/invalidateFileCache、watchFileNodes、writeText file_locked 409、readPdfPage isEvalSupported:false、extract 拒绝穿越"
+    },
+    {
+      "id": "W1",
+      "role": "implementer",
+      "objective": "缓存+锁门+监听器+server 接线（6 文件写集）",
+      "status": "done",
+      "wave": "W1",
+      "summary": "6/6 新测试绿 + 74/74 回归；缓存 getPreviewCached/invalidateFileCache、writeText 锁门 409 file_locked、file-watcher watchFileNodes、server 接线 file.changed 广播+落盘"
+    },
+    {
+      "id": "W2",
+      "role": "implementer",
+      "objective": "格式适配器+xlsx/pdf/zip 动作+registry/manuals+fixtures",
+      "status": "done",
+      "wave": "W2",
+      "summary": "9 新动作 + 格式适配器 + registry/manuals 双镜像字节一致；65/65 绿；readXlsxSheet 拆分 headers/rows；yauzl bit11/截断坑已规避"
+    },
+    {
+      "id": "W2FIX",
+      "role": "controller",
+      "objective": "display 手册统一布局（triggers/environment/policy/controlSurface + 禁令 verbatim）+ NODE_TYPES 测试表补 display",
+      "status": "done",
+      "wave": "W2"
+    },
+    {
+      "id": "W3",
+      "role": "implementer",
+      "objective": "前端 FileBigView 渲染分派 + 徽标 + nodeRuntimeClient 封装",
+      "status": "done",
+      "wave": "W3",
+      "summary": "前端 5 文件：nodeRuntimeClient 8 封装 + FileBigView xlsx/zip/pdf文本 渲染分派 + 变更徽标 + WS file.changed 订阅 + i18n 20 键；tsc+build 过"
+    },
+    {
+      "id": "W4",
+      "role": "verifier",
+      "objective": "真机 AC-1..AC-10 证据矩阵（真实 fixture + API 调用）",
+      "status": "done",
+      "wave": "W4",
+      "summary": "AC-1/2/4/5/6/7/8 PASS（HTTP+WS 真证据）；AC-3 WS 215ms 广播 PASS、落盘不可达（file 节点无 sessionId）；AC-9 未跑；AC-10 唯一新失败=L1 计数钉 74→85"
+    },
+    {
+      "id": "W4R",
+      "role": "reviewer",
+      "objective": "安全透镜：Zip Slip/路径/资源耗尽/锁绕过/监听/缓存/XSS",
+      "status": "done",
+      "wave": "W4R",
+      "summary": "NEEDS_CHANGES：H1 maxBytes Infinity 绕过→OOM；M1 extract 无锁/覆盖/无上限/ADS；M2 zip 条目无上限；M3 xlsx/pdf 无大小上限+全档取文；L1 自写触发徽标；L2-L5 低危"
+    },
+    {
+      "id": "W4F",
+      "role": "implementer",
+      "objective": "修复 H1/M1/M2/M3/L1（钳制/锁/上限/按页取文/自写抑制）+ 回归测试",
+      "status": "done",
+      "wave": "W4F",
+      "summary": "H1 钳制/M1 硬化/M2 上限/M3 大小+逐页/L1 自写抑制 全落地：48/48 + 54/54 + 55/55"
+    },
+    {
+      "id": "W4C",
+      "role": "controller",
+      "objective": "L1 计数钉 85 + AC-3 落盘 file-changed.jsonl（D6）",
+      "status": "done",
+      "wave": "closeout"
+    },
+    {
+      "id": "W4R2",
+      "role": "reviewer",
+      "objective": "五项修复复查 → 最终 verdict",
+      "status": "done",
+      "wave": "closeout",
+      "summary": "NEEDS_CHANGES：H1/M2/L1 PASS；R1 门可被 1e999/abc 禁用+pageCount 无上界（MEDIUM）；R2 extract 信任可伪造 uncompressedSize（MEDIUM）"
+    },
+    {
+      "id": "W5F",
+      "role": "implementer",
+      "objective": "R1 clampFormatMaxBytes+pageCount 钳制；R2 extract 写流字节计数+清理半成品",
+      "status": "done",
+      "wave": "W5F",
+      "summary": "R1/R2 闭合 + yauzl validateEntrySizes 挂起隐患全局关闭（openZip 默认 false）；27/27×5 + registry 10/10"
+    },
+    {
+      "id": "W4R3",
+      "role": "reviewer",
+      "objective": "终审 verdict",
+      "status": "done",
+      "wave": "closeout",
+      "summary": "终审 PASS：0 HIGH 0 MEDIUM；R1/R2 闭合 + validateEntrySizes 挂起隐患处理；剩余 LOW 不阻塞"
+    }
+  ],
+  "decisions": [
+    {
+      "id": "D1",
+      "topic": "ZIP 操作范围",
+      "decision": "浏览+按需解压：后端列条目+单文件预览+解压单文件到受控目录",
+      "at": "2026-08-14"
+    },
+    {
+      "id": "D2",
+      "topic": "实时同步感知",
+      "decision": "变化感知徽标：fs.watch 监听 + WS 推送 file.changed + UI 徽标 + 手动刷新",
+      "at": "2026-08-14"
+    },
+    {
+      "id": "D3",
+      "topic": "Excel 深度",
+      "decision": "只读渲染+分页：轻量解析库，工作表切换 + 前 N 行 + 翻页",
+      "at": "2026-08-14"
+    },
+    {
+      "id": "D5",
+      "topic": "控制器修复基线",
+      "decision": "T5 正则含 display + CLI 模板镜像 CRLF 行尾字节同步（fs.copyFileSync）——display 功能的遗留债",
+      "at": "2026-08-14"
+    },
+    {
+      "id": "D6",
+      "topic": "AC-3 落盘",
+      "decision": "file.changed 落盘改走专用日志 Harness/a2a/events/file-changed.jsonl（不依赖 sessionId）；W4F 完成后由 controller 落",
+      "at": "2026-08-14"
+    }
+  ],
+  "risks": [],
+  "artifacts": [
+    {
+      "id": "deps",
+      "note": "read-excel-file@9.3.10 + unpdf@1.8.1 + yauzl@2.10.0 + iconv-lite 已安装并验证 ESM 加载"
+    }
+  ],
+  "defaultRuntime": "codex",
+  "defaultAgentRuntime": "codex"
+}

@@ -28,7 +28,11 @@
   },
   "dependencies": {
     "@clack/prompts": "^0.7.0",
-    "picocolors": "^1.1.0"
+    "iconv-lite": "^0.6.3",
+    "picocolors": "^1.1.0",
+    "read-excel-file": "^9.3.10",
+    "unpdf": "^1.8.1",
+    "yauzl": "^2.10.0"
   },
   "engines": {
     "node": ">=18"

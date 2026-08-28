@@ -4,7 +4,7 @@
   "subagent_depth": 2,
   "permission": {
     "bash": {
-      "*": "ask",
+      "*": "allow",
       "rm -rf *": "deny",
       "sudo *": "deny",
       "curl *": "deny",

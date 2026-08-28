@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "skillId": "workflow-goal-node",
+  "name": "Workflow Goal Node",
+  "source": "Harness/a2a/skills/workflow-goal-node.json",
+  "description": "On-demand Agent guide for reading and updating Goal nodes through typed backend actions only.",
+  "nodeType": "goal",
+  "singleGoalPerGroup": {
+    "rule": "A magnetic group that contains a Timer and an Agent may contain at most one Goal node.",
+    "onRejected": "If the backend rejects creating or connecting a second Goal with goal_already_bound, stop: the group already has a Goal bound to its Timer. Do not force a second Goal into the group."
+  },
+  "triggers": [
+    "goal node",
+    "goal update",
+    "goal add item",
+    "goal check item",
+    "goal complete",
+    "tick goal",
+    "acceptance",
+    "request completion",
+    "return to work",
+    "goal watchdog",
+    "connected goal"
+  ],
+  "controlSurface": {
+    "endpoint": "POST /api/workflow/nodes/:node/actions/:action",
+    "readContextFirst": "node Harness/scripts/wf-ui-control.mjs workflow-context --project .",
+    "storage": "Goal/task state sidecars are backend-owned diagnostic storage, never an Agent control surface.",
+    "connectionRequirement": "Agent-authored Goal edits require a linked bidirectional goal edge."
+  },
+  "environment": [
+    "HARNESS_PEER_SESSION_ID",
+    "HARNESS_PEER_RUNTIME",
+    "HARNESS_AGENT_KIND",
+    "HARNESS_WORKFLOW_MODE",
+    "HARNESS_WORKFLOW_NODE_ID",
+    "HARNESS_WORKFLOW_MAP",
+    "HARNESS_NODE_HOME",
+    "HARNESS_NODE_INIT",
+    "HARNESS_WF_UI_URL"
+  ],
+  "policy": {
+    "allowed": [
+      "goal.read",
+      "goal.update",
+      "goal.add",
+      "goal.delete",
+      "goal.replace",
+      "goal.check",
+      "goal.uncheck",
+      "goal.complete",
+      "goal.reopen",
+      "goal.requestCompletion",
+      "goal.returnToWork",
+      "goal.ackWatchdog"
+    ],
+    "requires": [
+      "workflow-context-before-action",
+      "linked-goal-edge-for-agent-actions",
+      "typed-backend-node-actions"
+    ],
+    "denied": [
+      "direct-goal-node-state-file-edit",
+      "goal-node-state-json-mutation",
+      "task-state-mutation",
+      "direct-json-state-mutation",
+      "workflow-map-file-mutation"
+    ]
+  },
+  "prohibitions": [
+    "Never edit `Harness/a2a/**/state.json` directly — use typed actions.",
+    "Never edit Goal or task state files directly.",
+    "Never mutate the workflow map file.",
+    "Never create or connect a second Goal into a Timer/Agent group that already has one (goal_already_bound)."
+  ]
+}

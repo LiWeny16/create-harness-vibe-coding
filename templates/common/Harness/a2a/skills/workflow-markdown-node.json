@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "skillId": "workflow-markdown-node",
+  "name": "Workflow Markdown Node",
+  "source": "Harness/a2a/skills/workflow-markdown-node.json",
+  "description": "On-demand Agent guide for reading and writing Markdown nodes through typed backend actions only.",
+  "nodeType": "markdown",
+  "findGuidance": {
+    "how": "Find Markdown nodes by nodeId (exact) or title (substring) with markdown.find. It returns metadata only (nodeId, title, revision) — never content. Share nodes by nodeId only in request contextRefs; receivers read the content through typed actions."
+  },
+  "revisionGuard": {
+    "guidance": "markdown.patch, markdown.append, and markdown.replace accept optional expectedRevision (and lockId). When expectedRevision does not match the current revision, no write occurs.",
+    "conflict": {
+      "error": "markdown_conflict",
+      "fields": ["currentRevision", "expectedRevision"],
+      "recover": "Reread the node (markdown.read), merge your changes, re-acquire the lock if needed, and retry with the fresh currentRevision."
+    },
+    "locked": {
+      "error": "markdown_locked",
+      "fields": ["holder", "expiresAt"],
+      "recover": "The lease expires at expiresAt (default 30 seconds). Wait for expiry or ask the holder to release, then retry."
+    }
+  },
+  "triggers": [
+    "markdown node",
+    "find markdown",
+    "lock markdown",
+    "write notes",
+    "append markdown",
+    "replace markdown",
+    "connected markdown",
+    "durable text output"
+  ],
+  "controlSurface": {
+    "endpoint": "POST /api/workflow/nodes/:node/actions/:action",
+    "readContextFirst": "node Harness/scripts/wf-ui-control.mjs workflow-context --project .",
+    "storage": "Harness/a2a/component-nodes/**/state.json is backend-owned diagnostic storage, never an Agent control surface.",
+    "outputRouting": "Prefer connected writable Markdown nodes for durable notes, reports, task plans, and long-form text."
+  },
+  "environment": [
+    "HARNESS_PEER_SESSION_ID",
+    "HARNESS_PEER_RUNTIME",
+    "HARNESS_AGENT_KIND",
+    "HARNESS_WORKFLOW_MODE",
+    "HARNESS_WORKFLOW_NODE_ID",
+    "HARNESS_WORKFLOW_MAP",
+    "HARNESS_NODE_HOME",
+    "HARNESS_NODE_INIT",
+    "HARNESS_WF_UI_URL"
+  ],
+  "policy": {
+    "allowed": [
+      "markdown.find",
+      "markdown.read",
+      "markdown.append",
+      "markdown.replace",
+      "markdown.patch",
+      "markdown.acquireLock",
+      "markdown.releaseLock"
+    ],
+    "requires": [
+      "workflow-context-before-action",
+      "connected-resource-ref",
+      "typed-backend-node-actions"
+    ],
+    "denied": [
+      "component-state-file-mutation",
+      "direct-component-node-state-file-edit",
+      "direct-json-state-mutation",
+      "workflow-map-file-mutation"
+    ]
+  },
+  "prohibitions": [
+    "Never edit `Harness/a2a/**/state.json` directly — use typed actions.",
+    "Never edit component-node state files or the workflow map file.",
+    "Never inline a Markdown body in a request payload; share the node by nodeId only.",
+    "Never overwrite another writer's changes: always use the lock and expectedRevision, and reread-and-retry on markdown_conflict."
+  ]
+}

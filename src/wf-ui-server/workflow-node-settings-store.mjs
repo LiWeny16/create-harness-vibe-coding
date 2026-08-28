@@ -38,6 +38,43 @@ const SCHEMAS = {
       watchChanges: { type: 'boolean', default: false },
     },
   },
+  timer: {
+    schemaId: 'timer-settings',
+    fields: {
+      autoFire: { type: 'boolean', default: false },
+      notifyAgent: { type: 'boolean', default: true },
+    },
+  },
+  'github-trigger': {
+    schemaId: 'github-trigger-settings',
+    fields: {
+      notifyAgent: { type: 'boolean', default: true },
+      dedupeDeliveries: { type: 'boolean', default: true },
+      retainDeliverySummaries: { type: 'number', default: 50, min: 1, max: 500 },
+    },
+  },
+  'skill-group': {
+    schemaId: 'skill-group-settings',
+    fields: {
+      autoAttachOnConnect: { type: 'boolean', default: true },
+      exposeAsEffectiveSkills: { type: 'boolean', default: true },
+    },
+  },
+  'mcp-connector': {
+    schemaId: 'mcp-connector-settings',
+    fields: {
+      autoAttachOnConnect: { type: 'boolean', default: true },
+      metadataOnly: { type: 'boolean', default: true },
+      refreshOnOpen: { type: 'boolean', default: false },
+    },
+  },
+  goal: {
+    schemaId: 'goal-settings',
+    fields: {
+      showAcceptance: { type: 'boolean', default: true },
+      showWatchdog: { type: 'boolean', default: true },
+    },
+  },
   agent: {
     schemaId: 'agent-settings',
     fields: {
@@ -47,12 +84,33 @@ const SCHEMAS = {
 };
 
 const COMPONENT_NODE_ID_RE = /^component-[a-z0-9][a-z0-9-]*$/;
+const EVENT_NODE_ID_RE = /^event-[a-z0-9][a-z0-9-]*$/;
+const CAPABILITY_NODE_ID_RE = /^capability-[a-z0-9][a-z0-9-]*$/;
+const GOAL_NODE_ID_RE = /^goal-[A-Za-z0-9][A-Za-z0-9_.-]*$/;
 const SAFE_AGENT_NODE_ID_RE = /^[A-Za-z0-9][A-Za-z0-9_-]*$/;
 
 // ── Helpers ──
 function assertSettingsNodeId(nodeId, kindHint = '') {
   const value = String(nodeId || '').trim();
   const kind = String(kindHint || '').trim().toLowerCase();
+  if (kind === 'timer' || kind === 'github-trigger') {
+    if (!EVENT_NODE_ID_RE.test(value)) {
+      throw new ComponentNodeError('Invalid event node id; traversal and escaped ids are not allowed');
+    }
+    return { id: value, scope: 'event' };
+  }
+  if (kind === 'skill-group' || kind === 'mcp-connector') {
+    if (!CAPABILITY_NODE_ID_RE.test(value)) {
+      throw new ComponentNodeError('Invalid capability node id; traversal and escaped ids are not allowed');
+    }
+    return { id: value, scope: 'capability' };
+  }
+  if (kind === 'goal') {
+    if (!GOAL_NODE_ID_RE.test(value)) {
+      throw new ComponentNodeError('Invalid goal node id; traversal and escaped ids are not allowed');
+    }
+    return { id: value, scope: 'goal' };
+  }
   if (kind === 'agent' || (!kind && !COMPONENT_NODE_ID_RE.test(value))) {
     if (!SAFE_AGENT_NODE_ID_RE.test(value)) {
       throw new ComponentNodeError('Invalid workflow node id; traversal and escaped ids are not allowed');
@@ -68,7 +126,7 @@ function assertSettingsNodeId(nodeId, kindHint = '') {
 function assertKind(kind) {
   const value = String(kind || '').trim().toLowerCase();
   if (!Object.hasOwn(SCHEMAS, value)) {
-    throw new ComponentNodeError('Invalid settings kind; expected markdown, excalidraw, file, or agent');
+    throw new ComponentNodeError('Invalid settings kind; expected markdown, excalidraw, file, timer, github-trigger, skill-group, mcp-connector, goal, or agent');
   }
   return value;
 }
@@ -79,6 +137,18 @@ function settingsRoot(projectRoot) {
 
 function agentSettingsRoot(projectRoot) {
   return path.join(projectRoot, 'Harness', 'a2a', 'nodes');
+}
+
+function eventSettingsRoot(projectRoot) {
+  return path.join(projectRoot, 'Harness', 'a2a', 'event-nodes');
+}
+
+function capabilitySettingsRoot(projectRoot) {
+  return path.join(projectRoot, 'Harness', 'a2a', 'capability-nodes');
+}
+
+function goalSettingsRoot(projectRoot) {
+  return path.join(projectRoot, 'Harness', 'a2a', 'goal-nodes');
 }
 
 function ensureInside(root, target) {
@@ -93,7 +163,13 @@ function ensureInside(root, target) {
 
 function settingsPath(projectRoot, nodeId, kindHint = '') {
   const { id, scope } = assertSettingsNodeId(nodeId, kindHint);
-  const root = scope === 'agent' ? agentSettingsRoot(projectRoot) : settingsRoot(projectRoot);
+  const root = scope === 'agent'
+    ? agentSettingsRoot(projectRoot)
+    : (scope === 'event'
+        ? eventSettingsRoot(projectRoot)
+        : (scope === 'capability'
+            ? capabilitySettingsRoot(projectRoot)
+            : (scope === 'goal' ? goalSettingsRoot(projectRoot) : settingsRoot(projectRoot))));
   return ensureInside(root, path.join(root, id, 'settings.json'));
 }
 

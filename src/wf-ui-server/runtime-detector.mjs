@@ -282,8 +282,13 @@ export function resolveRuntimeLaunchArgs(runtimeId, opts = {}) {
     }
   }
   if (initialPrompt) {
-    if (runtimeId === 'opencode') args.push('--prompt', initialPrompt);
-    else if (runtimeId === 'claude' || runtimeId === 'cc' || runtimeId === 'codex') args.push(initialPrompt);
+    // Newlines inside one argv element break `cmd.exe /c` quoting on Windows:
+    // only the first line reaches the runtime (observed live: codex received
+    // just the first paragraph of a multi-line mission prompt). Flatten to a
+    // single line so the full prompt survives the shell.
+    const flattened = initialPrompt.replace(/\s*\r?\n\s*/g, ' ');
+    if (runtimeId === 'opencode') args.push('--prompt', flattened);
+    else if (runtimeId === 'claude' || runtimeId === 'cc' || runtimeId === 'codex') args.push(flattened);
   }
   return args;
 }
@@ -292,6 +297,13 @@ export function resolveRuntimeResumeArgs(runtimeId, opts = {}) {
   const definition = getRuntimeDefinition(runtimeId);
   if (typeof definition?.resumeArgs !== 'function') return [];
   const agentSessionId = String(opts.agentSessionId || '').trim();
+  if (runtimeId === 'codex') {
+    // Codex keys saved sessions by its internal rollout UUID (captured from
+    // the PTY boot output), not by the harness session id. Prefer the captured
+    // rollout id when present; fall back to the harness-tracked id.
+    const codexRolloutId = String(opts.codexRolloutId || '').trim();
+    return definition.resumeArgs(codexRolloutId || agentSessionId);
+  }
   return definition.resumeArgs(agentSessionId);
 }
 

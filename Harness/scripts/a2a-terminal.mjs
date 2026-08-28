@@ -144,7 +144,7 @@ function postInput(urlText, token, sessionId, text) {
       headers: {
         'Content-Type': 'application/json',
         'Content-Length': Buffer.byteLength(body),
-        Authorization: `Bearer ${token}`,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
     }, (res) => {
       let data = '';
@@ -165,7 +165,7 @@ async function sendInput(projectRoot, flags) {
   const text = flags.text || '';
   const url = flags.url || process.env.WF_UI_URL;
   const token = flags.token || process.env.WF_UI_TOKEN;
-  if (url && token) return postInput(url, token, sessionId, text);
+  if (url) return postInput(url, token, sessionId, text);
 
   const found = findSession(projectRoot, sessionId);
   if (!found) throw new Error(`Session not found: ${sessionId}`);

@@ -1,3 +1,4 @@
+import { WebglAddon } from '@xterm/addon-webgl';
 import type { IDisposable, Terminal as XTerm } from '@xterm/xterm';
 import { apiJson } from './api';
 
@@ -56,6 +57,20 @@ export function installTerminalResponseGuards(term: TerminalWithParser): IDispos
   const disposables = SPECIAL_COLOR_QUERY_IDS.map(id => term.parser.registerOscHandler(id, swallowQuery));
   disposables.push(term.parser.registerOscHandler(4, data => data.split(';').some(slot => slot.trim() === '?')));
   return disposables;
+}
+
+export function loadTerminalWebglAddon(term: XTerm): IDisposable | null {
+  const probe = document.createElement('canvas');
+  if (!(probe.getContext('webgl2') || probe.getContext('webgl'))) return null;
+  const addon = new WebglAddon();
+  try {
+    term.loadAddon(addon);
+  } catch (error) {
+    console.warn('xterm WebGL renderer unavailable, falling back to DOM', error);
+    return null;
+  }
+  addon.onContextLoss(() => addon.dispose());
+  return addon;
 }
 
 export function terminalShouldHandleKey(event: KeyboardEvent, live: boolean, term?: TerminalWithSelection | null) {

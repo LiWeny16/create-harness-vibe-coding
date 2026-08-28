@@ -75,6 +75,7 @@ export function parseTaskCapsule(taskDir) {
     gate: state.gate || null,
     tier: state.tier || null,
     mode: state.mode || null,
+    group: state.group || null,
     updatedAt: state.updatedAt || null,
     activeQuestion: state.activeQuestion || null,
     nextAction: state.nextAction || null,

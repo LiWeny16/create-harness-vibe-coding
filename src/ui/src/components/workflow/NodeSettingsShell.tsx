@@ -1,8 +1,8 @@
-import type { CSSProperties, ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { X, Trash2 } from 'lucide-react';
-import { motion } from 'motion/react';
 import { useT } from '../../i18n';
 import type { WorkflowRuntimeNode } from './nodeRuntimeClient';
+import WorkflowFloatingPanel from './WorkflowFloatingPanel';
 
 type Props = {
   node: WorkflowRuntimeNode;
@@ -15,29 +15,23 @@ export default function NodeSettingsShell({ node, onClose, onDelete, children }:
   const t = useT();
   const kind = node.kind;
 
-  const panelStyle: CSSProperties = {
-    border: '1px solid var(--border)',
-    borderRadius: 'var(--radius)',
-    background: 'rgba(255,255,255,0.96)',
-    boxShadow: '0 18px 46px rgba(15,23,42,0.14)',
-    backdropFilter: 'blur(16px)',
-  };
+  // Unified interaction: Esc closes every node settings page.
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
 
   return (
-    <motion.aside
-      data-canvas-control="true"
-      data-testid="workflow-component-settings"
-      data-node-id={node.nodeId}
-      data-node-kind={kind}
-      className="workflow-node-settings workflow-component-settings wf-floating-panel nodrag nopan nowheel"
-      style={panelStyle}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ type: 'spring', stiffness: 230, damping: 30, mass: 0.86 }}
-      onPointerDown={e => e.stopPropagation()}
-      onMouseDown={e => e.stopPropagation()}
-      onWheel={e => e.stopPropagation()}
+    <WorkflowFloatingPanel
+      dataTestId="workflow-component-settings"
+      nodeId={node.nodeId}
+      nodeKind={kind}
+      className="workflow-node-settings workflow-component-settings"
+      layer="settings"
+      bare
     >
       {/* Header */}
       <div className="workflow-node-settings-header">
@@ -69,6 +63,6 @@ export default function NodeSettingsShell({ node, onClose, onDelete, children }:
           <Trash2 size={12} /> {t('Delete')}
         </button>
       </div>
-    </motion.aside>
+    </WorkflowFloatingPanel>
   );
 }

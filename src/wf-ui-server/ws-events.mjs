@@ -2,7 +2,6 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { parseTaskList } from './task-parser.mjs';
-import { validateToken } from './token.mjs';
 
 const KEEPALIVE_INTERVAL = 15000;
 const PING_TIMEOUT = 5000;
@@ -107,29 +106,18 @@ function parseFrames(buffer) {
  * @param {number} statusCode
  * @param {string} message
  */
-function sendHttpError(sock, statusCode, message) {
-  const body = JSON.stringify({ error: { code: statusCode === 401 ? 'UNAUTHORIZED' : 'ERROR', message } });
-  sock.write(
-    `HTTP/1.1 ${statusCode} ${statusCode === 401 ? 'Unauthorized' : 'Error'}\r\n` +
-    'Content-Type: application/json\r\n' +
-    `Content-Length: ${body.length}\r\n` +
-    'Connection: close\r\n\r\n' + body
-  );
-  sock.end();
-}
-
 // ── Public API ──
 
 /**
  * Attach a WebSocket /ws/events endpoint to an existing http.Server.
  *
- * On upgrade: validates `?token=` query param, upgrades to WS, sends
- * `server.connected` handshake. Listens to `Harness/tasks/` for changes
+ * On upgrade: upgrades to WS and sends `server.connected` handshake.
+ * Listens to `Harness/tasks/` for changes
  * and broadcasts `task.updated` to all connected clients. Sends `ping`
  * keepalive every 15s and force-closes clients that don't pong within 5s.
  *
  * @param {import('http').Server} httpServer
- * @param {string} expectedToken - The token clients must present.
+ * @param {string} expectedToken - Compatibility parameter; no token validation is performed.
  * @param {string} projectRoot - Absolute path to the project root.
  * @param {{ keepaliveInterval?: number, pingTimeout?: number }} [options]
  * @returns {{ wss: null, seq: number, close: () => Promise<void> }}
@@ -143,6 +131,8 @@ export function attachEventsWs(httpServer, expectedToken, projectRoot, options =
   let seq = 0;
   let watcher = null;
   let watchTimeout = null;
+  let a2aWatcher = null;
+  let a2aWatchTimeout = null;
   let keepaliveTimer = null;
 
   // ── wire upgrade handler ──
@@ -150,11 +140,6 @@ export function attachEventsWs(httpServer, expectedToken, projectRoot, options =
     const url = new URL(req.url, `http://${req.headers.host || '127.0.0.1'}`);
     if (url.pathname !== '/ws/events') {
       // Not an events path — let another handler process it
-      return;
-    }
-
-    if (!validateToken(url.searchParams.get('token'), expectedToken)) {
-      sendHttpError(socket, 401, 'Invalid or missing token');
       return;
     }
 
@@ -246,6 +231,42 @@ export function attachEventsWs(httpServer, expectedToken, projectRoot, options =
     } catch { /* watcher unavailable — degrade gracefully */ }
   }
 
+  // ── a2a graph watcher ──
+  // Mirrors the tasks watcher but watches Harness/a2a and broadcasts
+  // graph.changed. Separate debounce timer so the two never cancel each other.
+  const a2aRoot = path.join(projectRoot, 'Harness', 'a2a');
+  if (fs.existsSync(a2aRoot)) {
+    try {
+      a2aWatcher = fs.watch(a2aRoot, { recursive: true }, () => {
+        if (a2aWatchTimeout) clearTimeout(a2aWatchTimeout);
+        a2aWatchTimeout = setTimeout(async () => {
+          seq++;
+          let fingerprint = '';
+          let a2aStore = null;
+          try {
+            // Lazy import: a2a-store is evolving in parallel; a missing export
+            // must never crash the watcher, so resolution stays guarded here.
+            a2aStore = await import('./a2a-store.mjs');
+          } catch { /* a2a-store unavailable — broadcast with empty fingerprint */ }
+          if (a2aStore) {
+            try { fingerprint = a2aStore.stateFingerprint(projectRoot); } catch { /* fingerprint best-effort */ }
+            try { a2aStore.invalidateSnapshotCache(projectRoot); } catch { /* invalidation best-effort */ }
+          }
+          const payload = JSON.stringify({
+            type: 'graph.changed',
+            seq,
+            ts: new Date().toISOString(),
+            source: 'a2a',
+            payload: { fingerprint },
+          });
+          for (const c of clients) {
+            try { sendFrame(c.socket, payload); } catch { /* ignore */ }
+          }
+        }, 250);
+      });
+    } catch { /* watcher unavailable — degrade gracefully */ }
+  }
+
   // ── keepalive timer ──
   keepaliveTimer = setInterval(() => {
     const now = Date.now();
@@ -273,8 +294,12 @@ export function attachEventsWs(httpServer, expectedToken, projectRoot, options =
     return new Promise((resolve) => {
       if (keepaliveTimer) clearInterval(keepaliveTimer);
       if (watchTimeout) clearTimeout(watchTimeout);
+      if (a2aWatchTimeout) clearTimeout(a2aWatchTimeout);
       if (watcher) {
         try { watcher.close(); } catch { /* ignore */ }
+      }
+      if (a2aWatcher) {
+        try { a2aWatcher.close(); } catch { /* ignore */ }
       }
       for (const c of [...clients]) {
         try { sendCloseFrame(c.socket, 1001); c.socket.end(); } catch { /* ignore */ }

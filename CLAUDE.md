@@ -13,6 +13,37 @@ pointed to by `HARNESS_NODE_INIT` before taking node-specific action. Use
 `HARNESS_WF_UI_URL` to identify this node, runtime, graph position, and control
 plane. Do not require or wait for a user-injected bootstrap prompt.
 
+In a Harness-managed PTY node, workflow context hydration is mandatory and
+unconditional. At the start of every operator turn, silently read this node's
+workflow context with `node Harness/scripts/wf-ui-control.mjs workflow-context
+--project .`; `HARNESS_WORKFLOW_NODE_ID` selects the current graph node. Do not
+skip hydration based on wording: local shell, Git, MCP, coding, review,
+debugging, and runtime questions still hydrate first so current graph identity,
+connected nodes, and connected affordances are known. Before controlling,
+mutating, delegating to, reading from, or writing to any node, hydrate context
+again if the last context read happened before a graph change or operator
+message. If hydration fails, say workflow context is unavailable before making
+claims about node-map connections or control targets. Do not print the command
+or raw JSON unless asked.
+
+Workflow node state files under `Harness/a2a/**/state.json` and
+`Harness/a2a/workflow-map.json` are backend-owned diagnostic storage, not
+control surfaces, nor information sources — read graph and connection state
+only through the typed wf-ui API/CLI. Do not edit event-node, goal-node,
+component-node, capability-node, node-home, workflow-map, or task state files
+to control Timer, Goal, Agent, resource, capability, or graph state; use the
+typed wf-ui backend API commands instead.
+
+### Agent Team Cooperation (WF / WF-MAX)
+
+When the user enters `/wf`, `$wf`, `/wf-max`, or `$wf-max`, the main Agent node autonomously: understands the task and decides whether team collaboration is needed; finds existing agents by role or capability; connects or creates sub-agents with a role profile (displayName + roleTitle); shares context through Markdown nodes (referenced by nodeId only); sends structured requests with a request id; waits via Timer wakeup messages, checked on the agent's next turn; aggregates replies; ticks Goal items and completes the Goal when all items are checked. When the target is ambiguous, ASK THE USER — never blindly create or connect an agent.
+
+**Subagent Strategy:**
+
+Subagent mode comes from node settings (built-in-subagents default = native helpers, no canvas nodes; wf-node-subagents = visible canvas agents). Natural language: "内部助手"/"内置子代理" → built-in; "画布节点"/"WF node协作" → wf-node. Discover everything at runtime: help --json, workflow-context, manuals <type>, snapshot, workflow-ontology.
+
+Never edit `Harness/a2a/**/state.json` directly; use typed actions only. The Timer is the only wakeup source; the Goal node never wakes agents. Explain all of this to the user in plain language, without broadcast/A2A/thread/shared-context terminology.
+
 If `Harness/` exists, this repository is governed by the Harness contract.
 
 Default installed-project startup is thin: after loading `CLAUDE.md`, read `Harness/memory/startup-hints.md` (L2 lightweight digest, 5-10 hints). This is NOT loading `Harness/MEMORY.md`, `Harness/README.md`, or PROGRESS — it is a minimal startup hint file only.

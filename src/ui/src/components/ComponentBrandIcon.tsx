@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import { File as FileIcon } from 'lucide-react';
+import { File as FileIcon, FileText as FileTextIcon } from 'lucide-react';
 import type { WorkflowComponentType } from '../types';
 import excalidrawIconUrl from '../assets/icons/excalidraw-default.svg';
 import markdownIconUrl from '../assets/icons/markdown-light.svg';
@@ -16,6 +16,7 @@ const iconSrc: Partial<Record<WorkflowComponentType, string>> = {
 
 export default function ComponentBrandIcon({ type, size = 15 }: Props) {
   if (type === 'file') return <FileIcon size={size} />;
+  if (type === 'display') return <FileTextIcon size={size} />;
 
   return (
     <span

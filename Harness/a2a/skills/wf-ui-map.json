@@ -1,51 +1,10 @@
 {
   "schemaVersion": 1,
   "skillId": "wf-ui-map",
-  "name": "WF UI Map",
+  "name": "WF UI Map Legacy Alias",
   "source": "Harness/a2a/skills/wf-ui-map.json",
-  "description": "Workflow-canvas awareness and control commands for PTY agent nodes.",
-  "commands": [
-    {
-      "name": "self",
-      "command": "node Harness/scripts/wf-ui-control.mjs self",
-      "description": "Print this PTY node's session id, runtime, agent kind, workflow mode, graph node id, and map path."
-    },
-    {
-      "name": "describe",
-      "command": "node Harness/scripts/wf-ui-control.mjs describe",
-      "description": "Describe the current workflow graph from the wf-ui snapshot when available, or from Harness/a2a workflow-map files."
-    },
-    {
-      "name": "snapshot",
-      "command": "node Harness/scripts/wf-ui-control.mjs snapshot",
-      "description": "Read the complete workflow snapshot for routing and graph-state decisions."
-    },
-    {
-      "name": "create-agent",
-      "command": "node Harness/scripts/wf-ui-control.mjs create-agent --agent-kind subagent --runtime claude --objective \"...\"",
-      "description": "Main Agent only. Create a managed PTY node in the Workflow canvas through the wf-ui backend."
-    },
-    {
-      "name": "send-input",
-      "command": "node Harness/scripts/wf-ui-control.mjs send-input --session <sessionId> --text \"...\"",
-      "description": "Main Agent only. Send terminal input to a connected managed PTY node and record a wf-bridge message."
-    },
-    {
-      "name": "bridge-messages",
-      "command": "node Harness/scripts/wf-ui-control.mjs bridge-messages --from <sessionId> --to <sessionId>",
-      "description": "Main Agent only. Read the recorded wf-bridge conversation between two managed sessions."
-    },
-    {
-      "name": "connect",
-      "command": "node Harness/scripts/wf-ui-control.mjs connect --from <nodeOrSession> --to <nodeOrSession>",
-      "description": "Main Agent only. Add a wf-bridge edge to the workflow graph."
-    },
-    {
-      "name": "delete-node",
-      "command": "node Harness/scripts/wf-ui-control.mjs delete-node --node <graphNodeIdOrSessionId>",
-      "description": "Main Agent only. Remove a saved workflow graph node while preserving transcript history."
-    }
-  ],
+  "compatibilityAliasFor": "workflow-node-map",
+  "description": "Compatibility alias for workflow-node-map. Prefer workflow-node-map in new Agent prompts; node-map remains supported for older nodes.",
   "environment": [
     "HARNESS_PEER_SESSION_ID",
     "HARNESS_PEER_RUNTIME",
@@ -55,29 +14,36 @@
     "HARNESS_WORKFLOW_MAP",
     "HARNESS_NODE_HOME",
     "HARNESS_NODE_INIT",
-    "HARNESS_WF_UI_URL",
-    "HARNESS_WF_UI_TOKEN",
-    "HARNESS_WF_UI_READ_TOKEN"
+    "HARNESS_WF_UI_URL"
   ],
   "policy": {
     "mainAgent": [
-      "read-workflow-map",
-      "describe-graph",
+      "api-only-node-map-control",
+      "no-direct-workflow-map-writes",
+      "workflow-node-map",
+      "read-workflow-map-diagnostic-only",
+      "agent.readGraph",
+      "agent.createNode",
+      "agent.connectNodes",
+      "agent.disconnectNodes",
+      "agent.moveNode",
+      "agent.deleteNode",
+      "agent.deleteNodes",
       "create-subagent-node",
-      "send-terminal-input",
-      "read-bridge-messages",
       "connect-managed-nodes",
       "delete-saved-node",
       "stop-managed-node"
     ],
     "subagent": [
-      "read-workflow-map",
-      "describe-graph",
+      "read-workflow-map-diagnostic-only",
       "return-evidence"
     ],
     "subagentDenied": [
       "create-agent-node",
       "create-task-node",
+      "workflow-node-map-control",
+      "node-map-control",
+      "workflow-map-file-mutation",
       "spawn-pty-subagents"
     ]
   }

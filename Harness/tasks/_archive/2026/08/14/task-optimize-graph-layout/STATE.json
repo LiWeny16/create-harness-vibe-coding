@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-optimize-graph-layout",
+  "status": "archived",
+  "mode": "wf",
+  "tier": "standard",
+  "phase": "archived",
+  "gate": "REVIEW-GATE",
+  "updatedAt": "2026-08-28T02:35:58.906Z",
+  "activeQuestion": null,
+  "nextAction": "User browser check (tidy button + new-node placement) + commit on user request; then archive task",
+  "acceptance": [
+    "AC-001: newly created nodes never overlap existing nodes (min gap >= 16px); existing node positions unchanged; preferred point = parent/connected node vicinity if edge exists, else canvas visual center",
+    "AC-002: top-right Tidy button re-lays out the graph hierarchically (edge direction defines layers, same-layer no overlap, crossings minimized); positions persisted via server; button has visible state (idle/busy) and i18n label",
+    "AC-003: layout engine server unit tests: deterministic output, no overlaps for cyclic/multi-component/isolated-node graphs; docked capsule pairs stay glued"
+  ],
+  "links": {
+    "dependsOn": [
+      "task-fix-wf-ui-ux-issues"
+    ],
+    "blocks": [],
+    "related": [
+      "task-wf-ui-control-260729"
+    ]
+  },
+  "queues": {
+    "ready": [],
+    "running": [],
+    "blocked": [],
+    "done": [
+      "W0-E1-layout-server",
+      "W0-E2-client-create-toolbar",
+      "W0-P1-plan"
+    ]
+  },
+  "workItems": [
+    {
+      "id": "W0-E1-layout-server",
+      "title": "Explore graph-layout.mjs + position persistence + dock constraints",
+      "status": "done"
+    },
+    {
+      "id": "W0-E2-client-create-toolbar",
+      "title": "Explore creation position logic + toolbar pattern + i18n",
+      "status": "done"
+    },
+    {
+      "id": "W0-P1-plan",
+      "title": "Planner: decomposition + write sets",
+      "status": "done"
+    }
+  ],
+  "dispatchLedger": [],
+  "decisions": [
+    "D-1: layout strategy = hierarchical (Sugiyama-style layered, edges define direction) — user decision",
+    "D-2: new-node placement = nearest free spot scan from preferred point; existing nodes never move on create — user decision",
+    "D-3: memory hints: none",
+    "D-4: tier WF-Standard (multi-file server+client, one review lens)"
+  ],
+  "risks": [
+    "R1: docked capsule pairs must stay glued during global re-layout (magnet links are persistent relationships)",
+    "R2: cyclic graphs need a layering heuristic (back-edge handling)",
+    "R3: node sizes vary per kind (276x158 .. 560x358) — layout must size-aware",
+    "R4: dagre availability server-side unknown — prefer zero-dep implementation"
+  ],
+  "artifacts": [],
+  "defaultRuntime": "codex",
+  "defaultAgentRuntime": "codex"
+}

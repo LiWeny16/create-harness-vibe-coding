@@ -1,0 +1,159 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-simplify-skills-hub-pack-prompt",
+  "status": "in_progress",
+  "mode": "wf-max",
+  "tier": "WF-Standard",
+  "phase": "implement",
+  "gate": "d-gate",
+  "updatedAt": "2026-08-28T02:30:56.689Z",
+  "activeQuestion": null,
+  "nextAction": "Attempt native subagent fan-out (W0 explore + W1 architect), then W2 implementation waves",
+  "acceptance": [
+    "AC-001",
+    "AC-002",
+    "AC-003",
+    "AC-004",
+    "AC-005",
+    "AC-006",
+    "AC-007"
+  ],
+  "links": {
+    "dependsOn": [],
+    "blocks": [],
+    "related": []
+  },
+  "queues": {
+    "ready": [
+      "W1-architect",
+      "W2a-hub-roots",
+      "W2b-pack-prompt",
+      "W2d-overlay-market"
+    ],
+    "running": [],
+    "blocked": [
+      "W2c-context-merge (needs W2b)"
+    ],
+    "done": []
+  },
+  "workItems": [],
+  "dispatchLedger": [
+    {
+      "wave": "W1",
+      "agent": "architect",
+      "mode": "read",
+      "ac": [
+        "AC-003",
+        "AC-004"
+      ],
+      "status": "pending"
+    },
+    {
+      "wave": "W2a",
+      "agent": "implementer",
+      "mode": "write",
+      "claim": [
+        "src/wf-ui-server/workflow-skills-hub.mjs"
+      ],
+      "ac": [
+        "AC-001",
+        "AC-002"
+      ],
+      "status": "pending"
+    },
+    {
+      "wave": "W2b",
+      "agent": "implementer",
+      "mode": "write",
+      "claim": [
+        "src/wf-ui-server/workflow-capability-node-store.mjs",
+        "src/wf-ui-server/workflow-node-types/skill-group-node.mjs"
+      ],
+      "ac": [
+        "AC-003"
+      ],
+      "status": "pending"
+    },
+    {
+      "wave": "W2c",
+      "agent": "implementer",
+      "mode": "write",
+      "claim": [
+        "src/wf-ui-server/workflow-agent-context.mjs"
+      ],
+      "ac": [
+        "AC-004"
+      ],
+      "blockedBy": [
+        "W2b"
+      ],
+      "status": "pending"
+    },
+    {
+      "wave": "W2d",
+      "agent": "implementer",
+      "mode": "write",
+      "claim": [
+        "src/ui/src/components/WorkflowSkillsHubOverlay.tsx",
+        "src/ui/src/components/WorkflowRoute.tsx"
+      ],
+      "ac": [
+        "AC-005",
+        "AC-006"
+      ],
+      "blockedBy": [
+        "W2a"
+      ],
+      "status": "pending"
+    },
+    {
+      "wave": "W2e",
+      "agent": "test-writer",
+      "mode": "write",
+      "claim": [
+        "src/wf-ui-server/__tests__/*",
+        "src/ui/e2e/*"
+      ],
+      "ac": [
+        "AC-001",
+        "AC-002",
+        "AC-003",
+        "AC-004",
+        "AC-005",
+        "AC-006",
+        "AC-007"
+      ],
+      "status": "pending"
+    },
+    {
+      "wave": "W3",
+      "agent": "reviewer+verifier",
+      "mode": "read",
+      "ac": [
+        "AC-001",
+        "AC-002",
+        "AC-003",
+        "AC-004",
+        "AC-005",
+        "AC-006",
+        "AC-007"
+      ],
+      "status": "pending"
+    }
+  ],
+  "decisions": [
+    "D1 scan roots codex/claude/opencode/pi/copilot (opencode=~/.config/opencode/skills; pi/copilot guarded conventional)",
+    "D2 name-prefix family auto-group (server family:<prefix>, UI collapsible)",
+    "D3 injection=agent-told-via-prompt (option A), connection implies told",
+    "D4 cut Market tab, unwire workflow-skills-market.mjs from hub",
+    "D5 pack gains optional prompt field, no bodies/paths"
+  ],
+  "risks": [
+    "opencode/pi/copilot root path accuracy",
+    "large WorkflowRoute.tsx surgical-edit regression risk",
+    "Market removal may break existing market tests"
+  ],
+  "artifacts": [],
+  "defaultRuntime": "codex",
+  "defaultAgentRuntime": "codex"
+}

@@ -13,7 +13,7 @@ test('create with valid runtime claude succeeds', () => {
   assert.ok(session.sessionId);
   assert.equal(session.taskId, 'task-xyz');
   assert.equal(session.runtime, 'claude');
-  assert.equal(session.subagentMode, 'wf-subagents');
+  assert.equal(session.subagentMode, 'built-in-subagents');
   assert.equal(session.workflowMode, null);
   assert.equal(session.status, 'starting');
   assert.equal(session.cols, 120);
@@ -23,6 +23,16 @@ test('create with valid runtime claude succeeds', () => {
   assert.equal(session.wsClientCount, 0);
   assert.equal(typeof session.startedAt, 'string');
   assert.equal(typeof session.updatedAt, 'string');
+});
+
+test('create normalizes legacy wf-subagents mode to wf-node-subagents', () => {
+  const reg = new SessionRegistry();
+  const legacy = reg.create({ runtime: 'claude', subagentMode: 'wf-subagents' });
+  assert.equal(legacy.subagentMode, 'wf-node-subagents');
+  const modern = reg.create({ runtime: 'claude', subagentMode: 'wf-node-subagents' });
+  assert.equal(modern.subagentMode, 'wf-node-subagents');
+  const defaulted = reg.create({ runtime: 'claude' });
+  assert.equal(defaulted.subagentMode, 'built-in-subagents');
 });
 
 test('create can start an unbound terminal agent session', () => {

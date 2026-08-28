@@ -1,0 +1,4241 @@
+{
+ "schemaVersion": 1,
+ "description": "Registry of typed workflow node actions implemented by the wf-ui backend (documentation-of-record; consumers arrive in later waves).",
+ "actions": [
+  {
+   "id": "markdown.read",
+   "nodeType": "markdown",
+   "category": "resource",
+   "summary": "Read the markdown content, revision, and title of a markdown node.",
+   "params": [],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "markdown.read"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "markdown",
+    "export": "read",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action markdown.read --project ."
+  },
+  {
+   "id": "markdown.patch",
+   "nodeType": "markdown",
+   "category": "resource",
+   "summary": "Apply a diff operation (append, insert, or replace) to markdown content with an optional revision/lock guard.",
+   "params": [
+    {
+     "name": "diff",
+     "type": "object",
+     "required": true,
+     "description": "Diff descriptor: {op: 'append'|'insert'|'replace', text, offset?, length?} — append adds text at end; insert places text at offset; replace swaps length chars at offset with text."
+    },
+    {
+     "name": "expectedRevision",
+     "type": "number",
+     "required": false,
+     "description": "Expected current node revision; mismatch yields markdown_conflict."
+    },
+    {
+     "name": "lockId",
+     "type": "string",
+     "required": false,
+     "description": "Lock id to present when the node is leased (mandatory exclusion while held)."
+    },
+    {
+     "name": "lockOwner",
+     "type": "string",
+     "required": false,
+     "description": "Lock holder name to present when the node is leased."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "markdown.patch"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "markdown",
+    "export": "patch",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action markdown.patch --payload \"{\\\"diff\\\":{\\\"op\\\":\\\"insert\\\",\\\"text\\\":\\\"# Title\\\",\\\"offset\\\":0}}\" --project ."
+  },
+  {
+   "id": "markdown.replace",
+   "nodeType": "markdown",
+   "category": "resource",
+   "summary": "Replace the entire markdown content of a node.",
+   "params": [
+    {
+     "name": "markdown",
+     "type": "string",
+     "required": true,
+     "description": "Full new markdown content."
+    },
+    {
+     "name": "expectedRevision",
+     "type": "number",
+     "required": false,
+     "description": "Expected current node revision; mismatch yields markdown_conflict."
+    },
+    {
+     "name": "lockId",
+     "type": "string",
+     "required": false,
+     "description": "Lock id to present when the node is leased."
+    },
+    {
+     "name": "lockOwner",
+     "type": "string",
+     "required": false,
+     "description": "Lock holder name to present when the node is leased."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "markdown.replace"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "markdown",
+    "export": "replace",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action markdown.replace --payload \"{\\\"markdown\\\":\\\"# Plan\\n\\\"}\" --project ."
+  },
+  {
+   "id": "markdown.append",
+   "nodeType": "markdown",
+   "category": "resource",
+   "summary": "Append text to the end of a markdown node's content.",
+   "params": [
+    {
+     "name": "markdown",
+     "type": "string",
+     "required": true,
+     "description": "Text to append to the current content."
+    },
+    {
+     "name": "expectedRevision",
+     "type": "number",
+     "required": false,
+     "description": "Expected current node revision; mismatch yields markdown_conflict."
+    },
+    {
+     "name": "lockId",
+     "type": "string",
+     "required": false,
+     "description": "Lock id to present when the node is leased."
+    },
+    {
+     "name": "lockOwner",
+     "type": "string",
+     "required": false,
+     "description": "Lock holder name to present when the node is leased."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "markdown.append"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "markdown",
+    "export": "append",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action markdown.append --payload \"{\\\"markdown\\\":\\\"- done\\n\\\"}\" --project ."
+  },
+  {
+   "id": "markdown.find",
+   "nodeType": "markdown",
+   "category": "discovery",
+   "summary": "Find markdown nodes by exact nodeId or case-insensitive title substring; returns metadata only, never content.",
+   "params": [
+    {
+     "name": "nodeId",
+     "type": "string",
+     "required": false,
+     "description": "Exact node id to match."
+    },
+    {
+     "name": "title",
+     "type": "string",
+     "required": false,
+     "description": "Case-insensitive title substring to match."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "markdown.find"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "markdown",
+    "export": "find",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action markdown.find --payload \"{\\\"title\\\":\\\"plan\\\"}\" --project ."
+  },
+  {
+   "id": "markdown.acquireLock",
+   "nodeType": "markdown",
+   "category": "resource",
+   "summary": "Acquire (or renew with an existing lockId) a write lease on a markdown node.",
+   "params": [
+    {
+     "name": "lockOwner",
+     "type": "string",
+     "required": true,
+     "description": "Owner name recorded as the lease holder."
+    },
+    {
+     "name": "ttlSeconds",
+     "type": "number",
+     "required": false,
+     "description": "Lease TTL in seconds (default 30, capped at 300)."
+    },
+    {
+     "name": "lockId",
+     "type": "string",
+     "required": false,
+     "description": "Existing lock id to renew; omit to create a new lease."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "markdown.acquireLock"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "markdown",
+    "export": "acquireLock",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action markdown.acquireLock --payload \"{\\\"lockOwner\\\":\\\"agent-x\\\",\\\"ttlSeconds\\\":60}\" --project ."
+  },
+  {
+   "id": "markdown.releaseLock",
+   "nodeType": "markdown",
+   "category": "resource",
+   "summary": "Release a write lease on a markdown node; only the holder may release.",
+   "params": [
+    {
+     "name": "lockOwner",
+     "type": "string",
+     "required": true,
+     "description": "Owner name of the lease being released."
+    },
+    {
+     "name": "lockId",
+     "type": "string",
+     "required": false,
+     "description": "Lock id to release (matches holder ownership)."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "markdown.releaseLock"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "markdown",
+    "export": "releaseLock",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action markdown.releaseLock --payload \"{\\\"lockOwner\\\":\\\"agent-x\\\"}\" --project ."
+  },
+  {
+   "id": "markdown.save",
+   "nodeType": "markdown",
+   "category": "resource",
+   "summary": "Save full markdown content to a node (alias of markdown.replace without revision guard).",
+   "params": [
+    {
+     "name": "markdown",
+     "type": "string",
+     "required": true,
+     "description": "Full new markdown content."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "markdown.save"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "markdown",
+    "export": "save",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action markdown.save --payload \"{\\\"markdown\\\":\\\"# Plan\\n\\\"}\" --project .",
+   "notes": [
+    "markdown.save delegates to markdown.replace (no lock/revision guard)."
+   ]
+  },
+  {
+   "id": "display.write",
+   "nodeType": "display",
+   "category": "resource",
+   "summary": "Write a full HTML report to a Display node. The user views it fullscreen on the canvas; fully-open JS by user decision (agent-authored content carries the same trust as the agent terminal).",
+   "params": [
+    {
+     "name": "html",
+     "type": "string",
+     "required": true,
+     "description": "Full self-contained HTML document."
+    },
+    {
+     "name": "expectedRevision",
+     "type": "number",
+     "required": false,
+     "description": "Optional revision guard; write fails on mismatch."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "display.write"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "display",
+    "export": "write",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action display.write --payload \"{\"html\":\"<html>...</html>\"}\" --project .",
+   "notes": [
+    "Use {{excalidraw:<nodeId>}} placeholders to embed Excalidraw scenes as inline SVG."
+   ]
+  },
+  {
+   "id": "display.read",
+   "nodeType": "display",
+   "category": "resource",
+   "summary": "Read the current HTML report of a Display node, plus the built-in usage guide.",
+   "params": [],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "display.read"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "display",
+    "export": "read",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action display.read --project .",
+   "notes": []
+  },
+  {
+   "id": "excalidraw.readScene",
+   "nodeType": "excalidraw",
+   "category": "resource",
+   "summary": "Read the full excalidraw scene, revision, and title of an excalidraw node.",
+   "params": [],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "excalidraw.readScene"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "excalidraw",
+    "export": "readScene",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action excalidraw.readScene --project ."
+  },
+  {
+   "id": "excalidraw.patchScene",
+   "nodeType": "excalidraw",
+   "category": "resource",
+   "summary": "Shallow-merge a plain-object patch into the current scene (elements, appState, files, ...).",
+   "params": [
+    {
+     "name": "patch",
+     "type": "object",
+     "required": true,
+     "description": "Plain object merged into the stored scene (top-level keys only)."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "excalidraw.patchScene"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "excalidraw",
+    "export": "patchScene",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action excalidraw.patchScene --payload \"{\\\"patch\\\":{\\\"appState\\\":{\\\"name\\\":\\\"diagram\\\"}}}\" --project ."
+  },
+  {
+   "id": "excalidraw.saveScene",
+   "nodeType": "excalidraw",
+   "category": "resource",
+   "summary": "Replace the entire scene; the payload must be an object with elements, appState, and files.",
+   "params": [
+    {
+     "name": "scene",
+     "type": "object",
+     "required": true,
+     "description": "Full scene object: {elements: [], appState: {}, files: {}}."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "excalidraw.saveScene"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "excalidraw",
+    "export": "saveScene",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action excalidraw.saveScene --payload \"{\\\"scene\\\":{\\\"elements\\\":[],\\\"appState\\\":{},\\\"files\\\":{}}}\" --project ."
+  },
+  {
+   "id": "excalidraw.renderPreview",
+   "nodeType": "excalidraw",
+   "category": "resource",
+   "summary": "Compute a normalized viewport preview of the scene (bounding box, scale, element count).",
+   "params": [],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "excalidraw.renderPreview"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "excalidraw",
+    "export": "renderPreview",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action excalidraw.renderPreview --project ."
+  },
+  {
+   "id": "file.readMeta",
+   "nodeType": "file",
+   "category": "workspace",
+   "summary": "Read metadata of the workspace file bound to a file node (path, name, mime, size, exists, stale).",
+   "params": [],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "file.readMeta"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "file",
+    "export": "readMeta",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action file.readMeta --project ."
+  },
+  {
+   "id": "file.readText",
+   "nodeType": "file",
+   "category": "workspace",
+   "summary": "Read a bounded UTF-8 text window of the bound file (preview limits apply).",
+   "params": [
+    {
+     "name": "offset",
+     "type": "number",
+     "required": false,
+     "description": "Byte offset to start reading from."
+    },
+    {
+     "name": "limit",
+     "type": "number",
+     "required": false,
+     "description": "Maximum bytes to read."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "file.readText"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "file",
+    "export": "readText",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action file.readText --payload \"{\\\"limit\\\":4096}\" --project ."
+  },
+  {
+   "id": "file.readBytes",
+   "nodeType": "file",
+   "category": "workspace",
+   "summary": "Read file metadata with etag; byte-range content is served by GET /api/workspace/file, not this adapter.",
+   "params": [],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "file.readBytes"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "file",
+    "export": "readBytes",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action file.readBytes --project .",
+   "notes": [
+    "Returns file metadata (path, name, mime, size, etag) only; actual byte-range reads go through the workspace file HTTP route."
+   ]
+  },
+  {
+   "id": "file.refresh",
+   "nodeType": "file",
+   "category": "workspace",
+   "summary": "Refresh the node-bound file reference against the workspace (size, mtime, etag, exists).",
+   "params": [],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "file.refresh"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "file",
+    "export": "refresh",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action file.refresh --project ."
+  },
+  {
+   "id": "file.writeText",
+   "nodeType": "file",
+   "category": "workspace",
+   "summary": "Write UTF-8 text content to the bound file through the workspace op log (full-file writes only).",
+   "params": [
+    {
+     "name": "content",
+     "type": "string",
+     "required": true,
+     "description": "Full text content to write."
+    },
+    {
+     "name": "offset",
+     "type": "number",
+     "required": false,
+     "description": "Must be 0 or omitted; partial writes are rejected."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "file.writeText"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "file",
+    "export": "writeText",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action file.writeText --payload \"{\\\"content\\\":\\\"hello\\\"}\" --project ."
+  },
+  {
+   "id": "file.preview",
+   "nodeType": "file",
+   "category": "workspace",
+   "summary": "Single-call preview metadata (previewKind, mime, size, textSnippet for text files) for the bound file.",
+   "params": [],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "file.preview"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "file",
+    "export": "preview",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action file.preview --project ."
+  },
+  {
+   "id": "file.acquireLock",
+   "nodeType": "file",
+   "category": "workspace",
+   "summary": "Acquire (or renew with an existing lockId) a write lease on a file node; persisted and TTL-expiring, refused under a foreign lease.",
+   "params": [
+    {
+     "name": "holder",
+     "type": "string",
+     "required": true,
+     "description": "Owner name recorded as the lease holder."
+    },
+    {
+     "name": "ttlMs",
+     "type": "number",
+     "required": false,
+     "description": "Lease TTL in milliseconds (default 30000, capped at 300000)."
+    },
+    {
+     "name": "lockId",
+     "type": "string",
+     "required": false,
+     "description": "Existing lock id to renew; omit to create a new lease."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "file.acquireLock"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "file",
+    "export": "acquireLock",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action file.acquireLock --payload \"{\\\"holder\\\":\\\"agent-x\\\",\\\"ttlMs\\\":60000}\" --project ."
+  },
+  {
+   "id": "file.releaseLock",
+   "nodeType": "file",
+   "category": "workspace",
+   "summary": "Release a write lease on a file node; only the holder may release.",
+   "params": [
+    {
+     "name": "holder",
+     "type": "string",
+     "required": true,
+     "description": "Owner name of the lease being released."
+    },
+    {
+     "name": "lockId",
+     "type": "string",
+     "required": false,
+     "description": "Lock id to release (matches holder ownership)."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "file.releaseLock"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "file",
+    "export": "releaseLock",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action file.releaseLock --payload \"{\\\"holder\\\":\\\"agent-x\\\"}\" --project ."
+  },
+  {
+   "id": "file.readXlsx",
+   "nodeType": "file",
+   "category": "workspace",
+   "summary": "List the sheet names of the bound Excel workbook (.xlsx).",
+   "params": [],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "file.readXlsx"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "file",
+    "export": "readXlsx",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action file.readXlsx --project ."
+  },
+  {
+   "id": "file.readXlsxSheet",
+   "nodeType": "file",
+   "category": "workspace",
+   "summary": "Read one Excel sheet paged: column headers plus the requested page of data rows (never the whole sheet).",
+   "params": [
+    {
+     "name": "sheet",
+     "type": "string",
+     "required": false,
+     "description": "Sheet name or 1-based index; defaults to the first sheet."
+    },
+    {
+     "name": "page",
+     "type": "number",
+     "required": false,
+     "description": "1-based page number (default 1)."
+    },
+    {
+     "name": "pageSize",
+     "type": "number",
+     "required": false,
+     "description": "Data rows per page (default 100)."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "file.readXlsxSheet"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "file",
+    "export": "readXlsxSheet",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action file.readXlsxSheet --payload \"{\\\"sheet\\\":\\\"Data\\\",\\\"page\\\":1,\\\"pageSize\\\":100}\" --project ."
+  },
+  {
+   "id": "file.readPdf",
+   "nodeType": "file",
+   "category": "workspace",
+   "summary": "Read the bound PDF's total page count and document metadata (title, author, subject, ...).",
+   "params": [],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "file.readPdf"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "file",
+    "export": "readPdf",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action file.readPdf --project ."
+  },
+  {
+   "id": "file.readPdfPage",
+   "nodeType": "file",
+   "category": "workspace",
+   "summary": "Extract a PDF page range as text with the isEvalSupported:false security baseline.",
+   "params": [
+    {
+     "name": "page",
+     "type": "number",
+     "required": false,
+     "description": "1-based first page (default 1)."
+    },
+    {
+     "name": "pageCount",
+     "type": "number",
+     "required": false,
+     "description": "Number of pages to extract starting at page (default 1)."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "file.readPdfPage"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "file",
+    "export": "readPdfPage",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action file.readPdfPage --payload \"{\\\"page\\\":1,\\\"pageCount\\\":2}\" --project ."
+  },
+  {
+   "id": "file.readZipEntries",
+   "nodeType": "file",
+   "category": "workspace",
+   "summary": "List the bound ZIP archive's entries (name, size, compressedSize, directory flag, UTF-8 flag); streamed, never a whole-archive read.",
+   "params": [],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "file.readZipEntries"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "file",
+    "export": "readZipEntries",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action file.readZipEntries --project ."
+  },
+  {
+   "id": "file.readZipEntry",
+   "nodeType": "file",
+   "category": "workspace",
+   "summary": "Preview a single text entry of the bound ZIP with a maxBytes bound (truncated flag when capped); binary entries are refused.",
+   "params": [
+    {
+     "name": "entryName",
+     "type": "string",
+     "required": true,
+     "description": "Entry name inside the archive (exact, after GBK/UTF-8 decoding)."
+    },
+    {
+     "name": "maxBytes",
+     "type": "number",
+     "required": false,
+     "description": "Preview byte cap (default 65536); larger entries are truncated and flagged."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "file.readZipEntry"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "file",
+    "export": "readZipEntry",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action file.readZipEntry --payload \"{\\\"entryName\\\":\\\"readme.txt\\\"}\" --project ."
+  },
+  {
+   "id": "file.extractZipEntry",
+   "nodeType": "file",
+   "category": "workspace",
+   "summary": "Extract a single ZIP entry into a workspace-controlled destDir; Zip Slip traversal entries are rejected.",
+   "params": [
+    {
+     "name": "entryName",
+     "type": "string",
+     "required": true,
+     "description": "Entry name inside the archive; ../ and ..\\ segments or absolute paths are rejected (ZIP_SLIP)."
+    },
+    {
+     "name": "destDir",
+     "type": "string",
+     "required": false,
+     "description": "Workspace-relative extraction directory (default Harness/a2a/file-extracts/<nodeId>/); escapes outside the workspace are rejected."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "file.extractZipEntry"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "file",
+    "export": "extractZipEntry",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action file.extractZipEntry --payload \"{\\\"entryName\\\":\\\"readme.txt\\\",\\\"destDir\\\":\\\"Harness/a2a/file-extracts\\\"}\" --project ."
+  },
+  {
+   "id": "agent.readOutput",
+   "nodeType": "agent",
+   "category": "terminal-io",
+   "summary": "Read the latest terminal output window of an agent node's session.",
+   "params": [
+    {
+     "name": "tail",
+     "type": "number",
+     "required": false,
+     "description": "Last n entries (default 50)."
+    },
+    {
+     "name": "fromSeq",
+     "type": "number",
+     "required": false,
+     "description": "Start sequence number."
+    },
+    {
+     "name": "toSeq",
+     "type": "number",
+     "required": false,
+     "description": "End sequence number."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "read-agent",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<agentNodeId>"
+     },
+     {
+      "flag": "--action",
+      "value": "output"
+     },
+     {
+      "flag": "--tail",
+      "value": "<n>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "agent",
+    "export": "readOutput",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs read-agent --node <agentNodeId> --action output --tail 50"
+  },
+  {
+   "id": "agent.sendInput",
+   "nodeType": "agent",
+   "category": "terminal-io",
+   "summary": "Write terminal input to an agent node's PTY session (server control-plane route; raw or prompt-submit).",
+   "params": [
+    {
+     "name": "data",
+     "type": "string",
+     "required": true,
+     "description": "Input text (aliases: input, text)."
+    },
+    {
+     "name": "submit",
+     "type": "boolean",
+     "required": false,
+     "description": "Prompt-submit mode: char-by-char typing plus a single enter after the prompt marker."
+    },
+    {
+     "name": "promptSubmit",
+     "type": "boolean",
+     "required": false,
+     "description": "Alias of submit."
+    },
+    {
+     "name": "raw",
+     "type": "boolean",
+     "required": false,
+     "description": "Send bytes exactly as given (used by the send-key wrapper)."
+    },
+    {
+     "name": "fromSessionId",
+     "type": "string",
+     "required": false,
+     "description": "Actor session id (aliases: actorSessionId, sourceSessionId)."
+    },
+    {
+     "name": "fromNodeId",
+     "type": "string",
+     "required": false,
+     "description": "Actor workflow node id (aliases: sourceNodeId)."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "send-input",
+    "flags": [
+     {
+      "flag": "--session",
+      "value": "<sessionId>"
+     },
+     {
+      "flag": "--text",
+      "value": "<text>"
+     },
+     {
+      "flag": "--raw",
+      "value": ""
+     }
+    ]
+   },
+   "implementation": {
+    "special": true
+   },
+   "example": "wf-ui-control.mjs send-input --session <sessionId> --text \"/model\"",
+   "notes": [
+    "Server-special-cased in server.mjs: routed to sendRuntimeSessionInput before adapter dispatch.",
+    "CLI wrappers: send-input (--session/--text/--raw), send-key (raw keystroke bytes), delegate-agent (typed agent.sendInput via workflow-node-action)."
+   ]
+  },
+  {
+   "id": "agent.sendMessage",
+   "nodeType": "agent",
+   "category": "communication",
+   "summary": "Send a structured 1-to-1 message with envelope fields to one recipient agent node.",
+   "params": [
+    {
+     "name": "to",
+     "type": "string",
+     "required": true,
+     "description": "Recipient agent node id or session id."
+    },
+    {
+     "name": "text",
+     "type": "string",
+     "required": true,
+     "description": "Message text (aliases: data, message, input)."
+    },
+    {
+     "name": "topic",
+     "type": "string",
+     "required": false,
+     "description": "Message topic."
+    },
+    {
+     "name": "threadId",
+     "type": "string",
+     "required": false,
+     "description": "Thread id for correlation."
+    },
+    {
+     "name": "requestId",
+     "type": "string",
+     "required": false,
+     "description": "Correlation request id."
+    },
+    {
+     "name": "replyTo",
+     "type": "string",
+     "required": false,
+     "description": "Reply to a prior message id."
+    },
+    {
+     "name": "contextRefs",
+     "type": "array",
+     "required": false,
+     "description": "Markdown node references shared with the recipient (referenced by nodeId only)."
+    },
+    {
+     "name": "raw",
+     "type": "boolean",
+     "required": false,
+     "description": "Mark the message raw (no envelope processing)."
+    },
+    {
+     "name": "force",
+     "type": "boolean",
+     "required": false,
+     "description": "Allow delivery without a graph connection to the recipient."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": true,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "send-agent-message",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<senderNodeId>"
+     },
+     {
+      "flag": "--to",
+      "value": "<targetNodeId>"
+     },
+     {
+      "flag": "--text",
+      "value": "<text>"
+     },
+     {
+      "flag": "--request-id",
+      "value": "<requestId>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "agent",
+    "export": "sendMessage",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs send-agent-message --node <senderNodeId> --to <targetNodeId> --text \"task\" --request-id r1",
+   "notes": [
+    "Requires an existing connection between sender and recipient unless force is set (NOT_CONNECTED 403)."
+   ]
+  },
+  {
+   "id": "agent.broadcastMessage",
+   "nodeType": "agent",
+   "category": "communication",
+   "summary": "Send one structured message with envelope fields to many recipient agent nodes.",
+   "params": [
+    {
+     "name": "to",
+     "type": "array",
+     "required": false,
+     "description": "Recipient agent node ids or session ids; defaults to all connected agents."
+    },
+    {
+     "name": "text",
+     "type": "string",
+     "required": true,
+     "description": "Message text (aliases: data, message, input)."
+    },
+    {
+     "name": "topic",
+     "type": "string",
+     "required": false,
+     "description": "Message topic."
+    },
+    {
+     "name": "threadId",
+     "type": "string",
+     "required": false,
+     "description": "Thread id for correlation."
+    },
+    {
+     "name": "requestId",
+     "type": "string",
+     "required": false,
+     "description": "Correlation request id."
+    },
+    {
+     "name": "contextRefs",
+     "type": "array",
+     "required": false,
+     "description": "Markdown node references shared with recipients (referenced by nodeId only)."
+    },
+    {
+     "name": "raw",
+     "type": "boolean",
+     "required": false,
+     "description": "Mark the message raw (no envelope processing)."
+    },
+    {
+     "name": "force",
+     "type": "boolean",
+     "required": false,
+     "description": "Allow delivery without graph connections to the recipients."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "broadcast-agent-message",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<senderNodeId>"
+     },
+     {
+      "flag": "--to",
+      "value": "<a,b,c>"
+     },
+     {
+      "flag": "--text",
+      "value": "<text>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "agent",
+    "export": "broadcastMessage",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs broadcast-agent-message --node <senderNodeId> --to a,b,c --text \"All hands\""
+  },
+  {
+   "id": "agent.readMessages",
+   "nodeType": "agent",
+   "category": "communication",
+   "summary": "Read the recorded conversation with a peer agent, aggregated by requestId, or wakeup messages.",
+   "params": [
+    {
+     "name": "peer",
+     "type": "string",
+     "required": false,
+     "description": "Peer agent node id or session id (aliases: to, from, target, node)."
+    },
+    {
+     "name": "requestId",
+     "type": "string",
+     "required": false,
+     "description": "Aggregate all replies in this request thread across peers."
+    },
+    {
+     "name": "threadId",
+     "type": "string",
+     "required": false,
+     "description": "Thread id filter."
+    },
+    {
+     "name": "wakeup",
+     "type": "boolean",
+     "required": false,
+     "description": "Read wakeup-delivery messages instead of the peer conversation."
+    },
+    {
+     "name": "limit",
+     "type": "number",
+     "required": false,
+     "description": "Max entries (default 200; alias: tail)."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "read-agent-messages",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<senderNodeId>"
+     },
+     {
+      "flag": "--peer",
+      "value": "<peerNodeId>"
+     },
+     {
+      "flag": "--tail",
+      "value": "<n>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "agent",
+    "export": "readMessages",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs read-agent-messages --node <senderNodeId> --peer <peerNodeId>"
+  },
+  {
+   "id": "agent.readTranscript",
+   "nodeType": "agent",
+   "category": "discovery",
+   "summary": "Read the agent's terminal transcript window from disk.",
+   "params": [
+    {
+     "name": "tail",
+     "type": "number",
+     "required": false,
+     "description": "Last n entries (default 200)."
+    },
+    {
+     "name": "fromSeq",
+     "type": "number",
+     "required": false,
+     "description": "Start sequence number."
+    },
+    {
+     "name": "toSeq",
+     "type": "number",
+     "required": false,
+     "description": "End sequence number."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "read-agent",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<agentNodeId>"
+     },
+     {
+      "flag": "--action",
+      "value": "transcript"
+     },
+     {
+      "flag": "--tail",
+      "value": "<n>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "agent",
+    "export": "readTranscript",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs read-agent --node <agentNodeId> --action transcript --tail 50"
+  },
+  {
+   "id": "agent.start",
+   "nodeType": "agent",
+   "category": "lifecycle",
+   "summary": "Start an agent node's PTY session through the server control plane (createRuntimeSession).",
+   "params": [
+    {
+     "name": "forceRestart",
+     "type": "boolean",
+     "required": false,
+     "description": "Restart even if the session is already live."
+    },
+    {
+     "name": "runtime",
+     "type": "string",
+     "required": false,
+     "description": "Peer runtime id (default: session/node runtime)."
+    },
+    {
+     "name": "role",
+     "type": "string",
+     "required": false,
+     "description": "Agent role title."
+    },
+    {
+     "name": "objective",
+     "type": "string",
+     "required": false,
+     "description": "Agent objective text."
+    },
+    {
+     "name": "taskId",
+     "type": "string",
+     "required": false,
+     "description": "Task capsule id."
+    },
+    {
+     "name": "cwd",
+     "type": "string",
+     "required": false,
+     "description": "Working directory (default: project root)."
+    },
+    {
+     "name": "model",
+     "type": "string",
+     "required": false,
+     "description": "Model id."
+    },
+    {
+     "name": "provider",
+     "type": "string",
+     "required": false,
+     "description": "Model provider."
+    },
+    {
+     "name": "subagentMode",
+     "type": "string",
+     "required": false,
+     "description": "built-in-subagents | wf-node-subagents."
+    },
+    {
+     "name": "workflowMode",
+     "type": "string",
+     "required": false,
+     "description": "Workflow mode (wf, wf-max, ...)."
+    },
+    {
+     "name": "initialPrompt",
+     "type": "string",
+     "required": false,
+     "description": "First task prompt auto-submitted by the runtime TUI."
+    },
+    {
+     "name": "initialInput",
+     "type": "string",
+     "required": false,
+     "description": "Initial terminal input."
+    },
+    {
+     "name": "deferPtySpawn",
+     "type": "boolean",
+     "required": false,
+     "description": "Defer PTY spawn."
+    },
+    {
+     "name": "parentAgentId",
+     "type": "string",
+     "required": false,
+     "description": "Parent agent session id."
+    },
+    {
+     "name": "parentNodeId",
+     "type": "string",
+     "required": false,
+     "description": "Parent workflow node id."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "create-agent",
+    "flags": [
+     {
+      "flag": "--role",
+      "value": "<roleTitle>"
+     },
+     {
+      "flag": "--runtime",
+      "value": "<runtime>"
+     },
+     {
+      "flag": "--initial-prompt",
+      "value": "<text>"
+     },
+     {
+      "flag": "--model",
+      "value": "<model>"
+     }
+    ]
+   },
+   "implementation": {
+    "special": true
+   },
+   "example": "wf-ui-control.mjs create-agent --role implementer --initial-prompt \"Implement X\"",
+   "notes": [
+    "Server-special-cased in server.mjs: routed to startWorkflowGraphNode (session registry + PTY spawn). The agent adapter export only throws USE_A2A_START.",
+    "CLI create-agent is the primary path for creating agent nodes (POST /api/sessions)."
+   ]
+  },
+  {
+   "id": "agent.stop",
+   "nodeType": "agent",
+   "category": "lifecycle",
+   "summary": "Stop an agent node's session and kill its PTY process.",
+   "params": [],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": null,
+   "implementation": {
+    "special": true
+   },
+   "example": "POST /api/workflow/nodes/<nodeId>/actions/agent.stop",
+   "notes": [
+    "Server-special-cased in server.mjs: routed to stopRuntimeSession. The agent adapter export stops the PTY directly when reached in-process."
+   ]
+  },
+  {
+   "id": "agent.restart",
+   "nodeType": "agent",
+   "category": "lifecycle",
+   "summary": "Restart an agent node: start a fresh session and stop the previous one.",
+   "params": [
+    {
+     "name": "runtime",
+     "type": "string",
+     "required": false,
+     "description": "Peer runtime id (default: session/node runtime)."
+    },
+    {
+     "name": "role",
+     "type": "string",
+     "required": false,
+     "description": "Agent role title."
+    },
+    {
+     "name": "objective",
+     "type": "string",
+     "required": false,
+     "description": "Agent objective text."
+    },
+    {
+     "name": "taskId",
+     "type": "string",
+     "required": false,
+     "description": "Task capsule id."
+    },
+    {
+     "name": "model",
+     "type": "string",
+     "required": false,
+     "description": "Model id."
+    },
+    {
+     "name": "provider",
+     "type": "string",
+     "required": false,
+     "description": "Model provider."
+    },
+    {
+     "name": "subagentMode",
+     "type": "string",
+     "required": false,
+     "description": "built-in-subagents | wf-node-subagents."
+    },
+    {
+     "name": "initialPrompt",
+     "type": "string",
+     "required": false,
+     "description": "First task prompt auto-submitted by the runtime TUI."
+    },
+    {
+     "name": "initialInput",
+     "type": "string",
+     "required": false,
+     "description": "Initial terminal input."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": null,
+   "implementation": {
+    "special": true
+   },
+   "example": "POST /api/workflow/nodes/<nodeId>/actions/agent.restart",
+   "notes": [
+    "Server-special-cased in server.mjs: routed to restartWorkflowGraphNode (forceRestart is forced internally). The agent adapter export only throws USE_A2A_START."
+   ]
+  },
+  {
+   "id": "agent.deleteAgentNode",
+   "nodeType": "agent",
+   "category": "lifecycle",
+   "summary": "Delete an agent node from the workflow graph (must be stopped first).",
+   "params": [],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": null,
+   "implementation": {
+    "adapter": "agent",
+    "export": "deleteAgentNode",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action agent.deleteAgentNode --project .",
+   "notes": [
+    "Rejects deletion of running/starting agents (NODE_LIVE 409); also exported as adapter suffix 'delete' (agent.delete)."
+   ]
+  },
+  {
+   "id": "agent.delete",
+   "nodeType": "agent",
+   "category": "lifecycle",
+   "summary": "Delete an agent node (alias export of deleteAgentNode under the adapter suffix 'delete').",
+   "params": [],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "agent.delete"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "agent",
+    "export": "delete",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action agent.delete --project .",
+   "notes": [
+    "Routed alias of agent.deleteAgentNode (agent-node.mjs exports deleteAgentNode as delete)."
+   ]
+  },
+  {
+   "id": "agent.readContext",
+   "nodeType": "agent",
+   "category": "discovery",
+   "summary": "Build an agent node's workflow context: identity, connected peers, and available actions.",
+   "params": [],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "read-agent",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<agentNodeId>"
+     },
+     {
+      "flag": "--action",
+      "value": "context"
+     }
+    ]
+   },
+   "implementation": {
+    "special": true
+   },
+   "example": "wf-ui-control.mjs read-agent --node <agentNodeId> --action context",
+   "notes": [
+    "Special-cased route in workflow-node-runtime executeNodeAction: delegates to getNodeContext (component, agent, event, capability, goal nodes all supported)."
+   ]
+  },
+  {
+   "id": "agent.setModel",
+   "nodeType": "agent",
+   "category": "config",
+   "summary": "Switch an agent node's model by writing the project-scope runtime config file (restart required).",
+   "params": [
+    {
+     "name": "model",
+     "type": "string",
+     "required": true,
+     "description": "Model id to write into the project config (max 100 chars)."
+    },
+    {
+     "name": "actorSessionId",
+     "type": "string",
+     "required": false,
+     "description": "Actor session id (aliases: fromSessionId, sourceSessionId)."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": null,
+   "implementation": {
+    "special": true
+   },
+   "example": "POST /api/workflow/nodes/<nodeId>/actions/agent.setModel --data '{\"model\":\"claude-sonnet-4-5\"}'",
+   "notes": [
+    "Server-special-cased in server.mjs: routed to setWorkflowNodeModel; only PROJECT-scope config files are written, and a missing config file is refused (409).",
+    "No CLI command yet."
+   ]
+  },
+  {
+   "id": "agent.layout",
+   "nodeType": "agent",
+   "category": "graph",
+   "summary": "Auto-layout all non-docked workflow graph node positions (tree or grid) as a Main Agent actor.",
+   "params": [
+    {
+     "name": "mode",
+     "type": "string",
+     "required": false,
+     "description": "Layout mode: 'tree' (default) or 'grid'."
+    },
+    {
+     "name": "originX",
+     "type": "number",
+     "required": false,
+     "description": "Origin x (default 260)."
+    },
+    {
+     "name": "originY",
+     "type": "number",
+     "required": false,
+     "description": "Origin y (default 220)."
+    },
+    {
+     "name": "gapX",
+     "type": "number",
+     "required": false,
+     "description": "Horizontal gap (default 420)."
+    },
+    {
+     "name": "gapY",
+     "type": "number",
+     "required": false,
+     "description": "Vertical gap (default 140)."
+    },
+    {
+     "name": "actorNodeId",
+     "type": "string",
+     "required": false,
+     "description": "Actor node id (must be a Main Agent node)."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "node-map",
+    "flags": [
+     {
+      "flag": "--action",
+      "value": "layout"
+     },
+     {
+      "flag": "--layout-mode",
+      "value": "<grid|tree>"
+     }
+    ]
+   },
+   "implementation": {
+    "special": true
+   },
+   "example": "wf-ui-control.mjs node-map --action layout --actor <graphNodeId> --layout-mode tree",
+   "notes": [
+    "Server-special-cased in server.mjs: routed to executeGraphLayoutAction; requires a Main Agent graph node actor (MAIN_AGENT_REQUIRED 403)."
+   ]
+  },
+  {
+   "id": "timer.read",
+   "nodeType": "timer",
+   "category": "event",
+   "summary": "Read a timer node's full state: schedule, heartbeat, loop, whileGuard, taskBinding, controlPolicy, payloadTemplate.",
+   "params": [],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "timer.read"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "timer",
+    "export": "read",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action timer.read --project ."
+  },
+  {
+   "id": "timer.fire",
+   "nodeType": "timer",
+   "category": "event",
+   "summary": "Record a fired event on the timer (backend-internal; scheduler-owned).",
+   "params": [
+    {
+     "name": "payload",
+     "type": "object",
+     "required": false,
+     "description": "Event payload; defaults to the timer's payloadTemplate."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": false
+   },
+   "cli": null,
+   "implementation": {
+    "adapter": "timer",
+    "export": "fire",
+    "special": false
+   },
+   "example": "(internal) timer-wakeup-scheduler.mjs invokes timer-node fire() directly",
+   "notes": [
+    "Backend-internal action: the HTTP surface denies every actor except the main/controller agent and the internal scheduler marker (F1/F3)."
+   ]
+  },
+  {
+   "id": "timer.configure",
+   "nodeType": "timer",
+   "category": "config",
+   "summary": "Configure a timer node (title, enabled, schedule, heartbeat); agent actors cannot mutate policy/template/loop/binding fields.",
+   "params": [
+    {
+     "name": "title",
+     "type": "string",
+     "required": false,
+     "description": "Node title."
+    },
+    {
+     "name": "enabled",
+     "type": "boolean",
+     "required": false,
+     "description": "Whether the timer is enabled."
+    },
+    {
+     "name": "schedule",
+     "type": "object",
+     "required": false,
+     "description": "Schedule: {intervalSeconds, mode} (mode: manual|once|interval|cron|loop|adaptive|watchdog|while|task)."
+    },
+    {
+     "name": "heartbeat",
+     "type": "object",
+     "required": false,
+     "description": "Heartbeat: {watchdog: {enabled, intervalSeconds, timeoutSeconds}}."
+    },
+    {
+     "name": "controlPolicy",
+     "type": "object",
+     "required": false,
+     "description": "Control policy (main-only; agent configure is denied CONTROL_DENIED 403)."
+    },
+    {
+     "name": "payloadTemplate",
+     "type": "object",
+     "required": false,
+     "description": "Default event payload (main-only)."
+    },
+    {
+     "name": "loop",
+     "type": "object",
+     "required": false,
+     "description": "Loop guard config (main-only)."
+    },
+    {
+     "name": "whileGuard",
+     "type": "object",
+     "required": false,
+     "description": "While guard config (main-only)."
+    },
+    {
+     "name": "taskBinding",
+     "type": "object",
+     "required": false,
+     "description": "Task binding (main-only)."
+    },
+    {
+     "name": "actorNodeId",
+     "type": "string",
+     "required": false,
+     "description": "When present, agent policy checks are applied (enable/disable/setInterval/setMode/ackWatchdog)."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": true,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "timer.configure"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "timer",
+    "export": "configure",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action timer.configure --payload \"{\\\"enabled\\\":true,\\\"schedule\\\":{\\\"intervalSeconds\\\":60}}\" --project ."
+  },
+  {
+   "id": "timer.enable",
+   "nodeType": "timer",
+   "category": "event",
+   "summary": "Enable a timer node (schedule + base heartbeat).",
+   "params": [],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": true,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "timer.enable"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "timer",
+    "export": "enable",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action timer.enable --project ."
+  },
+  {
+   "id": "timer.disable",
+   "nodeType": "timer",
+   "category": "event",
+   "summary": "Disable a timer node (subject to control policy).",
+   "params": [],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": true,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "timer.disable"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "timer",
+    "export": "disable",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action timer.disable --project ."
+  },
+  {
+   "id": "timer.setInterval",
+   "nodeType": "timer",
+   "category": "config",
+   "summary": "Set the timer interval seconds (clamped by control policy; lane selects base or watchdog).",
+   "params": [
+    {
+     "name": "intervalSeconds",
+     "type": "number",
+     "required": false,
+     "description": "Interval in seconds (clamped to policy min/max)."
+    },
+    {
+     "name": "lane",
+     "type": "string",
+     "required": false,
+     "description": "'base' (default) or 'watchdog' heartbeat lane."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": true,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "timer.setInterval"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "timer",
+    "export": "setInterval",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action timer.setInterval --payload \"{\\\"intervalSeconds\\\":120}\" --project ."
+  },
+  {
+   "id": "timer.setMode",
+   "nodeType": "timer",
+   "category": "config",
+   "summary": "Set the timer schedule mode (manual|once|interval|cron|loop|adaptive|watchdog|while|task).",
+   "params": [
+    {
+     "name": "mode",
+     "type": "string",
+     "required": false,
+     "description": "Schedule mode; invalid values keep the current mode."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": true,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "timer.setMode"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "timer",
+    "export": "setMode",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action timer.setMode --payload \"{\\\"mode\\\":\\\"interval\\\"}\" --project ."
+  },
+  {
+   "id": "timer.ackWatchdog",
+   "nodeType": "timer",
+   "category": "event",
+   "summary": "Acknowledge the timer watchdog heartbeat (marks state ok with lastAckAt).",
+   "params": [
+    {
+     "name": "now",
+     "type": "string",
+     "required": false,
+     "description": "ISO timestamp override (default: current time)."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": true,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "timer.ackWatchdog"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "timer",
+    "export": "ackWatchdog",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action timer.ackWatchdog --project ."
+  },
+  {
+   "id": "timer.resetWatchdog",
+   "nodeType": "timer",
+   "category": "event",
+   "summary": "Reset the timer watchdog heartbeat (clears missed count and last ping).",
+   "params": [
+    {
+     "name": "now",
+     "type": "string",
+     "required": false,
+     "description": "ISO timestamp override (default: current time)."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": true,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "timer.resetWatchdog"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "timer",
+    "export": "resetWatchdog",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action timer.resetWatchdog --project ."
+  },
+  {
+   "id": "timer.dispatchWakeup",
+   "nodeType": "timer",
+   "category": "event",
+   "summary": "Compose the wakeup envelope and append it to the message queue of every agent in the timer's magnetic group (backend-internal).",
+   "params": [
+    {
+     "name": "firedAt",
+     "type": "string",
+     "required": false,
+     "description": "ISO fired timestamp."
+    },
+    {
+     "name": "scheduledAt",
+     "type": "string",
+     "required": false,
+     "description": "ISO scheduled timestamp."
+    },
+    {
+     "name": "intervalSeconds",
+     "type": "number",
+     "required": false,
+     "description": "Interval reported in the wakeup envelope."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": false
+   },
+   "cli": null,
+   "implementation": {
+    "adapter": "timer",
+    "export": "dispatchWakeup",
+    "special": false
+   },
+   "example": "(internal) timer-wakeup-scheduler.mjs invokes timer-node dispatchWakeup() directly",
+   "notes": [
+    "Backend-internal: wakeups land in the message store only (never PTY stdin); agents read them on their next turn. HTTP surface is main/controller or internal-scheduler only."
+   ]
+  },
+  {
+   "id": "timer.tick",
+   "nodeType": "timer",
+   "category": "event",
+   "summary": "Advance the timer heartbeat (base due events and watchdog timeouts); scheduler-owned.",
+   "params": [
+    {
+     "name": "now",
+     "type": "string",
+     "required": false,
+     "description": "ISO timestamp override (default: current time)."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": false
+   },
+   "cli": null,
+   "implementation": {
+    "adapter": "timer",
+    "export": "tick",
+    "special": false
+   },
+   "example": "(internal) timer-wakeup-scheduler.mjs invokes timer-node tick() directly",
+   "notes": [
+    "Backend-internal action: HTTP surface is main/controller or internal-scheduler only (F1/F3)."
+   ]
+  },
+  {
+   "id": "github-trigger.read",
+   "nodeType": "github-trigger",
+   "category": "event",
+   "summary": "Read a github-trigger node's state: repository, eventFilters, payloadTemplate, delivery counters, last event.",
+   "params": [],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "github-trigger.read"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "github-trigger",
+    "export": "read",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action github-trigger.read --project ."
+  },
+  {
+   "id": "github-trigger.receive",
+   "nodeType": "github-trigger",
+   "category": "event",
+   "summary": "Record an inbound GitHub webhook delivery event (runtime action; webhook intake).",
+   "params": [
+    {
+     "name": "event",
+     "type": "string",
+     "required": false,
+     "description": "GitHub event name (aliases: githubEvent, name)."
+    },
+    {
+     "name": "action",
+     "type": "string",
+     "required": false,
+     "description": "Event action (e.g. opened, closed)."
+    },
+    {
+     "name": "repository",
+     "type": "object",
+     "required": false,
+     "description": "Repository: {owner, name, fullName} (or {full_name})."
+    },
+    {
+     "name": "deliveryId",
+     "type": "string",
+     "required": false,
+     "description": "Webhook delivery id (aliases: deliveryID, id)."
+    },
+    {
+     "name": "pullRequest",
+     "type": "object",
+     "required": false,
+     "description": "Pull request: {number, title, url} (alias: pull_request)."
+    },
+    {
+     "name": "issue",
+     "type": "object",
+     "required": false,
+     "description": "Issue: {number, title, url}."
+    },
+    {
+     "name": "release",
+     "type": "object",
+     "required": false,
+     "description": "Release: {tagName, name, url} (alias: tag_name)."
+    },
+    {
+     "name": "workflowRun",
+     "type": "object",
+     "required": false,
+     "description": "Workflow run: {id, name, status, conclusion, url} (alias: workflow_run)."
+    },
+    {
+     "name": "ref",
+     "type": "string",
+     "required": false,
+     "description": "Git ref."
+    },
+    {
+     "name": "sender",
+     "type": "object",
+     "required": false,
+     "description": "Sender login (or plain string)."
+    },
+    {
+     "name": "dedupeKey",
+     "type": "string",
+     "required": false,
+     "description": "Dedupe key; defaults to a composition of event/repo/ref."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": false
+   },
+   "cli": null,
+   "implementation": {
+    "adapter": "github-trigger",
+    "export": "receive",
+    "special": false
+   },
+   "example": "(webhook) POST to the github-trigger node action route with the delivery payload",
+   "notes": [
+    "Runtime action in the ontology; designed for webhook intake rather than agent-authored calls."
+   ]
+  },
+  {
+   "id": "github-trigger.configure",
+   "nodeType": "github-trigger",
+   "category": "config",
+   "summary": "Configure a github-trigger node (title, enabled, repository, eventFilters, payloadTemplate).",
+   "params": [
+    {
+     "name": "title",
+     "type": "string",
+     "required": false,
+     "description": "Node title."
+    },
+    {
+     "name": "enabled",
+     "type": "boolean",
+     "required": false,
+     "description": "Whether the trigger is enabled."
+    },
+    {
+     "name": "repository",
+     "type": "object",
+     "required": false,
+     "description": "Repository binding: {owner, name}."
+    },
+    {
+     "name": "eventFilters",
+     "type": "array",
+     "required": false,
+     "description": "Filtered event names/actions."
+    },
+    {
+     "name": "payloadTemplate",
+     "type": "object",
+     "required": false,
+     "description": "Default delivery payload template."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "github-trigger.configure"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "github-trigger",
+    "export": "configure",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action github-trigger.configure --payload \"{\\\"enabled\\\":true}\" --project ."
+  },
+  {
+   "id": "skill-group.read",
+   "nodeType": "skill-group",
+   "category": "capability",
+   "summary": "Read a skill-group node: description, sourceGroup, skills, skillNames, skillCount, nodeSemantics.",
+   "params": [],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "skill-group.read"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "skill-group",
+    "export": "read",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action skill-group.read --project ."
+  },
+  {
+   "id": "skill-group.setSkillEnabled",
+   "nodeType": "skill-group",
+   "category": "capability",
+   "summary": "Enable or disable a single skill within a skill-group node.",
+   "params": [
+    {
+     "name": "skillId",
+     "type": "string",
+     "required": true,
+     "description": "Skill id to toggle (alias: skill)."
+    },
+    {
+     "name": "enabled",
+     "type": "boolean",
+     "required": true,
+     "description": "true to enable, false to disable."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "skill-group.setSkillEnabled"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "skill-group",
+    "export": "setSkillEnabled",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action skill-group.setSkillEnabled --payload \"{\\\"skillId\\\":\\\"wf-ui\\\",\\\"enabled\\\":true}\" --project ."
+  },
+  {
+   "id": "skill-group.configure",
+   "nodeType": "skill-group",
+   "category": "config",
+   "summary": "Configure a skill-group node (title, description, sourceGroup, skills).",
+   "params": [
+    {
+     "name": "title",
+     "type": "string",
+     "required": false,
+     "description": "Node title."
+    },
+    {
+     "name": "description",
+     "type": "string",
+     "required": false,
+     "description": "Group description."
+    },
+    {
+     "name": "sourceGroup",
+     "type": "string",
+     "required": false,
+     "description": "Source group id."
+    },
+    {
+     "name": "skills",
+     "type": "array",
+     "required": false,
+     "description": "Replacement skills list."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "skill-group.configure"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "skill-group",
+    "export": "configure",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action skill-group.configure --payload \"{\\\"description\\\":\\\"team skills\\\"}\" --project ."
+  },
+  {
+   "id": "mcp-connector.read",
+   "nodeType": "mcp-connector",
+   "category": "capability",
+   "summary": "Read an mcp-connector node: servers, serverNames, transports, envKeyNames, redactedFieldCount.",
+   "params": [],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "mcp-connector.read"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "mcp-connector",
+    "export": "read",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action mcp-connector.read --project ."
+  },
+  {
+   "id": "mcp-connector.configure",
+   "nodeType": "mcp-connector",
+   "category": "config",
+   "summary": "Configure an mcp-connector node (title, description, sourceGroup, servers, server).",
+   "params": [
+    {
+     "name": "title",
+     "type": "string",
+     "required": false,
+     "description": "Node title."
+    },
+    {
+     "name": "description",
+     "type": "string",
+     "required": false,
+     "description": "Connector description."
+    },
+    {
+     "name": "sourceGroup",
+     "type": "string",
+     "required": false,
+     "description": "Source group id."
+    },
+    {
+     "name": "servers",
+     "type": "array",
+     "required": false,
+     "description": "Replacement MCP server metadata list."
+    },
+    {
+     "name": "server",
+     "type": "object",
+     "required": false,
+     "description": "Single server metadata to attach."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "mcp-connector.configure"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "mcp-connector",
+    "export": "configure",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action mcp-connector.configure --payload \"{\\\"description\\\":\\\"db tools\\\"}\" --project ."
+  },
+  {
+   "id": "goal.read",
+   "nodeType": "goal",
+   "category": "discovery",
+   "summary": "Read a goal node's full state (objective, planItems, acceptance, wdt, confirmation, status).",
+   "params": [],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "goal.read"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "goal",
+    "export": "read",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action goal.read --project ."
+  },
+  {
+   "id": "goal.update",
+   "nodeType": "goal",
+   "category": "resource",
+   "summary": "Patch a goal node's title, objective, nextAction, acceptance, planItems, or wdt fields.",
+   "params": [
+    {
+     "name": "title",
+     "type": "string",
+     "required": false,
+     "description": "Goal title (max 400 chars)."
+    },
+    {
+     "name": "objective",
+     "type": "string",
+     "required": false,
+     "description": "Goal objective (max 2000 chars)."
+    },
+    {
+     "name": "nextAction",
+     "type": "string",
+     "required": false,
+     "description": "Next action hint (max 1000 chars)."
+    },
+    {
+     "name": "acceptance",
+     "type": "array",
+     "required": false,
+     "description": "Acceptance items (strings or {text, status})."
+    },
+    {
+     "name": "planItems",
+     "type": "array",
+     "required": false,
+     "description": "Plan items (strings or {text, status})."
+    },
+    {
+     "name": "wdt",
+     "type": "object",
+     "required": false,
+     "description": "Watchdog timer state: {enabled, state, timerNodeId, lastAckAt}."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": true,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "goal.update"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "goal",
+    "export": "update",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action goal.update --payload \"{\\\"nextAction\\\":\\\"verify tests\\\"}\" --project ."
+  },
+  {
+   "id": "goal.requestCompletion",
+   "nodeType": "goal",
+   "category": "lifecycle",
+   "summary": "Propose goal completion (status proposed-complete) with evidence refs and a note.",
+   "params": [
+    {
+     "name": "evidenceRefs",
+     "type": "array",
+     "required": false,
+     "description": "Evidence reference strings."
+    },
+    {
+     "name": "note",
+     "type": "string",
+     "required": false,
+     "description": "Completion note (max 1000 chars)."
+    },
+    {
+     "name": "actorNodeId",
+     "type": "string",
+     "required": false,
+     "description": "Proposing agent node id."
+    },
+    {
+     "name": "now",
+     "type": "string",
+     "required": false,
+     "description": "ISO timestamp override."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": true,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "goal.requestCompletion"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "goal",
+    "export": "requestCompletion",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action goal.requestCompletion --payload \"{\\\"evidenceRefs\\\":[\\\"commit abc\\\"]}\" --project ."
+  },
+  {
+   "id": "goal.returnToWork",
+   "nodeType": "goal",
+   "category": "lifecycle",
+   "summary": "Return a proposed-complete goal to active work (status active, confirmation returned).",
+   "params": [
+    {
+     "name": "evidenceRefs",
+     "type": "array",
+     "required": false,
+     "description": "Evidence reference strings."
+    },
+    {
+     "name": "note",
+     "type": "string",
+     "required": false,
+     "description": "Return note (max 1000 chars)."
+    },
+    {
+     "name": "actorNodeId",
+     "type": "string",
+     "required": false,
+     "description": "Returning agent node id."
+    },
+    {
+     "name": "now",
+     "type": "string",
+     "required": false,
+     "description": "ISO timestamp override."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": true,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "goal.returnToWork"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "goal",
+    "export": "returnToWork",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action goal.returnToWork --payload \"{\\\"note\\\":\\\"more work needed\\\"}\" --project ."
+  },
+  {
+   "id": "goal.add",
+   "nodeType": "goal",
+   "category": "resource",
+   "summary": "Append plan items (P-*) and acceptance items (AC-*) to a goal node.",
+   "params": [
+    {
+     "name": "planItems",
+     "type": "array",
+     "required": false,
+     "description": "Plan items to append (strings or {text, status}); max 100."
+    },
+    {
+     "name": "acceptance",
+     "type": "array",
+     "required": false,
+     "description": "Acceptance items to append (strings or {text, status}); max 100."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": true,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "goal.add"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "goal",
+    "export": "add",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action goal.add --payload \"{\\\"planItems\\\":[\\\"step 1\\\"]}\" --project ."
+  },
+  {
+   "id": "goal.delete",
+   "nodeType": "goal",
+   "category": "resource",
+   "summary": "Remove plan items and/or acceptance items by id (implemented as the removeItems helper alias).",
+   "params": [
+    {
+     "name": "planItemIds",
+     "type": "array",
+     "required": false,
+     "description": "Plan item ids to remove (e.g. P-001)."
+    },
+    {
+     "name": "acceptanceIds",
+     "type": "array",
+     "required": false,
+     "description": "Acceptance item ids to remove (e.g. AC-001)."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": true,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "goal.delete"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "goal",
+    "export": "delete",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action goal.delete --payload \"{\\\"planItemIds\\\":[\\\"P-001\\\"]}\" --project .",
+   "notes": [
+    "goal-node.mjs exports removeItems as delete (adapter suffix 'delete'); unknown ids are returned in skipped."
+   ]
+  },
+  {
+   "id": "goal.replace",
+   "nodeType": "goal",
+   "category": "resource",
+   "summary": "Replace the entire planItems and/or acceptance lists of a goal node.",
+   "params": [
+    {
+     "name": "planItems",
+     "type": "array",
+     "required": false,
+     "description": "Full replacement plan items (strings or {id, text, status}); max 100."
+    },
+    {
+     "name": "acceptance",
+     "type": "array",
+     "required": false,
+     "description": "Full replacement acceptance items (strings or {id, text, status}); max 100."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": true,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "goal.replace"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "goal",
+    "export": "replace",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action goal.replace --payload \"{\\\"planItems\\\":[\\\"a\\\",\\\"b\\\"]}\" --project ."
+  },
+  {
+   "id": "goal.check",
+   "nodeType": "goal",
+   "category": "resource",
+   "summary": "Mark plan items done by id (status done, records updatedBy/updatedAt).",
+   "params": [
+    {
+     "name": "planItemIds",
+     "type": "array",
+     "required": true,
+     "description": "Plan item ids to check (e.g. P-001)."
+    },
+    {
+     "name": "actorNodeId",
+     "type": "string",
+     "required": false,
+     "description": "Acting agent node id."
+    },
+    {
+     "name": "now",
+     "type": "string",
+     "required": false,
+     "description": "ISO timestamp override."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": true,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "goal.check"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "goal",
+    "export": "check",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action goal.check --payload \"{\\\"planItemIds\\\":[\\\"P-001\\\"]}\" --project ."
+  },
+  {
+   "id": "goal.uncheck",
+   "nodeType": "goal",
+   "category": "resource",
+   "summary": "Mark plan items back to todo by id (records updatedBy/updatedAt).",
+   "params": [
+    {
+     "name": "planItemIds",
+     "type": "array",
+     "required": true,
+     "description": "Plan item ids to uncheck (e.g. P-001)."
+    },
+    {
+     "name": "actorNodeId",
+     "type": "string",
+     "required": false,
+     "description": "Acting agent node id."
+    },
+    {
+     "name": "now",
+     "type": "string",
+     "required": false,
+     "description": "ISO timestamp override."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": true,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "goal.uncheck"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "goal",
+    "export": "uncheck",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action goal.uncheck --payload \"{\\\"planItemIds\\\":[\\\"P-001\\\"]}\" --project ."
+  },
+  {
+   "id": "goal.complete",
+   "nodeType": "goal",
+   "category": "lifecycle",
+   "summary": "Propose goal completion once all plan items are done (rejects with goal_items_pending otherwise).",
+   "params": [
+    {
+     "name": "evidenceRefs",
+     "type": "array",
+     "required": false,
+     "description": "Evidence reference strings."
+    },
+    {
+     "name": "note",
+     "type": "string",
+     "required": false,
+     "description": "Completion note (max 1000 chars)."
+    },
+    {
+     "name": "actorNodeId",
+     "type": "string",
+     "required": false,
+     "description": "Proposing agent node id."
+    },
+    {
+     "name": "now",
+     "type": "string",
+     "required": false,
+     "description": "ISO timestamp override."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": true,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "goal.complete"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "goal",
+    "export": "complete",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action goal.complete --payload \"{\\\"evidenceRefs\\\":[\\\"test pass\\\"]}\" --project ."
+  },
+  {
+   "id": "goal.reopen",
+   "nodeType": "goal",
+   "category": "lifecycle",
+   "summary": "Reopen a completed goal back to active status with confirmation state returned.",
+   "params": [
+    {
+     "name": "evidenceRefs",
+     "type": "array",
+     "required": false,
+     "description": "Evidence reference strings."
+    },
+    {
+     "name": "note",
+     "type": "string",
+     "required": false,
+     "description": "Reopen note (max 1000 chars)."
+    },
+    {
+     "name": "actorNodeId",
+     "type": "string",
+     "required": false,
+     "description": "Reopening agent node id."
+    },
+    {
+     "name": "now",
+     "type": "string",
+     "required": false,
+     "description": "ISO timestamp override."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": true,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "goal.reopen"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "goal",
+    "export": "reopen",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action goal.reopen --payload \"{\\\"note\\\":\\\"scope grew\\\"}\" --project ."
+  },
+  {
+   "id": "goal.ackWatchdog",
+   "nodeType": "goal",
+   "category": "event",
+   "summary": "Acknowledge the goal watchdog timer (wdt state ok with lastAckAt and timerNodeId).",
+   "params": [
+    {
+     "name": "timerNodeId",
+     "type": "string",
+     "required": false,
+     "description": "Timer node id recorded in the wdt state."
+    },
+    {
+     "name": "now",
+     "type": "string",
+     "required": false,
+     "description": "ISO timestamp override."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": true,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "workflow-node-action",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--action",
+      "value": "goal.ackWatchdog"
+     },
+     {
+      "flag": "--payload",
+      "value": "<json>"
+     }
+    ]
+   },
+   "implementation": {
+    "adapter": "goal",
+    "export": "ackWatchdog",
+    "special": false
+   },
+   "example": "wf-ui-control.mjs workflow-node-action --node <nodeId> --action goal.ackWatchdog --payload \"{\\\"timerNodeId\\\":\\\"timer-1\\\"}\" --project ."
+  },
+  {
+   "id": "node.delete",
+   "nodeType": "node",
+   "category": "graph",
+   "summary": "Delete any workflow node (component, event, capability, goal) by id; live agent nodes must be stopped first.",
+   "params": [],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": null,
+   "implementation": {
+    "special": true
+   },
+   "example": "POST /api/workflow/nodes/<nodeId>/actions/node.delete",
+   "notes": [
+    "Server-special-cased in workflow-node-runtime executeNodeAction: routed to deleteNode before adapter dispatch. Agent graph nodes use agent.deleteNode/agent.deleteNodes (graph category)."
+   ]
+  },
+  {
+   "id": "node.restore",
+   "nodeType": "node",
+   "category": "graph",
+   "summary": "Restore a previously deleted workflow node from its snapshot (state recovery + graph restore).",
+   "params": [
+    {
+     "name": "recovery",
+     "type": "object",
+     "required": false,
+     "description": "Recovery payload: {graphId, node: {type, nodeId, componentState|eventState|capabilityState}} or the snapshot fields flattened."
+    },
+    {
+     "name": "graphId",
+     "type": "string",
+     "required": false,
+     "description": "Graph node id to restore (top-level alias)."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": null,
+   "implementation": {
+    "special": true
+   },
+   "example": "POST /api/workflow/nodes/<nodeId>/actions/node.restore --data '{\"node\": {\"type\": \"markdown\", \"nodeId\": \"md-1\", \"componentState\": {...}}}'",
+   "notes": [
+    "Server-special-cased in workflow-node-runtime executeNodeAction: routed to restoreNode (restoreComponentNode/restoreEventNode/restoreCapabilityNode by node kind)."
+   ]
+  },
+  {
+   "id": "agent.createNode",
+   "nodeType": "graph",
+   "category": "graph",
+   "summary": "Create a workflow graph node (component, event, capability, or goal) as a Main Agent actor.",
+   "params": [
+    {
+     "name": "type",
+     "type": "string",
+     "required": true,
+     "description": "Node type: markdown, excalidraw, file, timer, github-trigger (needs experimental: true), skill-group, mcp-connector, goal."
+    },
+    {
+     "name": "title",
+     "type": "string",
+     "required": false,
+     "description": "Node title."
+    },
+    {
+     "name": "position",
+     "type": "object",
+     "required": false,
+     "description": "Graph position: {x, y}."
+    },
+    {
+     "name": "node",
+     "type": "object",
+     "required": false,
+     "description": "Nested node payload: {type, title, position, ...type-specific fields}."
+    },
+    {
+     "name": "markdown",
+     "type": "string",
+     "required": false,
+     "description": "Initial content for markdown nodes."
+    },
+    {
+     "name": "mcpServerId",
+     "type": "string",
+     "required": false,
+     "description": "MCP server id to attach for mcp-connector nodes."
+    },
+    {
+     "name": "experimental",
+     "type": "boolean",
+     "required": false,
+     "description": "Required true for github-trigger creation (PLANNED_NODE_REQUIRES_EXPERIMENTAL otherwise)."
+    }
+   ],
+   "actor": {
+    "spawnGate": "root",
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "node-map",
+    "flags": [
+     {
+      "flag": "--action",
+      "value": "createNode"
+     },
+     {
+      "flag": "--type",
+      "value": "<nodeType>"
+     },
+     {
+      "flag": "--title",
+      "value": "<title>"
+     }
+    ]
+   },
+   "implementation": {
+    "special": true
+   },
+   "example": "wf-ui-control.mjs node-map --action createNode --type markdown --title \"Plan\" --actor <graphNodeId>",
+   "notes": [
+    "Server-special-cased: routed to executeAgentGraphAction (Main Agent actors only, assertMainAgentGraphActor). To create agent nodes (PTY sessions) use the create-agent CLI / agent.start instead."
+   ]
+  },
+  {
+   "id": "agent.connectNodes",
+   "nodeType": "graph",
+   "category": "graph",
+   "summary": "Connect two workflow nodes with a typed edge (Single-Goal rule enforced) as a Main Agent actor.",
+   "params": [
+    {
+     "name": "to",
+     "type": "string",
+     "required": true,
+     "description": "Target node or session (aliases: target, targetNodeId)."
+    },
+    {
+     "name": "from",
+     "type": "string",
+     "required": false,
+     "description": "Source node or session (aliases: source, sourceNodeId; default: actor)."
+    },
+    {
+     "name": "relation",
+     "type": "string",
+     "required": false,
+     "description": "Edge relation (default: delegation; e.g. context, event, control, goal, capability, wf-bridge)."
+    },
+    {
+     "name": "sourceHandle",
+     "type": "string",
+     "required": false,
+     "description": "Source handle."
+    },
+    {
+     "name": "targetHandle",
+     "type": "string",
+     "required": false,
+     "description": "Target handle."
+    },
+    {
+     "name": "direction",
+     "type": "string",
+     "required": false,
+     "description": "Edge direction (default: bidirectional)."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "connect",
+    "flags": [
+     {
+      "flag": "--from",
+      "value": "<nodeOrSession>"
+     },
+     {
+      "flag": "--to",
+      "value": "<nodeOrSession>"
+     },
+     {
+      "flag": "--relation",
+      "value": "<relation>"
+     }
+    ]
+   },
+   "implementation": {
+    "special": true
+   },
+   "example": "wf-ui-control.mjs connect --actor <actorNodeId> --from <nodeId> --to <nodeId> --relation delegation",
+   "notes": [
+    "Server-special-cased: routed to executeAgentGraphAction (Main Agent actors only); also reachable via node-map --action connectNodes."
+   ]
+  },
+  {
+   "id": "agent.disconnectNodes",
+   "nodeType": "graph",
+   "category": "graph",
+   "summary": "Remove an edge between two workflow nodes by edge id as a Main Agent actor.",
+   "params": [
+    {
+     "name": "edgeId",
+     "type": "string",
+     "required": true,
+     "description": "Edge id to disconnect (alias: id)."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "node-map",
+    "flags": [
+     {
+      "flag": "--action",
+      "value": "disconnectNodes"
+     },
+     {
+      "flag": "--edge",
+      "value": "<edgeId>"
+     }
+    ]
+   },
+   "implementation": {
+    "special": true
+   },
+   "example": "wf-ui-control.mjs node-map --action disconnectNodes --edge <edgeId> --actor <graphNodeId>",
+   "notes": [
+    "Server-special-cased: routed to executeAgentGraphAction (Main Agent actors only)."
+   ]
+  },
+  {
+   "id": "agent.moveNode",
+   "nodeType": "graph",
+   "category": "graph",
+   "summary": "Move a workflow node to a new graph position as a Main Agent actor.",
+   "params": [
+    {
+     "name": "targetNodeId",
+     "type": "string",
+     "required": true,
+     "description": "Node to move (aliases: nodeId, id)."
+    },
+    {
+     "name": "position",
+     "type": "object",
+     "required": true,
+     "description": "New position: {x, y} (or pass x/y directly in the payload)."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "node-map",
+    "flags": [
+     {
+      "flag": "--action",
+      "value": "moveNode"
+     },
+     {
+      "flag": "--node",
+      "value": "<nodeId>"
+     },
+     {
+      "flag": "--x",
+      "value": "<number>"
+     },
+     {
+      "flag": "--y",
+      "value": "<number>"
+     }
+    ]
+   },
+   "implementation": {
+    "special": true
+   },
+   "example": "wf-ui-control.mjs node-map --action moveNode --node <nodeId> --x 400 --y 300 --actor <graphNodeId>",
+   "notes": [
+    "Server-special-cased: routed to executeAgentGraphAction (Main Agent actors only)."
+   ]
+  },
+  {
+   "id": "agent.deleteNode",
+   "nodeType": "graph",
+   "category": "graph",
+   "summary": "Delete a single workflow graph node as a Main Agent actor (live agent nodes require allowLiveAgentDelete/force).",
+   "params": [
+    {
+     "name": "nodeId",
+     "type": "string",
+     "required": true,
+     "description": "Node to delete (aliases: node, id)."
+    },
+    {
+     "name": "force",
+     "type": "boolean",
+     "required": false,
+     "description": "Force deletion."
+    },
+    {
+     "name": "allowLiveAgentDelete",
+     "type": "boolean",
+     "required": false,
+     "description": "Allow deleting live agent nodes."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "delete-node",
+    "flags": [
+     {
+      "flag": "--node",
+      "value": "<graphNodeIdOrSessionId>"
+     },
+     {
+      "flag": "--actor",
+      "value": "<actorNodeId>"
+     }
+    ]
+   },
+   "implementation": {
+    "special": true
+   },
+   "example": "wf-ui-control.mjs delete-node --node <graphNodeIdOrSessionId> --actor <actorNodeId>",
+   "notes": [
+    "Server-special-cased: routed to executeAgentGraphAction (Main Agent actors only); also reachable via node-map --action deleteNode."
+   ]
+  },
+  {
+   "id": "agent.deleteNodes",
+   "nodeType": "graph",
+   "category": "graph",
+   "summary": "Delete multiple workflow graph nodes (or all non-actor nodes) as a Main Agent actor.",
+   "params": [
+    {
+     "name": "nodeIds",
+     "type": "array",
+     "required": false,
+     "description": "Target node ids (aliases: nodes)."
+    },
+    {
+     "name": "all",
+     "type": "boolean",
+     "required": false,
+     "description": "Delete all non-actor nodes."
+    },
+    {
+     "name": "force",
+     "type": "boolean",
+     "required": false,
+     "description": "Force deletion."
+    },
+    {
+     "name": "allowLiveAgentDelete",
+     "type": "boolean",
+     "required": false,
+     "description": "Allow deleting live agent nodes."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "node-map",
+    "flags": [
+     {
+      "flag": "--action",
+      "value": "deleteNodes"
+     },
+     {
+      "flag": "--nodes",
+      "value": "<nodeId,...>"
+     },
+     {
+      "flag": "--all",
+      "value": ""
+     }
+    ]
+   },
+   "implementation": {
+    "special": true
+   },
+   "example": "wf-ui-control.mjs node-map --action deleteNodes --nodes a,b,c --actor <graphNodeId>",
+   "notes": [
+    "Server-special-cased: routed to executeAgentGraphAction (Main Agent actors only)."
+   ]
+  },
+  {
+   "id": "agent.readGraph",
+   "nodeType": "graph",
+   "category": "graph",
+   "summary": "Read the full workflow graph snapshot (nodes, edges, positions, capsule dock links) as a Main Agent actor.",
+   "params": [],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "node-map",
+    "flags": [
+     {
+      "flag": "--action",
+      "value": "readGraph"
+     },
+     {
+      "flag": "--actor",
+      "value": "<graphNodeIdOrSessionId>"
+     }
+    ]
+   },
+   "implementation": {
+    "special": true
+   },
+   "example": "wf-ui-control.mjs node-map --action readGraph --actor <graphNodeId>",
+   "notes": [
+    "Server-special-cased: routed to executeAgentGraphAction (Main Agent actors only)."
+   ]
+  },
+  {
+   "id": "graph.undo",
+   "nodeType": "graph",
+   "category": "graph",
+   "summary": "Undo the most recent graph operation (moveNode/connectNodes/disconnectNodes/updateEdge/attachDock/detachDock/setDockSide/layout/deleteNode/createNode) by replaying its inverse slice; human and agent edits share one server-owned history.",
+   "params": [
+    {
+     "name": "scope",
+     "type": "string",
+     "required": false,
+     "description": "Scope selector; 'graph' (default) applies the workflow graph history."
+    },
+    {
+     "name": "expectedVersion",
+     "type": "number",
+     "required": false,
+     "description": "Optional graph version guard; mismatch yields STALE_GRAPH_VERSION (409)."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "node-map",
+    "flags": [
+     {
+      "flag": "--action",
+      "value": "undo"
+     },
+     {
+      "flag": "--actor",
+      "value": "<graphNodeIdOrSessionId>"
+     }
+    ]
+   },
+   "implementation": {
+    "special": true
+   },
+   "example": "wf-ui-control.mjs node-map --action undo --actor <graphNodeId>",
+   "notes": [
+    "Server-special-cased in server.mjs: routed to undoGraphOp; requires an Agent graph node actor; empty stack is idempotent ({ok:true, applied:null})."
+   ]
+  },
+  {
+   "id": "graph.redo",
+   "nodeType": "graph",
+   "category": "graph",
+   "summary": "Redo the most recently undone graph operation by replaying its forward slice.",
+   "params": [
+    {
+     "name": "scope",
+     "type": "string",
+     "required": false,
+     "description": "Scope selector; 'graph' (default) applies the workflow graph history."
+    },
+    {
+     "name": "expectedVersion",
+     "type": "number",
+     "required": false,
+     "description": "Optional graph version guard; mismatch yields STALE_GRAPH_VERSION (409)."
+    }
+   ],
+   "actor": {
+    "spawnGate": null,
+    "edgeRequired": false,
+    "agentAuthored": true
+   },
+   "cli": {
+    "command": "node-map",
+    "flags": [
+     {
+      "flag": "--action",
+      "value": "redo"
+     },
+     {
+      "flag": "--actor",
+      "value": "<graphNodeIdOrSessionId>"
+     }
+    ]
+   },
+   "implementation": {
+    "special": true
+   },
+   "example": "wf-ui-control.mjs node-map --action redo --actor <graphNodeId>",
+   "notes": [
+    "Server-special-cased in server.mjs: routed to redoGraphOp; requires an Agent graph node actor; empty stack is idempotent ({ok:true, applied:null})."
+   ]
+  }
+ ]
+}

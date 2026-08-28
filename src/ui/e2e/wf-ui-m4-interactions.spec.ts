@@ -2,7 +2,6 @@ import { expect, test, type Locator, type Page, type Route } from '@playwright/t
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const token = process.env.WF_UI_E2E_TOKEN || 'playwright-m1-red';
 const repoRoot = process.env.WF_UI_E2E_PROJECT_ROOT
   || path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 
@@ -62,7 +61,7 @@ function control() {
     canDelete: true,
     canOpenTerminal: true,
     canOpenTranscript: true,
-    canSendInput: true,
+    canSendInput: false,
     canCreateAgent: true,
     canCreateComponentNode: true,
   };
@@ -131,6 +130,7 @@ function workflowSnapshot() {
       source: mainNodeId,
       target: workerNodeId,
       relation: 'delegates',
+      direction: 'bidirectional',
       sourceHandle: 'right',
       targetHandle: 'left',
       offset: 0,
@@ -150,6 +150,7 @@ function workflowSnapshot() {
         source: mainNodeId,
         target: workerNodeId,
         relation: 'delegates',
+        direction: 'bidirectional',
         sourceHandle: 'right',
         targetHandle: 'left',
         offset: 0,
@@ -306,6 +307,7 @@ async function installWorkflowFixture(page: Page): Promise<HarnessNetwork> {
           source: edge.source || edge.from,
           target: edge.target || edge.to,
           relation: edge.relation || edge.label || 'wf-bridge',
+          direction: edge.direction || 'bidirectional',
           sourceHandle: edge.sourceHandle,
           targetHandle: edge.targetHandle,
           offset: edge.offset,
@@ -393,6 +395,10 @@ async function installWorkflowFixture(page: Page): Promise<HarnessNetwork> {
     return jsonResponse(route, { ok: true, path: filePath, name: path.basename(filePath), type: 'file', exists: true, size: 820, mime: 'application/json', etag: 'm4-etag', previewKind: 'text' });
   });
   await page.route('**/api/workspace/text**', route => jsonResponse(route, { text: '{ "name": "m4" }', bytesRead: 16, truncated: false, encoding: 'utf-8' }));
+  // 右键菜单的 New File/Rename/Delete 现在会真实请求 ops/reveal——拦截
+  // 防止测试触达真实服务端写入项目文件（task-wf-ui-terminal-explorer-ux）。
+  await page.route('**/api/workspace/ops', route => jsonResponse(route, { ok: true, opId: 'op-m4', revision: 1, undoable: true, entriesChanged: [] }));
+  await page.route('**/api/workspace/reveal', route => jsonResponse(route, { ok: true, path: '', isDirectory: false, platform: 'test' }));
   await page.route('**/api/workspace/file**', route => route.fulfill({ status: 200, contentType: 'application/json', body: '{ "name": "m4" }' }));
   await page.route(/\/api\/workflow\/nodes(?:\?.*)?$/, async route => {
     if (route.request().method() === 'GET') return jsonResponse(route, { ok: true, nodes: [] });
@@ -408,7 +414,20 @@ async function installWorkflowFixture(page: Page): Promise<HarnessNetwork> {
   await page.route(/\/api\/workflow\/edges(?:\?.*)?$/, async route => {
     const payload = route.request().postDataJSON() as JsonRecord || {};
     network.graphMapRequests.push({ method: route.request().method(), url: route.request().url(), payload });
-    return jsonResponse(route, { ok: true, edge: { id: `${payload.from}->${payload.to}`, from: payload.from, to: payload.to } }, 201);
+    return jsonResponse(route, {
+      ok: true,
+      edge: {
+        id: `${payload.from}->${payload.to}`,
+        from: payload.from,
+        to: payload.to,
+        source: payload.from,
+        target: payload.to,
+        relation: payload.relation || 'wf-bridge',
+        direction: payload.direction || 'bidirectional',
+        sourceHandle: payload.sourceHandle || null,
+        targetHandle: payload.targetHandle || null,
+      },
+    }, 201);
   });
   await page.route('**/api/user-files', route => jsonResponse(route, { ok: true, files: [] }));
 
@@ -416,7 +435,7 @@ async function installWorkflowFixture(page: Page): Promise<HarnessNetwork> {
 }
 
 async function openWorkflow(page: Page) {
-  await page.goto(`/workflow?token=${encodeURIComponent(token)}`);
+  await page.goto('/workflow');
   await expect(page.getByTestId('workflow-canvas')).toBeVisible();
   await expect(page.getByTestId('workflow-node').first()).toBeVisible();
   await expect(page.getByTestId('workflow-explorer-shell')).toBeVisible();
@@ -529,15 +548,27 @@ test.describe('WF UI M4 RED interaction acceptance', () => {
     const menu = page.getByTestId('workspace-context-menu');
     await expect(menu).toBeVisible();
     await expectInViewport(page, menu);
-    await expectTopAtCenter(page, menu);
+    // 新版菜单（新建/重命名/复制/删除/复制路径/打开资源管理器）全是全宽按钮，
+    // 中心点会命中某个菜单项；改用菜单 padding 角点验证「菜单在最上层可点」。
+    const menuPaddingHit = await page.evaluate(() => {
+      const menuEl = document.querySelector('[data-testid="workspace-context-menu"]') as HTMLElement | null;
+      if (!menuEl) return null;
+      const rect = menuEl.getBoundingClientRect();
+      const hit = document.elementFromPoint(rect.left + 4, rect.top + 4) as HTMLElement | null;
+      return hit?.closest('[data-testid="workspace-context-menu"]')?.getAttribute('data-testid') || hit?.tagName || null;
+    });
+    expect(menuPaddingHit).toBe('workspace-context-menu');
     const menuBox = await menu.boundingBox();
     expect(menuBox!.x).toBeGreaterThan(360);
-    expect(menuBox!.y).toBeGreaterThan(250);
+    // 新菜单高度随条目变化（约 240-250px，旧版固定 160px）：钳制断言改为
+    // 「菜单完整落在视口内」，不再耦合具体高度数值。
+    expect(menuBox!.y + menuBox!.height).toBeLessThanOrEqual(421);
+    expect(menuBox!.x + menuBox!.width).toBeLessThanOrEqual(641);
     await menu.getByRole('button', { name: /new file/i }).click();
     await assertNoBrowserFailures(page, signals);
   });
 
-  test('AC-007 node double-click opens settings and right-click opens only the contracted node menu actions', async ({ page }) => {
+  test('AC-007 agent double-click opens the terminal floating window and right-click opens only the contracted node menu actions', async ({ page }) => {
     const signals = await installBrowserCollectors(page);
     await installWorkflowFixture(page);
     await openWorkflow(page);
@@ -545,8 +576,9 @@ test.describe('WF UI M4 RED interaction acceptance', () => {
     const node = page.locator(`[data-testid="workflow-node"][data-node-id="${mainNodeId}"]`).first();
     await expect(node).toBeVisible();
     await node.dblclick();
-    await expect(page.getByTestId('workflow-node-settings')).toBeVisible();
-    await page.keyboard.press('Escape');
+    await expect(page.getByTestId('terminal-window')).toBeVisible();
+    await expect(page.locator(`[data-testid="workflow-node-terminal"][data-node-id="${mainNodeId}"]`)).toHaveCount(0);
+    await expect(page.getByTestId('workflow-node-settings')).toHaveCount(0);
 
     await node.click({ button: 'right' });
     await expect(page.getByTestId('workflow-node-context-menu')).toBeVisible();
@@ -556,7 +588,64 @@ test.describe('WF UI M4 RED interaction acceptance', () => {
     const actionValues = await page.getByTestId('workflow-node-context-action').evaluateAll(elements => (
       elements.map(element => element.getAttribute('data-action')).filter(Boolean).sort()
     ));
-    expect(actionValues).toEqual(['copy', 'cut', 'delete', 'duplicate', 'open-config', 'settings'].sort());
+    expect(actionValues).toEqual(['copy', 'cut', 'delete', 'duplicate', 'mcp-hub', 'open-config', 'settings', 'skills-hub'].sort());
+    await assertNoBrowserFailures(page, signals);
+  });
+
+  test('AC-007 middle mouse does not drag workflow nodes', async ({ page }) => {
+    const signals = await installBrowserCollectors(page);
+    const network = await installWorkflowFixture(page);
+    await openWorkflow(page);
+
+    const node = page.locator(`[data-testid="workflow-node"][data-node-id="${mainNodeId}"]`).first();
+    await expect(node).toBeVisible();
+    await page.waitForTimeout(250);
+    const beforeBox = await node.boundingBox();
+    expect(beforeBox).not.toBeNull();
+    const beforePutCount = network.graphMapRequests.filter(request => request.method === 'PUT').length;
+
+    await page.mouse.move(beforeBox!.x + beforeBox!.width / 2, beforeBox!.y + beforeBox!.height / 2);
+    await page.mouse.down({ button: 'middle' });
+    await page.mouse.move(beforeBox!.x + beforeBox!.width / 2 + 120, beforeBox!.y + beforeBox!.height / 2 + 70, { steps: 4 });
+    await page.mouse.up({ button: 'middle' });
+    await page.waitForTimeout(150);
+
+    expect(network.graphMapRequests.filter(request => request.method === 'PUT').length).toBe(beforePutCount);
+
+    const viewport = page.locator('.react-flow__viewport').first();
+    const canvasBox = await page.getByTestId('workflow-canvas').boundingBox();
+    expect(canvasBox).not.toBeNull();
+    const beforePanTransform = await viewport.getAttribute('style');
+    await page.mouse.move(canvasBox!.x + canvasBox!.width - 180, canvasBox!.y + 180);
+    await page.mouse.down({ button: 'middle' });
+    await page.mouse.move(canvasBox!.x + canvasBox!.width - 60, canvasBox!.y + 250, { steps: 4 });
+    await page.mouse.up({ button: 'middle' });
+    await page.waitForTimeout(120);
+    await expect.poll(() => viewport.getAttribute('style')).not.toBe(beforePanTransform);
+    await assertNoBrowserFailures(page, signals);
+  });
+
+  test('AC-007 transient empty project metadata does not surface a drag-refresh error', async ({ page }) => {
+    const signals = await installBrowserCollectors(page);
+    const network = await installWorkflowFixture(page);
+    await page.route('**/api/project', route => jsonResponse(route, null));
+    await openWorkflow(page);
+
+    const node = page.locator(`[data-testid="workflow-node"][data-node-id="${mainNodeId}"]`).first();
+    const box = await node.boundingBox();
+    expect(box).not.toBeNull();
+    await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(box!.x + box!.width / 2 + 80, box!.y + box!.height / 2 + 50, { steps: 4 });
+    await page.mouse.up();
+    await page.waitForTimeout(350);
+
+    await expect.poll(() => network.graphMapRequests.filter(request => request.method === 'PUT').length).toBeGreaterThan(0);
+    const movedPut = network.graphMapRequests.filter(request => request.method === 'PUT').at(-1)!;
+    const movedPosition = (movedPut.payload.positions as JsonRecord)[mainNodeId] as JsonRecord;
+    expect(movedPosition).toEqual(expect.objectContaining({ x: expect.any(Number), y: expect.any(Number) }));
+    expect(movedPosition.x !== 460 || movedPosition.y !== 180).toBe(true);
+    await expect(page.getByTestId('workflow-toast')).toHaveCount(0);
     await assertNoBrowserFailures(page, signals);
   });
 
@@ -567,6 +656,7 @@ test.describe('WF UI M4 RED interaction acceptance', () => {
 
     const label = page.getByTestId('workflow-bridge-label').first();
     await expect(label).toBeVisible();
+    await expect(label).toContainText('right <-> left');
     await label.click();
     await expect(page.getByTestId('workflow-bridge-panel')).toHaveCount(0);
     await expect(page.getByTestId('workflow-edge-selection-count')).toBeVisible();
@@ -593,8 +683,11 @@ test.describe('WF UI M4 RED interaction acceptance', () => {
       source: mainNodeId,
       target: workerNodeId,
       relation: 'delegates',
+      direction: 'bidirectional',
       sourceHandle: 'right',
-      targetHandle: 'context',
+      targetHandle: 'left',
+      uiSourceHandle: 'right',
+      uiTargetHandle: 'left',
     }));
     expect(Number(committedEdge?.offset)).toBeGreaterThan(8);
     expect((network.committedGraph.edges as JsonRecord[]).find(edge => edge.id === bridgeEdgeId)).toEqual(
@@ -610,6 +703,10 @@ test.describe('WF UI M4 RED interaction acceptance', () => {
     await expect(page.locator(`[data-testid="workflow-edge"][data-source="${mainNodeId}"][data-target="${workerNodeId}"]`)).toHaveCount(1);
     const reloadedLabel = page.getByTestId('workflow-bridge-label').first();
     await expect(reloadedLabel).toBeVisible();
+    await expect(reloadedLabel).toContainText('right <-> left');
+    const reloadedEdgePath = page.locator(`[data-testid="workflow-edge"][data-source="${mainNodeId}"][data-target="${workerNodeId}"] .react-flow__edge-path`).first();
+    await expect(reloadedEdgePath).toHaveAttribute('marker-start', /url/);
+    await expect(reloadedEdgePath).toHaveAttribute('marker-end', /url/);
     await reloadedLabel.dblclick();
     await expect(page.getByTestId('workflow-bridge-panel')).toBeVisible();
     await assertNoBrowserFailures(page, signals);

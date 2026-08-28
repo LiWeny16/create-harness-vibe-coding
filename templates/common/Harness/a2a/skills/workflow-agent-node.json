@@ -1,0 +1,143 @@
+{
+  "schemaVersion": 1,
+  "skillId": "workflow-agent-node",
+  "name": "Workflow Agent Node",
+  "source": "Harness/a2a/skills/workflow-agent-node.json",
+  "description": "On-demand Agent guide for delegating to and reading connected Agent nodes through backend and wf-bridge actions.",
+  "nodeType": "agent",
+  "roleProfile": {
+    "howToRead": "Read your own profile with node Harness/scripts/wf-ui-control.mjs workflow-context --project . ; the context carries your roleProfile block with displayName, roleTitle, responsibility, capabilities, and roleProfileRef. roleProfileRef points at the markdown profile file under Harness/a2a/agent-roles/. Your roleTitle comes from the canonical vocabulary (ceo, manager, implementer, reviewer, verifier, planner, terminal-controller) or a free-form role. Act inside your responsibility; ask the coordinating agent before expanding scope."
+  },
+  "decisionFlow": [
+    "Understand the task from the user request.",
+    "Decide whether team collaboration is needed: simple requests are handled directly with no team; complex or multi-skill work gets a team.",
+    "Select the subagent mode per subagentModes: default to built-in-subagents; use wf-node-subagents only when the user explicitly asks for canvas Agent nodes.",
+    "Choose the required roles from the canonical roleTitle vocabulary: ceo, manager, implementer, reviewer, verifier, planner, terminal-controller.",
+    "Find existing agents by role, runtime, provider, capability, or title.",
+    "Exactly one unambiguous match: auto-connect that agent.",
+    "No match and the task target is clear: create an agent with a full role profile (displayName, roleTitle, responsibility, capabilities, roleProfileRef).",
+    "Multiple matches or an unclear target: ask the user; never blindly create or connect.",
+    "Share durable context through Markdown nodes, referenced by nodeId only.",
+    "Send structured requests with a requestId, wait via Timer wakeup messages, and aggregate replies per request.",
+    "Tick the connected Goal node's items as they finish; call goal.complete when every item is checked; report to the user in plain language."
+  ],
+  "goalPlanning": {
+    "guidance": "Plans, plan tables, and goal setting default to the workflow Goal node. Do not use runtime built-in goal/task tools for planning when a workflow map is present.",
+    "flow": [
+      "Before planning, read workflow-context to find the Goal node connected to you (direct edge or same Timer/Agent group).",
+      "Goal node found and connected: write the plan with goal.add / goal.replace, tick progress with goal.check / goal.uncheck, and call goal.complete when every item is checked.",
+      "Goal node found but not connected: connect it with node Harness/scripts/wf-ui-control.mjs connect --actor <your-graph-node-id> --from <your-graph-node-id> --to <goal-node-id> --relation goal, then move it above your node with node Harness/scripts/wf-ui-control.mjs node-map --action moveNode --node <goal-node-id> --x <your-x> --y <your-y-above>.",
+      "No Goal node exists: create one with node Harness/scripts/wf-ui-control.mjs node-map --action createNode --type goal --title '<task> goal' --x <your-x> --y <your-y-above>, then connect it as above and write the plan into it.",
+      "Respect singleGoalPerGroup: one Goal per Timer/Agent group; if goal_already_bound is returned, use the existing Goal."
+    ],
+    "preferGoalNodeOverBuiltins": true
+  },
+  "subagentModes": {
+    "note": "2x2 subagent strategy matrix. Mode is set via Agent node settings or detected from natural language; unspecified defaults to built-in-subagents.",
+    "default": "built-in-subagents",
+    "matrix": [
+      {
+        "mode": "built-in-subagents",
+        "behavior": "Use the current runtime's native subagent mechanism. Do NOT create WF canvas Agent nodes.",
+        "evidence": ["fanoutAttempted", "channel", "roles", "native subagent evidence"],
+        "nlTriggers": ["内部助手", "内置子代理", "不要开画布节点", "native subagent", "built-in"]
+      },
+      {
+        "mode": "wf-node-subagents",
+        "behavior": "Create/connect WF Agent nodes on canvas. Use mailbox for communication. Timer/Markdown/Goal nodes visible and collaborative.",
+        "evidence": ["WF Agent nodes", "edges", "mailbox evidence"],
+        "nlTriggers": ["画布Agent节点", "开Claude Code节点", "WF node协作", "可视化协作", "canvas worker"]
+      }
+    ],
+    "runtimeDegradation": "If the current runtime has no native subagent adapter and mode is built-in-subagents, record clear degradation evidence and inform the user. Codex main can use wf-node-subagents to dispatch tasks to Claude Code implementer nodes and aggregate replies."
+  },
+  "structuredRequests": {
+    "guidance": "Give every team request a requestId and reuse it for all messages of that request. Reference shared Markdown nodes in contextRefs by nodeId only — never inline Markdown bodies or long content in the message text.",
+    "inputEnvelope": "A structured request arrives in your terminal as a compact prefix before the text, e.g. [harness-request req-20260812-0001 to-role=implementer contextRefs=markdown-2a1] <text>. On receiving one, reply via send-agent-message with the SAME requestId and set --reply-to to the message id you are answering, so the sender can aggregate the replies.",
+    "envelopeFields": ["requestId", "replyTo", "contextRefs"],
+    "rules": [
+      "requestId: sender-generated; the receiver echoes it in replies so you can aggregate them.",
+      "replyTo: set to the message id you are answering.",
+      "contextRefs: nodeId references only; the receiver reads the node through typed actions."
+    ]
+  },
+  "wakeupMessages": {
+    "guidance": "Timers are the only source of wakeup messages; the Goal node never wakes agents. When a wakeup message arrives (type 'wakeup'), read it on your next turn. It carries timerNodeId, scheduledAt, firedAt, and goalNodeId when the group has a Goal node.",
+    "goalCheck": "When the wakeup message references a Goal node, read the Goal state first and tick its items before continuing work."
+  },
+  "goalTicking": {
+    "guidance": "Tick Goal plan items as you finish them with goal.check; use goal.uncheck when an item is back in progress. When every item is checked, call goal.complete. If goal.complete returns goal_items_pending, check the listed items first, then retry.",
+    "completeRequiresAllChecked": true
+  },
+  "markdownBlackboard": {
+    "guidance": "Share durable context through Markdown nodes; reference them by nodeId only in requests. Before writing, find the node, acquire a lock, write with the current revision, then release the lock. On markdown_conflict, reread, merge, and retry with the fresh revision."
+  },
+  "triggers": [
+    "agent node",
+    "delegate agent",
+    "send agent message",
+    "broadcast agent message",
+    "reply agent",
+    "agent direct message",
+    "agent group message",
+    "shared context",
+    "发送消息",
+    "群发消息",
+    "回复 Agent",
+    "共享上下文",
+    "共享 Markdown",
+    "read agent output",
+    "read transcript",
+    "start agent",
+    "stop agent",
+    "connected agent"
+  ],
+  "controlSurface": {
+    "sendMessage": "POST /api/workflow/nodes/:sender/actions/agent.sendMessage",
+    "broadcastMessage": "POST /api/workflow/nodes/:sender/actions/agent.broadcastMessage",
+    "readMessages": "POST /api/workflow/nodes/:sender/actions/agent.readMessages",
+    "sendInput": "POST /api/workflow/nodes/:node/actions/agent.sendInput",
+    "readOutput": "POST /api/workflow/nodes/:node/actions/agent.readOutput",
+    "bridge": "wf-bridge routes record Agent-to-Agent communication.",
+    "storage": "Harness/a2a/nodes/** and terminal logs are runtime records, not manual control surfaces."
+  },
+  "environment": [
+    "HARNESS_PEER_SESSION_ID",
+    "HARNESS_PEER_RUNTIME",
+    "HARNESS_AGENT_KIND",
+    "HARNESS_WORKFLOW_MODE",
+    "HARNESS_WORKFLOW_NODE_ID",
+    "HARNESS_WORKFLOW_MAP",
+    "HARNESS_NODE_HOME",
+    "HARNESS_NODE_INIT",
+    "HARNESS_WF_UI_URL"
+  ],
+  "policy": {
+    "allowed": [
+      "agent.readContext",
+      "agent.readOutput",
+      "agent.readTranscript",
+      "agent.sendMessage",
+      "agent.broadcastMessage",
+      "agent.readMessages",
+      "agent.sendInput"
+    ],
+    "requires": [
+      "connected-agent-ref",
+      "typed-backend-agent-actions"
+    ],
+    "denied": [
+      "node-home-file-mutation",
+      "terminal-log-mutation",
+      "session-state-file-mutation",
+      "direct-json-state-mutation",
+      "unmanaged-pty-spawn"
+    ]
+  },
+  "prohibitions": [
+    "Never edit `Harness/a2a/**/state.json` directly — use typed actions.",
+    "Never edit node-home files, terminal logs, or session state files.",
+    "Never spawn unmanaged PTY sessions.",
+    "Never inline Markdown node bodies in a message payload; reference them by nodeId only."
+  ]
+}

@@ -2,11 +2,11 @@ import { expect, test, type Locator, type Page, type Route } from '@playwright/t
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const token = process.env.WF_UI_E2E_TOKEN || 'playwright-m1-red';
 const repoRoot = process.env.WF_UI_E2E_PROJECT_ROOT
   || path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const sessionId = 'e2e-session-m2';
 const graphNodeId = 'e2e-node-m2';
+const markdownNodeId = 'e2e-node-m2-markdown';
 
 type JsonRecord = Record<string, any>;
 
@@ -150,6 +150,145 @@ function workflowSnapshot(config: JsonRecord = baseNodeConfig) {
   };
 }
 
+// Same workflow snapshot plus a markdown component node on canvas, used
+// to prove the component-node settings path never shows the legacy panel.
+// Mirrors the m3 component-node fixture schema: the canvas renderer only
+// recognizes a node as a component node when it carries kind 'component-node'
+// (or a componentType/type), and needs the graph-node stateRef, the
+// top-level componentNodes state map, and graph-level componentStateRefs to
+// hydrate the node card.
+function workflowSnapshotWithMarkdown(): JsonRecord {
+  const snapshot: JsonRecord = workflowSnapshot();
+  const statePath = `Harness/a2a/component-nodes/${markdownNodeId}/state.json`;
+  const revision = 1;
+  snapshot.nodes.push({
+    id: markdownNodeId,
+    graphNodeId: markdownNodeId,
+    label: 'M2 Markdown',
+    kind: 'component-node',
+    componentType: 'markdown',
+    type: 'markdown',
+    level: 0,
+    status: 'ready',
+    lifecycle: 'stateful',
+    runtimeState: 'ready',
+    managedByCurrentServer: true,
+    control: control(),
+    revision,
+    statePath,
+    observableInputs: ['markdown'],
+    observableOutputs: ['markdown', 'plainText'],
+    position: { x: 860, y: 180 },
+  });
+  snapshot.graph.nodes.push({
+    nodeId: markdownNodeId,
+    kind: 'component-node',
+    componentType: 'markdown',
+    status: 'ready',
+    lifecycle: 'stateful',
+    runtimeState: 'ready',
+    managedByCurrentServer: true,
+    control: control(),
+    taskId: 'task-define-workflow-context-surface',
+    position: { x: 860, y: 180 },
+    statePath,
+    revision,
+    stateRef: { path: statePath, revision },
+  });
+  snapshot.graph.positions[markdownNodeId] = { x: 860, y: 180 };
+  const componentStateRefs = {
+    [markdownNodeId]: {
+      type: 'markdown',
+      title: 'M2 Markdown',
+      statePath,
+      revision,
+    },
+  };
+  snapshot.graph.componentStatePath = 'Harness/a2a/component-nodes';
+  snapshot.graph.sourceOfTruth = 'backend';
+  snapshot.graph.componentStateRefs = componentStateRefs;
+  snapshot.componentNodes = {
+    [markdownNodeId]: {
+      nodeId: markdownNodeId,
+      type: 'markdown',
+      title: 'M2 Markdown',
+      revision,
+      markdown: '# M2 Markdown\n\nInitial backend text.',
+      observableInputs: ['markdown'],
+      observableOutputs: ['markdown', 'plainText'],
+      statePath,
+    },
+  };
+  snapshot.graphContextBySessionId = {
+    [sessionId]: {
+      workflowMapPath: 'Harness/a2a/workflow-map.json',
+      componentStatePath: 'Harness/a2a/component-nodes',
+      sourceOfTruth: 'backend',
+      componentStateRefs,
+    },
+  };
+  return snapshot;
+}
+
+// Runtime node records served by GET /api/workflow/nodes/:id. fetchRuntimeNode
+// resolves them into selectedRuntimeNode; `kind` picks the registry settings
+// component (agent -> AgentNodeSettings, markdown -> MarkdownNodeSettings).
+function agentRuntimeNodeRecord(): JsonRecord {
+  return {
+    nodeId: graphNodeId,
+    kind: 'agent',
+    version: 1,
+    lifecycle: 'live',
+    status: { state: 'running', updatedAt: '2026-08-01T00:00:00.000Z' },
+    sessionId,
+    graph: { position: { x: 520, y: 180 }, handles: [], connections: [] },
+    stateRef: { path: `Harness/a2a/nodes/${sessionId}`, revision: 0 },
+    settings: {
+      schemaId: 'agent-settings',
+      values: {
+        agentKind: 'main',
+        displayName: 'M2 Agent',
+        roleTitle: 'ceo',
+        subagentMode: 'built-in-subagents',
+        skills: baseNodeConfig.skills,
+        capabilities: baseNodeConfig.capabilities,
+      },
+      revision: 1,
+    },
+    capabilities: ['agent.sendInput', 'agent.readOutput', 'agent.start', 'agent.stop', 'agent.delete'],
+    ui: {
+      previewKind: 'agent',
+      settingsPanel: 'agent-settings',
+      testId: 'workflow-agent-node',
+      labels: { title: 'M2 Agent' },
+    },
+  };
+}
+
+function markdownRuntimeNodeRecord(nodeId: string): JsonRecord {
+  return {
+    nodeId,
+    kind: 'markdown',
+    version: 1,
+    lifecycle: 'live',
+    status: { state: 'running', updatedAt: '2026-08-01T00:00:00.000Z' },
+    graph: { position: { x: 860, y: 180 }, handles: [], connections: [] },
+    stateRef: { path: `Harness/a2a/component-nodes/${nodeId}/state.json`, revision: 1 },
+    settings: {
+      schemaId: 'markdown-settings',
+      values: { editorMode: 'split', autoSave: true, wordWrap: true, fontSize: 14 },
+      revision: 1,
+    },
+    capabilities: [],
+    ui: {
+      previewKind: 'markdown',
+      settingsPanel: 'markdown-settings',
+      testId: 'workflow-markdown-node',
+      labels: { title: 'M2 Markdown' },
+    },
+  };
+}
+
 function workspaceEntries(relPath: string) {
   const normalized = relPath.replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
   const table: Record<string, unknown[]> = {
@@ -260,7 +399,7 @@ async function installWorkflowFixture(page: Page): Promise<HarnessNetwork> {
 }
 
 async function openWorkflow(page: Page) {
-  await page.goto(`/workflow?token=${encodeURIComponent(token)}`);
+  await page.goto('/workflow');
   await expect(page.getByTestId('workflow-canvas')).toBeVisible();
   await expect(page.getByTestId('workflow-node').first()).toBeVisible();
 }
@@ -268,15 +407,23 @@ async function openWorkflow(page: Page) {
 async function openNodeSettings(page: Page) {
   const node = page.getByTestId('workflow-node').first();
   await expect(node).toBeVisible();
-  await node.click();
-  await node.dblclick();
+  await node.click({ button: 'right' });
+  await page.locator('[data-testid="workflow-node-context-action"][data-action="settings"]').click();
   await expect(page.getByTestId('workflow-node-settings')).toBeVisible();
+}
+
+// Right-click a specific node and open its settings without asserting which
+// settings surface appears (the AC-001 tests assert surface exclusivity).
+async function openNodeSettingsFor(page: Page, node: Locator) {
+  await expect(node).toBeVisible();
+  await node.click({ button: 'right' });
+  await page.locator('[data-testid="workflow-node-context-action"][data-action="settings"]').click();
 }
 
 async function expectLabeledControl(page: Page, testId: string, label: RegExp) {
   const control = page.getByTestId(testId);
   await expect(control).toBeVisible();
-  await expect(page.getByLabel(label)).toBeVisible();
+  await expect(control).toHaveAccessibleName(label);
 }
 
 async function expectTooltip(page: Page, testId: string) {
@@ -562,5 +709,55 @@ test.describe('WF UI M2 RED node settings acceptance', () => {
     await expect(page.getByTestId('workflow-explorer-shell')).toBeVisible();
     await expect(page.getByTestId('terminal-input-owner')).toBeVisible();
     await expect(page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).resolves.toBe(true);
+  });
+
+  test('AC-001 terminal-session agent whose runtime node resolves to kind agent renders exactly one settings panel', async ({ page }) => {
+    const runtimeFetches: string[] = [];
+    await installWorkflowFixture(page);
+    await page.route(`**/api/workflow/nodes/${graphNodeId}`, route => {
+      runtimeFetches.push(route.request().url());
+      return jsonResponse(route, { ok: true, node: agentRuntimeNodeRecord() });
+    });
+    await openWorkflow(page);
+    await openNodeSettingsFor(page, page.getByTestId('workflow-node').first());
+
+    // The mocked runtime fetch must resolve (kind agent) so the typed panel
+    // renders; without the exclusion guard the legacy panel renders too.
+    await expect.poll(() => runtimeFetches.length).toBeGreaterThan(0);
+    await expect(page.getByTestId('workflow-component-settings')).toBeVisible();
+    await expect(page.getByTestId('workflow-node-settings')).toHaveCount(0);
+    // Await both locator counts before summing: count() returns a Promise and
+    // naive `a.count() + b.count()` concatenates "[object Promise]" strings.
+    await expect.poll(async () => {
+      const legacyPanelCount = await page.locator('[data-testid="workflow-node-settings"]').count();
+      const componentPanelCount = await page.locator('[data-testid="workflow-component-settings"]').count();
+      return legacyPanelCount + componentPanelCount;
+    }).toBe(1);
+  });
+
+  test('AC-001 markdown component node renders exactly one settings panel and never the legacy panel', async ({ page }) => {
+    const snapshot = workflowSnapshotWithMarkdown();
+    const runtimeFetches: string[] = [];
+    await installWorkflowFixture(page);
+    await page.route('**/api/a2a/snapshot**', route => jsonResponse(route, snapshot));
+    await page.route(`**/api/workflow/nodes/${markdownNodeId}`, route => {
+      runtimeFetches.push(route.request().url());
+      return jsonResponse(route, { ok: true, node: markdownRuntimeNodeRecord(markdownNodeId) });
+    });
+    await openWorkflow(page);
+    const markdownNode = page.locator(`[data-testid="workflow-component-node"][data-node-id="${markdownNodeId}"]`);
+    await expect(markdownNode).toBeVisible();
+    await openNodeSettingsFor(page, markdownNode);
+
+    await expect.poll(() => runtimeFetches.length).toBeGreaterThan(0);
+    await expect(page.getByTestId('workflow-component-settings')).toBeVisible();
+    await expect(page.getByTestId('workflow-node-settings')).toHaveCount(0);
+    // Await both locator counts before summing: count() returns a Promise and
+    // naive `a.count() + b.count()` concatenates "[object Promise]" strings.
+    await expect.poll(async () => {
+      const legacyPanelCount = await page.locator('[data-testid="workflow-node-settings"]').count();
+      const componentPanelCount = await page.locator('[data-testid="workflow-component-settings"]').count();
+      return legacyPanelCount + componentPanelCount;
+    }).toBe(1);
   });
 });

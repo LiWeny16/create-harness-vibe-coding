@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-fix-wf-ui-ux-issues",
+  "status": "in_progress",
+  "mode": "wf-max",
+  "defaultRuntime": "claude",
+  "tier": "standard",
+  "phase": "intake",
+  "gate": "REVIEW-GATE",
+  "updatedAt": "2026-08-28T02:35:39.461Z",
+  "activeQuestion": null,
+  "nextAction": "User browser check (visual ACs) + commit on user request; then archive task",
+  "acceptance": [
+    "UX-1: node settings opens exactly ONE panel for every node type (agent and others); no duplicate panel",
+    "UX-2: cursor on the white wf-ui canvas is black/visible",
+    "UX-3: skills hub is the single skills surface; create-node panel has no skills hub; skills hub can compose a skill set and drag it onto the node map as a skills group usable by agents",
+    "UX-4: create-node panel layout is responsive, no overflow",
+    "UX-5: top-right canvas config button (non-functional) removed",
+    "UX-6: magnet/snap indicator positions track their node exactly; no drift",
+    "UX-7: node creation shows a same-size plain placeholder node with a smooth thinking-orb loading animation until the node is initialized"
+  ],
+  "links": {
+    "dependsOn": [],
+    "blocks": [],
+    "related": [
+      "task-wf-ui-control-260729",
+      "task-agent-control-parity",
+      "task-standardize-workflow-nodes"
+    ]
+  },
+  "queues": {
+    "ready": [],
+    "running": [
+      "W3a-e5-removal"
+    ],
+    "blocked": [
+      "W3b-behavior-changes"
+    ],
+    "done": [
+      "W0-E1-settings-panel",
+      "W0-E2-cursor",
+      "W0-E3-skills-hub",
+      "W0-E4-create-node-panel",
+      "W0-E5-config-button",
+      "W0-E6-magnet",
+      "W0-E7-node-loading",
+      "W2-A-cursor",
+      "W2-B-create-node-css",
+      "W2-C-skills-hub-ui",
+      "W2-D-placeholder",
+      "W2-E-m2-spec"
+    ]
+  },
+  "workItems": [
+    {
+      "id": "W0-E1-settings-panel",
+      "title": "Investigate duplicate node settings panels",
+      "status": "done"
+    },
+    {
+      "id": "W0-E2-cursor",
+      "title": "Locate cursor styling on white canvas",
+      "status": "done"
+    },
+    {
+      "id": "W0-E3-skills-hub",
+      "title": "Map skills hub + skills group data flow and drag design",
+      "status": "done"
+    },
+    {
+      "id": "W0-E4-create-node-panel",
+      "title": "Map create-node panel layout and overflow causes",
+      "status": "done"
+    },
+    {
+      "id": "W0-E5-config-button",
+      "title": "Locate top-right canvas config button and its (non-)behavior",
+      "status": "done"
+    },
+    {
+      "id": "W0-E6-magnet",
+      "title": "Trace magnet/snap position computation and drift cause",
+      "status": "done"
+    },
+    {
+      "id": "W0-E7-node-loading",
+      "title": "Trace node creation flow for placeholder/animation insertion",
+      "status": "done"
+    }
+  ],
+  "dispatchLedger": [],
+  "decisions": [
+    "D-1: new task capsule — scope substantially different from task-agent-control-parity (UI/UX bug batch on wf-ui canvas)",
+    "D-2: memory hints: none (no matching L3 route scenario)",
+    "D-3: user language for task state: Chinese where user-facing, English identifiers"
+  ],
+  "risks": [
+    "R1: skills hub redesign touches frontend + capability-node-store semantics — must not break existing skill attach flow",
+    "R2: magnet fix is geometry-sensitive — need e2e magnetic spec as guardrail",
+    "R3: node creation animation must not delay real data availability (animation is overlay, not blocking)"
+  ],
+  "artifacts": [],
+  "closedBy": "goal-complete",
+  "preCompletePhase": "verified",
+  "defaultAgentRuntime": "claude"
+}

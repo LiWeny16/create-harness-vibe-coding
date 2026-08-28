@@ -4,12 +4,56 @@
   "name": "Terminal Control",
   "source": "Harness/a2a/skills/terminal-control.json",
   "description": "Bounded A2A tools for listing terminal sessions, reading output ranges, globbing terminal events, and attach-gated input forwarding.",
+  "triggers": [
+    "list sessions",
+    "read terminal",
+    "read transcript",
+    "tail output",
+    "send input",
+    "send agent message",
+    "broadcast agent message",
+    "delegate agent",
+    "agent messages",
+    "read agent output",
+    "bridge messages",
+    "terminal events"
+  ],
   "tools": [
     { "name": "list-sessions", "reads": ["Harness/tasks/**/sessions/**/STATE.json"] },
     { "name": "read-range", "reads": ["Harness/tasks/**/sessions/**/terminal.jsonl"], "args": ["session", "from", "to", "tail"] },
     { "name": "glob-events", "reads": ["Harness/tasks/**/sessions/**/events.jsonl"], "args": ["pattern", "since", "limit"] },
-    { "name": "send-input", "writes": ["Harness/tasks/**/sessions/**/input-requests.jsonl"], "args": ["session", "text"] }
+    { "name": "send-input", "writes": ["Harness/tasks/**/sessions/**/input-requests.jsonl"], "args": ["session", "text"] },
+    { "name": "send-agent-message", "writes": ["Harness/tasks/**/sessions/**/input-requests.jsonl", "Harness/a2a/bridges/**"], "args": ["to", "text"] },
+    { "name": "broadcast-agent-message", "writes": ["Harness/tasks/**/sessions/**/input-requests.jsonl", "Harness/a2a/bridges/**"], "args": ["to", "text", "topic"] },
+    { "name": "read-agent-messages", "reads": ["Harness/a2a/bridges/**"], "args": ["peer", "tail"] },
+    { "name": "delegate-agent", "writes": ["Harness/tasks/**/sessions/**/input-requests.jsonl", "Harness/a2a/bridges/**"], "args": ["node", "text"] },
+    { "name": "read-agent", "reads": ["Harness/tasks/**/sessions/**/terminal.jsonl"], "args": ["node", "action", "tail"] }
   ],
+  "tuiControl": {
+    "summary": "Rules for driving interactive TUI sessions (codex/claude) via send-input and send-key.",
+    "charByCharTyping": {
+      "rule": "TUI input must be typed char-by-char (~12ms/char). Bulk-writing a prompt and pressing Enter leaves the text unsubmitted.",
+      "backendHandled": true,
+      "note": "The backend send-input/envelope paths type char-by-char automatically; agents do not do it manually, but must not rely on bulk-paste behavior."
+    },
+    "sendKey": {
+      "command": "node Harness/scripts/wf-ui-control.mjs send-key <key>",
+      "keys": ["up", "down", "left", "right", "enter", "esc", "tab", "backspace"],
+      "usage": "Public primitive for TUI navigation (menus, pickers, model switcher)."
+    },
+    "modelPicker": {
+      "recipe": "send-input \"/model\", then send-key up/down to navigate, send-key enter to confirm, send-key esc to cancel.",
+      "verifiedAgainst": "codex 0.147.0 TUI picker"
+    },
+    "preferredModelSwitch": {
+      "action": "agent.setModel backend action",
+      "why": "Non-interactive alternative: writes the project-scoped runtime config (e.g. .codex/config.toml model field), then restartRequired."
+    },
+    "warnings": [
+      "Never send \\r\\n - double-submit risk.",
+      "A lone \\r can be interpreted as interrupt in some TUI states."
+    ]
+  },
   "defaultMode": "watch",
   "inputPolicy": "attach-mode-required"
 }

@@ -1,0 +1,153 @@
+.workflow-create-node-catalog {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.workflow-create-node-panel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+}
+
+.workflow-create-node-panel-body {
+  max-height: calc(100vh - var(--header-h) - 116px);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* The agent/file forms are single children of the capped body; make them the
+   scroll container so long forms scroll instead of overflowing the panel. */
+.workflow-create-node-form {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+
+.workflow-create-node-search {
+  min-height: 44px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--wf-floating-inner-radius);
+  background: rgba(255,255,255,0.94);
+  color: var(--muted);
+}
+
+.workflow-create-node-search input {
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--fg);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.workflow-create-node-options {
+  /* single inner scroll container; flexes to panel height instead of a fixed 388px cap */
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  gap: 10px;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.workflow-create-node-group {
+  display: grid;
+  gap: 6px;
+}
+
+.workflow-create-node-group-label {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0;
+}
+
+.workflow-create-node-options button {
+  min-height: 68px;
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  padding: 10px 11px;
+  border: 1px solid var(--border);
+  border-radius: var(--wf-floating-inner-radius);
+  background: #fff;
+  color: var(--fg);
+  text-align: left;
+  transition-property: background-color, border-color, color, transform, box-shadow;
+  transition-duration: 140ms;
+  transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+}
+
+.workflow-create-node-options button:hover:not(:disabled) {
+  border-color: rgba(22,101,52,0.36);
+  background: #f0fdf4;
+  color: #166534;
+  box-shadow: 0 6px 18px rgba(15,23,42,0.08);
+}
+
+.workflow-create-node-options button:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.workflow-create-node-options button:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+.workflow-create-node-option-copy {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.workflow-create-node-option-title {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--fg);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.workflow-create-node-option-badge {
+  padding: 1px 5px;
+  border: 1px solid rgba(100,116,139,0.26);
+  border-radius: 999px;
+  background: #f8fafc;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.workflow-create-node-option-description,
+.workflow-create-node-option-semantics,
+.workflow-create-node-empty {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.workflow-create-node-option-semantics {
+  color: #64748b;
+}
+
+.workflow-create-node-empty {
+  padding: 14px 4px;
+}

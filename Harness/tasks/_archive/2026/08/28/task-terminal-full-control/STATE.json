@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-terminal-full-control",
+  "status": "archived",
+  "mode": "wf-max",
+  "defaultRuntime": "claude",
+  "tier": "full",
+  "phase": "archived",
+  "gate": "E-GATE",
+  "updatedAt": "2026-08-28T02:35:58.943Z",
+  "activeQuestion": null,
+  "nextAction": "W0 exploration: input injection path, codex TUI submit semantics, frontend terminal path, alternative trigger modes",
+  "acceptance": [
+    "AC-CTRL-001: Backend send-input reliably triggers an AI turn in the agent terminal (text lands AND submits)",
+    "AC-CTRL-002: Identify and verify at least one Enter-free trigger path (initial prompt / exec mode / bracketed paste)",
+    "AC-CTRL-003: Frontend terminal drawer retains full interactive control (user typing works end-to-end)",
+    "AC-CTRL-004: All agent-node control surfaces covered by tests: start/stop/restart/send-input/read-output/mailbox",
+    "AC-CTRL-005: Real-terminal evidence: a real codex/claude process executes a prompt injected via the fixed path",
+    "AC-CTRL-006: No regression in control-plane suites (43 acceptance + 12 CLI smoke + matrix 25)"
+  ],
+  "queues": {
+    "ready": [
+      "explore-input-path",
+      "explore-codex-submit",
+      "explore-frontend-path",
+      "explore-alt-triggers"
+    ],
+    "running": [],
+    "blocked": [],
+    "done": []
+  },
+  "dispatchLedger": [],
+  "decisions": [
+    "D0: Live diagnosis found: send-input text reaches codex TUI input box but Enter submit does not trigger AI turn; mailbox injection ([harness-request]) displays but does not act",
+    "D1: Scope = full agent-node control: backend injection + frontend terminal + alternative trigger paths; not just a one-line fix"
+  ],
+  "risks": [
+    "M1: codex TUI input protocol is not documented; Enter failure root cause may require codex CLI behavior probing",
+    "M2: Windows conpty may map CR differently than Unix PTYs",
+    "M3: Real-AI-turn verification costs real API calls and is slow/flaky — tests must bound this"
+  ],
+  "artifacts": [],
+  "links": {
+    "dependsOn": [
+      "task-subagent-strategy-2x2-matrix"
+    ],
+    "blocks": [],
+    "related": [
+      "task-agent-team-cooperation-layer",
+      "task-terminal-input-control"
+    ]
+  },
+  "defaultAgentRuntime": "claude"
+}

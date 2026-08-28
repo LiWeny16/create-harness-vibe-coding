@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-wf-ui-ms-latency",
+  "status": "archived",
+  "mode": "direct",
+  "defaultRuntime": "codex",
+  "defaultAgentRuntime": "codex",
+  "tier": "none",
+  "phase": "archived",
+  "gate": null,
+  "updatedAt": "2026-08-14T13:29:35.803Z",
+  "activeQuestion": null,
+  "nextAction": "wf-ui state-update latency optimization: WS push + snapshot memo + optimistic dock + poll cache semantics (target: ms-level)",
+  "acceptance": [],
+  "queues": {
+    "ready": [],
+    "running": [],
+    "blocked": [],
+    "done": []
+  },
+  "dispatchLedger": [],
+  "decisions": [],
+  "risks": [],
+  "artifacts": [],
+  "links": {
+    "dependsOn": [],
+    "blocks": [],
+    "related": []
+  }
+}

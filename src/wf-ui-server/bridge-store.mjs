@@ -53,6 +53,38 @@ export function listBridgeMessages(projectRoot, { fromSessionId, toSessionId, li
   };
 }
 
+// List bridge entries for any bridge this session participates in (used for
+// wakeup reads and cross-peer request aggregation; spec 6.1, 5).
+export function listBridgeMessagesForSession(projectRoot, sessionId, {
+  deliveryMode = '',
+  requestId = '',
+  threadId = '',
+  limit = 200,
+} = {}) {
+  const session = normalizeSessionId(sessionId);
+  const max = Math.min(Math.max(Number(limit) || 200, 1), MAX_BRIDGE_LIMIT);
+  const dir = bridgesRoot(projectRoot);
+  const entries = [];
+  if (fs.existsSync(dir)) {
+    for (const file of fs.readdirSync(dir)) {
+      if (!file.endsWith('.jsonl')) continue;
+      const bridgeId = file.slice(0, -'.jsonl'.length);
+      if (!(bridgeId === session || bridgeId.startsWith(`${session}__`) || bridgeId.endsWith(`__${session}`))) continue;
+      entries.push(...readJsonl(path.join(dir, file)));
+    }
+  }
+  let filtered = entries;
+  if (deliveryMode) filtered = filtered.filter(entry => entry.deliveryMode === deliveryMode);
+  if (requestId) filtered = filtered.filter(entry => entry.requestId === requestId);
+  if (threadId) filtered = filtered.filter(entry => entry.threadId === threadId);
+  filtered.sort((a, b) => {
+    const tsA = String(a.ts || '');
+    const tsB = String(b.ts || '');
+    return tsA === tsB ? (Number(a.seq) || 0) - (Number(b.seq) || 0) : tsA.localeCompare(tsB);
+  });
+  return { sessionId: session, entries: filtered.slice(-max) };
+}
+
 export function recordBridgeMessage(projectRoot, {
   fromSessionId,
   toSessionId,
@@ -60,6 +92,16 @@ export function recordBridgeMessage(projectRoot, {
   toNodeId = '',
   data = '',
   source = 'session-input',
+  messageId = '',
+  threadId = '',
+  topic = '',
+  replyTo = '',
+  requestId = '',
+  toRole = '',
+  contextRefs = [],
+  deliveryMode = 'direct',
+  recipientIndex = null,
+  recipientCount = null,
 } = {}) {
   const from = normalizeSessionId(fromSessionId);
   const to = normalizeSessionId(toSessionId);
@@ -71,6 +113,16 @@ export function recordBridgeMessage(projectRoot, {
     seq: current.length + 1,
     ts: new Date().toISOString(),
     bridgeId,
+    messageId: String(messageId || ''),
+    threadId: String(threadId || ''),
+    topic: String(topic || ''),
+    replyTo: String(replyTo || ''),
+    requestId: String(requestId || ''),
+    toRole: String(toRole || ''),
+    contextRefs: Array.isArray(contextRefs) ? contextRefs : [],
+    deliveryMode: String(deliveryMode || 'direct'),
+    recipientIndex: Number.isFinite(Number(recipientIndex)) ? Number(recipientIndex) : null,
+    recipientCount: Number.isFinite(Number(recipientCount)) ? Number(recipientCount) : null,
     fromSessionId: from,
     toSessionId: to,
     fromNodeId: String(fromNodeId || ''),

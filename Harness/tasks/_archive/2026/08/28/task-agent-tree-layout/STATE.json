@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-agent-tree-layout",
+  "status": "archived",
+  "mode": "direct",
+  "defaultRuntime": "codex",
+  "defaultAgentRuntime": "codex",
+  "tier": "none",
+  "phase": "archived",
+  "gate": null,
+  "updatedAt": "2026-08-28T02:35:58.924Z",
+  "activeQuestion": null,
+  "nextAction": "v2 layout: agent-tree compact auto-layout (main centered anchor, subagents tree below, assets matrix bands above owner, no edge mutation) + 409 merge-replay + clipboard image paste",
+  "acceptance": [],
+  "queues": {
+    "ready": [],
+    "running": [],
+    "blocked": [],
+    "done": []
+  },
+  "dispatchLedger": [],
+  "decisions": [],
+  "risks": [],
+  "artifacts": [],
+  "links": {
+    "dependsOn": [],
+    "blocks": [],
+    "related": []
+  }
+}

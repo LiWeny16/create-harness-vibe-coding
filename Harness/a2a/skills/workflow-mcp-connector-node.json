@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "skillId": "workflow-mcp-connector-node",
+  "name": "Workflow MCP Connector Node",
+  "source": "Harness/a2a/skills/workflow-mcp-connector-node.json",
+  "description": "On-demand Agent guide for MCP connector nodes as metadata-only capability providers.",
+  "nodeType": "mcp-connector",
+  "createKind": "mcp",
+  "triggers": [
+    "mcp connector node",
+    "mcp node",
+    "mcp tools",
+    "mcp resources",
+    "connected mcp",
+    "capability provider"
+  ],
+  "controlSurface": {
+    "endpoint": "GET /api/workflow/context/:node",
+    "readContextFirst": "node Harness/scripts/wf-ui-control.mjs workflow-context --project .",
+    "storage": "Harness/a2a/capability-nodes/**/state.json is backend-owned diagnostic storage, never an Agent control surface.",
+    "executionModel": "MCP connector nodes expose sanitized metadata only; direct tool invocation needs a separate permission/audit contract."
+  },
+  "environment": [
+    "HARNESS_PEER_SESSION_ID",
+    "HARNESS_PEER_RUNTIME",
+    "HARNESS_AGENT_KIND",
+    "HARNESS_WORKFLOW_MODE",
+    "HARNESS_WORKFLOW_NODE_ID",
+    "HARNESS_WORKFLOW_MAP",
+    "HARNESS_NODE_HOME",
+    "HARNESS_NODE_INIT",
+    "HARNESS_WF_UI_URL"
+  ],
+  "policy": {
+    "allowed": [
+      "state:read",
+      "capability:read",
+      "mcp.metadata.read"
+    ],
+    "requires": [
+      "workflow-context-before-action",
+      "connected-capability-ref"
+    ],
+    "denied": [
+      "capability-state-file-mutation",
+      "direct-capability-node-state-file-edit",
+      "direct-json-state-mutation",
+      "mcp-tool-invocation-without-permission",
+      "mcp-server-spawn",
+      "secret-payloads"
+    ]
+  },
+  "prohibitions": [
+    "Never edit `Harness/a2a/**/state.json` directly — use typed actions.",
+    "Never edit capability-node state files or the workflow map file.",
+    "Never invoke MCP tools without permission and never spawn MCP servers from the agent.",
+    "Never put secret or credential payloads in node actions; metadata exposes key names only."
+  ]
+}

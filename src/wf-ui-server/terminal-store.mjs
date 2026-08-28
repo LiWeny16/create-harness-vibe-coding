@@ -58,6 +58,83 @@ function appendJsonl(filePath, data) {
   fs.appendFileSync(filePath, `${JSON.stringify(data)}\n`, 'utf8');
 }
 
+// ── In-memory session index ──────────────────────────────────────────────────
+// Maintained by every persistSession/appendTerminalData call and rebuilt once at
+// backend startup. Snapshot fingerprinting (P1a) and the startup orphan
+// downgrade (P1b) read this instead of scanning every session dir per request.
+const sessionIndex = new Map();
+
+export function touchSessionIndex(record, { activityOnly = false } = {}) {
+  if (!record?.sessionId) return;
+  const entry = sessionIndex.get(record.sessionId) || {};
+  // activityOnly (terminal chunks/flushes) updates seq but NOT updatedAt: the
+  // snapshot fingerprint must not churn with streamed output, or every 5s
+  // poll rebuilds the snapshot and re-renders the canvas while any terminal
+  // is active.
+  const updatedAt = activityOnly
+    ? (entry.updatedAt || new Date().toISOString())
+    : (record.updatedAt ?? entry.updatedAt ?? new Date().toISOString());
+  sessionIndex.set(record.sessionId, {
+    ...entry,
+    sessionId: record.sessionId,
+    taskId: record.taskId ?? entry.taskId ?? null,
+    runtime: record.runtime ?? entry.runtime,
+    status: record.status ?? entry.status,
+    updatedAt,
+    terminalSeq: Number(record.terminalSeq ?? entry.terminalSeq ?? 0),
+  });
+}
+
+export function getSessionIndexSummary() {
+  let latestUpdatedAt = '';
+  for (const entry of sessionIndex.values()) {
+    if (String(entry.updatedAt || '') > latestUpdatedAt) latestUpdatedAt = String(entry.updatedAt);
+  }
+  return { count: sessionIndex.size, latestUpdatedAt };
+}
+
+export function getSessionIndexRecord(sessionId) {
+  return sessionIndex.get(sessionId) || null;
+}
+
+// Rebuilds the index with a single scan of all session dirs. Called once at
+// backend startup; per-request scans are gone.
+export function buildSessionIndex(projectRoot) {
+  sessionIndex.clear();
+  for (const found of allSessionDirs(projectRoot)) {
+    const state = readJson(path.join(found.dir, 'STATE.json'), null);
+    if (state) touchSessionIndex({ ...state, taskId: found.taskId });
+  }
+  return sessionIndex.size;
+}
+
+// ── One-time startup migration: orphaned live sessions ───────────────────────
+// At backend startup the in-memory registry manages nothing, so every disk
+// record with a live status is orphaned by definition (its PTY died with the
+// previous server). Persist the downgrade so snapshot, delete guards, and the
+// UI all see one consistent truth instead of "fake-live" sessions.
+export function downgradeOrphanedDiskSessions(projectRoot) {
+  const downgraded = [];
+  for (const found of allSessionDirs(projectRoot)) {
+    const state = readJson(path.join(found.dir, 'STATE.json'), null);
+    if (!state || !['running', 'starting'].includes(state.status)) continue;
+    const updated = {
+      ...state,
+      status: 'stopped',
+      blockedReason: state.blockedReason || 'not-managed-by-current-wf-ui',
+      orphanedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      // No clients can be attached right after a restart.
+      wsClientCount: 0,
+      attachMode: false,
+    };
+    writeJson(path.join(found.dir, 'STATE.json'), updated);
+    touchSessionIndex({ ...updated, taskId: found.taskId });
+    downgraded.push(found.sessionId);
+  }
+  return downgraded;
+}
+
 export function persistSession(projectRoot, session, patch = {}) {
   const dir = sessionDir(projectRoot, session.taskId, session.sessionId);
   const current = readJson(path.join(dir, 'STATE.json'), {});
@@ -68,6 +145,7 @@ export function persistSession(projectRoot, session, patch = {}) {
     updatedAt: new Date().toISOString(),
   };
   writeJson(path.join(dir, 'STATE.json'), state);
+  touchSessionIndex(state);
   return state;
 }
 
@@ -82,11 +160,51 @@ export function appendSessionEvent(projectRoot, session, event) {
   });
 }
 
-export function appendTerminalData(projectRoot, session, data, stream = 'stdout') {
-  const dir = sessionDir(projectRoot, session.taskId, session.sessionId);
+// ── Batched terminal writes ──────────────────────────────────────────────────
+// Per-chunk sync file I/O (read STATE.json + append terminal.jsonl + rewrite
+// STATE.json per chunk) saturated the event loop when many terminals streamed
+// at once. Entries now buffer per session and flush as ONE append + ONE state
+// write every 500ms (or at 64 entries / 64KB, whichever first). Readers flush
+// before reading, so disk reads always see the latest entry.
+const TERMINAL_FLUSH_DELAY_MS = 500;
+const TERMINAL_FLUSH_MAX_ENTRIES = 64;
+const TERMINAL_FLUSH_MAX_BYTES = 64 * 1024;
+const terminalFlushTimers = new Map();
+const terminalBuffers = new Map();
+
+export function flushTerminalBuffer(projectRoot, sessionId) {
+  const pending = terminalBuffers.get(sessionId);
+  if (!pending) return 0;
+  terminalBuffers.delete(sessionId);
+  const timer = terminalFlushTimers.get(sessionId);
+  if (timer) {
+    clearTimeout(timer);
+    terminalFlushTimers.delete(sessionId);
+  }
+  const dir = sessionDir(projectRoot, pending.taskId, sessionId);
   const statePath = path.join(dir, 'STATE.json');
-  const state = readJson(statePath, session);
-  const nextSeq = Number(state.terminalSeq || 0) + 1;
+  const state = readJson(statePath, pending.session);
+  const lines = pending.entries.map((entry) => `${JSON.stringify(entry)}\n`).join('');
+  fs.mkdirSync(dir, { recursive: true });
+  fs.appendFileSync(path.join(dir, 'terminal.jsonl'), lines, 'utf8');
+  const last = pending.entries[pending.entries.length - 1];
+  const updatedState = {
+    ...state,
+    terminalSeq: last.seq,
+    lastActivityAt: last.ts,
+    updatedAt: last.ts,
+  };
+  writeJson(statePath, updatedState);
+  touchSessionIndex(updatedState, { activityOnly: true });
+  return pending.entries.length;
+}
+
+export function appendTerminalData(projectRoot, session, data, stream = 'stdout') {
+  const indexRecord = getSessionIndexRecord(session.sessionId);
+  const baseSeq = indexRecord
+    ? Number(indexRecord.terminalSeq || 0)
+    : Number(readJson(path.join(sessionDir(projectRoot, session.taskId, session.sessionId), 'STATE.json'), {}).terminalSeq || 0);
+  const nextSeq = baseSeq + 1;
   const entry = {
     seq: nextSeq,
     ts: new Date().toISOString(),
@@ -96,13 +214,27 @@ export function appendTerminalData(projectRoot, session, data, stream = 'stdout'
     stream,
     data: String(data || ''),
   };
-  appendJsonl(path.join(dir, 'terminal.jsonl'), entry);
-  writeJson(statePath, {
-    ...state,
-    terminalSeq: nextSeq,
-    lastActivityAt: entry.ts,
-    updatedAt: entry.ts,
-  });
+  const pending = terminalBuffers.get(session.sessionId) || {
+    taskId: session.taskId,
+    session,
+    entries: [],
+    bytes: 0,
+  };
+  pending.entries.push(entry);
+  pending.bytes += entry.data.length;
+  terminalBuffers.set(session.sessionId, pending);
+  touchSessionIndex({ ...session, terminalSeq: nextSeq, updatedAt: entry.ts }, { activityOnly: true });
+
+  if (pending.entries.length >= TERMINAL_FLUSH_MAX_ENTRIES || pending.bytes >= TERMINAL_FLUSH_MAX_BYTES) {
+    flushTerminalBuffer(projectRoot, session.sessionId);
+  } else if (!terminalFlushTimers.has(session.sessionId)) {
+    const timer = setTimeout(() => {
+      terminalFlushTimers.delete(session.sessionId);
+      flushTerminalBuffer(projectRoot, session.sessionId);
+    }, TERMINAL_FLUSH_DELAY_MS);
+    timer.unref?.();
+    terminalFlushTimers.set(session.sessionId, timer);
+  }
   return entry;
 }
 
@@ -167,6 +299,8 @@ export function findTerminalSession(projectRoot, sessionId) {
 }
 
 export function readTerminalRange(projectRoot, { sessionId, fromSeq, toSeq, tail } = {}) {
+  // Disk reads always see the latest entry: flush the pending buffer first.
+  flushTerminalBuffer(projectRoot, sessionId);
   const found = findTerminalSession(projectRoot, sessionId);
   if (!found) return { sessionId, entries: [] };
   let entries = readJsonl(path.join(found.dir, 'terminal.jsonl'));

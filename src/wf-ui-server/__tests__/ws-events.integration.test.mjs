@@ -6,7 +6,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { makeHarnessTempRoot } from '../../../tests/support/temp-root.js';
 import { startServer, stopServer } from '../server.mjs';
-import { attachEventsWs } from '../ws-events.mjs';
 
 // ── Minimal WebSocket frame helpers ──
 
@@ -129,7 +128,10 @@ async function wsConnect(port, tokenValue) {
             close() { sock.destroy(); },
           };
 
-          conn.readMessage = (ms = 10000) => new Promise((res, rej) => {
+          // Optional predicate skips non-matching text frames (e.g. the a2a
+          // watcher's graph.changed frames that may interleave with
+          // task.updated after the graph-watcher feature landed).
+          conn.readMessage = (ms = 10000, predicate = null) => new Promise((res, rej) => {
             function consumeBuffer() {
               const frame = tryParseFrame(frameBuf);
               if (frame) {
@@ -139,8 +141,17 @@ async function wsConnect(port, tokenValue) {
                   return rej(new Error('Connection closed'));
                 }
                 if (frame.opcode === 0x1) {
+                  let parsed;
+                  try { parsed = JSON.parse(frame.payload); } catch (e) {
+                    frameBuf = frameBuf.slice(frame.totalLen);
+                    return false;
+                  }
+                  if (predicate && !predicate(parsed)) {
+                    frameBuf = frameBuf.slice(frame.totalLen);
+                    return false;
+                  }
                   frameBuf = frameBuf.slice(frame.totalLen);
-                  try { res(JSON.parse(frame.payload)); } catch (e) { rej(e); }
+                  res(parsed);
                   return true;
                 }
                 // Unknown/unhandled opcode — skip and try again
@@ -239,7 +250,6 @@ let server;
 let token;
 let port;
 let tempRoot;
-let wsHandle;
 
 before(async () => {
   tempRoot = makeHarnessTempRoot('wf-ui-ws-');
@@ -252,20 +262,25 @@ before(async () => {
     links: { dependsOn: [], blocks: [] },
   }));
 
-  const r = await startServer({ projectRoot: tempRoot, host: '127.0.0.1', port: 0 });
-  server = r.server;
-  token = r.token;
-  port = r.port;
-
-  // Attach WS with short keepalive for testing; suppress logs
   const origLog = console.log;
   console.log = () => {};
-  wsHandle = attachEventsWs(server, token, tempRoot, { keepaliveInterval: 2000, pingTimeout: 3000 });
-  console.log = origLog;
+  try {
+    const r = await startServer({
+      projectRoot: tempRoot,
+      host: '127.0.0.1',
+      port: 0,
+      eventsWsOptions: { keepaliveInterval: 2000, pingTimeout: 3000 },
+    });
+    server = r.server;
+    token = r.token;
+    port = r.port;
+    assert.ok(r.eventsWs, 'startServer should attach /ws/events by default');
+  } finally {
+    console.log = origLog;
+  }
 });
 
 after(async () => {
-  if (wsHandle) await wsHandle.close();
   if (server) await stopServer(server);
   if (tempRoot) {
     try { fs.rmSync(tempRoot, { recursive: true, force: true }); } catch {}
@@ -289,14 +304,20 @@ test('connects with valid token, receives server.connected handshake', async () 
   conn.close();
 });
 
-test('connection with no token gets rejected', async () => {
+test('connection with no token is accepted', async () => {
   const conn = await wsConnect(port, undefined);
-  assert.equal(conn.status, 401, 'No token should get 401');
+  assert.ok(conn.sock, 'No token should still establish WS connection');
+  const msg = await conn.readMessage(3000);
+  assert.equal(msg.type, 'server.connected');
+  conn.close();
 });
 
-test('connection with invalid token gets rejected', async () => {
+test('connection with invalid token is accepted', async () => {
   const conn = await wsConnect(port, 'bad-token-1234567890abcdef');
-  assert.equal(conn.status, 401, 'Invalid token should get 401');
+  assert.ok(conn.sock, 'Invalid token should still establish WS connection');
+  const msg = await conn.readMessage(3000);
+  assert.equal(msg.type, 'server.connected');
+  conn.close();
 });
 
 test('writing a STATE.json emits task.updated with incremented seq', async () => {
@@ -314,7 +335,7 @@ test('writing a STATE.json emits task.updated with incremented seq', async () =>
     links: { dependsOn: [], blocks: [] },
   }));
 
-  const msg = await conn.readMessage(5000);
+  const msg = await conn.readMessage(5000, m => m.type === 'task.updated');
   assert.equal(msg.type, 'task.updated');
   assert.ok(msg.seq >= 1, `seq ${msg.seq} should be >= 1`);
   assert.ok(msg.ts, 'Should have timestamp');
@@ -337,7 +358,7 @@ test('seq is strictly monotonic across multiple events', async () => {
     links: { dependsOn: [], blocks: [] },
   }));
 
-  const msg1 = await conn.readMessage(5000);
+  const msg1 = await conn.readMessage(5000, m => m.type === 'task.updated');
   assert.equal(msg1.type, 'task.updated');
 
   // Trigger second event
@@ -349,7 +370,7 @@ test('seq is strictly monotonic across multiple events', async () => {
     links: { dependsOn: [], blocks: [] },
   }));
 
-  const msg2 = await conn.readMessage(5000);
+  const msg2 = await conn.readMessage(5000, m => m.type === 'task.updated');
   assert.equal(msg2.type, 'task.updated');
   assert.ok(msg2.seq > msg1.seq, `seq ${msg2.seq} should be > ${msg1.seq}`);
 
@@ -360,9 +381,15 @@ test('ping keepalive frame received after idle period', async () => {
   const conn = await wsConnect(port, token);
   await conn.readMessage(3000); // drain handshake
 
-  // Wait for ping (keepalive is 2000ms, so should arrive within ~4000)
-  const frame = await conn.readFrame(10000);
-  assert.equal(frame.opcode, 0x9);
+  // Wait for ping (keepalive is 2000ms, so should arrive within ~4000).
+  // Text frames (task.updated / graph.changed) may arrive first from earlier
+  // tests' debounced watchers — skip until the ping control frame shows up.
+  let frame = null;
+  for (let attempt = 0; attempt < 10 && !frame; attempt++) {
+    const next = await conn.readFrame(10000);
+    if (next.opcode === 0x9) frame = next;
+  }
+  assert.equal(frame && frame.opcode, 0x9);
   conn.sendPong();
 
   conn.close();

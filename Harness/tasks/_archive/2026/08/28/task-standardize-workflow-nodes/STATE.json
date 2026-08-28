@@ -1,0 +1,1198 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-standardize-workflow-nodes",
+  "status": "archived",
+  "mode": "$wf",
+  "tier": "WF-Full",
+  "phase": "archived",
+  "gate": "VERIFY",
+  "updatedAt": "2026-08-28T02:35:58.933Z",
+  "activeQuestion": null,
+  "nextAction": "W40 Timer-Agent magnetic boundary hotfix verified: Timer/Event snap geometry now uses rendered visual bounds instead of stale fixed heights, capsule drag commits settle docking before persistence, and Playwright covers Timer-above-Agent docking with no overlap. Existing follow-ups remain: F6 actor-path moveNode flush 409 churn; F7 session-less Agent dblclick fallback; F4 transitive A-C no-line e2e assertion; F2 goal-handle mismatch; F5 dead branch; M3 full-suite environment flakiness.",
+  "acceptance": [
+    {
+      "id": "AC-001",
+      "status": "verified",
+      "text": "Unified node creation exists from top-right plus and canvas right-click, offers Agent/File/Markdown/Diagram, and removes the old top-center Markdown/Diagram toolbar."
+    },
+    {
+      "id": "AC-002",
+      "status": "verified",
+      "text": "File/text ingestion works: Explorer drag creates workspace-reference File node; Explorer preview can insert File node; external drop/paste stores File node under Harness/user-files; large pasted text creates Markdown node."
+    },
+    {
+      "id": "AC-003",
+      "status": "verified",
+      "text": "Backend exposes a complete workspace file pipe: meta, byte read, bounded text read, HEAD, Range, MIME, traversal denial, stale/missing file state."
+    },
+    {
+      "id": "AC-004",
+      "status": "verified",
+      "text": "Agent-readable graph snapshot includes connected resource refs, handles, bidirectional direction metadata, endpoint roles, stateRef, contentRef, and capability hints for File/Markdown/Diagram nodes."
+    },
+    {
+      "id": "AC-005",
+      "status": "verified",
+      "text": "Markdown default output is configurable per agent, target-selectable, and falls back to oldest connected Markdown when enabled with no explicit target."
+    },
+    {
+      "id": "AC-006",
+      "status": "verified",
+      "text": "Explorer interaction is deterministic: single-click folder toggles open/closed, file click opens preview, right-click menu uses global viewport coordinates and clamps in view, Explorer gestures do not pan/drag canvas."
+    },
+    {
+      "id": "AC-007",
+      "status": "verified",
+      "text": "Node interaction is deterministic: Agent double-click opens terminal mode; Markdown and Diagram double-click open enlarged editor mode; right-click opens node menu only; delete/settings/open config/copy/cut/duplicate actions are available with stable selectors."
+    },
+    {
+      "id": "AC-008",
+      "status": "verified",
+      "text": "Bridge edge interaction is stable: single-click/drag does not open panel, double-click opens panel, edge/offset persistence happens on commit only and survives reload without disconnections."
+    },
+    {
+      "id": "AC-009",
+      "status": "verified",
+      "text": "Markdown and Excalidraw editors have enlarged/fullscreen mode, smooth loading/open animation, real editor loaded state, save revisions, Excalidraw icon/brand styling, no useless Rect toolbar button."
+    },
+    {
+      "id": "AC-010",
+      "status": "verified",
+      "text": "Agent settings panel is searchable, categorized, compact, i18n-ready, has tooltips, selectors/switches for common config, explorer-backed cwd picker, working Add Skill, and no raw JSON for common permission/launch policy."
+    },
+    {
+      "id": "AC-011",
+      "status": "verified",
+      "text": "Overlay stack is deterministic: toasts render above workflow chrome, menus/panels clamp to viewport, fullscreen is top layer."
+    },
+    {
+      "id": "AC-012",
+      "status": "verified",
+      "text": "Performance budget holds on /workflow: no React update loop, no failed API resources, ready under 3s in seeded graph smoke, no long task above 250ms during key interactions, edge drag sends no graph-map PUT before pointerup."
+    }
+  ],
+  "links": {
+    "dependsOn": [],
+    "blocks": [],
+    "related": [
+      "task-define-workflow-context-surface",
+      "task-terminal-input-control",
+      "task-stabilize-workflow-agent-control",
+      "task-upgrade-workflow-agent-canvas"
+    ]
+  },
+  "queues": {
+    "ready": [],
+    "running": [],
+    "blocked": [],
+    "done": [
+      "w0-readonly-fanout",
+      "dgate-rewrite",
+      "w1-backend-contract-tests",
+      "w1-interaction-e2e-tests",
+      "w1-component-perf-e2e-tests",
+      "w2-backend-file-pipe",
+      "w2-frontend-canvas-gestures",
+      "w2-frontend-editors-settings",
+      "w2-frontend-explorer-file",
+      "w2-style-integration",
+      "w2-m4-residual-debug",
+      "w2-graph-persistence-debug",
+      "w3-review",
+      "w4-ceo-cdp-closeout",
+      "w5-bidirectional-connection-state",
+      "w6-resource-handle-state-and-node-planning",
+      "w7-node-catalog-foundation",
+      "w8-skills-hub-capability-drawer",
+      "w9-agent-skill-attach-context",
+      "w10-resource-handle-regression-mcp-metadata",
+      "w11-timer-event-node-single-handle-ports",
+      "w12-skill-group-capability-node",
+      "w13-mcp-connector-capability-node",
+      "w14-advanced-timer-goal-node",
+      "w15-goal-agent-canvas-menu-regression",
+      "w16-expanded-timer-goal-editors",
+      "w17-agent-architecture-review",
+      "w18-agent-control-operation-layer",
+      "w18-agent-dynamic-delete-hotfix",
+      "w18-stale-component-snapshot-hotfix",
+      "w19-agent-node-map-api-skill",
+      "w20-agent-default-workflow-skills",
+      "w21-workflow-ontology",
+      "w22-no-token-connected-output-policy",
+      "w23-agent-node-product-e2e",
+      "w24-agent-session-graph-binding",
+      "w25-product-architecture-review",
+      "w26-agent-bootstrap-submit",
+      "w27-agent-delegate-submit-connected-output-e2e",
+      "w28-agent-control-consistency-contract",
+      "w29-agent-context-workspace-skill-triggers",
+      "w30-ui-connection-fixed-port-stability",
+      "w31-release-gate-closeout",
+      "w34-magnet-semantic-split-stabilization",
+      "w35-agent-node-control-context-timer-ui",
+      "w36-goal-create-node-concrete-node-skills",
+      "w37-external-skills-market-groups",
+      "w38-be-topology",
+      "w38-be-fileapi",
+      "w38-fe-timer",
+      "w38-be-fourside",
+      "w38-be-cleanup",
+      "w38-fe-handles",
+      "w38-fe-fileview",
+      "w38-fe-skills-be",
+      "w38-fe-skills-component",
+      "w38-be-followup",
+      "w38-fe-integrator",
+      "w38-test-m3",
+      "w38-test-m6",
+      "w39-be-store-utils",
+      "w40-magnetic-boundary-hotfix"
+    ]
+  },
+  "workItems": [
+    {
+      "id": "w0-readonly-fanout",
+      "status": "done",
+      "ownerRole": "ceo",
+      "goal": "Fan out read-only RCA across UI interaction, backend/API contract, performance architecture, and CDP/test plan."
+    },
+    {
+      "id": "dgate-rewrite",
+      "status": "done",
+      "ownerRole": "ceo",
+      "goal": "Rewrite task PLAN around AC-001..AC-012, API/UI/state/performance contracts, and disjoint Worker waves."
+    },
+    {
+      "id": "w1-backend-contract-tests",
+      "status": "done",
+      "ownerRole": "test-writer",
+      "goal": "Add RED backend tests for workspace file pipe, connected resource refs, and Markdown output fallback."
+    },
+    {
+      "id": "w1-interaction-e2e-tests",
+      "status": "done",
+      "ownerRole": "test-writer",
+      "goal": "Add RED Playwright/CDP tests for Explorer, menus, node gestures, bridge gestures, overlays, and React #185 guard."
+    },
+    {
+      "id": "w1-component-perf-e2e-tests",
+      "status": "done",
+      "ownerRole": "test-writer",
+      "goal": "Add RED Playwright tests for File preview, Markdown/Excalidraw fullscreen, and performance smoke."
+    },
+    {
+      "id": "w2-backend-file-pipe",
+      "status": "done",
+      "ownerRole": "implementer",
+      "goal": "Implement workspace meta/HEAD/Range/text contract and agent contentRef/capability refs."
+    },
+    {
+      "id": "w2-frontend-explorer-file",
+      "status": "done",
+      "ownerRole": "implementer",
+      "goal": "Fix Explorer single-click, global context menu, preview insert, file preview pipe, and lazy preview policy."
+    },
+    {
+      "id": "w2-frontend-canvas-gestures",
+      "status": "done",
+      "ownerRole": "implementer",
+      "goal": "Centralize canvas/node/edge gestures, drop routing, node menu, bridge drag/double-click, persistence commit guards, and React #185 fix."
+    },
+    {
+      "id": "w2-frontend-editors-settings",
+      "status": "done",
+      "ownerRole": "implementer",
+      "goal": "Productize settings and improve Markdown/Excalidraw fullscreen editors/icons/brand/loading."
+    },
+    {
+      "id": "w2-style-integration",
+      "status": "done",
+      "ownerRole": "implementer",
+      "goal": "Resolve residual Explorer canvas drift, /ws/events test-server failure, visible workflow-toast layer, and final overlay styling."
+    },
+    {
+      "id": "w3-review",
+      "status": "done",
+      "ownerRole": "reviewer",
+      "goal": "Run independent spec/UX, API/security, and performance/React reviews."
+    },
+    {
+      "id": "w2-m4-residual-debug",
+      "status": "done",
+      "ownerRole": "debugger",
+      "goal": "Fix remaining M4 failures: Explorer node drift and toast create-panel timeout."
+    },
+    {
+      "id": "w4-ceo-cdp-closeout",
+      "status": "done",
+      "ownerRole": "ceo",
+      "goal": "Run final Playwright/CDP validation against /workflow and record AC matrix."
+    },
+    {
+      "id": "w2-graph-persistence-debug",
+      "status": "done",
+      "ownerRole": "debugger",
+      "goal": "Fix M3 graph-map persistence for component node drag and handle connect while preserving M4 no-PUT-before-pointerup behavior."
+    },
+    {
+      "id": "w5-bidirectional-connection-state",
+      "status": "done",
+      "ownerRole": "ceo",
+      "goal": "Standardize workflow links as bidirectional state across backend stores/API snapshots, runtime graph connections, frontend ReactFlow persistence/rendering, tests, architecture docs, protocol docs, and templates."
+    },
+    {
+      "id": "w6-resource-handle-state-and-node-planning",
+      "status": "done",
+      "ownerRole": "ceo",
+      "goal": "Fix Markdown/Excalidraw bidirectional resource side handles, component editor draft persistence, settings panel layout, node double-click semantics, API relation/handle normalization, and record future Timer/Trigger/MCP/Skills/Group node architecture."
+    },
+    {
+      "id": "w7-node-catalog-foundation",
+      "status": "done",
+      "ownerRole": "ceo",
+      "goal": "Make node creation registry-driven, searchable, scrollable, and category-grouped; keep future Timer/Trigger/GitHub/MCP/Skill/Skill group/Group entries planned and disabled until runtime contracts exist."
+    },
+    {
+      "id": "w8-skills-hub-capability-drawer",
+      "status": "done",
+      "ownerRole": "ceo",
+      "goal": "Add a guarded Skills Hub metadata scanner and Capability Hub drawer so Skill/Skill group/MCP planned entries open hub discovery surfaces without creating runtime nodes or attaching capabilities before Agent config/context contracts exist."
+    },
+    {
+      "id": "w9-agent-skill-attach-context",
+      "status": "done",
+      "ownerRole": "ceo",
+      "goal": "Enable Agent-targeted Skills Hub attach through Agent config skills/skillPolicy and expose effectiveSkills/connectedCapabilityRefs in Agent-readable workflow context."
+    },
+    {
+      "id": "w10-resource-handle-regression-mcp-metadata",
+      "status": "done",
+      "ownerRole": "ceo",
+      "goal": "Fix Markdown/Excalidraw manual drag receive regression, preserve physical side aliases, constrain component settings layout, verify no-spawn MCP Hub metadata listing, and record bidirectional resource/capability versus future directed event-node standards."
+    },
+    {
+      "id": "w11-timer-event-node-single-handle-ports",
+      "status": "done",
+      "ownerRole": "ceo",
+      "goal": "Implement Timer as the first runtime event-source node with directed event edges and Agent event refs, remove hidden overlapping bidirectional handles from resource/status ports, tighten component settings layout, and record the updated architecture standards."
+    },
+    {
+      "id": "w12-skill-group-capability-node",
+      "status": "done",
+      "ownerRole": "ceo",
+      "goal": "Implement Skill group as the first runtime capability-provider node with backend-owned capability state, bidirectional capability ports, Agent context refs/effective skills, Hub create-pack UI, no-leak metadata constraints, tests, and docs."
+    },
+    {
+      "id": "w13-mcp-connector-capability-node",
+      "status": "done",
+      "ownerRole": "ceo",
+      "goal": "Implement MCP connector as a metadata-only backend-owned capability-provider node created from MCP Hub mcpServerId, with bidirectional capability ports, Agent context refs, no-spawn/no-secret/no-raw-config tests, and Hub create UI while direct MCP attach/tool invocation remain gated."
+    },
+    {
+      "id": "w14-advanced-timer-goal-node",
+      "status": "done",
+      "ownerRole": "ceo",
+      "goal": "Implement Advanced Timer and synthetic Goal nodes with backend-owned state, Agent-readable context refs, Timer control-edge-gated actions, WDT/base heartbeat behavior, two-phase Goal completion proposal flow, frontend renderers, and backend/UI regression tests."
+    },
+    {
+      "id": "w15-goal-agent-canvas-menu-regression",
+      "status": "done",
+      "ownerRole": "ceo",
+      "goal": "Verify and fix Agent-to-Goal read/update semantics plus real blank-canvas right-click creation menu behavior, while preserving the workflow performance smoke budget."
+    },
+    {
+      "id": "w16-expanded-timer-goal-editors",
+      "status": "done",
+      "ownerRole": "ceo",
+      "goal": "Implement Timer and Goal double-click primary workbenches, preserve all supported Timer schedule modes, support user Goal sidecar edits including objective, require linked Agent authority for Agent-authored Goal updates, and gate Agent-authored timer.configure behind a control edge."
+    },
+    {
+      "id": "w17-agent-architecture-review",
+      "status": "done",
+      "ownerRole": "ceo",
+      "goal": "Review whether Agent nodes have enough graph authority, context, state, workspace identity, backend APIs, and orchestration primitives to support autonomous Agent-team workflows."
+    },
+    {
+      "id": "w18-agent-control-operation-layer",
+      "status": "done",
+      "ownerRole": "ceo",
+      "goal": "Implement Main-Agent graph actions, bounded operation audit records, operation-derived canvas/node/edge control visuals, and browser graph-intent parity with no duplicate mutation paths."
+    },
+    {
+      "id": "w18-agent-dynamic-delete-hotfix",
+      "status": "done",
+      "ownerRole": "ceo",
+      "goal": "Fix dynamic Agent node-map deletion by adding agent.deleteNode/deleteNodes, self-delete/live-agent safety, Goal virtual-node hide semantics, unified UI node.delete, graph.deleteNode/deleteNodes browser intents, and operation-expiry timing regression coverage."
+    },
+    {
+      "id": "w18-stale-component-snapshot-hotfix",
+      "status": "done",
+      "ownerRole": "ceo",
+      "goal": "Fix wf-ui frontend crash caused by stale component index entries whose backend state files are missing; global snapshots skip stale refs and dangling edges, direct reads remain strict, and delete can clean stale index entries."
+    },
+    {
+      "id": "w19-agent-node-map-api-skill",
+      "status": "done",
+      "ownerRole": "ceo",
+      "goal": "Make Agent node-map control API-only by adding the default node-map skill command surface, delegating legacy connect/delete-node aliases to typed agent.* backend actions, and forbidding direct workflow-map/node-state file edits for canvas control."
+    },
+    {
+      "id": "w20-agent-default-workflow-skills",
+      "status": "done",
+      "ownerRole": "ceo",
+      "goal": "Standardize Agent default workflow skill naming around workflow-node-map, workflow-context, and workflow-node-actions; keep wf-ui-map as a compatibility alias; add CLI/API wrappers and workflow-context access."
+    },
+    {
+      "id": "w21-workflow-ontology",
+      "status": "done",
+      "ownerRole": "ceo",
+      "goal": "Add lightweight Workflow Ontology so terminal Agent nodes can interpret node classes, relations, actor affordances, default workflow skills, and Timer/Goal authority through backend APIs instead of prompt-only conventions."
+    },
+    {
+      "id": "w22-no-token-connected-output-policy",
+      "status": "done",
+      "ownerRole": "ceo",
+      "goal": "Remove local wf-ui token authentication and make Agent nodes prefer connected writable Markdown/Excalidraw resource nodes by output modality through init guidance, ontology affordances, and default node-action skills."
+    },
+    {
+      "id": "w23-agent-node-product-e2e",
+      "status": "done",
+      "ownerRole": "ceo",
+      "goal": "Validate the current product pillars and run a real wf-ui Agent-node E2E showing context read, graph connection, Goal update, Markdown write, and connected Excalidraw flowchart output; record Browser-plugin evidence gap separately."
+    },
+    {
+      "id": "w24-agent-session-graph-binding",
+      "status": "done",
+      "ownerRole": "implementer",
+      "goal": "Fix wf-ui-created Agent sessions so dynamic subagents persist as real workflow graph nodes that can be connected, delegated to, and read through backend APIs."
+    },
+    {
+      "id": "w25-product-architecture-review",
+      "status": "done",
+      "ownerRole": "reviewer",
+      "goal": "Narrow release positioning to the two verified product pillars and keep unverified orchestration, trigger, scheduler, and arbitrary MCP claims out of release scope."
+    },
+    {
+      "id": "w26-agent-bootstrap-submit",
+      "status": "done",
+      "ownerRole": "implementer",
+      "goal": "Fix graph Agent startup bootstrap so initial guidance waits for terminal readiness and is actually submitted."
+    },
+    {
+      "id": "w27-agent-delegate-submit-connected-output-e2e",
+      "status": "done",
+      "ownerRole": "implementer",
+      "goal": "Fix canonical delegate-agent prompt submission and verify a live connected-output E2E where an Agent uses connected Excalidraw and Markdown nodes through backend actions only."
+    },
+    {
+      "id": "w28-agent-control-consistency-contract",
+      "status": "done",
+      "ownerRole": "architect",
+      "goal": "Define the final Agent-node context/workspace/skills/debug matrix, add semantic skill triggers, and harden agent.readContext to the canonical context shape."
+    },
+    {
+      "id": "w29-agent-context-workspace-skill-triggers",
+      "status": "done",
+      "ownerRole": "implementer",
+      "goal": "Expose explicit Agent identity/workspace/skillTriggers in canonical context, carry triggers on default capability refs, and verify live wf-ui context after restart."
+    },
+    {
+      "id": "w30-ui-connection-fixed-port-stability",
+      "status": "done",
+      "ownerRole": "implementer",
+      "goal": "Fix WorkflowRoute TDZ crash, typed manual edge reconciliation, compact bidirectional connection handles, settings panel tooltip/z-layer polish, no-token wf-ui command surfaces, and fixed default wf-ui port 56670 with +1 fallback."
+    },
+    {
+      "id": "w31-release-gate-closeout",
+      "status": "done",
+      "ownerRole": "ceo",
+      "goal": "Run final local stability gates, integrate native subagent review, and record the remaining external mirror/tag blocker separately from wf-ui/node-map readiness."
+    },
+    {
+      "id": "w34-magnet-semantic-split-stabilization",
+      "status": "done",
+      "ownerRole": "ceo",
+      "goal": "Separate ordinary visible graph edges from special Agent/Timer/Goal magnetic dock semantics, prevent stale dock/edge resurrection, preserve manual edges across dock/undock, support four-side docking, and remove misleading whole-canvas Agent aura."
+    },
+    {
+      "id": "w35-agent-node-control-context-timer-ui",
+      "status": "done",
+      "ownerRole": "ceo",
+      "goal": "Make Agent node control context explicit and API-only for Timer/Goal/Agent/resource nodes, add on-demand public node skills, fix Timer scheduling updates through backend actions, and show Timer running/stopped/countdown state in compact UI."
+    },
+    {
+      "id": "w36-goal-create-node-concrete-node-skills",
+      "status": "done",
+      "ownerRole": "ceo",
+      "goal": "Expose Goal in the Create Node catalog, support backend API create/restore/position for active-task Goal nodes, and provide concrete on-demand node skills for every ready/implemented create-node type."
+    },
+    {
+      "id": "w37-external-skills-market-groups",
+      "status": "completed",
+      "ownerRole": "ceo",
+      "goal": "Implement hosted Skills Market discovery/install and make Skill Group the bounded Agent context unit with pack-first Skills Hub UI.",
+      "result": "Implemented Skillstore-backed Skills Market APIs, secure project-default install path, lockfile, bounded Skill Group metadata/context, Skills Hub tabs/workbench, and focused backend/UI verification.",
+      "completedAt": "2026-08-11T02:50:51.582Z"
+    },
+    {
+      "id": "w38-be-topology",
+      "status": "completed",
+      "ownerRole": "implementer",
+      "goal": "Compute magnetic topology (connected components) from capsuleDockLinks and expose directMagneticNeighbors/magneticReachableNodes/magneticGroupId/magneticTopology in Agent context + workflow-context."
+    },
+    {
+      "id": "w38-be-fileapi",
+      "status": "completed",
+      "ownerRole": "implementer",
+      "goal": "Add file.writeText/file.parsePdf/file.preview/file.meta backend node actions with workspace path safety; no direct state.json mutation."
+    },
+    {
+      "id": "w38-fe-timer",
+      "status": "completed",
+      "ownerRole": "implementer",
+      "goal": "Compact Timer card: nextDueAt display, event-count testid, loop/while/task mode distinction."
+    },
+    {
+      "id": "w38-fe-magnetic",
+      "status": "completed",
+      "ownerRole": "implementer",
+      "goal": "Four-side bidirectional handles + capsule role for Markdown/File/Diagram; clear edge selection on drag; debounce graph-map PUT; Agent double-click always-drawer guard."
+    },
+    {
+      "id": "w38-fe-fileview",
+      "status": "completed",
+      "ownerRole": "implementer",
+      "goal": "VSCode-like File big view (fullscreen shell) with text edit/save, Markdown toggle, image zoom, PDF preview+parse, JSON/YAML format+validate via file.* API."
+    },
+    {
+      "id": "w38-fe-skills",
+      "status": "completed",
+      "ownerRole": "implementer",
+      "goal": "Skills Hub/Group big WYSIWYG config overlay with enable/disable, group/ungroup, mount-to-Agent affordances."
+    },
+    {
+      "id": "w38-be-fourside",
+      "status": "completed",
+      "ownerRole": "implementer",
+      "goal": "Backend 4-side resource handle normalization confirmed already in tree; new 4-side test added (11/11)."
+    },
+    {
+      "id": "w38-be-cleanup",
+      "status": "completed",
+      "ownerRole": "implementer",
+      "goal": "Remove pdfjs-dist dependency from package.json; fix 4 stale 2-side test assertions (81/81)."
+    },
+    {
+      "id": "w38-fe-handles",
+      "status": "completed",
+      "ownerRole": "implementer",
+      "goal": "4-side bidirectional DOM handles for markdown/scene/file verified already in tree (W11 one-handle-per-side)."
+    },
+    {
+      "id": "w38-fe-fileview",
+      "status": "completed",
+      "ownerRole": "implementer",
+      "goal": "WorkflowFileBigView native-media component + nodeRuntimeClient file.* methods."
+    },
+    {
+      "id": "w38-fe-skills-be",
+      "status": "completed",
+      "ownerRole": "implementer",
+      "goal": "skill-group.setSkillEnabled typed action + enabled flag in capability store (64/64)."
+    },
+    {
+      "id": "w38-fe-skills-component",
+      "status": "completed",
+      "ownerRole": "implementer",
+      "goal": "WorkflowSkillsHubOverlay big WYSIWYG overlay component."
+    },
+    {
+      "id": "w38-be-followup",
+      "status": "completed",
+      "ownerRole": "implementer",
+      "goal": "Fix component-node-api stale file contract + project enabled through effectiveSkillGroups skillRefs (103/103)."
+    },
+    {
+      "id": "w38-fe-integrator",
+      "status": "completed",
+      "ownerRole": "implementer",
+      "goal": "Wire all W38 frontend pieces into WorkflowRoute.tsx: resource capsule dock, drag clears selection, debounced PUT + moveNode flush, Agent dblclick drawer guard, File big view, Skills overlay; W38 spec 6/6."
+    },
+    {
+      "id": "w38-test-m3",
+      "status": "completed",
+      "ownerRole": "implementer",
+      "goal": "Update 3 stale m3 handle-count assertions to the 4-side contract."
+    },
+    {
+      "id": "w38-test-m6",
+      "status": "completed",
+      "ownerRole": "debugger",
+      "goal": "Fix W18-PARITY: graph.moveNode awaits the debounced graph-map PUT flush (code-side)."
+    },
+    {
+      "id": "w39-be-store-utils",
+      "status": "completed",
+      "ownerRole": "implementer",
+      "goal": "Implement C7+C5 storage follow-up: shared atomic JSON utilities, strict corrupt JSON reads, node-store-utils, and Component/Event/Capability/Goal store migration."
+    },
+    {
+      "id": "w40-magnetic-boundary-hotfix",
+      "status": "completed",
+      "ownerRole": "debugger",
+      "goal": "Fix Timer-Agent magnetic docking boundary overlap by using rendered visual node bounds and settling capsule drops before graph persistence."
+    }
+  ],
+  "dispatchLedger": [
+    {
+      "id": "019fbc4d-5551-7af3-8dfb-9eb118d818a1",
+      "wave": "W0",
+      "runtime": "Codex",
+      "channel": "multi_agent_v1",
+      "role": "codebase-explorer",
+      "status": "returned-closed",
+      "result": "Gesture ownership, overlay layering, drop ambiguity, and edge persistence findings integrated."
+    },
+    {
+      "id": "019fbc4d-a3ae-7002-b9b6-7bf703fb9968",
+      "wave": "W0",
+      "runtime": "Codex",
+      "channel": "multi_agent_v1",
+      "role": "architect",
+      "status": "returned-closed",
+      "result": "File pipe/contentRef/API contract findings integrated."
+    },
+    {
+      "id": "019fbc4d-f053-7ec1-9c4c-a3603ab690a5",
+      "wave": "W0",
+      "runtime": "Codex",
+      "channel": "multi_agent_v1",
+      "role": "architect",
+      "status": "returned-closed",
+      "result": "Performance architecture findings integrated."
+    },
+    {
+      "id": "019fbc4e-3df2-7d22-9d33-35db862c5e79",
+      "wave": "W0",
+      "runtime": "Codex",
+      "channel": "multi_agent_v1",
+      "role": "test-writer",
+      "status": "returned-closed",
+      "result": "AC expansion and CDP/API/Playwright test plan integrated."
+    },
+    {
+      "id": "019fbc59-1943-7b91-8c65-fb3aedfc8213",
+      "wave": "W1",
+      "runtime": "Codex",
+      "channel": "multi_agent_v1",
+      "role": "test-writer",
+      "status": "returned-closed",
+      "result": "Backend RED tests added; initial expected failures were missing meta, HEAD, text, contentRef, and Markdown output routing."
+    },
+    {
+      "id": "019fbc59-6673-7ad3-887e-c65ef0a2407a",
+      "wave": "W1",
+      "runtime": "Codex",
+      "channel": "multi_agent_v1",
+      "role": "test-writer",
+      "status": "returned-closed",
+      "result": "Interaction/CDP RED tests added for Explorer, workspace menu, node menu, bridge, toast, React #185 and failed API collector."
+    },
+    {
+      "id": "019fbc59-a795-7ac2-b39f-8ca849deda20",
+      "wave": "W1",
+      "runtime": "Codex",
+      "channel": "multi_agent_v1",
+      "role": "test-writer",
+      "status": "returned-closed",
+      "result": "M3/M5 RED tests added; initial expected failures were missing file preview selector, Excalidraw node type, and Excalidraw loaded state."
+    },
+    {
+      "id": "019fbc65-25e7-7b83-9f45-dfcdfe2acae6",
+      "wave": "W2A",
+      "runtime": "Codex",
+      "channel": "multi_agent_v1",
+      "role": "implementer",
+      "status": "returned-closed-verified",
+      "result": "Backend file pipe/contentRef/outputRouting implementation complete; targeted backend command passed 26/26 locally."
+    },
+    {
+      "id": "019fbc65-743c-7902-96e3-1fb9f615ec53",
+      "wave": "W2B",
+      "runtime": "Codex",
+      "channel": "multi_agent_v1",
+      "role": "implementer",
+      "status": "returned-closed-typecheck-pass",
+      "result": "Explorer/File implementation returned; typecheck and build passed with existing chunk-size warnings. Remaining targeted Playwright failures: canvas node drift 8.55px and /ws/events 404."
+    },
+    {
+      "id": "019fbc65-c492-7320-b72c-b1c0c1bc0e7b",
+      "wave": "W2C",
+      "runtime": "Codex",
+      "channel": "multi_agent_v1",
+      "role": "implementer",
+      "status": "returned-closed-typecheck-pass",
+      "result": "WorkflowRoute gesture/persistence/node menu implementation returned; typecheck passed. Remaining focused Playwright failures: /ws/events 404 collector and missing visible workflow-toast/style layer."
+    },
+    {
+      "id": "019fbc69-7f71-7e30-82e8-46ceef077ead",
+      "wave": "W2D",
+      "runtime": "Codex",
+      "channel": "multi_agent_v1",
+      "role": "implementer",
+      "status": "returned-closed-verified",
+      "result": "Editor/settings implementation complete; typecheck passed, targeted M3/M5 Playwright 3 passed, focused settings smoke 2 passed, vite build passed with existing chunk-size warnings."
+    },
+    {
+      "id": "019fbc84-303c-7131-bedf-c7ed084c3468",
+      "wave": "W2E",
+      "runtime": "Codex",
+      "channel": "multi_agent_v1",
+      "role": "debugger",
+      "status": "returned-closed-verified",
+      "result": "Resolved Explorer drift, optional /ws/events Playwright collector, and fixed high-z workflow-toast; reported M4 5/5 pass."
+    },
+    {
+      "id": "019fbc95-acd9-77f3-92fb-99a62d237471",
+      "wave": "W2F",
+      "runtime": "Codex",
+      "channel": "multi_agent_v1",
+      "role": "debugger",
+      "status": "returned-closed-verified",
+      "result": "Added coordinate-aware canvas-control detection and Explorer guard; reported typecheck pass, M4 5/5 pass, and AC-006 repeat 3/3 pass."
+    },
+    {
+      "id": "019fbc9f-486f-7273-b358-ff4fa5b8772e",
+      "wave": "W2G",
+      "runtime": "Codex",
+      "channel": "multi_agent_v1",
+      "role": "debugger",
+      "status": "returned-closed-verified",
+      "result": "Closed graph persistence/browser-control gaps; build pass, M3 14/14, M4 5/5, M5 1/1, backend target 47/47."
+    },
+    {
+      "id": "019fccde-92e4-7e61-8b8c-8549be5c6181",
+      "wave": "W4",
+      "runtime": "Codex",
+      "channel": "multi_agent_v1",
+      "role": "reflector",
+      "status": "returned-pass-closeout",
+      "result": "PASS_CLOSEOUT after final validation: M2 AC-010 1/1, M3/M4/M5 21/21, backend 78 tests, typecheck, and build. Residual risk is task-index inconsistency outside this task and untracked runtime files needing inclusion in any commit."
+    },
+    {
+      "id": "019fcd3c-0daa-71f0-8514-f769d4e2f93b",
+      "wave": "W5",
+      "runtime": "Codex",
+      "channel": "multi_agent_v1",
+      "role": "backend-reviewer",
+      "status": "returned-closed-integrated",
+      "result": "Runtime/A2A graph-map edge shape needed canonical bidirectional normalization, endpoint roles, semantic relation preservation, and unordered duplicate guards."
+    },
+    {
+      "id": "019fcd3c-3cf9-7551-a2f5-4f038f3839b9",
+      "wave": "W5",
+      "runtime": "Codex",
+      "channel": "multi_agent_v1",
+      "role": "frontend-reviewer",
+      "status": "returned-closed-integrated",
+      "result": "ReactFlow edge labels, markers, handles, and persistence were mixing display text with semantic relation and needed bidirectional rendering evidence."
+    },
+    {
+      "id": "019fcd3c-7723-7540-9422-9c095311d857",
+      "wave": "W5",
+      "runtime": "Codex",
+      "channel": "multi_agent_v1",
+      "role": "docs-reviewer",
+      "status": "returned-closed-integrated",
+      "result": "Architecture, protocol, and template docs needed an explicit workflow connection-state contract to prevent recurrence."
+    },
+    {
+      "id": "019fcdd7-c158-7811-887c-7705560d1bcf",
+      "wave": "W6",
+      "runtime": "Codex",
+      "channel": "multi_agent_v1",
+      "role": "code-architecture-reviewer",
+      "status": "returned-blockers-fixed",
+      "result": "UI edge behavior was acceptable, but API relation normalization and /api/workflow/nodes component handle snapshots still leaked legacy display/physical handle semantics. Fixed by relation sanitizer, canonical runtime handles, and 53/53 backend verification."
+    },
+    {
+      "id": "019fcdd7-f19b-7b72-be7c-bf9161fae829",
+      "wave": "W6",
+      "runtime": "Codex",
+      "channel": "multi_agent_v1",
+      "role": "product-architecture-planner",
+      "status": "returned-closed-integrated",
+      "result": "Confirmed agent-node-centric future taxonomy: resources stay bidirectional; timers/triggers/GitHub triggers are explicit event sources; MCP/Skills are capability providers; skill groups/MCP bundles should use group/subgraph boundary ports."
+    },
+    {
+      "id": "019fcdef-d326-7ef3-bbc0-fe7d6ca9589a",
+      "wave": "W8",
+      "runtime": "Codex",
+      "channel": "multi_agent_v1",
+      "role": "frontend-hub-reviewer",
+      "status": "returned-closed-integrated",
+      "result": "Recommended planned Skill/MCP catalog entries open a right-side Capability Hub drawer with stable selectors and disabled attach/create actions instead of pretending to create runtime nodes."
+    },
+    {
+      "id": "019fcdef-96f9-7c72-bbb0-f1c73813a109",
+      "wave": "W8",
+      "runtime": "Codex",
+      "channel": "multi_agent_v1",
+      "role": "backend-hub-architect",
+      "status": "returned-closed-integrated",
+      "result": "Recommended a project-scoped, read-only Skills Hub scanner; future attach should reuse Agent config skills/skillPolicy and future MCP Hub must stay no-spawn/no-secret."
+    },
+    {
+      "id": "019fce1c-0bd8-71d2-99f1-34f81dc8a119",
+      "wave": "W10",
+      "runtime": "Codex",
+      "channel": "multi_agent_v1",
+      "role": "codebase-explorer",
+      "status": "returned-closed-integrated",
+      "result": "Found resource ports were rendered as source-only handles in ReactFlow, bare left/right aliases could invert by endpoint role, and manual drag coverage was missing; fixes and tests integrated."
+    },
+    {
+      "id": "019fce1c-50cb-7680-9781-d0b275bac1e6",
+      "wave": "W10",
+      "runtime": "Codex",
+      "channel": "multi_agent_v1",
+      "role": "architect",
+      "status": "returned-closed-integrated",
+      "result": "Recommended Agent-centered future taxonomy: resources and capability providers bidirectional by default, Timer/Trigger/GitHub as explicit directed events, and Skill/MCP bundles through group/subgraph boundary ports."
+    },
+    {
+      "id": "019fce38-17ec-7d62-a37d-e619586b4c43",
+      "wave": "W11",
+      "runtime": "Codex",
+      "channel": "multi_agent_v1",
+      "role": "backend-event-node-reviewer",
+      "status": "returned-closed-integrated",
+      "result": "Timer needed real event-node storage/runtime wiring, graph direction persistence, and Agent context event refs."
+    },
+    {
+      "id": "019fce38-4df1-7ed2-8899-579af9636998",
+      "wave": "W11",
+      "runtime": "Codex",
+      "channel": "multi_agent_v1",
+      "role": "frontend-timer-reviewer",
+      "status": "returned-closed-integrated",
+      "result": "Frontend needed explicit non-component/non-agent node render/layout support for Timer and typed direction preservation."
+    },
+    {
+      "id": "019fce38-d6fb-7e00-925b-a57cd8df9a11",
+      "wave": "W11",
+      "runtime": "Codex",
+      "channel": "multi_agent_v1",
+      "role": "node-taxonomy-reviewer",
+      "status": "returned-closed-integrated",
+      "result": "Trigger/GitHub remain event sources, MCP/Skills remain Agent-mediated capability providers, and group/subgraph boundary ports are required for bundles."
+    },
+    {
+      "id": "019fce5a-7e5e-7862-aadb-12e8c8d3b992",
+      "wave": "W12",
+      "runtime": "Codex",
+      "channel": "multi_agent_v1",
+      "role": "backend-capability-architect",
+      "status": "returned-closed-integrated",
+      "result": "Recommended backend-owned skill-group capability-pack nodes under Harness/a2a/capability-nodes, bidirectional capability ports, and Agent context capability refs/effective skills."
+    },
+    {
+      "id": "019fce5a-bb2d-74a1-81a4-3aa115ae4409",
+      "wave": "W12",
+      "runtime": "Codex",
+      "channel": "multi_agent_v1",
+      "role": "frontend-hub-reviewer",
+      "status": "returned-closed-integrated",
+      "result": "Recommended Skills Hub group chips create detachable packs while individual skills still attach directly to target Agents; warned capability nodes needed explicit render/layout support."
+    },
+    {
+      "id": "019fce5a-f684-7a01-8653-840d52daf120",
+      "wave": "W12",
+      "runtime": "Codex",
+      "channel": "multi_agent_v1",
+      "role": "independent-reviewer",
+      "status": "returned-closed-integrated",
+      "result": "Required backend store/ports/runtime/API/UI picker-to-Hub-create regression coverage and no-leak checks before promoting Skill group nodes."
+    },
+    {
+      "id": "019fce7a-59b0-7d41-aadc-d4d861a50909",
+      "wave": "W13",
+      "runtime": "Codex",
+      "channel": "multi_agent_v1",
+      "role": "backend-mcp-capability-architect",
+      "status": "returned-closed-integrated",
+      "result": "Recommended backend-owned mcp-connector nodes resolved by Hub mcpServerId, shared capability ports, Agent context refs, and no raw config persistence."
+    },
+    {
+      "id": "019fce7a-735c-7160-abc0-18b179c7d6a4",
+      "wave": "W13",
+      "runtime": "Codex",
+      "channel": "multi_agent_v1",
+      "role": "frontend-hub-reviewer",
+      "status": "returned-closed-integrated",
+      "result": "Recommended no-target MCP connector creation plus Agent-targeted auto-connect while keeping direct Attach disabled and rendering server metadata instead of skill counts."
+    },
+    {
+      "id": "019fce7a-95f7-7750-ad2f-82ebcf7fde0c",
+      "wave": "W13",
+      "runtime": "Codex",
+      "channel": "multi_agent_v1",
+      "role": "security-test-reviewer",
+      "status": "returned-closed-integrated",
+      "result": "Required no-spawn sentinels, URL path-token redaction, no raw args/env/config allowlist tests, and direct MCP attach/tool invocation gating."
+    },
+    {
+      "id": "019fd0e6-3637-7702-be8c-9025ad716711",
+      "wave": "W18",
+      "runtime": "Codex",
+      "channel": "multi_agent_v1",
+      "role": "backend-test-writer",
+      "status": "returned-implemented",
+      "result": "Added W18 backend RED tests for Main-Agent graph actions, non-main rejection, bounded redacted operation audit records, and workflow snapshot exposure."
+    },
+    {
+      "id": "019fd0e6-7765-7e03-9fc8-b5b8b32343a6",
+      "wave": "W18",
+      "runtime": "Codex",
+      "channel": "multi_agent_v1",
+      "role": "frontend-test-writer",
+      "status": "returned-implemented",
+      "result": "Added W18 Playwright RED tests for operation-derived canvas aura, controlled-node glow, data-flow edge animation, expiry, and browser graph intent parity."
+    },
+    {
+      "id": "019fd0e6-ab52-7ed0-8745-e4fb29e3f3ef",
+      "wave": "W18",
+      "runtime": "Codex",
+      "channel": "multi_agent_v1",
+      "role": "architect",
+      "status": "returned-integrated",
+      "result": "Mapped the minimal W18 implementation: operation ledger, Agent graph action dispatch, snapshot operation exposure, frontend operation-derived visual state, and bridge intent parity."
+    },
+    {
+      "id": "019fd549-e794-7131-ab97-f37b6d2ae3e3",
+      "wave": "W23",
+      "runtime": "Codex",
+      "channel": "multi_agent_v1",
+      "role": "product-reviewer",
+      "status": "returned-integrated",
+      "result": "Current product pillars are Agent-operable observable workflow canvas and context-bound Agent durable IO; scheduler/orchestrator/external triggers remain gated."
+    },
+    {
+      "id": "019fd54a-2701-7533-a8a6-19bce39cf4cd",
+      "wave": "W23",
+      "runtime": "Codex",
+      "channel": "multi_agent_v1",
+      "role": "architecture-verifier",
+      "status": "returned-integrated",
+      "result": "Confirmed Agent graph actions, workflow context, and typed resource writes exist; connected Agent nodes are not first-class WF-MAX workers yet."
+    }
+  ],
+  "fanout": {
+    "fanoutAttempted": true,
+    "runtime": "Codex",
+    "channel": "multi_agent_v1",
+    "agentsRequested": 45,
+    "agentsReturned": 45,
+    "nativeSubagentsUsable": true,
+    "mode": "WF-Max-Useful",
+    "degradation": "Implementation parallelism is limited by shared high-conflict files WorkflowRoute.tsx and index.css; implementation waves are sequenced where write sets overlap."
+  },
+  "decisions": [
+    "Workspace Explorer file drags into the canvas create reference File nodes, not copied files.",
+    "External files/images dropped or pasted into the canvas are stored under Harness/user-files and represented as File nodes.",
+    "Pasted large text into the canvas creates a Markdown node.",
+    "For this slice, all node connections are effectively bidirectional by default, with permission/port metadata reserved for later refinement.",
+    "Markdown default output is controlled by an agent setting; if multiple connected Markdown nodes exist and no explicit target is selected, use the earliest-created Markdown node.",
+    "Agent settings should hide raw JSON for common permission and launch policy controls, while preserving an advanced area only for genuinely advanced fields.",
+    "Markdown and Diagram nodes should offer enlarged editing; Diagram should use the open-source Excalidraw package already installed in the UI workspace.",
+    "React error #185 is treated as a P0 update-loop regression and must be cleared by CDP/browser evidence before acceptance.",
+    "WebSocket is reserved for invalidation events in this slice, not file byte streaming.",
+    "Service Worker and WASM are out of default scope unless profiling proves they solve a specific bottleneck.",
+    "Workflow connection semantics are bidirectional by default; from/to and source/target are endpoint ordering and render metadata, not one-way permission semantics.",
+    "Workflow edge relation is semantic data only. Display labels such as markdown <-> context or legacy markdown -> context must never be promoted into relation.",
+    "Workflow edge duplicate validation uses unordered endpoint pairs, so reverse duplicates are rejected at store/API boundaries.",
+    "Agent-readable runtime connections expose direction: bidirectional plus endpointRole and handles so local perspective is explicit without making the underlying link one-way.",
+    "Markdown and Excalidraw resource nodes expose one semantic bidirectional port, markdown or scene, with physical ReactFlow side handles markdown:left/right and scene:left/right used only for geometry.",
+    "Markdown and Excalidraw must not use separate input/output port limits; both physical sides can start and receive workflow connections.",
+    "Bidirectional resource ports must render exactly one DOM handle per physical side; hidden overlapping source/target handles are not allowed because they create ambiguous drag hit targets.",
+    "Bare resource side aliases left/right preserve their physical side before semantic fallback in frontend and backend normalizers; tests must include real browser drag, not only semantic intent actions.",
+    "Agent double-click opens terminal mode. Markdown and Excalidraw double-click opens enlarged editor mode. Settings remain available from node menu/actions.",
+    "Timer is the first ready event-source node and uses explicit source-to-target event edges; Trigger and GitHub trigger remain gated until their webhook/auth/replay/dedupe contracts are tested.",
+    "Future MCP and Skills nodes are capability-provider nodes attached to Agent nodes by default, not independent executors. Skill groups and MCP bundles should use group/subgraph nodes with explicit boundary ports.",
+    "Workflow node creation is registry-driven. Future node types may be shown as planned catalog entries, but they must remain disabled until backend runtime adapters, state ownership, graph ports, direction semantics, settings/actions schema, and browser/API tests exist.",
+    "Skills Hub discovery is read-only metadata: default project scope, bounded SKILL.md reads, no absolute local paths, no skill bodies, no command execution, and no secrets.",
+    "Skill, Skill group, and MCP catalog entries may open a Capability Hub drawer through an open-hub action; Skills Hub groups may create skill-group capability nodes because the backend runtime/state/context contract now exists, while MCP connector creation remains gated.",
+    "MCP Hub listing is implemented as no-spawn/no-secret metadata discovery; it must not launch MCP servers, probe credentials, or leak environment values on GET, and MCP attach/create remain separately gated.",
+    "Agent-targeted Skills Hub attach mutates the Agent node config through deduped skills and skillPolicy manual; a no-target Hub remains read-only with disabled attach controls.",
+    "Attached Skills are Agent-mediated capability metadata, not standalone executors. Agent context exposes them as connectedCapabilityRefs and effectiveSkills with relation capability, direction bidirectional, and executor agent.",
+    "Skill group capability nodes are detachable metadata packs, not independent executors. They store bounded skill metadata under Harness/a2a/capability-nodes, expose one bidirectional capability port with physical left/right handles, and contribute connectedCapabilityNodeRefs/effectiveSkills only through connected Agent context.",
+    "MCP connector nodes are metadata-only capability-provider nodes created from MCP Hub mcpServerId. The backend re-reads Hub metadata and persists only sanitized server records; the frontend must not send raw MCP config.",
+    "MCP connectors contribute connected capability refs to Agent context but do not become effectiveSkills. Direct MCP attach, credential probing, tool listing, and tool invocation remain gated behind a separate permission/audit/runtime contract.",
+    "Advanced Timer nodes are event/control nodes: Timer-to-Agent edges deliver directed heartbeat events, while Agent-to-Timer control edges are required for mutable actions such as interval changes, WDT ack/reset, enable/disable, and mode changes.",
+    "Advanced Timer loop/while/task modes persist declarative metadata only; timer tick computation must not evaluate user-authored code from node settings.",
+    "Goal nodes are task-state views plus proposal sidecars. Agent nodes may request completion and feed/ack watchdog state through graph context, but direct task STATE mutation remains gated until a separate authority contract exists.",
+    "Agent-authored Goal mutations require an existing bidirectional goal edge; unconnected actors are rejected with GOAL_EDGE_REQUIRED.",
+    "Blank-canvas context menus use one document capture listener scoped to the workflow canvas because ReactFlow/pan handlers can swallow pane-level contextmenu propagation.",
+    "Double-click opens a node's primary workbench; right-click opens lightweight node management/settings.",
+    "Goal expanded workbench writes editable metadata to the Goal sidecar via goal.update; task STATE.json remains the task source reference and is not mutated by UI edits.",
+    "Agent-authored mutable Goal actions require an existing bidirectional goal edge when actorNodeId is present.",
+    "Timer expanded editor preserves all supported schedule modes and persists schedule edits through timer.configure; Agent-authored timer.configure requires the explicit control edge and cannot mutate policy/templates/guards/task bindings.",
+    "goal.update is limited to title, objective, nextAction, acceptance, and WDT metadata; task status, phase, gate, and completion transitions use separate authority actions.",
+    "Timer expanded editor preserves every supported schedule mode through timer.configure; the durable scheduler loop remains gated.",
+    "Agent-authored graph mutations must go through typed Main-Agent agent.* actions, append bounded sanitized workflow operation records, and drive frontend canvas aura, controlled-node glow, and data-flow edge animation only from workflow.operations.recent[]. Browser graph intents must use one semantic mutation request and return operation metadata.",
+    "Dynamic graph deletion is part of the same Agent graph action matrix: use agent.deleteNode/deleteNodes for Agent actors, graph.deleteNode/deleteNodes for browser intents, reject self-delete, skip the actor and live Agents during bulk delete by default, and hide synthetic Goal nodes without mutating task capsules.",
+    "Global workflow snapshots, graph maps, runtime node lists, Agent contexts, and browser observations enumerate live component nodes only. Missing/corrupt/revision-mismatched component state is skipped globally with dangling edges filtered; direct component reads stay strict, and delete paths must remove stale index entries even after state files are gone.",
+    "Agent node-map skills and CLI commands must control the canvas only through typed backend agent.* actions. Harness/a2a/workflow-map.json and node sidecars are backend-owned diagnostic storage; legacy connect/delete-node aliases must delegate to the same API path and never mutate files or whole-map PUTs directly.",
+    "Agent default workflow skills use canonical workflow-* naming: workflow-node-map mutates graph through typed agent.* actions, workflow-context reads connected context, and workflow-node-actions invokes typed node actions. wf-ui-map remains only a legacy compatibility alias.",
+    "Default workflow skills must include machine-readable triggers so Agents and Hubs can select workflow-node-map, workflow-context, workflow-ontology, and workflow-node-actions by semantics instead of prompt prose only.",
+    "workflow-context and local wf-ui HTTP/WebSocket APIs are trusted local surfaces and no longer require frontend/API tokens; mutating graph or node actions still go through backend action gates and actor rules.",
+    "Workflow Ontology is the canonical Agent-readable semantic layer: Agents read /api/workflow/ontology plus /api/workflow/context/:node affordances before acting; workflow-node-action marks Agent-authored calls with actor headers; Timer/Goal mutable Agent writes require canonical linked control/goal edges.",
+    "Agent durable output policy is modality-aware: prefer connected writable Excalidraw nodes for diagrams, flowcharts, visual plans, and sketches; prefer connected writable Markdown nodes for notes, plans, reports, and long-form text; terminal prose is fallback or summary.",
+    "Existing already-running Agent terminals do not automatically reread regenerated init guidance; restart or explicit re-initialization is required when Agent operation language changes.",
+    "Agent prompt delivery must use the canonical prompt-submit path: write prompt body first, then send Enter after a short delay. Tests must cover the delayed Enter contract instead of only checking that text reaches the PTY.",
+    "Current product positioning should focus on the Agent-operable observable workflow canvas and context-bound Agent durable IO. Durable orchestration, external triggers, arbitrary MCP invocation, and Agent-team scheduling are not release-ready selling points.",
+    "Goal authority edges are canonical relation goal. Namespaced aliases such as wf-bridge/goal must normalize to the same backend permission semantics before Agent-authored Goal actions are evaluated.",
+    "Agent-node E2E acceptance requires durable connected-node state evidence by revision/content, not only terminal prose. Browser-plugin evidence must be reported separately when in-app Browser iab is unavailable.",
+    "agent.readContext, workflow-context, and GET /api/workflow/context/:node must share the same canonical Agent context shape; simplified duplicate context builders are regression risk.",
+    "Agent canonical context must expose self identity and workspace boundaries, including cwd, nodeHomeRel, nodeInitRel, workflow-map diagnostic-only status, and workflow API route hints.",
+    "wf-ui-created Agent sessions must be attached to a persisted workflow graph node before node init and PTY launch. Snapshot-only virtual session nodes are not valid graph endpoints because connect/delegate/read APIs resolve against the backend workflow map.",
+    "Manual canvas connections must use the typed workflow edge API as the source of truth. Local ReactFlow reconciliation may suppress redundant graph-map topology PUTs, while explicit position and bridge-offset commits remain durable graph-map writes.",
+    "Workflow connection handles use compact constant visual targets that counter-scale with canvas zoom. Agent/session nodes and component nodes share the same handle-size invariant, and Markdown/Excalidraw physical side handles remain bidirectional resource ports.",
+    "Local wf-ui startup defaults to port 56670 and falls upward when occupied. Explicit --port 0 is reserved for callers that intentionally want an OS-assigned port.",
+    "Agent context must distinguish connected Timer event delivery from mutable Timer control. Timer-to-Agent event edges and magnetic dock semantics can make a Timer visible to the Agent, but Agent-authored timer.setInterval/enable/disable/configure requires an explicit Agent-to-Timer control affordance and must use backend typed actions, never direct event-node state.json edits.",
+    "Every ready/implemented Create Node type must have a concrete on-demand node skill matching its runtime adapter. Planned catalog entries may advertise discovery or hub affordances, but must not ship executable node-control skills until their backend create/action/context contract exists.",
+    "W37 Skills Market defaults external installs to project .agents/skills, allows user-selected project/user skill roots, never runs external CLIs, verifies manifest-listed file hashes, and represents connected Skill Groups in Agent context as bounded group summaries plus skill ids rather than bulk skill descriptions.",
+    "W38 bundles NO PDF parser (user decision): file.parsePdf was removed, pdfjs was purged from package.json, and PDF preview is browser-native iframe only. Users who want PDF text extraction for Agents install their own parser.",
+    "W38 all media is browser-native (user decision): images via img, audio via audio, video via video, PDF via iframe. No third-party parsing/rendering libraries were added.",
+    "W38 resource nodes (Markdown/Excalidraw/File) are magnetic-capable with 4 bidirectional physical sides (top/right/bottom/left), preserving W6 one-semantic-port and W11 one-DOM-handle-per-side. File's input/output split is removed; file is one bidirectional port.",
+    "W38 magnetic topology is derived context, not rendered UI: transitive magneticGroup members are exposed to Agent context (directMagneticNeighbors/magneticReachableNodes/magneticGroupId/magneticTopology) and the UI never draws a line between non-docked group members.",
+    "W38 graph-map persistence is trailing-debounced (250ms) for drag gestures; the graph.moveNode browser intent flushes the pending PUT before resolving so the W18 one-mutation-per-intent contract holds.",
+    "W38 Agent node double-click opens the floating TerminalDrawer only; explicit workflow-open-terminal buttons keep terminal-mode conversion (user-approved)."
+  ],
+  "risks": [
+    "Current graph state has backend, localStorage, and IndexedDB paths; keeping more than one source of truth can recreate disappearing edge bugs.",
+    "File previews for PDF/image/video/Excel can grow scope quickly; first slice should use browser-native viewers plus lightweight text/CSV support and avoid heavy parsers unless already available.",
+    "Changing node creation and settings UI touches a large WorkflowRoute component; implementation parallelism must respect write-set conflicts.",
+    "The worktree already contains partial prior edits and unrelated dirty files; Workers must not revert unrelated user changes.",
+    "React #185 may hide a state subscription loop that only appears in production/minified builds.",
+    "Any future workflow state that crosses graph-map, A2A snapshot, runtime node context, and ReactFlow render state can drift again unless it has one documented contract, one normalizer, and tests at each boundary.",
+    "Future directed event edges, Skills Hub scanning, MCP/GitHub credentials, and group/subgraph boundary-port serialization need dedicated specs before implementation.",
+    "A catalog item becoming visible is not sufficient evidence that the node is implemented; planned entries are discoverability metadata only until the runtime contract is verified.",
+    "Skill scanning can leak local filesystem structure or over-read user files unless allowed roots, relative display paths, max depth, max read size, and no-body response rules stay enforced.",
+    "Hub UI can mislead users if attach/create affordances become enabled before Agent config mutation, Agent context exposure, runtime node store, and regression tests exist.",
+    "MCP attach and MCP connector node creation remain gated even though metadata listing exists; they still need Agent config mutation, permission, audit, runtime context, and regression tests.",
+    "General Group/subgraph nodes remain gated; the W12 Skill group node is a narrow capability-pack node and must not be treated as proof that nested graph scheduling or arbitrary bundle execution is implemented.",
+    "Direct MCP attach/tool invocation still needs a separate permission, audit, sandbox, lifecycle, and replay contract before it can be enabled.",
+    "Trigger/GitHub trigger runtime creation, full Group/subgraph boundary ports, natural-language node creation, and deeper Agent-Agent communication semantics remain open slices of the active task.",
+    "Timer delivery is currently modeled at the runtime action/snapshot layer; a durable scheduler loop, retry/replay journal, and real Agent wake-up execution contract still need a separate implementation slice before unattended production scheduling.",
+    "Goal node completion is intentionally two-phase. If future automation needs direct closeout authority, it must add explicit permissions, audit, and failed-agent recovery semantics instead of bypassing the sidecar proposal flow.",
+    "Workflow operation records are recent observability metadata, not durable scheduling or retry state. A future run orchestrator must not overload the W18 operation ledger.",
+    "Late-arriving or expired operation snapshots can stick visual control state if UI time state is stale; operation render state must refresh current time whenever operation records change.",
+    "Component index and state files can drift when a delete or external file operation partially succeeds; global graph hydration must tolerate stale refs, while repair/delete APIs preserve explicit error visibility for direct state reads.",
+    "Any future Agent-facing skill or CLI shortcut that mutates graph files directly can bypass operation audit, self/live-Agent delete safety, Goal virtual-node hide semantics, and UI control animations.",
+    "Future reintroduction of remote/shared wf-ui authentication requires a separate permission/audit model; local frontend and Agent scripts must not depend on tokens.",
+    "Prompt guidance alone can drift from runtime capability state; connected output preference must stay duplicated in Agent init guidance, ontology affordances, and workflow-node-action command metadata.",
+    "Strict @Browser in-app E2E evidence can be unavailable even when wf-ui API/runtime E2E passes; release gates must distinguish Browser-plugin coverage from backend/runtime state evidence.",
+    "Connected Agent nodes are controllable PTY peers today, but not first-class WF-MAX workers with delegation queues, retry/cancel, ownership, result collation, or scheduler integration.",
+    "Long terminal-input prompts are now submitted through the canonical delayed-Enter path, but future UI/PTY input paths must reuse that same helper or provide a structured context-input channel.",
+    "Formal release should not claim full Agent-team orchestration yet. Dynamic Agent graph binding is fixed, but durable delegation queues, retry/cancel, result collation, and Browser-plugin E2E coverage remain separate release-gate decisions.",
+    "External package release remains blocked until update mirrors and tags are synchronized; local wf-ui/node-map stability evidence is green, but check:mirrors still fails on legacy zingspark main 0.8.19 and missing v0.8.20 tags.",
+    "W38-F6 (medium): actor-path agent.moveNode flushes a graph-map PUT carrying client-stale positions with old expectedVersion, producing a guaranteed 409 → conflict-reload churn. Converges to correct state; not race-regression-tested.",
+    "W38-F7 (low): Agent double-click on a session-less agent node falls back to config instead of the drawer (session resolution only, no creation). Real graph Agents always have sessions (W24).",
+    "W38-F4 (low): no Playwright assertion that a transitive magnetic group member (A-C in an A-B-C chain) renders no line; guaranteed by design (UI renders only direct dock pairs) and covered by backend unit tests.",
+    "W38-F2 (low): handlesFor('goal') advertises goal:top/bottom but WorkflowGoalNode renders only left/right; declarative mismatch only.",
+    "W38-F5 (cosmetic): WorkflowFileBigView saveOk branch is dead code.",
+    "M3 full Playwright suite is environment-flaky on this checkpoint branch (ERR_CONNECTION_REFUSED clusters rotate across untouched tests; server port reuse); the 3 stale handle-count tests were fixed and pass in isolation."
+  ],
+  "artifacts": [
+    {
+      "type": "browser-acceptance",
+      "path": "src/ui/test-results",
+      "note": "Final closeout: M2 AC-010 1/1 and combined M3/M4/M5 21/21 after W3 fixes."
+    },
+    {
+      "type": "w5-verification",
+      "path": "Harness/tasks/task-standardize-workflow-nodes/PROGRESS.md",
+      "note": "W5 bidirectional connection-state verification: backend target 52/52, UI typecheck, UI build, combined M3/M4/M5 21/21, and stale single-direction scan no matches."
+    },
+    {
+      "type": "w6-verification",
+      "path": "Harness/tasks/task-standardize-workflow-nodes/PROGRESS.md",
+      "note": "W6 resource handle/state verification: backend target 53/53, UI typecheck, UI build, combined M3/M4/M5 21/21, and relation/physical-handle scan limited to docs, labels, and regression tests."
+    },
+    {
+      "type": "w7-verification",
+      "path": "Harness/tasks/task-standardize-workflow-nodes/PROGRESS.md",
+      "note": "W7 node catalog/search foundation: backend target 53/53, UI typecheck, UI build, combined M3/M4/M5 21/21. Planned future node entries remain disabled until runtime contracts exist."
+    },
+    {
+      "type": "w8-verification",
+      "path": "Harness/tasks/task-standardize-workflow-nodes/PROGRESS.md",
+      "note": "W8 Skills Hub and Capability Hub baseline: backend target 55/55, standalone Skills Hub 2/2, UI typecheck, UI build, focused hub Playwright 2/2, combined M3/M4/M5 21/21. Skill/MCP attach and create remain gated."
+    },
+    {
+      "type": "w9-verification",
+      "path": "Harness/tasks/task-standardize-workflow-nodes/PROGRESS.md",
+      "note": "W9 Agent Skill attach baseline: backend target 56/56, workflow-api-phase3 13/13, UI typecheck, UI build, focused M3/M4 2/2, combined M3/M4/M5 21/21. MCP attach remained gated before the W10 no-spawn/no-secret metadata route."
+    },
+    {
+      "type": "w10-verification",
+      "path": "Harness/tasks/task-standardize-workflow-nodes/PROGRESS.md",
+      "note": "W10 resource handle regression and MCP metadata baseline: backend target 60/60, UI typecheck, UI build, combined M3/M4/M5 22/22. MCP attach/create, directed event edges, and group/subgraph runtime creation remain gated."
+    },
+    {
+      "type": "w11-verification",
+      "path": "Harness/tasks/task-standardize-workflow-nodes/PROGRESS.md",
+      "note": "W11 Timer event node and single-handle port correction: backend target 65/65, UI typecheck, UI build, combined M3/M4/M5 22/22. Trigger/GitHub runtime creation, MCP attach/create, and group/subgraph runtime creation remain gated."
+    },
+    {
+      "type": "w12-verification",
+      "path": "Harness/tasks/task-standardize-workflow-nodes/PROGRESS.md",
+      "note": "W12 Skill group capability node: backend workflow runtime/API/Hub target 53/53, UI typecheck, UI build, focused AC-001 Playwright, combined M3/M4/M5 22/22. MCP attach/create, Trigger/GitHub runtime creation, and general Group/subgraph runtime creation remain gated."
+    },
+    {
+      "type": "w13-verification",
+      "path": "Harness/tasks/task-standardize-workflow-nodes/PROGRESS.md",
+      "note": "W13 MCP connector capability node: backend workflow runtime/API/Hub target 57/57, UI typecheck, UI build, focused MCP Hub Playwright 3/3, and combined M3/M4/M5 23/23 after one focused rerun of an order-sensitive manual resource-port drag test. Direct MCP attach/tool invocation, Trigger/GitHub runtime creation, and general Group/subgraph runtime creation remain gated."
+    },
+    {
+      "type": "w14-verification",
+      "path": "Harness/tasks/task-standardize-workflow-nodes/PROGRESS.md",
+      "note": "W14 Advanced Timer and Goal nodes: backend workflow runtime/API/component/Hub target 82/82, UI typecheck, UI build, focused W14 Playwright, and combined M3/M4/M5 24/24. Durable scheduler loop, external triggers, and general Group/subgraph runtime creation remain gated."
+    },
+    {
+      "type": "w15-verification",
+      "path": "Harness/tasks/task-standardize-workflow-nodes/PROGRESS.md",
+      "note": "W15 Goal-Agent and canvas context-menu regression: backend target 82/82, UI typecheck, UI build, and combined M3/M4/M5 Playwright 24/24. Performance smoke remained green."
+    },
+    {
+      "type": "w16-verification",
+      "path": "Harness/tasks/task-standardize-workflow-nodes/PROGRESS.md",
+      "note": "W16 Timer/Goal expanded workbench after read-only reviewer fixes: backend workflow runtime/API/component/Skills Hub/MCP Hub target 85/85, UI typecheck, UI build with existing Vite chunk warnings, focused W16 Playwright 3/3, and combined M3/M4/M5 27/27. Durable scheduler loop, external triggers, and general Group/subgraph runtime creation remain gated."
+    },
+    {
+      "type": "w18-verification",
+      "path": "Harness/tasks/task-standardize-workflow-nodes/PROGRESS.md",
+      "note": "W18 Agent control operation layer: backend workflow target 71/71, UI typecheck, UI build with existing Vite chunk warnings, and M4+M6 Playwright 7/7. Durable scheduler/orchestrator, external triggers, GitHub/webhook auth, arbitrary MCP invocation, and full group/subgraph scheduling remain gated."
+    },
+    {
+      "type": "w18-delete-hotfix-verification",
+      "path": "Harness/tasks/task-standardize-workflow-nodes/PROGRESS.md",
+      "note": "W18 dynamic delete hotfix: backend workflow target 71/71, UI typecheck, UI build with existing Vite chunk warnings, focused M6 2/2, and combined M4+M6 7/7. No commit, push, publish, archive, or shutdown performed."
+    },
+    {
+      "type": "w18-stale-component-hotfix-verification",
+      "path": "Harness/tasks/task-standardize-workflow-nodes/PROGRESS.md",
+      "note": "W18 stale component snapshot hotfix: backend workflow target 93/93, node --check touched backend modules, wf-ui restarted on 127.0.0.1:64192, Playwright loaded /workflow with no console/pageerror events, and /api/workflow returned 200."
+    },
+    {
+      "type": "w19-verification",
+      "path": "Harness/tasks/task-standardize-workflow-nodes/PROGRESS.md",
+      "note": "W19 Agent node-map API skill: RED confirmed missing node-map and legacy alias gaps; GREEN backend target 100/100 and node --check touched modules. Anti-drift W19 protocol checks pass; one unrelated pre-existing WorkflowRoute static assertion remains failing."
+    },
+    {
+      "type": "w20-verification",
+      "path": "Harness/tasks/task-standardize-workflow-nodes/PROGRESS.md",
+      "note": "W20 Agent default workflow skills: RED confirmed missing canonical skills, CLI wrappers, and workflow-context access path. GREEN: node --check touched control/server/default-skill modules PASS; backend target 113/113 PASS; anti-drift PASS 21/21; UI typecheck PASS; UI build PASS with existing Vite chunk warnings."
+    },
+    {
+      "type": "w21-verification",
+      "path": "Harness/tasks/task-standardize-workflow-nodes/PROGRESS.md",
+      "note": "W21 Workflow Ontology: W21 auth+ontology tests 3/3, capability context tests 5/5, a2a-store+anti-drift 33/33, live wf-ui ontology/context smoke, and wf-browser runtime smoke run-msfyjgw3-c9efdc/window-msfyjgwb-f8d66d passed."
+    },
+    {
+      "type": "w22-verification",
+      "path": "Harness/tasks/task-standardize-workflow-nodes/PROGRESS.md",
+      "note": "W22 no-token and connected output priority: local API/WS/frontend/Agent scripts no longer require tokens; Agent init, ontology affordances, and workflow-node-actions mark connected Markdown/Excalidraw as preferred output targets; live context for session-ec522ed5-4b33-422e-85f7-e12537223e4e reports component-diagram-ba22fd preferred-output-target diagram with excalidraw.patchScene/saveScene."
+    },
+    {
+      "type": "w23-agent-node-product-e2e",
+      "path": "Harness/tasks/task-standardize-workflow-nodes/PROGRESS.md",
+      "note": "W23 Agent-node E2E: real Main Agent session updated Goal nextAction, connected/wrote Markdown component-markdown-node-a01ef0 rev 2, and saved a 14-element Excalidraw flowchart to component-diagram-ba22fd rev 2. Backend API phase3 21/21 and workflow-node-runtime 48/48 pass after Goal relation normalization."
+    },
+    {
+      "type": "w24-agent-session-graph-binding",
+      "path": "Harness/tasks/task-standardize-workflow-nodes/PROGRESS.md",
+      "note": "W24 Agent session graph binding: /api/sessions now defaults to graph attachment for wf-ui-created Agents, persists terminal-session graph nodes, and live smoke on 127.0.0.1:56670 confirmed a deferred subagent could connect to Markdown and read connectedResourceRefs. CLI regression also verifies create-agent -> workflow-context -> delegate-agent -> read-agent by graph node id. Backend workflow-agent-runtime 5/5, workflow-api-phase3 22/22, workflow-node-runtime 49/49, and server.integration 36/36 pass."
+    },
+    {
+      "type": "w27-agent-connected-output-e2e",
+      "path": "Harness/tasks/task-standardize-workflow-nodes/PROGRESS.md",
+      "note": "W26/W27 fixed Agent startup/delegate prompt submission. Live wf-ui on 127.0.0.1:56670 verified the real Main Agent read workflow-context and used connected Excalidraw/Markdown through backend actions only: component-diagram-ba22fd rev 4 contains a 15-element W27 Connected Output flowchart, component-markdown-node-a01ef0 rev 4 contains W27 PASS evidence, and the Agent printed WF_NODE_E2E_W27_DONE. Strict @Browser iab evidence remains unavailable."
+    },
+    {
+      "type": "w28-agent-control-consistency-contract",
+      "path": "Harness/project/architecture.md",
+      "note": "W28 added the final Agent-node debug matrix and implementation path, fixed agent.readContext to return canonical context, and added semantic triggers to generated/default workflow skills. Targeted verification: node --check touched files, a2a-store + workflow-api-phase3 34/34 PASS, skill JSON trigger validation PASS. Live wf-ui restart on 127.0.0.1:56670 started Main Agent graph node session-ec522ed5-4b33-422e-85f7-e12537223e4e as session 1cd0cd13-15c9-4e2f-8386-54ccd301a832; live agent.readContext returned 2 resources, 1 Goal ref, ontology, and default workflow skills."
+    },
+    {
+      "type": "w29-agent-context-workspace-skill-triggers",
+      "path": "Harness/tasks/task-standardize-workflow-nodes/PROGRESS.md",
+      "note": "W29 added Agent identity/workspace/skillTriggers to canonical context, terminal-control manifest triggers, and trigger-bearing default capability refs. Targeted checks passed: workflow-api-phase3 22/22, a2a-store 12/12, default skill trigger JSON validation, node --check touched files, and git diff --check. Live wf-ui on 127.0.0.1:56670 has Main Agent running as session 5bd537bf-fb10-4ef0-815e-6c0bf44cc353; live context exposes draw/connect/terminal triggers, 2 resources, and 1 Goal."
+    },
+    {
+      "type": "w30-w31-local-stability-gate",
+      "path": "Harness/tasks/task-standardize-workflow-nodes/PROGRESS.md",
+      "note": "W30/W31 fixed the WorkflowRoute ws/applyRuntimeEdge TDZ crash, manual typed-edge-only connection reconciliation, settings tooltip/z-layer polish, compact 12px counter-scaled connection handles, no-token wf-ui docs, and default wf-ui port 56670 with +1 fallback. Final local gates passed: node --check touched backend/CLI modules, UI typecheck, UI build, backend/API target 171/171, npm test 286/286 with 1 skipped, M3 Playwright 23/23, npm run test:smoke, npm run pack:smoke, git diff --check, and native reviewer PASS. check:mirrors remains failed for external mirror/tag sync only."
+    },
+    {
+      "type": "w34-magnet-semantic-split-verification",
+      "path": "Harness/tasks/task-standardize-workflow-nodes/PROGRESS.md",
+      "note": "W34 split ordinary GUI lines from special capsule dock semantics: graph.edges[] stays visible-line-only, capsuleDockLinks[] carries Agent/Timer/Goal dock runtime connections, legacy dock-created normal edges are migrated out, tombstones block stale snapshot resurrection, existing manual lines hide and restore across dock/undock, and four-side damped docking is covered. Verification passed: UI typecheck, UI build, backend W34 56/56, and full M3 Playwright 30/30."
+    },
+    {
+      "type": "w35-agent-node-control-context-timer-ui",
+      "path": "Harness/tasks/task-standardize-workflow-nodes/PROGRESS.md",
+      "note": "W35 fixed Agent-facing node control semantics and Timer visibility: public on-demand node skills for Timer/Goal/Agent/resource, API-only Timer commands, direct state.json mutation denial in init/default skills, Timer event-vs-control context affordances, scheduled nextDueAt updates through backend actions, and compact Timer running/stopped/countdown UI. Verification passed: backend workflow target with dot reporter, anti-drift 21/21, UI typecheck, UI build with existing Vite chunk warnings, focused W14 Timer Playwright 1/1, and git diff --check."
+    },
+    {
+      "type": "w36-goal-create-node-concrete-node-skills",
+      "path": "Harness/tasks/task-standardize-workflow-nodes/PROGRESS.md",
+      "note": "W36 fixed Create Node and node skill coverage: Goal is a ready Create Node catalog entry, frontend/backend createNode supports type=goal by restoring/placing the active task Goal anchor, Agent contexts advertise concrete on-demand skills for Agent/Markdown/Diagram/File/Timer/Goal/Skill group/MCP connector plus the resource aggregate, and dogfood/template skill manifests are byte-identical. Verification passed: node --check touched backend modules, node skill JSON parse 18/18, targeted W20/W25/W35 backend tests, full workflow-node-runtime+a2a-store dot suite, anti-drift 21/21, UI typecheck, UI build with existing Vite chunk warnings, focused AC-001 toolbar create Playwright 1/1, focused AC-001 right-click create Playwright 1/1, and git diff --check."
+    }
+  ],
+  "defaultRuntime": "codex",
+  "defaultAgentRuntime": "codex",
+  "verification": {
+    "w37": {
+      "status": "passed",
+      "commands": [
+        "node --test src/wf-ui-server/__tests__/workflow-skills-market.test.mjs src/wf-ui-server/__tests__/workflow-skills-hub.test.mjs src/wf-ui-server/__tests__/workflow-node-runtime.test.mjs src/wf-ui-server/__tests__/workflow-api-phase3.test.mjs => PASS 87/87",
+        "pnpm --dir src/ui exec tsc --noEmit => PASS",
+        "npm run build --prefix src/ui => PASS with existing Vite chunk-size warnings",
+        "pnpm --dir src/ui exec playwright test e2e/wf-ui-m3-component-nodes.spec.ts -g \"AC-001 creates Agent\" => PASS 1/1"
+      ]
+    },
+    "w38": {
+      "status": "passed",
+      "commands": [
+        "node --test 15 backend test files => PASS 215/215 (incl. workflow-magnetic-topology 8, workflow-file-node-actions 10, workflow-resource-handle-four-side 11, workflow-skill-group-enable-disable 6, workflow-skill-group-context-enabled)",
+        "pnpm --dir src/ui exec tsc --noEmit => PASS",
+        "pnpm --dir src/ui run build => PASS with existing Vite chunk-size warnings",
+        "pnpm --dir src/ui exec playwright test e2e/wf-ui-m4-w38.spec.ts e2e/wf-ui-m6-agent-control.spec.ts e2e/wf-ui-m4-timer-ui.spec.ts e2e/wf-ui-m4-interactions.spec.ts => PASS 17/17",
+        "Reviewers: code/architecture PASS; spec/UX/security PASS. Reflector: PASS_CLOSEOUT."
+      ]
+    },
+    "w39": {
+      "status": "passed",
+      "commands": [
+        "node --check src/wf-ui-server/json-store-utils.mjs src/wf-ui-server/node-store-utils.mjs src/wf-ui-server/component-node-store.mjs src/wf-ui-server/workflow-event-node-store.mjs src/wf-ui-server/workflow-capability-node-store.mjs src/wf-ui-server/workflow-goal-node-store.mjs src/wf-ui-server/__tests__/workflow-node-store-utils.test.mjs => PASS",
+        "node --test src/wf-ui-server/__tests__/workflow-node-store-utils.test.mjs src/wf-ui-server/__tests__/component-node-store.test.mjs src/wf-ui-server/__tests__/component-node-api.test.mjs src/wf-ui-server/__tests__/workflow-node-runtime.test.mjs src/wf-ui-server/__tests__/workflow-api-phase3.test.mjs => PASS 109/109",
+        "node --test src/wf-ui-server/__tests__/a2a-store.test.mjs src/wf-ui-server/__tests__/workflow-agent-context.test.mjs src/wf-ui-server/__tests__/workflow-skill-group-enable-disable.test.mjs src/wf-ui-server/__tests__/workflow-skill-group-context-enabled.test.mjs src/wf-ui-server/__tests__/workflow-file-node-actions.test.mjs src/wf-ui-server/__tests__/server.integration.test.mjs => PASS 71/71",
+        "git diff --check on touched tracked W39 files => PASS"
+      ]
+    },
+    "w40": {
+      "status": "passed",
+      "commands": [
+        "pnpm --dir src/ui exec tsc --noEmit => PASS",
+        "node --check src/ui/e2e/wf-ui-m4-magnetic.spec.ts => PASS",
+        "pnpm --dir src/ui build => PASS with existing Vite chunk-size warnings",
+        "pnpm --dir src/ui exec playwright test e2e/wf-ui-m4-magnetic.spec.ts -g \"Timer vertical magnetic dock\" --reporter=line => PASS 1/1",
+        "pnpm --dir src/ui exec playwright test e2e/wf-ui-m4-magnetic.spec.ts --reporter=line => PASS 5/5",
+        "git diff --check -- src/ui/src/components/WorkflowRoute.tsx src/ui/e2e/wf-ui-m4-magnetic.spec.ts => PASS"
+      ]
+    }
+  }
+}

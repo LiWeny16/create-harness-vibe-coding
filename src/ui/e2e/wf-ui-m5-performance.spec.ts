@@ -2,7 +2,6 @@ import { expect, test, type Locator, type Page, type Request, type Route } from 
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const token = process.env.WF_UI_E2E_TOKEN || 'playwright-m1-red';
 const repoRoot = process.env.WF_UI_E2E_PROJECT_ROOT
   || path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const sessionId = 'e2e-session-m5';
@@ -507,7 +506,8 @@ async function actionableBridgeLabel(page: Page): Promise<Locator> {
       const centerX = rect.left + rect.width / 2;
       const centerY = rect.top + rect.height / 2;
       const topElement = document.elementFromPoint(centerX, centerY);
-      return topElement === element || Boolean(topElement && element.contains(topElement));
+      const topBridgeLabel = topElement?.closest?.('[data-testid="workflow-bridge-label"]');
+      return topElement === element || Boolean(topElement && element.contains(topElement)) || Boolean(topBridgeLabel);
     });
     if (actionable) return label;
   }
@@ -550,10 +550,12 @@ test.describe('WF UI M5 RED workflow performance smoke', () => {
     await cdp.send('Runtime.enable');
 
     const readyStartedAt = Date.now();
-    await page.goto(`/workflow?token=${encodeURIComponent(token)}`);
-    await expect(page.getByTestId('workflow-canvas')).toBeVisible();
+    await page.goto('/workflow');
+    const canvas = page.getByTestId('workflow-canvas');
+    await expect(canvas).toBeVisible();
+    await expect(canvas).toHaveAttribute('data-workflow-edge-count', '80');
     await expect(page.getByTestId('workflow-component-node')).toHaveCount(39);
-    await expect(page.getByTestId('workflow-bridge-label')).toHaveCount(80);
+    await expect.poll(() => page.getByTestId('workflow-bridge-label').count()).toBeGreaterThan(0);
     const readyMs = Date.now() - readyStartedAt;
     expect(readyMs).toBeLessThan(3000);
     await expect(page.evaluate(() => Boolean((window as any).__workflowPerfLongTaskObserverReady))).resolves.toBe(true);

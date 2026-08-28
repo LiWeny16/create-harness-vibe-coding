@@ -1,0 +1,222 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-optimize-cmds-save-shortcut",
+  "status": "archived",
+  "mode": "wf-max",
+  "tier": "WF-Full",
+  "phase": "archived",
+  "gate": "A-GATE-PASS",
+  "updatedAt": "2026-08-28T02:35:58.930Z",
+  "activeQuestion": null,
+  "nextAction": "Final report to user; closeout: record 3 durable lessons to Harness/memory/ (memory-master), F1 re-verify 3 untracked node files at commit time; archive per TASK_ARCHIVE.md when user confirms",
+  "acceptance": [
+    "AC-001 canvas Ctrl+S flushes graph PUT + success toast",
+    "AC-002 excalidraw fullscreen Ctrl+S saves draft scene",
+    "AC-003 markdown fullscreen Ctrl+S saves (PATCH bump rev)",
+    "AC-004 file big view dirty Ctrl+S saves",
+    "AC-005 goal expanded Ctrl+S saves",
+    "AC-006 timer expanded Ctrl+S saves",
+    "AC-007 Ctrl+S no-op in terminal/plain input",
+    "AC-008 regression: existing shortcuts intact"
+  ],
+  "links": {
+    "dependsOn": [],
+    "blocks": [],
+    "related": [
+      "task-wf-ui-terminal-explorer-ux"
+    ]
+  },
+  "queues": {
+    "ready": [],
+    "running": [],
+    "blocked": [],
+    "done": [
+      "W-N",
+      "W-G",
+      "W-T(round1)",
+      "W-T(round2 rework, 10/10 x3 + tsc clean)",
+      "W-V(run1:stale-bundle)",
+      "W-V(run2:6/8)",
+      "W-V-rerun(8/8 independent)",
+      "W-V-rerun2(10/10 x2 independent + tsc clean)",
+      "W-R2(approve, 4 minor)",
+      "W-R1(reject round1: 2 major fake-pass)",
+      "W-R1(re-check: both major CLOSED, PASS)",
+      "W-F(PASS, 0 conditions, follow-ups F1-F4)"
+    ]
+  },
+  "workItems": [],
+  "dispatchLedger": [
+    {
+      "id": "W-N",
+      "role": "implementer",
+      "mode": "Write",
+      "writeSet": [
+        "src/ui/src/hooks/useSaveShortcut.ts",
+        "src/ui/src/components/ExcalidrawComponentNode.tsx",
+        "src/ui/src/components/MarkdownComponentNode.tsx",
+        "src/ui/src/components/WorkflowFileBigView.tsx",
+        "src/ui/src/components/WorkflowGoalExpandedNode.tsx",
+        "src/ui/src/components/WorkflowTimerExpandedNode.tsx"
+      ],
+      "acIds": [
+        "AC-002",
+        "AC-003",
+        "AC-004",
+        "AC-005",
+        "AC-006",
+        "AC-007"
+      ],
+      "status": "done"
+    },
+    {
+      "id": "W-G",
+      "role": "implementer",
+      "mode": "Write",
+      "writeSet": [
+        "src/ui/src/components/WorkflowRoute.tsx",
+        "src/ui/src/i18n/translations.ts"
+      ],
+      "acIds": [
+        "AC-001",
+        "AC-007",
+        "AC-008"
+      ],
+      "status": "done"
+    },
+    {
+      "id": "W-T",
+      "role": "test-writer",
+      "mode": "Write",
+      "writeSet": [
+        "src/ui/e2e/wf-ui-cmds-save-shortcut.spec.ts"
+      ],
+      "acIds": [
+        "AC-001",
+        "AC-002",
+        "AC-003",
+        "AC-004",
+        "AC-005",
+        "AC-006",
+        "AC-007",
+        "AC-008"
+      ],
+      "status": "done"
+    },
+    {
+      "id": "W-V",
+      "role": "verifier",
+      "mode": "Read/Bash",
+      "writeSet": [],
+      "acIds": [
+        "AC-001",
+        "AC-002",
+        "AC-003",
+        "AC-004",
+        "AC-005",
+        "AC-006",
+        "AC-007",
+        "AC-008"
+      ],
+      "status": "done"
+    },
+    {
+      "id": "W-V-rerun",
+      "role": "verifier",
+      "mode": "Read/Bash",
+      "writeSet": [],
+      "acIds": [
+        "AC-001",
+        "AC-002",
+        "AC-003",
+        "AC-004",
+        "AC-005",
+        "AC-006",
+        "AC-007",
+        "AC-008"
+      ],
+      "status": "done"
+    },
+    {
+      "id": "W-R1",
+      "role": "reviewer",
+      "mode": "Read",
+      "writeSet": [],
+      "acIds": [
+        "AC-001",
+        "AC-002",
+        "AC-003",
+        "AC-004",
+        "AC-005",
+        "AC-006",
+        "AC-007",
+        "AC-008"
+      ],
+      "status": "done"
+    },
+    {
+      "id": "W-R2",
+      "role": "reviewer",
+      "mode": "Read",
+      "writeSet": [],
+      "acIds": [
+        "AC-001",
+        "AC-002",
+        "AC-003",
+        "AC-004",
+        "AC-005",
+        "AC-006",
+        "AC-007",
+        "AC-008"
+      ],
+      "status": "done"
+    },
+    {
+      "id": "W-F",
+      "role": "reflector",
+      "mode": "Read",
+      "writeSet": [],
+      "acIds": [
+        "AC-001",
+        "AC-002",
+        "AC-003",
+        "AC-004",
+        "AC-005",
+        "AC-006",
+        "AC-007",
+        "AC-008"
+      ],
+      "status": "done"
+    }
+  ],
+  "decisions": [
+    "D1 capture-phase node hook + bubble-phase canvas handler for deterministic Ctrl+S precedence",
+    "D2 one shared useSaveShortcut(onSave, active) hook for all 5 node surfaces",
+    "D3 exclude Agent settings panel and read-only Display node",
+    "D4 canvas Ctrl+S = flush pending graph PUT + success toast",
+    "D5 node Ctrl+S reuses existing save fn + existing feedback (no new per-node toast)",
+    "D6 WF-Max-Useful fan-out = 3 parallel agents (W-N, W-G, W-T); fanoutAttempted: true"
+  ],
+  "risks": [
+    "capture listener swallowing existing shortcuts (mitigated AC-007/AC-008)",
+    "excalidraw editor fighting the key (mitigated D1 capture, no handleKeyboardGlobally change)",
+    "cross-worker hook contract drift (mitigated: hook + consumers in one Worker)",
+    "file big view Ctrl+S when not dirty (mitigated: guard on dirty)",
+    "i18n key missing (mitigated: t() falls back to en; W-G adds en+zh key)",
+    "e2e webServer serves stale src/ui/dist build — MUST rebuild (npm run build) before running e2e after UI source changes (root cause of run-1 7/8 failure; fixed by rebuild, run-2 6/8)",
+    "fixture leaks 501 'Session registry not available' (unmocked session endpoint vs e2e server without session registry) -> persistent error toast masks success toast via WorkflowRoute.tsx:8084 render precedence (W-T adding fixture mock)",
+    "W-R2 residual (documented, not fixed): (a) two simultaneously mounted node overlays both save on one Ctrl+S - stopImmediatePropagation rejected because it would save the EARLIER-mounted (background) node and silently skip the frontmost unsaved editor; (b) strict lowercase 's' - caps-lock/Ctrl+Shift+S falls through to browser default, plan-sanctioned; (c) not-dirty file big view + Ctrl+S on body shows 'Canvas saved' toast - misleading copy, harmless per D4; (d) 3 untracked node files content-verified only - re-verify at commit time against clean base"
+  ],
+  "artifacts": [
+    "Harness/tasks/task-optimize-cmds-save-shortcut/PLAN.md",
+    "W-V evidence run1 (stale dist 2026-08-20): new spec 1/8; m3 5 pre-existing fails",
+    "W-V evidence run2 (fresh dist 2026-08-24): new spec 6/8 (AC-002..007 PASS; AC-001/008 toast masked by 501 error toast); m3 25/5 identical fails => zero new regressions; tsc clean",
+    "W-V-rerun (independent verifier, post fixture-mock): new spec 8/8 PASS (11.6s, 1 worker); tsc --noEmit exit 0; implementer W-T self-report independently confirmed",
+    "W-R1 findings (2026-08-24): MAJOR AC-001 poll cannot distinguish flush from 250ms debounce expiry (fake-pass); MAJOR AC-008 surface never open => capture hook inactive => swallowing claim untested; minor: .xterm guard untested, AC-005/006 payload not echoed, AC-007 toast idiom fragile; docs: PLAN testid 'workflow-file-big-view-save' never existed (fixed) + AC Evidence cells now describe actual assertions (fixed)",
+    "W-T round2 rework (spec-only; CEO grep+read verified): AC-001 150ms hard deadline inside 250ms debounce window + exactly-one-PUT hardening (CEO confirmed firePendingGraphPut WorkflowRoute.tsx:5619-5623 consumes the debounce); AC-008 rewritten with goal surface OPEN (hook active unconditionally; CEO-endorsed fallback since markdown fullscreen backdrop stops keydown) + focus-non-editor poll guard + Ctrl+Z all-negatives + Delete proves node detach; AC-007b .xterm no-op case; AC-005/006 payload echo; AC-007 exact toast count. Self-reported 10/10 x3 consecutive + tsc clean; timing math: drag waits 80ms, debounce remainder ~170ms, poll 150ms -> flush wins, deleted flush would time out",
+    "W-V-rerun2 (independent verifier): Playwright 10/10 x2 runs (13.3s/13.5s, 1 worker), AC-001 150ms deadline not flaky across 2 runs; tsc --noEmit clean; verdict PASS",
+    "W-R1 re-check: both original MAJORs CLOSED (AC-001 timing math verified independently: 80ms wait -> ~170ms remaining debounce vs 150ms poll; AC-008 goal hook active at WorkflowGoalExpandedNode.tsx:227, Delete positive proof). 4 minor notes: 80ms debounce-armed wait is timing assumption (5 consecutive green runs mitigates); AC-008 Ctrl+Z negative-only (undo unreachable in-fixture, Delete is positive proof); spec:1419-1421 comment understates no-double-PUT mechanism (debounce self-guard :5620, no clearTimeout); goal title/objective <input> has no input-guard in hook -> Ctrl+S there saves goal (CEO: consistent with feature intent, AC-007 targets non-save inputs only)"
+  ],
+  "defaultRuntime": "codex",
+  "defaultAgentRuntime": "codex"
+}

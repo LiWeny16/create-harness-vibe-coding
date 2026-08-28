@@ -3,8 +3,10 @@ import type { KeyboardEvent, SyntheticEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { Maximize2, X } from 'lucide-react';
 import { motion } from 'motion/react';
+import { renderSceneSvg } from '@server/excalidraw-svg.mjs';
 import type { WorkflowComponentNodeState } from '../types';
 import { useT } from '../i18n';
+import { useSaveShortcut } from '../hooks/useSaveShortcut';
 import ComponentBrandIcon from './ComponentBrandIcon';
 
 type SceneElement = {
@@ -27,6 +29,7 @@ type Scene = {
 type Props = {
   state: WorkflowComponentNodeState;
   onSave: (patch: Partial<WorkflowComponentNodeState>) => Promise<WorkflowComponentNodeState | null>;
+  openRequest?: number;
 };
 
 function normalizeScene(value: unknown): Scene {
@@ -85,57 +88,19 @@ function copyScene(value: Scene): Scene {
   };
 }
 
-function finiteNumber(value: unknown, fallback = 0) {
-  const next = Number(value);
-  return Number.isFinite(next) ? next : fallback;
-}
-
-function previewElementsForStage(elements: SceneElement[]) {
-  if (!elements.length) return [];
-  const normalized = elements.map(element => {
-    const width = Math.max(1, finiteNumber(element.width, 48));
-    const height = Math.max(1, finiteNumber(element.height, 36));
-    return {
-      ...element,
-      x: finiteNumber(element.x),
-      y: finiteNumber(element.y),
-      width,
-      height,
-    };
-  });
-
-  let minX = Infinity;
-  let minY = Infinity;
-  let maxX = -Infinity;
-  let maxY = -Infinity;
-  for (const element of normalized) {
-    minX = Math.min(minX, element.x);
-    minY = Math.min(minY, element.y);
-    maxX = Math.max(maxX, element.x + element.width);
-    maxY = Math.max(maxY, element.y + element.height);
-  }
-
-  const viewWidth = 300;
-  const viewHeight = 180;
-  const padding = 14;
-  const boundsWidth = Math.max(1, maxX - minX);
-  const boundsHeight = Math.max(1, maxY - minY);
-  const scale = Math.min(
-    (viewWidth - padding * 2) / boundsWidth,
-    (viewHeight - padding * 2) / boundsHeight,
-    1.8,
-  );
-
-  return normalized.map(element => ({
+// Same shape/fill/arrow renderer as the static Display-node embed, letterboxed
+// into the card. Per-element data-* hooks are injected so e2e tests can target
+// individual elements (renderSceneSvg copies them onto each <g>).
+function previewSvgForStage(elements: SceneElement[]) {
+  const annotated = elements.map(element => ({
     ...element,
-    x: Math.round(((element.x - minX) * scale + padding) * 100) / 100,
-    y: Math.round(((element.y - minY) * scale + padding) * 100) / 100,
-    width: Math.max(3, Math.round(element.width * scale * 100) / 100),
-    height: Math.max(3, Math.round(element.height * scale * 100) / 100),
+    'data-testid': 'workflow-excalidraw-element',
+    'data-element-type': element.type,
   }));
+  return renderSceneSvg(annotated as any[], { fit: 'contain', fillMode: 'plain' });
 }
 
-export default function ExcalidrawComponentNode({ state, onSave }: Props) {
+export default function ExcalidrawComponentNode({ state, onSave, openRequest = 0 }: Props) {
   const t = useT();
   const [scene, setScene] = useState<Scene>(() => normalizeScene(state.scene));
   const [draftScene, setDraftScene] = useState<Scene>(() => normalizeScene(state.scene));
@@ -150,14 +115,26 @@ export default function ExcalidrawComponentNode({ state, onSave }: Props) {
   const fullscreenEditorRef = useRef<HTMLDivElement>(null);
   const draftSceneRef = useRef<Scene>(normalizeScene(state.scene));
   const draftPublishFrameRef = useRef<number | null>(null);
+  const fullscreenOpenRef = useRef(false);
+  const fullscreenDirtyRef = useRef(false);
   const elements = useMemo(() => scene.elements || [], [scene.elements]);
-  const previewElements = useMemo(() => previewElementsForStage(elements), [elements]);
+  const previewSvg = useMemo(() => previewSvgForStage(elements), [elements]);
+
+  useEffect(() => {
+    fullscreenOpenRef.current = fullscreenOpen;
+  }, [fullscreenOpen]);
 
   useEffect(() => {
     const next = normalizeScene(state.scene);
     setScene(next);
-    setDraftScene(next);
-    draftSceneRef.current = next;
+    if (!fullscreenOpenRef.current || !fullscreenDirtyRef.current) {
+      setDraftScene(next);
+      draftSceneRef.current = next;
+      if (fullscreenOpenRef.current) {
+        setInitialFullscreenScene(next);
+        setFullscreenKey(current => current + 1);
+      }
+    }
     setError('');
   }, [state.scene, state.revision]);
 
@@ -208,6 +185,7 @@ export default function ExcalidrawComponentNode({ state, onSave }: Props) {
   }, []);
 
   const handleEditorChange = useCallback((nextElements: any, nextAppState: any, nextFiles: any) => {
+    fullscreenDirtyRef.current = true;
     publishDraftScene({
       elements: [...nextElements],
       appState: cleanAppState(nextAppState),
@@ -243,6 +221,7 @@ export default function ExcalidrawComponentNode({ state, onSave }: Props) {
         setScene(next);
         setDraftScene(next);
         draftSceneRef.current = next;
+        fullscreenDirtyRef.current = false;
       }
     } catch (e: any) {
       setError(e?.message || t('Component save failed'));
@@ -254,13 +233,25 @@ export default function ExcalidrawComponentNode({ state, onSave }: Props) {
   const save = async () => saveScene(scene);
   const saveFullscreen = async () => saveScene(draftSceneRef.current);
 
+  useSaveShortcut(saveFullscreen, fullscreenOpen);
+
   const openFullscreen = () => {
     const nextScene = copyScene(scene);
     setDraftScene(nextScene);
     draftSceneRef.current = nextScene;
     setInitialFullscreenScene(nextScene);
     setFullscreenKey(current => current + 1);
+    fullscreenDirtyRef.current = false;
     setFullscreenOpen(true);
+  };
+
+  useEffect(() => {
+    if (openRequest > 0) openFullscreen();
+  }, [openRequest]);
+
+  const closeFullscreen = () => {
+    fullscreenDirtyRef.current = false;
+    setFullscreenOpen(false);
   };
 
   const stopCanvasEvent = (event: SyntheticEvent) => {
@@ -269,7 +260,7 @@ export default function ExcalidrawComponentNode({ state, onSave }: Props) {
 
   const stopCanvasKeys = (event: KeyboardEvent) => {
     event.stopPropagation();
-    if (event.key === 'Escape') setFullscreenOpen(false);
+    if (event.key === 'Escape') closeFullscreen();
   };
 
   return (
@@ -297,24 +288,15 @@ export default function ExcalidrawComponentNode({ state, onSave }: Props) {
       <div
         className="workflow-excalidraw-stage"
         aria-label="Excalidraw scene preview"
-        data-has-content={previewElements.length > 0 ? 'true' : 'false'}
+        data-has-content={elements.length > 0 ? 'true' : 'false'}
       >
-        {previewElements.map(element => (
+        {elements.length > 0 && (
           <div
-            key={element.id}
-            data-testid="workflow-excalidraw-element"
-            data-element-type={element.type}
-            className="workflow-excalidraw-element"
-            style={{
-              left: element.x,
-              top: element.y,
-              width: element.width,
-              height: element.height,
-              borderColor: element.strokeColor || '#6965DB',
-              background: element.backgroundColor || 'rgba(105,101,219,0.16)',
-            }}
+            className="workflow-excalidraw-stage-svg"
+            data-testid="workflow-excalidraw-stage-svg"
+            dangerouslySetInnerHTML={{ __html: previewSvg }}
           />
-        ))}
+        )}
       </div>
       {error && <div data-testid="workflow-component-node-error" className="workflow-component-node-error">{error}</div>}
       <div className="workflow-component-node-actions">
@@ -343,6 +325,7 @@ export default function ExcalidrawComponentNode({ state, onSave }: Props) {
               onMouseDown={stopCanvasEvent}
               onWheel={stopCanvasEvent}
               onKeyDown={stopCanvasKeys}
+              onClick={event => { if (event.target === event.currentTarget) setFullscreenOpen(false); }}
             >
           <motion.section
             className="workflow-component-fullscreen-shell workflow-excalidraw-fullscreen-shell"
@@ -373,7 +356,7 @@ export default function ExcalidrawComponentNode({ state, onSave }: Props) {
                   data-testid="workflow-component-fullscreen-close"
                   title={t('Close')}
                   aria-label={t('Close')}
-                  onClick={() => setFullscreenOpen(false)}
+                  onClick={closeFullscreen}
                 >
                   <X size={15} />
                 </button>

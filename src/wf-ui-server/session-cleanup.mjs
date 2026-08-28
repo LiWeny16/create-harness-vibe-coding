@@ -1,5 +1,4 @@
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 
 export const DEFAULT_CLEANUP_POLICY = {
@@ -182,7 +181,8 @@ function collectSessionTargets(projectRoot, policy, { liveSessionIds = new Set()
   return { all, stopped, eligible };
 }
 
-function collectDetachedLogTargets(policy, { tempRoot = os.tmpdir(), now = new Date(), currentReadyFile = process.env.HARNESS_WF_UI_READY_FILE, includeTempLogs = true } = {}) {
+function collectDetachedLogTargets(policy, { tempRoot, now = new Date(), currentReadyFile = process.env.HARNESS_WF_UI_READY_FILE, includeTempLogs = true } = {}) {
+  if (!tempRoot) return { all: [], eligible: [] };
   if (!includeTempLogs) return { all: [], eligible: [] };
   const root = path.resolve(tempRoot);
   const currentDir = currentReadyFile ? path.resolve(path.dirname(currentReadyFile)) : null;
@@ -221,19 +221,12 @@ function collectDetachedLogTargets(policy, { tempRoot = os.tmpdir(), now = new D
 }
 
 function defaultDetachedLogRoot(projectRoot) {
-  return projectRoot
-    ? path.join(projectRoot, 'Harness', '.temp', 'wf-ui-launch')
-    : os.tmpdir();
+  return path.join(projectRoot || process.cwd(), 'Harness', '.temp', 'wf-ui-launch');
 }
 
 function detachedLogRoots(projectRoot, options = {}) {
   if (options.tempRoot) return [path.resolve(options.tempRoot)];
-  const roots = [path.resolve(defaultDetachedLogRoot(projectRoot))];
-  if (options.legacyTempRoot !== false) {
-    const legacyRoot = path.resolve(options.legacyTempRoot || os.tmpdir());
-    if (!roots.includes(legacyRoot)) roots.push(legacyRoot);
-  }
-  return roots;
+  return [path.resolve(defaultDetachedLogRoot(projectRoot))];
 }
 
 function collectDetachedLogTargetsFromRoots(projectRoot, policy, options = {}) {

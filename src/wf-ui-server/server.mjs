@@ -1,23 +1,28 @@
 import http from 'node:http';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { canonicalizeProjectPath, validateTaskId } from './security.mjs';
 import { parseTaskList, parseTaskCapsule, parseArchivedTasks, readTaskFile } from './task-parser.mjs';
 import { loadSettings } from './settings.mjs';
-import { generateToken, validateToken } from './token.mjs';
-import { validateGraphReadToken } from './control-plane-token.mjs';
-import { detectRuntimesCached, getRuntimeDefinition, resolveRuntimeResumeArgs } from './runtime-detector.mjs';
+import { detectRuntimesCached, getRuntimeDefinition, resolveRuntimeLaunchArgs, resolveRuntimeResumeArgs } from './runtime-detector.mjs';
 import { spawnPty } from './pty-adapter.mjs';
-import { killPtyProcess, registerPtyProcess, unregisterPtyProcess, writePtyInput } from './ws-terminal.mjs';
+import { buildHarnessEnvSession } from './harness-env.mjs';
+import { createChatDriver, dispose as disposeChatDriver, sendTo as sendToChatDriver } from './chat-driver.mjs';
+import { readChatEnvelopes } from './chat-store.mjs';
+import { attachChatWs } from './ws-chat.mjs';
+import { bringRevealWindowToFront } from './reveal-foreground.mjs';
+import { gracefulStopPty, killPtyProcess, registerPtyProcess, unregisterPtyProcess, writePtyInput } from './ws-terminal.mjs';
 import {
   applyWorkspaceOperation,
   buildTerminalContextInput,
   getWorkspaceFileInfo,
   getWorkspaceMeta,
   listWorkspaceTree,
+  planRevealWorkspacePath,
   readWorkspaceTextPreview,
   storeUserFiles,
   undoWorkspaceOperation,
@@ -27,19 +32,39 @@ import {
   ensureA2aDefaults,
   loadA2aSkills,
   buildWorkflowSnapshot,
+  stateFingerprint,
   loadWorkflowGraphMap,
   loadBuiltInWorkflows,
   loadRoleGraph,
   removeWorkflowGraphNode,
   updateWorkflowGraphSessionNode,
   writeWorkflowGraphMap,
+  assertSingleGoalPerGroup,
+  autoConnectAgent,
+  findAgents,
 } from './a2a-store.mjs';
+import { listGoalNodes } from './workflow-goal-node-store.mjs';
+import { findAgentGraphNode, isMainAgentGraphNode } from './workflow-agent-context.mjs';
+import { createRoleProfile, nextAvailableRole, profileSessionFields, readRoleProfile } from './workflow-node-types/role-profile-store.mjs';
+// agent-node.mjs mirrors the ready-gated submit tracker for its own
+// writePromptSubmitInput (agent.sendMessage/agent.sendInput); feed it the same
+// spawn/ready/exit/stop signals this module feeds its own tracker below, so
+// agent-node submits are ready-gated for server-spawned PTYs too. No import
+// cycle: agent-node.mjs does not import server.mjs (verified dependency tree).
+import { clearTerminalState as clearAgentNodeTerminalState, markTerminalReady as markAgentNodeTerminalReady, trackTerminalSpawn as trackAgentNodeTerminalSpawn } from './workflow-node-types/agent-node.mjs';
 import { readRuntimeConfig, writeRuntimeConfig } from './runtime-config.mjs';
+import { materializeClaudeTranscript, encodeClaudeProjectDir } from './claude-transcript-materializer.mjs';
+import { createSpawnGate } from './spawn-gate.mjs';
+import { autoPlaceNode, layeredTreePositions, tidyPositions, agentTreePositions, findClearPosition, nodeVisualSize } from './graph-layout.mjs';
+import { renderHtml as renderDisplayHtml } from './workflow-node-types/display-node.mjs';
 import { codexUpdatePromptInputForChoice } from './codex-update-prompt.mjs';
 import { buildCleanupSummary, pruneCleanupTargets } from './session-cleanup.mjs';
 import {
   appendSessionEvent,
   appendTerminalData,
+  buildSessionIndex,
+  downgradeOrphanedDiskSessions as persistOrphanDowngradeAtStartup,
+  flushTerminalBuffer,
   globTerminalEvents,
   listTerminalSessions,
   persistSession,
@@ -48,6 +73,7 @@ import {
   writeDroppedTerminalFiles,
 } from './terminal-store.mjs';
 import { listBridgeMessages, recordBridgeMessage } from './bridge-store.mjs';
+import { stopTimerScheduler } from './timer-wakeup-scheduler.mjs';
 import {
   mergeNodeConfig,
   nodeConfigResponse,
@@ -72,7 +98,22 @@ import {
   deleteNode as deleteWorkflowNode,
   getNodeContext,
 } from './workflow-node-runtime.mjs';
-import { connectNodes, disconnectNodes, getGraphSnapshot } from './workflow-graph-store.mjs';
+import { workflowOntology } from './workflow-ontology.mjs';
+import {
+  connectNodes,
+  disconnectNodes,
+  getGraphSnapshot,
+  recordGraphOp,
+  redoGraphOp,
+  resolveWorkflowNodeId,
+  undoGraphOp,
+  updateEdge,
+} from './workflow-graph-store.mjs';
+import { appendWorkflowOperation } from './workflow-operation-store.mjs';
+import { listSkillsHub } from './workflow-skills-hub.mjs';
+import { listMcpHub } from './workflow-mcp-hub.mjs';
+import { attachEventsWs } from './ws-events.mjs';
+import { refreshBaseline, watchFileNodes } from './file-watcher.mjs';
 import {
   cleanupWfBrowserRuns,
   createWfBrowserRun,
@@ -116,13 +157,46 @@ const MIME = {
 };
 
 const SERVER_VERSION = '0.8.20';
+const EVENTS_WS_HANDLE = Symbol.for('wf-ui.eventsWsHandle');
+const FILE_WATCHER_HANDLE = Symbol.for('wf-ui.fileNodeWatcher');
+const CHAT_WS_HANDLE = Symbol.for('wf-ui.chatWsHandle');
+
+function workflowOperationActor(projectRoot, type = 'human') {
+  try {
+    const graph = getGraphSnapshot(projectRoot);
+    const main = (graph.nodes || []).find(node => (
+      node.agentKind === 'main'
+      || String(node.role || '').toLowerCase() === 'main'
+      || String(node.role || '').toLowerCase().includes('ceo')
+    )) || (graph.nodes || []).find(node => node.sessionId);
+    return {
+      type,
+      ...(main?.nodeId || main?.id ? { nodeId: main.nodeId || main.id } : {}),
+      ...(main?.sessionId ? { sessionId: main.sessionId } : {}),
+      ...(main?.agentKind ? { agentKind: main.agentKind } : {}),
+    };
+  } catch {
+    return { type };
+  }
+}
 const PROCESS_MEMORY_CACHE_TTL_MS = 2000;
-const INITIAL_INPUT_READY_DELAY_MS = 1500;
-const INITIAL_INPUT_FALLBACK_DELAY_MS = 6000;
+const INITIAL_INPUT_READY_DELAY_MS = 1200;
+const INITIAL_INPUT_FALLBACK_DELAY_MS = 8000;
 const INITIAL_INPUT_ENTER_DELAY_MS = 800;
+const PROMPT_SUBMIT_ENTER_DELAY_MS = 800;
+// Per-character gap when typing a prompt submit into the TUI composer. The
+// xterm.js frontend delivers keystrokes one frame at a time; a single
+// bulk-write of the whole body leaves text sitting unsubmitted in the codex
+// composer, while per-char writes with ~12ms gaps submit reliably.
+const PROMPT_TYPING_CHAR_DELAY_MS = 12;
+const PROMPT_SUBMIT_READY_WAIT_MS = 10000;
+const PROMPT_SUBMIT_READY_POLL_MS = 250;
 const MAX_JSON_BODY_BYTES = 32 * 1024 * 1024;
 const processMemoryCache = new Map();
 const processCpuCache = new Map();
+// PTY spawn gate: boots heavy CLI processes; bounds concurrent spawns so a
+// batch of start requests queues instead of stampeding the machine.
+const ptySpawnGate = createSpawnGate();
 
 // ── In-memory debug state (frontend posts, CLI reads) ──
 let debugState = {
@@ -141,9 +215,9 @@ let debugState = {
 function resolveUiDist() {
   const __dirname = path.dirname(fileURLToPath(import.meta.url));
   const pkgDist = path.resolve(__dirname, '..', '..', 'dist', 'wf-ui');
-  if (fs.existsSync(pkgDist)) return pkgDist;
+  if (fs.existsSync(path.join(pkgDist, 'index.html'))) return pkgDist;
   const devDist = path.resolve(__dirname, '..', 'ui', 'dist');
-  if (fs.existsSync(devDist)) return devDist;
+  if (fs.existsSync(path.join(devDist, 'index.html'))) return devDist;
   return null;
 }
 
@@ -174,7 +248,7 @@ function workspaceFileHeaders(info, length = info.size, extra = {}) {
     'Cache-Control': 'no-cache',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, HEAD, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Harness-Session-Id, If-Match',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Harness-Session-Id, X-Harness-Actor-Type, X-Harness-Actor-Kind, X-Harness-Workflow-Node-Id, X-Harness-Node-Id, If-Match',
     'X-Content-Type-Options': 'nosniff',
     'Accept-Ranges': 'bytes',
     ETag: info.etag,
@@ -239,9 +313,17 @@ function sendJson(res, statusCode, data) {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, HEAD, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Harness-Session-Id, If-Match',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Harness-Session-Id, X-Harness-Actor-Type, X-Harness-Actor-Kind, X-Harness-Workflow-Node-Id, X-Harness-Node-Id, If-Match',
   });
   res.end(body);
+}
+
+function sendTextHtml(res, statusCode, html) {
+  res.writeHead(statusCode, {
+    'Content-Type': 'text/html; charset=utf-8',
+    'Access-Control-Allow-Origin': '*',
+  });
+  res.end(html);
 }
 
 function sendError(res, statusCode, code, message, details) {
@@ -250,10 +332,21 @@ function sendError(res, statusCode, code, message, details) {
   sendJson(res, statusCode, err);
 }
 
+// Typed detail fields carried on thrown errors (GoalNodeError / ComponentNodeError /
+// goal_already_bound) that must reach the HTTP body so the UI (T12 toast, markdown
+// conflict retry, goal completion) can consume them. Strictly additive: codes and
+// messages are unchanged (agent-team-cooperation-spec §6.2/§7/§8).
+const TYPED_ERROR_DETAIL_FIELDS = ['remaining', 'currentRevision', 'expectedRevision', 'holder', 'expiresAt', 'existingGoalNodeId', 'timerNodeId'];
+
 function sendMappedError(res, err) {
   const statusCode = Number(err?.statusCode || 400);
   const code = err?.code || (statusCode === 404 ? 'NOT_FOUND' : statusCode === 409 ? 'CONFLICT' : 'BAD_REQUEST');
-  return sendError(res, statusCode, code, err?.message || 'Request failed');
+  const detail = {};
+  for (const field of TYPED_ERROR_DETAIL_FIELDS) {
+    const value = err?.[field];
+    if (value !== undefined && value !== null) detail[field] = value;
+  }
+  return sendJson(res, statusCode, { error: { code, message: err?.message || 'Request failed' }, ...detail });
 }
 
 function wfBrowserCommandId(payload = {}) {
@@ -283,10 +376,9 @@ function normalizeWfBrowserRoute(value) {
   return text.startsWith('/') ? text : `/${text}`;
 }
 
-function wfBrowserLaunchUrl(requestUrl, token, windowState, lease = null, options = {}) {
+function wfBrowserLaunchUrl(requestUrl, _token, windowState, lease = null, options = {}) {
   const origin = `${requestUrl.protocol}//${requestUrl.host}`;
   const launchUrl = new URL(normalizeWfBrowserRoute(options.route || windowState.route || '/'), origin);
-  if (token) launchUrl.searchParams.set('token', token);
   const params = new URLSearchParams(wfBrowserDebugUrlParams({
     runId: windowState.runId,
     windowId: windowState.windowId,
@@ -298,18 +390,104 @@ function wfBrowserLaunchUrl(requestUrl, token, windowState, lease = null, option
   return launchUrl.toString();
 }
 
-function tokenFromRequest(req, url) {
-  const queryToken = url.searchParams.get('token');
-  if (queryToken) return queryToken;
-  const auth = req.headers.authorization || '';
-  const match = auth.match(/^Bearer\s+(.+)$/i);
-  return match ? match[1] : null;
-}
-
-function controlPlanePayload(url, token) {
+function controlPlanePayload(url, _token) {
   return {
     controlPlaneUrl: `${url.protocol}//${url.host}`,
-    controlPlaneToken: token || '',
+    controlPlaneToken: '',
+  };
+}
+
+function workflowActionActorOptions(req, url) {
+  const headers = req.headers || {};
+  return {
+    actorType: cleanString(url.searchParams.get('actorType') || headers['x-harness-actor-type'], ''),
+    actorKind: cleanString(url.searchParams.get('actorKind') || headers['x-harness-actor-kind'], ''),
+    actorNodeId: cleanString(
+      url.searchParams.get('actorNodeId')
+        || headers['x-harness-workflow-node-id']
+        || headers['x-harness-node-id'],
+      '',
+    ),
+    actorSessionId: cleanString(url.searchParams.get('actorSessionId') || headers['x-harness-session-id'], ''),
+  };
+}
+
+// Spec §4.5 (AC-025): the cooperation audit is DERIVED from backend-owned
+// data only — sessions (created whom + role), bridge messages grouped by
+// requestId (asked / replied), and wakeup envelopes (wakeup dispatched).
+// No timeout data is stored backend-side, so nothing is fabricated here; the
+// UI derives the timed-out marker client-side from real timestamps
+// (ask-without-reply beyond a threshold, see TerminalDrawer.tsx).
+function deriveCooperationAudit(absRoot) {
+  const sessions = listTerminalSessions(absRoot);
+  const created = (Array.isArray(sessions) ? sessions : []).map(session => ({
+    kind: 'created',
+    sessionId: session.sessionId || '',
+    nodeId: session.graphNodeId || (session.sessionId ? `session-${session.sessionId}` : ''),
+    displayName: String(session.displayName || session.role || ''),
+    roleTitle: String(session.roleTitle || session.role || ''),
+    runtime: String(session.runtime || ''),
+    agentKind: String(session.agentKind || ''),
+    ts: String(session.createdAt || ''),
+  }));
+  const bridgeEntries = listBridgeMessages(absRoot, { limit: 500 }).entries || [];
+  const requests = new Map();
+  const wakeups = [];
+  for (const entry of Array.isArray(bridgeEntries) ? bridgeEntries : []) {
+    if (String(entry.deliveryMode || '') === 'wakeup' || String(entry.source || '') === 'timer.wakeup') {
+      let goalNodeId = '';
+      try {
+        const parsed = JSON.parse(String(entry.data || ''));
+        goalNodeId = String(parsed?.goalNodeId || '');
+      } catch {
+        // envelope data is informational; a parse failure omits goalNodeId
+      }
+      wakeups.push({
+        kind: 'wakeup',
+        messageId: String(entry.messageId || ''),
+        timerNodeId: String(entry.fromNodeId || ''),
+        goalNodeId,
+        agentNodeId: String(entry.toNodeId || ''),
+        ts: String(entry.ts || ''),
+      });
+      continue;
+    }
+    if (entry.requestId) {
+      const list = requests.get(entry.requestId) || [];
+      list.push(entry);
+      requests.set(entry.requestId, list);
+    }
+  }
+  const requestEntries = [];
+  for (const [requestId, entries] of requests) {
+    const ask = entries.find(entry => !entry.replyTo) || entries[0];
+    requestEntries.push({
+      kind: 'request',
+      requestId: String(requestId || ''),
+      asked: {
+        fromSessionId: String(ask?.fromSessionId || ''),
+        toSessionId: String(ask?.toSessionId || ''),
+        fromNodeId: String(ask?.fromNodeId || ''),
+        toNodeId: String(ask?.toNodeId || ''),
+        toRole: String(ask?.toRole || ''),
+        ts: String(ask?.ts || ''),
+      },
+      replied: entries
+        .filter(entry => entry.replyTo)
+        .map(reply => ({
+          fromSessionId: String(reply.fromSessionId || ''),
+          fromNodeId: String(reply.fromNodeId || ''),
+          replyTo: String(reply.replyTo || ''),
+          ts: String(reply.ts || ''),
+        })),
+    });
+  }
+  return {
+    ok: true,
+    derived: true,
+    source: 'backend-derived',
+    entries: { created, requests: requestEntries, wakeups },
+    note: 'Timeout data is not stored backend-side; the UI derives timed-out from ask-without-reply timestamps.',
   };
 }
 
@@ -372,6 +550,21 @@ function normalizeSessionStatus(status) {
   return status === 'saved' ? 'stopped' : status;
 }
 
+// True when claude/cc has a conversation transcript on disk for the given
+// agent session id in the given project cwd. Used as a pre-flight check
+// before passing --resume to the runtime: resuming a conversation whose
+// transcript was cleaned prints "No conversation found with session ID"
+// and exits immediately.
+function claudeConversationExists(cwd, agentSessionId) {
+  if (!cwd || !agentSessionId) return false;
+  try {
+    const filePath = path.join(os.homedir(), '.claude', 'projects', encodeClaudeProjectDir(cwd), `${agentSessionId}.jsonl`);
+    return fs.existsSync(filePath);
+  } catch {
+    return false;
+  }
+}
+
 function normalizeSessionForApi(session) {
   if (!session) return session;
   return {
@@ -384,7 +577,17 @@ function downgradeOrphanedDiskSessions(memorySessions, diskSessions) {
   const currentSessionIds = new Set(memorySessions.map(session => session.sessionId));
   return diskSessions.map(session => (
     !currentSessionIds.has(session.sessionId) && isLiveSession(session)
-      ? { ...session, status: 'stopped', blockedReason: session.blockedReason || 'not-managed-by-current-wf-ui', wsClientCount: 0 }
+      ? {
+        ...session,
+        // Disk-only sessions are not dead: the PTY may still be alive after a
+        // backend restart. Keep them attachable (status 'running', watch-only
+        // attachMode) instead of marking them 'stopped' so the frontend can
+        // reconnect over /ws/terminal.
+        status: 'running',
+        attachMode: false,
+        blockedReason: session.blockedReason || 'not-managed-by-current-wf-ui',
+        wsClientCount: 0,
+      }
       : normalizeSessionForApi(session)
   ));
 }
@@ -545,7 +748,10 @@ function cleanupPolicy(absRoot, override = {}) {
 
 function withResumeMetadata(session) {
   const runtimeInfo = getRuntimeDefinition(session.runtime);
-  const resumeArgs = resolveRuntimeResumeArgs(session.runtime, { agentSessionId: session.agentSessionId });
+  const resumeArgs = resolveRuntimeResumeArgs(session.runtime, {
+    agentSessionId: session.agentSessionId,
+    codexRolloutId: session.codexRolloutId,
+  });
   const command = runtimeInfo?.commands?.[0] || session.runtime;
   const resourceUsage = isLiveSession(session)
     ? sessionResourceUsage(session)
@@ -571,12 +777,20 @@ export function createServer({ projectRoot, sessionRegistry: sr, token: expected
   const startTime = Date.now();
   ensureA2aDefaults(absRoot);
 
+  // ws-terminal.mjs revives /ws/terminal upgrades for sessions that exist on
+  // disk but not in the in-memory registry (backend restarted while the PTY
+  // session survived). Expose the same persisted-session lookup the sessions
+  // API uses so the upgrade path can reattach to disk-only sessions.
+  if (sr && typeof sr === 'object' && typeof sr.reviveSession !== 'function') {
+    sr.reviveSession = (sessionId) => persistedSessionById(absRoot, sessionId);
+  }
+
   const server = http.createServer((req, res) => {
     if (req.method === 'OPTIONS') {
       res.writeHead(204, {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, HEAD, POST, PUT, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Harness-Session-Id, If-Match',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Harness-Session-Id, X-Harness-Actor-Type, X-Harness-Actor-Kind, X-Harness-Workflow-Node-Id, X-Harness-Node-Id, If-Match',
       });
       res.end();
       return;
@@ -584,17 +798,6 @@ export function createServer({ projectRoot, sessionRegistry: sr, token: expected
 
     const url = new URL(req.url, `http://${req.headers.host || '127.0.0.1'}`);
     const pathname = url.pathname;
-
-    if (expectedToken && pathname.startsWith('/api/')) {
-      const presented = tokenFromRequest(req, url);
-      if (!presented) return sendError(res, 401, 'UNAUTHORIZED', 'Missing token');
-      const fullToken = validateToken(presented, expectedToken);
-      const readSessionId = url.searchParams.get('actorSessionId') || req.headers['x-harness-session-id'];
-      const graphRead = req.method === 'GET'
-        && (pathname === '/api/a2a/snapshot' || pathname === '/api/workflow')
-        && validateGraphReadToken(presented, expectedToken, readSessionId);
-      if (!fullToken && !graphRead) return sendError(res, 403, 'FORBIDDEN', 'Invalid token');
-    }
 
     // ── GET /api/health ──
     if (req.method === 'GET' && pathname === '/api/health') {
@@ -920,7 +1123,16 @@ export function createServer({ projectRoot, sessionRegistry: sr, token: expected
     if (req.method === 'POST' && pathname === '/api/workspace/ops') {
       readJsonBody(req).then((payload) => {
         try {
-          return sendJson(res, 200, applyWorkspaceOperation(absRoot, payload));
+          const result = applyWorkspaceOperation(absRoot, payload);
+          // L1 self-write suppression: every successful workspace op (this
+          // endpoint covers file.writeText too — the node action routes
+          // through applyWorkspaceOperation) re-baselines the file-node
+          // watcher so the write is never reported back as an external
+          // file.changed event.
+          if (result && Array.isArray(result.entriesChanged)) {
+            for (const entry of result.entriesChanged) refreshBaseline(absRoot, entry);
+          }
+          return sendJson(res, 200, result);
         } catch (e) {
           return sendMappedError(res, e);
         }
@@ -932,6 +1144,52 @@ export function createServer({ projectRoot, sessionRegistry: sr, token: expected
       readJsonBody(req).then((payload) => {
         try {
           return sendJson(res, 200, undoWorkspaceOperation(absRoot, payload));
+        } catch (e) {
+          return sendMappedError(res, e);
+        }
+      }).catch(e => sendError(res, 400, 'BAD_REQUEST', e.message));
+      return;
+    }
+
+    // ── POST /api/workspace/reveal ──
+    // Opens the user's OS file manager at a workspace path (directories open in
+    // place; files get revealed/selected). Loopback-only surface; the path is
+    // validated for containment + existence before anything is spawned.
+    if (req.method === 'POST' && pathname === '/api/workspace/reveal') {
+      readJsonBody(req).then((payload) => {
+        try {
+          const plan = planRevealWorkspacePath(absRoot, payload?.path ?? '');
+          // WF_UI_REVEAL_DRY_RUN=1 (tests/CI): validate + plan only, never
+          // launch a real OS window.
+          if (process.env.WF_UI_REVEAL_DRY_RUN === '1') {
+            return sendJson(res, 200, { ok: true, dryRun: true, ...plan });
+          }
+          let child;
+          try {
+            // No windowsHide: the target is a GUI file manager (explorer.exe /
+            // open / xdg-open) whose whole purpose is to show a window. On
+            // Windows windowsHide maps to CREATE_NO_WINDOW, which spawns the
+            // explorer window hidden — the request succeeds but nothing appears.
+            child = spawn(plan.command, plan.args, { detached: true, stdio: 'ignore' });
+          } catch (e) {
+            return sendError(res, 500, 'REVEAL_FAILED', `Failed to launch ${plan.command}: ${e.message}`);
+          }
+          child.on('error', (e) => {
+            // Spawn async failure (e.g. missing executable on PATH); the window
+            // is already detached so this is best-effort reporting only.
+            console.warn(`[workspace] reveal failed for ${plan.path}:`, e?.message || e);
+          });
+          child.unref();
+          // Windows foreground lock: explorer spawned from this background
+          // server opens behind the browser (or reuses an existing window
+          // without raising it). Best-effort focus helper; no-op elsewhere.
+          if (plan.platform === 'win32') bringRevealWindowToFront(plan);
+          return sendJson(res, 200, {
+            ok: true,
+            path: plan.path,
+            isDirectory: plan.isDirectory,
+            platform: plan.platform,
+          });
         } catch (e) {
           return sendMappedError(res, e);
         }
@@ -1027,7 +1285,28 @@ export function createServer({ projectRoot, sessionRegistry: sr, token: expected
     }
 
     if (req.method === 'GET' && (pathname === '/api/workflow' || pathname === '/api/a2a/snapshot')) {
-      return sendJson(res, 200, buildWorkflowSnapshot(absRoot, sr));
+      try {
+        // Incremental polling (P1a): clients send back the last fingerprint;
+        // an unchanged graph+session state costs a tiny JSON instead of a full
+        // snapshot build.
+        const since = url.searchParams.get('since') || '';
+        if (since && stateFingerprint(absRoot) === since) {
+          return sendJson(res, 200, { unchanged: true, fingerprint: since });
+        }
+        const snapshot = buildWorkflowSnapshot(absRoot, sr);
+        snapshot.fingerprint = stateFingerprint(absRoot);
+        return sendJson(res, 200, snapshot);
+      } catch (e) {
+        return sendMappedError(res, e);
+      }
+    }
+
+    if (req.method === 'GET' && pathname === '/api/workflow/ontology') {
+      try {
+        return sendJson(res, 200, { ok: true, ontology: workflowOntology() });
+      } catch (e) {
+        return sendMappedError(res, e);
+      }
     }
 
     if (req.method === 'GET' && pathname === '/api/a2a/graph-map') {
@@ -1055,6 +1334,20 @@ export function createServer({ projectRoot, sessionRegistry: sr, token: expected
         }
       }).catch(e => sendError(res, 400, 'BAD_REQUEST', e.message));
       return;
+    }
+
+    // Display node report HTML (fully-open JS per user decision; agent-authored
+    // content carries the same trust as the agent terminal). Excalidraw
+    // placeholders expand to self-contained inline SVG at serve time.
+    const componentHtmlMatch = pathname.match(/^\/api\/a2a\/component-nodes\/([^/]+)\/html$/);
+    if (componentHtmlMatch && req.method === 'GET') {
+      try {
+        const nodeId = decodeURIComponent(componentHtmlMatch[1]);
+        const html = renderDisplayHtml(absRoot, { nodeId });
+        return sendTextHtml(res, 200, html);
+      } catch (e) {
+        return sendMappedError(res, e);
+      }
     }
 
     const componentNodeMatch = pathname.match(/^\/api\/a2a\/component-nodes\/([^/]+)$/);
@@ -1098,6 +1391,94 @@ export function createServer({ projectRoot, sessionRegistry: sr, token: expected
       return;
     }
 
+    // ── Agent find / connect routing (agent-team-cooperation-spec §4) ──
+    if (req.method === 'GET' && pathname === '/api/workflow/agents/find') {
+      Promise.resolve().then(async () => {
+        const filters = {};
+        for (const key of ['role', 'runtime', 'provider', 'capability', 'title']) {
+          const value = url.searchParams.get(key);
+          if (value) filters[key] = value;
+        }
+        const result = await findAgents(absRoot, filters, sr);
+        const from = String(url.searchParams.get('from') || '').trim();
+        if (!from || url.searchParams.get('autoConnect') !== '1' || result.count !== 1) return result;
+        const fromNodeId = resolveAgentNodeId(absRoot, from);
+        if (!fromNodeId) return result;
+        if (!result.matches[0].connected) {
+          const connected = autoConnectAgent(absRoot, fromNodeId, result.matches[0].nodeId);
+          return { ...result, decision: 'connect', nodeId: result.matches[0].nodeId, edge: connected.edge };
+        }
+        return { ...result, decision: 'connect', nodeId: result.matches[0].nodeId, edge: null };
+      })
+        .then(data => sendJson(res, 200, data))
+        .catch(e => sendMappedError(res, e));
+      return;
+    }
+
+    if (req.method === 'GET' && pathname === '/api/workflow/agents/profile') {
+      const nodeId = String(url.searchParams.get('nodeId') || '').trim();
+      if (!nodeId) return sendError(res, 400, 'BAD_REQUEST', 'Missing nodeId query param');
+      return sendJson(res, 200, { ok: true, nodeId, profile: readRoleProfile(nodeId, absRoot) });
+    }
+
+    // ── Cooperation audit (spec §4.5, AC-025) ──
+    if (req.method === 'GET' && pathname === '/api/workflow/cooperation/audit') {
+      Promise.resolve().then(() => deriveCooperationAudit(absRoot))
+        .then(data => sendJson(res, 200, data))
+        .catch(e => sendMappedError(res, e));
+      return;
+    }
+
+    function goalAlreadyBoundResponse(res, error) {
+      return sendJson(res, 409, {
+        error: 'goal_already_bound',
+        message: error.message,
+        existingGoalNodeId: error.existingGoalNodeId,
+        timerNodeId: error.timerNodeId,
+      });
+    }
+
+    function assertSingleGoalOrThrowGoalBound(res, goalNodeId, opts = {}) {
+      try {
+        return assertSingleGoalPerGroup(absRoot, goalNodeId, opts);
+      } catch (error) {
+        if (error?.code === 'goal_already_bound') {
+          goalAlreadyBoundResponse(res, error);
+          return null;
+        }
+        throw error;
+      }
+    }
+
+    function resolveAgentNodeId(projectRoot, key) {
+      const graph = loadWorkflowGraphMap(projectRoot);
+      const node = (Array.isArray(graph.nodes) ? graph.nodes : [])
+        .find(item => (item.nodeId || item.id) === key || item.sessionId === key);
+      return node ? node.nodeId || node.id : '';
+    }
+
+    if (req.method === 'GET' && pathname === '/api/workflow/skills-hub') {
+      Promise.resolve().then(() => listSkillsHub(absRoot, {
+        q: url.searchParams.get('q') || '',
+        scope: url.searchParams.get('scope') || 'project',
+        limit: url.searchParams.get('limit') || undefined,
+      }))
+        .then(data => sendJson(res, 200, data))
+        .catch(e => sendMappedError(res, e));
+      return;
+    }
+
+    if (req.method === 'GET' && pathname === '/api/workflow/mcp-hub') {
+      Promise.resolve().then(() => listMcpHub(absRoot, {
+        q: url.searchParams.get('q') || '',
+        scope: url.searchParams.get('scope') || 'project',
+        limit: url.searchParams.get('limit') || undefined,
+      }))
+        .then(data => sendJson(res, 200, data))
+        .catch(e => sendMappedError(res, e));
+      return;
+    }
+
     const workflowNodeByIdMatch = pathname.match(/^\/api\/workflow\/nodes\/([^/]+)$/);
     if (req.method === 'GET' && workflowNodeByIdMatch) {
       Promise.resolve().then(() => getNode(absRoot, decodeURIComponent(workflowNodeByIdMatch[1])))
@@ -1108,8 +1489,31 @@ export function createServer({ projectRoot, sessionRegistry: sr, token: expected
 
     if (req.method === 'POST' && pathname === '/api/workflow/nodes') {
       readJsonBody(req)
-        .then(payload => createWorkflowNode(absRoot, payload))
-        .then(data => sendJson(res, 201, data))
+        .then((payload) => {
+          // Single-Goal rule (spec §6.2, AC-015): creating a Goal into a
+          // Timer+Agent magnetic group that already has a Goal is rejected.
+          // The count is candidate-inclusive (F2): a Goal surfaced into a
+          // group it is already docked in is counted; a free-floating Goal
+          // forms no group yet and passes — connect-time catches the second.
+          if (String(payload?.type || '').trim().toLowerCase() === 'goal') {
+            const goalNodeId = (listGoalNodes(absRoot)[0] || {}).nodeId || '';
+            if (goalNodeId && assertSingleGoalOrThrowGoalBound(res, goalNodeId, { extraNodeIds: [goalNodeId] }) === null) return null;
+          }
+          return createWorkflowNode(absRoot, payload);
+        })
+        .then(data => {
+          if (data === null) return;
+          const nodeId = data?.node?.nodeId || data?.node?.id || data?.state?.nodeId;
+          const operation = appendWorkflowOperation(absRoot, {
+            kind: 'graph.createNode',
+            actor: workflowOperationActor(absRoot, 'human'),
+            targetNodeIds: nodeId ? [nodeId] : [],
+            edgeIds: [],
+            status: 'completed',
+            summary: `created ${nodeId || 'node'}`,
+          });
+          sendJson(res, 201, { ...data, operation });
+        })
         .catch(e => sendMappedError(res, e));
       return;
     }
@@ -1171,7 +1575,7 @@ export function createServer({ projectRoot, sessionRegistry: sr, token: expected
               throw e;
             }
             const { node } = snapshotNodeByKey(absRoot, sr, key);
-            const result = stopRuntimeSession(sr, absRoot, node.sessionId, terminalHub);
+            const result = await stopRuntimeSession(sr, absRoot, node.sessionId, terminalHub);
             const snapshot = await getNode(absRoot, node.graphNodeId || node.id || key).catch(() => ({ node: null }));
             return { ok: true, action, node: snapshot.node, result };
           }
@@ -1188,12 +1592,54 @@ export function createServer({ projectRoot, sessionRegistry: sr, token: expected
             const snapshot = await getNode(absRoot, node.graphNodeId || node.id || key).catch(() => ({ node: null }));
             return { ok: true, action, node: snapshot.node, result };
           }
+          if (action === 'agent.setModel') {
+            if (!sr || typeof sr.get !== 'function') {
+              const e = new NodeConfigError('Session registry not available', {
+                statusCode: 501,
+                code: 'NOT_IMPLEMENTED',
+              });
+              throw e;
+            }
+            const { node } = snapshotNodeByKey(absRoot, sr, key);
+            const result = setWorkflowNodeModel(absRoot, sr, node, payload, workflowActionActorOptions(req, url));
+            const snapshot = await getNode(absRoot, node.graphNodeId || node.id || key).catch(() => ({ node: null }));
+            return {
+              ok: true,
+              action,
+              model: result.model,
+              configFile: result.configFile,
+              restartRequired: true,
+              node: snapshot.node,
+            };
+          }
+          if (action === 'agent.layout') {
+            return executeGraphLayoutAction(absRoot, key, payload);
+          }
+          if (action === 'agent.attachDock' || action === 'agent.detachDock' || action === 'agent.setDockSide') {
+            return executeGraphDockAction(absRoot, key, action, payload);
+          }
+          if (action === 'agent.updateEdge') {
+            return executeGraphEdgeUpdateAction(absRoot, key, payload);
+          }
+          if (action === 'graph.undo' || action === 'graph.redo') {
+            return executeGraphHistoryAction(absRoot, key, action, payload);
+          }
           return executeNodeAction(
             absRoot,
             key,
             action,
             payload,
-          );
+            workflowActionActorOptions(req, url),
+          ).then(data => {
+            // L1 self-write suppression: file.writeText lands on disk through
+            // applyWorkspaceOperation, so re-baseline the watcher target the
+            // same way the /api/workspace/ops route does — the node action's
+            // own write must not echo back as file.changed.
+            if (action === 'file.writeText' && data && data.result && typeof data.result.path === 'string') {
+              refreshBaseline(absRoot, data.result.path);
+            }
+            return data;
+          });
         })
         .then(data => sendJson(res, 200, data))
         .catch(e => sendMappedError(res, e));
@@ -1202,15 +1648,58 @@ export function createServer({ projectRoot, sessionRegistry: sr, token: expected
 
     if (req.method === 'POST' && pathname === '/api/workflow/edges') {
       readJsonBody(req)
-        .then(payload => connectNodes(absRoot, payload))
-        .then(data => sendJson(res, 201, data))
+        .then((payload) => {
+          // Single-Goal rule (spec §6.2, AC-015): connecting a Goal into a
+          // Timer+Agent magnetic group that already has a Goal is rejected.
+          // The count is candidate-inclusive (F2): the endpoint being
+          // connected is joined to its peer with a simulated dock link before
+          // counting, so a SECOND Goal that is not yet docked is still
+          // rejected when its group already holds a Goal.
+          const endpoints = [String(payload?.from || payload?.source || '').trim(), String(payload?.to || payload?.target || '').trim()];
+          for (const endpoint of endpoints) {
+            if (!endpoint || !/^goal-/.test(endpoint)) continue;
+            const peer = endpoints.find(candidate => candidate && candidate !== endpoint) || '';
+            const extraDockLinks = peer
+              ? [{ id: `sim:${endpoint}->${peer}`, nodeIds: [endpoint, peer] }]
+              : [];
+            if (assertSingleGoalOrThrowGoalBound(res, endpoint, { extraDockLinks }) === null) return null;
+          }
+          return connectNodes(absRoot, payload, { action: 'agent.connectNodes', actor: { kind: 'human', nodeId: '', sessionId: '' } });
+        })
+        .then(data => {
+          if (data === null) return;
+          const edge = data.edge || {};
+          const operation = appendWorkflowOperation(absRoot, {
+            kind: 'graph.connectNodes',
+            actor: workflowOperationActor(absRoot, 'human'),
+            targetNodeIds: [edge.from || edge.source, edge.to || edge.target],
+            edgeIds: [edge.id],
+            status: 'completed',
+            summary: `connected ${edge.id || 'edge'}`,
+          });
+          sendJson(res, 201, { ...data, operation });
+        })
         .catch(e => sendMappedError(res, e));
       return;
     }
 
     const workflowEdgeDeleteMatch = pathname.match(/^\/api\/workflow\/edges\/([^/]+)$/);
     if (req.method === 'DELETE' && workflowEdgeDeleteMatch) {
-      Promise.resolve().then(() => disconnectNodes(absRoot, decodeURIComponent(workflowEdgeDeleteMatch[1])))
+      Promise.resolve().then(() => {
+          const edgeId = decodeURIComponent(workflowEdgeDeleteMatch[1]);
+          const graph = getGraphSnapshot(absRoot);
+          const existing = (graph.edges || []).find(edge => edge.id === edgeId);
+          const data = disconnectNodes(absRoot, edgeId, { action: 'agent.disconnectNodes', actor: { kind: 'human', nodeId: '', sessionId: '' } });
+          const operation = appendWorkflowOperation(absRoot, {
+            kind: 'graph.disconnectNodes',
+            actor: workflowOperationActor(absRoot, 'human'),
+            targetNodeIds: existing ? [existing.from || existing.source, existing.to || existing.target] : [],
+            edgeIds: [edgeId],
+            status: 'completed',
+            summary: `disconnected ${edgeId}`,
+          });
+          return { ...data, operation };
+        })
         .then(data => sendJson(res, 200, data))
         .catch(e => sendMappedError(res, e));
       return;
@@ -1300,7 +1789,44 @@ export function createServer({ projectRoot, sessionRegistry: sr, token: expected
         if (registrySession && isLiveSession(registrySession)) {
           return sendError(res, 409, 'NODE_LIVE', 'Stop the live node before deleting it from the workflow graph');
         }
-        const result = removeWorkflowGraphNode(absRoot, node?.graphNodeId || node?.id || key);
+        const targetKey = node?.graphNodeId || node?.id || key;
+        const graphBefore = loadWorkflowGraphMap(absRoot);
+        const graphNodeRecord = (graphBefore.nodes || []).find(item => (
+          (item.nodeId || item.id) === targetKey || item.sessionId === targetKey
+        ));
+        const historyOptions = {};
+        if (graphNodeRecord) {
+          const nodeIdForHistory = graphNodeRecord.nodeId || graphNodeRecord.id || targetKey;
+          const affectedEdges = (graphBefore.edges || []).filter(edge => {
+            const from = String(edge?.from || edge?.source || '');
+            const to = String(edge?.to || edge?.target || '');
+            return from === nodeIdForHistory || to === nodeIdForHistory
+              || Boolean(graphNodeRecord.sessionId && (from === graphNodeRecord.sessionId || to === graphNodeRecord.sessionId));
+          });
+          // The inverse record carries the typed store state (event/component/
+          // capability) so undo can restore the store alongside the graph node.
+          const inverseRecord = { ...graphNodeRecord, position: graphBefore.positions?.[nodeIdForHistory] || graphNodeRecord.position };
+          if (node?.eventState !== undefined) inverseRecord.eventState = node.eventState;
+          if (node?.componentState !== undefined) inverseRecord.componentState = node.componentState;
+          if (node?.capabilityState !== undefined) inverseRecord.capabilityState = node.capabilityState;
+          const recorded = recordGraphOp(absRoot, {
+            action: 'agent.deleteNode',
+            actor: { kind: 'human', nodeId: '', sessionId: '' },
+            inverse: {
+              nodes: [inverseRecord],
+              edges: affectedEdges,
+            },
+            forward: {
+              nodes: [{ ...graphNodeRecord, _removed: true }],
+              edges: affectedEdges.map(edge => ({ ...edge, _removed: true })),
+            },
+          });
+          if (recorded) {
+            historyOptions.undoStack = recorded.undoStack;
+            historyOptions.redoStack = recorded.redoStack;
+          }
+        }
+        const result = removeWorkflowGraphNode(absRoot, targetKey, historyOptions);
         if (registrySession && typeof sr.remove === 'function') {
           sr.remove(node.sessionId);
         }
@@ -1402,6 +1928,16 @@ export function createServer({ projectRoot, sessionRegistry: sr, token: expected
       }));
     }
 
+    // ── GET /api/chat/:sessionId/range — stored chat envelopes backfill ──
+    const chatRangeMatch = pathname.match(/^\/api\/chat\/([^/]+)\/range$/);
+    if (req.method === 'GET' && chatRangeMatch) {
+      return sendJson(res, 200, readChatEnvelopes(absRoot, {
+        sessionId: chatRangeMatch[1],
+        fromSeq: url.searchParams.has('fromSeq') ? Number(url.searchParams.get('fromSeq')) : undefined,
+        limit: url.searchParams.has('limit') ? Number(url.searchParams.get('limit')) : undefined,
+      }));
+    }
+
     // ── GET /api/sessions ──
     if (req.method === 'GET' && pathname === '/api/sessions') {
       const memorySessions = sr && typeof sr.getAll === 'function' ? sr.getAll() : [];
@@ -1420,13 +1956,15 @@ export function createServer({ projectRoot, sessionRegistry: sr, token: expected
       }
       readJsonBody(req).then(async (payload) => {
         try {
+          assertCanvasAgentSpawnAllowed(absRoot, payload, req.headers);
           const session = await createRuntimeSession(sr, absRoot, {
             ...payload,
+            attachGraphNode: payload.attachGraphNode !== false,
             ...controlPlanePayload(url, expectedToken),
           }, terminalHub);
           sendJson(res, 201, session);
         } catch (e) {
-          sendError(res, 400, 'BAD_REQUEST', e.message);
+          sendMappedError(res, e);
         }
       }).catch(e => sendError(res, 400, 'BAD_REQUEST', e.message));
       return;
@@ -1823,18 +2361,51 @@ function archiveTask(absRoot, taskId) {
   return payload || { ok: true, command: 'archive', taskId };
 }
 
-function stopRuntimeSession(sr, absRoot, sessionId, terminalHub = null) {
+async function stopRuntimeSession(sr, absRoot, sessionId, terminalHub = null) {
+  // Chat-mode sessions run on a live structured-stdio driver, not a PTY;
+  // dispose it (driver-side graceful shutdown) before any registry teardown.
+  try { await disposeChatDriver(sessionId, { reason: 'stopped' }); } catch { /* never blocks stop */ }
   const session = sr.get(sessionId);
   if (!session) {
     killPtyProcess(sessionId);
+    // Backend restarted: the in-memory registry is empty, but the disk record
+    // still knows the runtime identity — flush the terminal buffer, then
+    // materialize the claude transcript from the persisted terminal ring
+    // before reporting already-stopped.
+    flushTerminalBuffer(absRoot, sessionId);
+    const disk = listTerminalSessions(absRoot).find((entry) => entry.sessionId === sessionId);
+    if (disk && disk.runtime === 'claude' && disk.agentSessionId) {
+      await materializeStoppedClaudeTranscript(absRoot, disk);
+    }
     return { ok: true, killed: false, stopped: null, saved: null, alreadyStopped: true };
   }
 
-  const killed = killPtyProcess(sessionId);
+  // claude/cc get a graceful exit (write /exit, then Ctrl+C, then hard kill)
+  // so the runtime can persist its transcript before the PTY dies; all other
+  // runtimes are hard-killed. Bounded: gracefulStopPty never exceeds ~6s.
+  const { killed } = await gracefulStopPty(sessionId, { runtime: session.runtime });
+  clearTerminalState(sessionId);
+  clearAgentNodeTerminalState(sessionId);
+  // Persist buffered terminal entries before materialization reads the ring.
+  flushTerminalBuffer(absRoot, sessionId);
+  // Materialize BEFORE the stop guard so re-stopping an already-stopped claude
+  // session still (re)builds its transcript from the persisted terminal ring.
+  if (session.runtime === 'claude' && session.agentSessionId) {
+    await materializeStoppedClaudeTranscript(absRoot, session);
+  }
   const stopped = sr.stop(sessionId);
   if (!stopped) return { ok: true, killed, stopped: null, saved: null, alreadyStopped: true };
+  // Restart race (AC-005): detachPreviousGraphSession may have already marked
+  // this session as graph-replaced on disk while the stop was in flight. The
+  // registry's stopped record predates that write, so persisting it verbatim
+  // would erase the graphReplacedBy* fields and resurrect the old session in
+  // the snapshot under the same node id. Merge: keep the disk-side detach
+  // markers unless the stopped record itself carries them.
+  const stoppedDisk = persistedSessionById(absRoot, sessionId) || {};
   const updated = withResumeMetadata({
     ...stopped,
+    graphReplacedBySessionId: stopped.graphReplacedBySessionId || stoppedDisk.graphReplacedBySessionId || '',
+    graphReplacedAt: stopped.graphReplacedAt || stoppedDisk.graphReplacedAt || '',
     status: 'stopped',
     killed,
     wsClientCount: 0,
@@ -1855,6 +2426,32 @@ function stopRuntimeSession(sr, absRoot, sessionId, terminalHub = null) {
   return { ok: true, killed, stopped: updated, saved: updated };
 }
 
+// claude-code never persists PTY-spawned conversations itself (RESUME-E2E-EVIDENCE.md
+// PASS 2-7), so the harness rebuilds the transcript from its own terminal ring at
+// stop time. Pure string work (no LLM); guarded so a materialize failure can never
+// block or fail a stop.
+async function materializeStoppedClaudeTranscript(absRoot, session) {
+  try {
+    const { entries } = readTerminalRange(absRoot, { sessionId: session.sessionId });
+    const result = materializeClaudeTranscript({
+      home: process.env.USERPROFILE || os.homedir(),
+      cwd: absRoot,
+      sessionId: session.agentSessionId,
+      entries,
+      model: session.model,
+      gitBranch: session.gitBranch,
+    });
+    if (!result) {
+      appendSessionEvent(absRoot, session, { type: 'claude.transcript.materialize.skipped', reason: 'no-turns' });
+      return;
+    }
+    persistSession(absRoot, { ...session, claudeTranscriptPath: result.path });
+    appendSessionEvent(absRoot, session, { type: 'claude.transcript.materialized', ...result });
+  } catch (err) {
+    appendSessionEvent(absRoot, session, { type: 'claude.transcript.materialize.failed', error: String(err?.message || err) });
+  }
+}
+
 function sendRuntimeSessionInput(sr, absRoot, sessionId, payload = {}, headers = {}) {
   const session = sr.get(sessionId);
   if (!session) {
@@ -1863,7 +2460,7 @@ function sendRuntimeSessionInput(sr, absRoot, sessionId, payload = {}, headers =
       code: 'NOT_FOUND',
     });
   }
-  const data = String(payload.data || payload.text || payload.input || '');
+  const data = String(payload.data ?? payload.input ?? payload.text ?? '');
   const actorSessionId = cleanString(
     payload.fromSessionId
       || payload.actorSessionId
@@ -1877,7 +2474,11 @@ function sendRuntimeSessionInput(sr, absRoot, sessionId, payload = {}, headers =
       code: 'BAD_REQUEST',
     });
   }
-  if (!writePtyInput(session.sessionId, data)) {
+  const promptSubmit = payload.submit === true || payload.promptSubmit === true;
+  const writeOk = promptSubmit
+    ? writePromptSubmitInput(session.sessionId, data)
+    : writePtyInput(session.sessionId, data);
+  if (!writeOk) {
     throw new NodeConfigError('No PTY process attached to this session', {
       statusCode: 409,
       code: 'NO_PTY',
@@ -1897,6 +2498,13 @@ function sendRuntimeSessionInput(sr, absRoot, sessionId, payload = {}, headers =
       toNodeId: cleanString(payload.toNodeId || session.graphNodeId, ''),
       data,
       source: cleanString(payload.source, 'api.sessions.input'),
+      messageId: cleanString(payload.messageId, ''),
+      threadId: cleanString(payload.threadId, ''),
+      topic: cleanString(payload.topic, ''),
+      replyTo: cleanString(payload.replyTo, ''),
+      deliveryMode: cleanString(payload.deliveryMode, 'direct'),
+      recipientIndex: payload.recipientIndex,
+      recipientCount: payload.recipientCount,
     });
     appendSessionEvent(absRoot, updated, {
       type: 'wf.bridge.message',
@@ -1906,6 +2514,228 @@ function sendRuntimeSessionInput(sr, absRoot, sessionId, payload = {}, headers =
     });
   }
   return { ok: true, sessionId: session.sessionId, bridgeMessage };
+}
+
+// ── agent.setModel — model selection via project-scope runtime config ──
+// TUI keystrokes (/model + arrows) are the interactive fallback; the right
+// way for agents to switch models is a project config-file update + restart.
+// Only PROJECT-scope config files are ever written here — user-scope files
+// (~/.codex/config.toml, ~/.claude/settings.json) are never touched, and a
+// missing project config file is refused (409) instead of created.
+function escapeRegExpForModelField(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function setJsonConfigField(data, dottedPath, value) {
+  const parts = String(dottedPath || '').split('.').filter(Boolean);
+  let current = data;
+  for (const part of parts.slice(0, -1)) {
+    if (!current[part] || typeof current[part] !== 'object' || Array.isArray(current[part])) {
+      current[part] = {};
+    }
+    current = current[part];
+  }
+  current[parts[parts.length - 1]] = value;
+}
+
+function writeModelToProjectConfig(configPath, format, modelField, model) {
+  if (format === 'toml') {
+    const text = fs.readFileSync(configPath, 'utf8');
+    const nextLine = `${modelField} = ${JSON.stringify(model)}`;
+    const regex = new RegExp(`^\\s*${escapeRegExpForModelField(modelField)}\\s*=\\s*.*$`, 'm');
+    // Top-level key only: stop at the first TOML [section] header so a model
+    // key inside a provider section is never treated as the runtime model.
+    const sectionIndex = text.search(/^\[[^\]]*\][ \t]*(?:#.*)?$/m);
+    const topLevel = sectionIndex === -1 ? text : text.slice(0, sectionIndex);
+    fs.writeFileSync(
+      configPath,
+      regex.test(topLevel) ? text.replace(regex, nextLine) : `${text}\n${nextLine}\n`,
+      'utf8',
+    );
+    return;
+  }
+  const data = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+  setJsonConfigField(data, modelField, model);
+  fs.writeFileSync(configPath, `${JSON.stringify(data, null, 2)}\n`, 'utf8');
+}
+
+function setWorkflowNodeModel(absRoot, sr, node, payload = {}, actorOptions = {}) {
+  const model = cleanString(payload.model, '');
+  if (!model) {
+    throw new NodeConfigError('model is required', {
+      statusCode: 400,
+      code: 'BAD_REQUEST',
+    });
+  }
+  if (model.length > 100) {
+    throw new NodeConfigError('model must be at most 100 characters', {
+      statusCode: 400,
+      code: 'BAD_REQUEST',
+    });
+  }
+  const actorSessionId = cleanString(
+    payload.actorSessionId
+      || payload.fromSessionId
+      || payload.sourceSessionId
+      || actorOptions.actorSessionId,
+    '',
+  );
+  if (actorSessionId && !validateTaskId(actorSessionId)) {
+    throw new NodeConfigError('Invalid actor session ID', {
+      statusCode: 400,
+      code: 'BAD_REQUEST',
+    });
+  }
+  const source = sessionForWorkflowNode(sr, absRoot, node);
+  const runtimeId = cleanString(source?.runtime || node.runtime, '');
+  const definition = getRuntimeDefinition(runtimeId);
+  const projectConfig = (definition?.configFiles || [])
+    .find(candidate => candidate.scope === 'project' && candidate.fields?.model);
+  if (!projectConfig) {
+    throw new NodeConfigError(
+      `Runtime ${runtimeId || 'unknown'} has no project-scope model config`,
+      { statusCode: 409, code: 'NO_PROJECT_MODEL_CONFIG' },
+    );
+  }
+  const configPath = path.isAbsolute(projectConfig.resolvedPath)
+    ? projectConfig.resolvedPath
+    : path.join(absRoot, projectConfig.resolvedPath);
+  if (!fs.existsSync(configPath)) {
+    throw new NodeConfigError(
+      `Project model config file does not exist (${projectConfig.path}); refusing to create it`,
+      { statusCode: 409, code: 'NO_PROJECT_MODEL_CONFIG' },
+    );
+  }
+  writeModelToProjectConfig(configPath, projectConfig.format, projectConfig.fields.model, model);
+  const patch = {
+    model,
+    restartRequired: true,
+    restartRequiredFields: [...new Set([...(source.restartRequiredFields || []), 'model'])],
+  };
+  if (sr && typeof sr.update === 'function' && sr.get(source.sessionId)) {
+    sr.update(source.sessionId, patch);
+    persistSession(absRoot, sr.get(source.sessionId));
+  } else {
+    persistSession(absRoot, { ...source, ...patch });
+  }
+  return { model, configFile: projectConfig.path };
+}
+
+// ── Prompt-submit input (send-input with submit=true) ──
+// Codex/Claude TUIs flush early writes at startup and need composer text
+// typed char-by-char (like the xterm.js frontend delivers keystrokes) and
+// followed by a SINGLE \r (0x0D, never \r\n): a bulk body write leaves text
+// sitting unsubmitted in the codex composer, per-char typing submits.
+// Submits are ready-gated on the prompt marker (❯/›, see
+// terminalReadyForInitialInput): when the marker has not been observed yet,
+// wait up to PROMPT_SUBMIT_READY_WAIT_MS (polled every
+// PROMPT_SUBMIT_READY_POLL_MS) and then submit anyway. A new submit for the
+// same session cancels every pending poll/char/enter timer of the previous
+// submit so a stale \r can never hit a re-registered PTY.
+
+/** sessionId -> { ready: boolean } — prompt-marker readiness for submit gating */
+const terminalInputState = new Map();
+
+/** sessionId -> pending submit timers (ready polls + enter), cancelled by the next submit */
+const pendingSubmitTimers = new Map();
+
+function trackTerminalSpawn(sessionId) {
+  if (!sessionId) return;
+  if (!terminalInputState.has(sessionId)) terminalInputState.set(sessionId, { ready: false });
+}
+
+function markTerminalReady(sessionId) {
+  if (!sessionId) return;
+  const entry = terminalInputState.get(sessionId) || { ready: false };
+  entry.ready = true;
+  terminalInputState.set(sessionId, entry);
+}
+
+function clearTerminalState(sessionId) {
+  if (!sessionId) return;
+  terminalInputState.delete(sessionId);
+}
+
+function terminalSubmitReady(sessionId) {
+  const entry = terminalInputState.get(sessionId);
+  // Untracked sessions (direct registration, tests) are treated as ready:
+  // gating exists for server-spawned PTYs, which always record a spawn.
+  if (!entry) return true;
+  return entry.ready === true;
+}
+
+function cancelPendingSubmit(sessionId) {
+  const timers = pendingSubmitTimers.get(sessionId);
+  if (!timers) return;
+  for (const timer of timers) clearTimeout(timer);
+  pendingSubmitTimers.delete(sessionId);
+}
+
+function scheduleSubmitTimer(sessionId, delayMs, fn) {
+  const timer = setTimeout(fn, delayMs);
+  const timers = pendingSubmitTimers.get(sessionId) || [];
+  timers.push(timer);
+  pendingSubmitTimers.set(sessionId, timers);
+  return timer;
+}
+
+function writePromptSubmitInput(sessionId, data) {
+  const text = String(data || '');
+  const body = text.replace(/[\r\n]+$/g, '');
+  // A new submit supersedes any pending poll/char/enter of a previous submit.
+  cancelPendingSubmit(sessionId);
+
+  const scheduleEnter = () => {
+    scheduleSubmitTimer(sessionId, PROMPT_SUBMIT_ENTER_DELAY_MS, () => {
+      // Submit with a SINGLE \r (0x0D); never \r\n. Retry the enter once if
+      // the PTY disappeared between the last char and the enter.
+      if (!writePtyInput(sessionId, '\r')) {
+        scheduleSubmitTimer(sessionId, PROMPT_SUBMIT_ENTER_DELAY_MS, () => writePtyInput(sessionId, '\r'));
+      }
+    });
+  };
+
+  const submit = () => {
+    // Type the body char-by-char with PROMPT_TYPING_CHAR_DELAY_MS gaps, like
+    // the xterm.js frontend delivers keystrokes: a bulk write of the whole
+    // body + \r leaves the text unsubmitted in the codex composer, per-char
+    // typing submits reliably. The first char is written synchronously so a
+    // missing PTY still surfaces as NO_PTY (409) on the submit call; the
+    // remaining chars and the enter ride the pending-timer list and are
+    // cancelled by the next submit for the same session. An empty body skips
+    // the char loop and just schedules the enter.
+    const chars = Array.from(body);
+    if (chars.length > 0 && !writePtyInput(sessionId, chars[0])) return false;
+    const typeNext = (index) => {
+      if (index >= chars.length) {
+        scheduleEnter();
+        return;
+      }
+      // Every remaining char (and the enter) rides the pending-timer list, so
+      // a second submit for the same session aborts the whole sequence; stop
+      // typing early if the PTY disappeared mid-sequence.
+      scheduleSubmitTimer(sessionId, PROMPT_TYPING_CHAR_DELAY_MS, () => {
+        if (!writePtyInput(sessionId, chars[index])) return;
+        typeNext(index + 1);
+      });
+    };
+    typeNext(1);
+    return true;
+  };
+
+  if (terminalSubmitReady(sessionId)) return submit();
+
+  // PTY is not ready yet: poll for the prompt marker, then submit anyway.
+  const startedAt = Date.now();
+  const poll = () => {
+    if (terminalSubmitReady(sessionId) || Date.now() - startedAt >= PROMPT_SUBMIT_READY_WAIT_MS) {
+      submit();
+      return;
+    }
+    scheduleSubmitTimer(sessionId, PROMPT_SUBMIT_READY_POLL_MS, poll);
+  };
+  poll();
+  return true;
 }
 
 function findWorkflowSnapshotNode(snapshot, key) {
@@ -2019,6 +2849,11 @@ function replaceWorkflowGraphSessionBinding(absRoot, { graphNodeId, previousSess
     };
   });
   if (!changed) {
+    const explicitPosition = sourceNode?.position || current.positions?.[targetNodeId] || null;
+    const position = explicitPosition || defaultGraphNodePosition(current, {
+      parentAgentId: session.parentAgentId || sourceNode?.parentAgentId || null,
+      parentNodeId: session.parentNodeId || sourceNode?.parentNodeId || null,
+    });
     nodes.push({
       nodeId: targetNodeId,
       sessionId: session.sessionId,
@@ -2028,15 +2863,678 @@ function replaceWorkflowGraphSessionBinding(absRoot, { graphNodeId, previousSess
       cwd: session.cwd,
       status: normalizeSessionStatus(session.status),
       label: sourceNode?.label || `${session.runtime} ${session.agentKind === 'main' ? 'main agent' : 'subagent'}`,
-      position: sourceNode?.position || current.positions?.[targetNodeId] || null,
+      parentAgentId: session.parentAgentId || sourceNode?.parentAgentId || null,
+      parentNodeId: session.parentNodeId || sourceNode?.parentNodeId || null,
+      position,
       restartedFromSessionId: previousSessionId || null,
       restartedAt: new Date().toISOString(),
+    });
+    return writeWorkflowGraphMap(absRoot, {
+      ...current,
+      version: current.version + 1,
+      nodes,
+      positions: explicitPosition
+        ? current.positions
+        : { ...(current.positions || {}), [targetNodeId]: position },
     });
   }
   return writeWorkflowGraphMap(absRoot, {
     ...current,
     version: current.version + 1,
     nodes,
+  });
+}
+
+// Smart default placement for a NEW graph node pushed without an explicit
+// position (previously `null`, which made the UI pile every node under the
+// terminal). Placement rules:
+//   1. Parent-anchored: when the node has a parent (parentAgentId/parentNodeId)
+//      and the parent node carries a position, place the child right of the
+//      parent, stacked vertically per sibling index.
+//   2. Otherwise below the lowest existing node, or the empty-graph origin.
+function defaultGraphNodePosition(graph, { parentAgentId = null, parentNodeId = null } = {}) {
+  const nodes = Array.isArray(graph.nodes) ? graph.nodes : [];
+  const positions = graph.positions && typeof graph.positions === 'object' && !Array.isArray(graph.positions)
+    ? graph.positions
+    : {};
+  const parentKey = parentNodeId || parentAgentId || '';
+  const parentNode = parentKey
+    ? nodes.find(node => (
+      (parentNodeId && ((node.nodeId || node.id) === parentNodeId || node.sessionId === parentNodeId))
+      || (parentAgentId && ((node.sessionId === parentAgentId) || (node.nodeId || node.id) === parentAgentId))
+    )) || null
+    : null;
+  if (parentNode) {
+    const parentId = parentNode.nodeId || parentNode.id || '';
+    const parentPosition = parentNode.position
+      || positions[parentId]
+      || (parentNodeId ? positions[parentNodeId] : null)
+      || (parentAgentId ? positions[parentAgentId] : null);
+    if (parentPosition && Number.isFinite(Number(parentPosition.x)) && Number.isFinite(Number(parentPosition.y))) {
+      const childIndex = nodes.filter(node => {
+        const nodeId = node.nodeId || node.id || '';
+        if (nodeId === parentId) return false;
+        const sameParentNode = parentNodeId
+          ? node.parentNodeId === parentNodeId || node.parentNodeId === parentId
+          : Boolean(parentId && node.parentNodeId === parentId);
+        const sameParentAgent = parentAgentId
+          ? node.parentAgentId === parentAgentId
+          : Boolean(parentNode.sessionId && node.parentAgentId === parentNode.sessionId);
+        return sameParentNode || sameParentAgent;
+      }).length;
+      return {
+        x: Number(parentPosition.x) + 420,
+        y: Number(parentPosition.y) + 80 * childIndex,
+      };
+    }
+  }
+  let maxBottom = -Infinity;
+  let hasPosition = false;
+  for (const value of Object.values(positions)) {
+    if (!value || !Number.isFinite(Number(value.y))) continue;
+    hasPosition = true;
+    maxBottom = Math.max(maxBottom, Number(value.y) + 120);
+  }
+  if (!hasPosition) return { x: 260, y: 220 };
+  return { x: 260, y: maxBottom + 140 };
+}
+
+function sessionGraphNodeLabel(session) {
+  if (session.label) return session.label;
+  return `${session.runtime} ${session.agentKind === 'main' ? 'main agent' : 'subagent'}`;
+}
+
+// ── graph layout action (agent.layout) ───────────────────────────────────────
+// Main Agent can tidy the whole canvas: tree mode arranges roots left-to-right
+// with children stacked right of their parent; grid mode fills rows of 4
+// columns (main agents first, then subagents grouped by parent). Nodes that
+// are bound into a capsuleDockLink are skipped so docked groups keep their
+// relative placement. Every computed position is persisted into the graph map
+// `positions` (the same persistence path moveNode uses).
+const GRAPH_LAYOUT_DEFAULTS = Object.freeze({
+  mode: 'tree',
+  originX: 260,
+  originY: 220,
+  gapX: 420,
+  gapY: 140,
+});
+
+function graphLayoutNumber(value, fallback) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function graphLayoutMode(payload) {
+  const mode = String(payload?.mode || GRAPH_LAYOUT_DEFAULTS.mode).toLowerCase();
+  if (mode === 'grid') return 'grid';
+  if (mode === 'tidy') return 'tidy';
+  if (mode === 'agent-tree') return 'agent-tree';
+  return 'tree';
+}
+
+function graphNodeLayoutParentId(node, nodes) {
+  if (!node) return '';
+  const parentNodeId = cleanString(node.parentNodeId, '');
+  const parentAgentId = cleanString(node.parentAgentId, '');
+  if (parentNodeId) {
+    const match = (Array.isArray(nodes) ? nodes : []).find(candidate => (
+      (candidate.nodeId || candidate.id) === parentNodeId
+      || candidate.sessionId === parentNodeId
+    ));
+    if (match) return match.nodeId || match.id || parentNodeId;
+  }
+  if (parentAgentId) {
+    const match = (Array.isArray(nodes) ? nodes : []).find(candidate => (
+      candidate.sessionId === parentAgentId
+      || (candidate.nodeId || candidate.id) === parentAgentId
+    ));
+    if (match) return match.nodeId || match.id || parentAgentId;
+  }
+  return '';
+}
+
+function layoutGraphGridPositions(nodes, { originX, originY, gapX, gapY }) {
+  const sorted = [...nodes].sort((a, b) => {
+    const aMain = isMainAgentGraphNode(a) ? 0 : 1;
+    const bMain = isMainAgentGraphNode(b) ? 0 : 1;
+    if (aMain !== bMain) return aMain - bMain;
+    const aParent = graphNodeLayoutParentId(a, nodes);
+    const bParent = graphNodeLayoutParentId(b, nodes);
+    if (aParent !== bParent) return aParent < bParent ? -1 : 1;
+    return 0;
+  });
+  const positions = {};
+  sorted.forEach((node, index) => {
+    const col = index % 4;
+    const row = Math.floor(index / 4);
+    positions[node.nodeId || node.id] = {
+      x: originX + col * gapX,
+      y: originY + row * gapY,
+    };
+  });
+  return { positions, placed: new Set(Object.keys(positions)) };
+}
+
+// Depth-gated canvas-agent spawning (P1; ontology spawnRules agent.createNode
+// root-only): ALL agents have equal permissions — the ONLY restriction is that
+// a depth-1 agent (a graph node carrying a parentAgentId) may NOT spawn NEW
+// canvas agent nodes. Anonymous / unresolvable actors stay allowed by design
+// (the control plane is auth-less); runtime built-in subagents are outside
+// this surface.
+function assertCanvasAgentSpawnAllowed(absRoot, payload = {}, headers = {}) {
+  const agentKind = cleanString(payload.agentKind, '').toLowerCase();
+  if (!agentKind) return; // not creating an agent node
+  const actorSessionCandidate = cleanString(
+    payload.parentAgentId
+    || headers['x-harness-session-id']
+    || process.env.HARNESS_PEER_SESSION_ID
+    || '',
+    '',
+  );
+  const actorNodeCandidate = cleanString(
+    payload.parentNodeId
+    || headers['x-harness-workflow-node-id']
+    || headers['x-harness-node-id']
+    || '',
+    '',
+  );
+  if (!actorSessionCandidate && !actorNodeCandidate) return; // anonymous
+  const graph = loadWorkflowGraphMap(absRoot);
+  let actorNode = actorNodeCandidate ? findAgentGraphNode(graph, actorNodeCandidate) : null;
+  if (!actorNode && actorSessionCandidate) {
+    actorNode = findAgentGraphNode(graph, actorSessionCandidate);
+    if (!actorNode) {
+      const session = persistedSessionById(absRoot, actorSessionCandidate);
+      if (session?.graphNodeId) actorNode = findAgentGraphNode(graph, session.graphNodeId);
+    }
+  }
+  if (!actorNode) return; // unresolvable actor — anonymous-equivalent
+  if (cleanString(actorNode.parentAgentId, '')) {
+    throw new NodeConfigError('Only the root agent can spawn canvas agents. Use your runtime\'s built-in subagents instead.', {
+      statusCode: 403,
+      code: 'DEPTH_LIMIT',
+    });
+  }
+}
+
+// ── Dock typed actions (P3): agent.attachDock / agent.detachDock /
+// agent.setDockSide. Persisted via writeWorkflowGraphMap under
+// graph.capsuleDockLinks, matching the shape the UI normalizes
+// (normalizeCapsuleDockLinks) and the store re-normalizes on load. ──
+const DOCK_SIDES = new Set(['left', 'right', 'top', 'bottom']);
+
+function dockSideValue(value, fallback = 'right') {
+  const side = cleanString(value, fallback).toLowerCase();
+  return DOCK_SIDES.has(side) ? side : fallback;
+}
+
+function dockPairKey(a, b) {
+  return [String(a || ''), String(b || '')].sort().join('::');
+}
+
+function dockLinkMatchesPair(link, anchorId, draggedId) {
+  const pairKey = dockPairKey(anchorId, draggedId);
+  const nodeIds = Array.isArray(link?.nodeIds)
+    ? link.nodeIds.map(id => String(id || '').trim()).filter(Boolean)
+    : [];
+  if (nodeIds.length >= 2) return dockPairKey(nodeIds[0], nodeIds[1]) === pairKey;
+  const linkAnchor = String(link?.anchorId || '').trim();
+  const linkDragged = String(link?.draggedId || '').trim();
+  return Boolean(linkAnchor && linkDragged) && dockPairKey(linkAnchor, linkDragged) === pairKey;
+}
+
+function findDockLink(graph, { anchorId = '', draggedId = '', dockId = '' } = {}) {
+  const links = Array.isArray(graph.capsuleDockLinks) ? graph.capsuleDockLinks : [];
+  if (dockId) return links.find(link => String(link?.id || '') === String(dockId)) || null;
+  if (!anchorId || !draggedId) return null;
+  return links.find(link => dockLinkMatchesPair(link, anchorId, draggedId)) || null;
+}
+
+function graphActionActorNode(absRoot, actorKey, payload = {}) {
+  const graph = loadWorkflowGraphMap(absRoot);
+  const actorNodeId = cleanString(payload?.actorNodeId || actorKey, '');
+  const graphNode = findAgentGraphNode(graph, actorNodeId);
+  if (!graphNode) {
+    throw new NodeConfigError('Agent graph actor not found', {
+      statusCode: 404,
+      code: 'AGENT_GRAPH_ACTOR_NOT_FOUND',
+    });
+  }
+  return { graph, graphNode, actorNodeId };
+}
+
+function dockEdgeBetween(graph, fromId, toId) {
+  const pairKey = dockPairKey(fromId, toId);
+  return (Array.isArray(graph.edges) ? graph.edges : []).find(edge => {
+    const from = String(edge.from || edge.source || '');
+    const to = String(edge.to || edge.target || '');
+    return Boolean(from && to) && dockPairKey(from, to) === pairKey;
+  }) || null;
+}
+
+function executeGraphDockAction(absRoot, actorKey, action, payload = {}) {
+  const { graph, graphNode, actorNodeId } = graphActionActorNode(absRoot, actorKey, payload);
+  const historyActor = { kind: 'agent', nodeId: actorNodeId, sessionId: graphNode?.sessionId || payload?.actorSessionId || '' };
+  const anchorId = cleanString(payload.anchorId, '');
+  const draggedId = cleanString(payload.draggedId, '');
+  const dockId = cleanString(payload.dockId, '');
+
+  if (action === 'agent.detachDock') {
+    if (!dockId && (!anchorId || !draggedId)) {
+      throw new NodeConfigError('detachDock requires dockId or anchorId+draggedId', {
+        statusCode: 400,
+        code: 'INVALID_DOCK_PAYLOAD',
+      });
+    }
+    const existing = dockId
+      ? findDockLink(graph, { dockId })
+      : (() => {
+          const fromId = resolveWorkflowNodeId(absRoot, graph, anchorId);
+          const toId = resolveWorkflowNodeId(absRoot, graph, draggedId);
+          return findDockLink(graph, { anchorId: fromId, draggedId: toId });
+        })();
+    if (!existing) return { ok: true, action, removed: false, dockId: dockId || null };
+    const removedId = existing.id || dockId || 'dock-link';
+    const recorded = recordGraphOp(absRoot, {
+      action,
+      actor: historyActor,
+      inverse: { dockLinks: [existing] },
+      forward: { dockLinks: [{ ...existing, _removed: true }] },
+    });
+    writeWorkflowGraphMap(absRoot, {
+      ...graph,
+      version: graph.version + 1,
+      capsuleDockLinks: (graph.capsuleDockLinks || []).filter(link => link !== existing),
+      ...(recorded ? { undoStack: recorded.undoStack, redoStack: recorded.redoStack } : {}),
+    }, { overrideHistory: Boolean(recorded) });
+    return { ok: true, action, removed: true, dockId: removedId };
+  }
+
+  if (!anchorId || !draggedId) {
+    throw new NodeConfigError(`${action} requires anchorId and draggedId`, {
+      statusCode: 400,
+      code: 'INVALID_DOCK_PAYLOAD',
+    });
+  }
+  const fromId = resolveWorkflowNodeId(absRoot, graph, anchorId);
+  const toId = resolveWorkflowNodeId(absRoot, graph, draggedId);
+  if (fromId === toId) {
+    throw new NodeConfigError(`${action} anchorId and draggedId must differ`, {
+      statusCode: 400,
+      code: 'INVALID_DOCK_PAYLOAD',
+    });
+  }
+  const existing = findDockLink(graph, { anchorId: fromId, draggedId: toId });
+
+  if (action === 'agent.setDockSide') {
+    if (!existing) {
+      throw new NodeConfigError('Dock link not found', {
+        statusCode: 404,
+        code: 'DOCK_NOT_FOUND',
+      });
+    }
+    const dockLink = { ...existing, side: dockSideValue(payload.side) };
+    const recorded = recordGraphOp(absRoot, {
+      action,
+      actor: historyActor,
+      inverse: { dockLinks: [existing] },
+      forward: { dockLinks: [dockLink] },
+    });
+    writeWorkflowGraphMap(absRoot, {
+      ...graph,
+      version: graph.version + 1,
+      capsuleDockLinks: (graph.capsuleDockLinks || []).map(link => (link === existing ? dockLink : link)),
+      ...(recorded ? { undoStack: recorded.undoStack, redoStack: recorded.redoStack } : {}),
+    }, { overrideHistory: Boolean(recorded) });
+    return { ok: true, action, dockLink };
+  }
+
+  // agent.attachDock — idempotent: re-attaching the same pair updates the side.
+  const pairKey = dockPairKey(fromId, toId);
+  const edge = dockEdgeBetween(graph, fromId, toId);
+  const dockLink = {
+    id: cleanString(payload.dockId, existing?.id || `dock:${pairKey}`),
+    nodeIds: [fromId, toId].sort(),
+    anchorId: fromId,
+    draggedId: toId,
+    side: dockSideValue(payload.side),
+    edges: edge ? [{ edgeId: edge.id, retention: 'keep' }] : [],
+    connections: edge ? [{
+      id: `dock:${pairKey}:${edge.id}`,
+      source: edge.source || edge.from,
+      target: edge.target || edge.to,
+      relation: edge.relation || 'wf-bridge',
+      direction: edge.direction || 'bidirectional',
+      sourceHandle: edge.sourceHandle || null,
+      targetHandle: edge.targetHandle || null,
+    }] : [],
+  };
+  const recorded = recordGraphOp(absRoot, {
+    action,
+    actor: historyActor,
+    inverse: existing ? { dockLinks: [existing] } : { dockLinks: [{ ...dockLink, _removed: true }] },
+    forward: { dockLinks: [dockLink] },
+  });
+  writeWorkflowGraphMap(absRoot, {
+    ...graph,
+    version: graph.version + 1,
+    capsuleDockLinks: existing
+      ? (graph.capsuleDockLinks || []).map(link => (link === existing ? dockLink : link))
+      : [...(graph.capsuleDockLinks || []), dockLink],
+    ...(recorded ? { undoStack: recorded.undoStack, redoStack: recorded.redoStack } : {}),
+  }, { overrideHistory: Boolean(recorded) });
+  return { ok: true, action, dockLink, replaced: Boolean(existing) };
+}
+
+// P5: graph.undo / graph.redo — shared human+agent history. Applies the op's
+// inverse (undo) or forward (redo) slice through the version-guarded
+// writeWorkflowGraphMap path; empty stacks are idempotent ({ok:true, applied:null}).
+function executeGraphHistoryAction(absRoot, actorKey, action, payload = {}) {
+  graphActionActorNode(absRoot, actorKey, payload);
+  const expectedVersion = payload?.expectedVersion;
+  return action === 'graph.redo'
+    ? redoGraphOp(absRoot, { expectedVersion })
+    : undoGraphOp(absRoot, { expectedVersion });
+}
+
+// P4: agent.updateEdge HTTP route — mirrors the connectNodes store pattern
+// (payload {edgeId, relation?, direction?, sourceHandle?, targetHandle?});
+// empty patches and unknown edges surface the store's 400/404 shapes.
+function executeGraphEdgeUpdateAction(absRoot, actorKey, payload = {}) {
+  const { graphNode, actorNodeId } = graphActionActorNode(absRoot, actorKey, payload);
+  const edgeId = cleanString(payload.edgeId, payload.id);
+  const patch = {};
+  if (payload.relation !== undefined) patch.relation = payload.relation;
+  if (payload.direction !== undefined) patch.direction = payload.direction;
+  if (payload.sourceHandle !== undefined) patch.sourceHandle = payload.sourceHandle;
+  if (payload.targetHandle !== undefined) patch.targetHandle = payload.targetHandle;
+  const result = updateEdge(absRoot, edgeId, patch, {
+    action: 'agent.updateEdge',
+    actor: { kind: 'agent', nodeId: actorNodeId, sessionId: graphNode?.sessionId || payload?.actorSessionId || '' },
+  });
+  return { ok: true, action: 'updateEdge', edge: result.edge };
+}
+
+function executeGraphLayoutAction(absRoot, actorKey, payload = {}) {
+  const graph = loadWorkflowGraphMap(absRoot);
+  const actorNodeId = cleanString(payload?.actorNodeId || actorKey, '');
+  const graphNode = findAgentGraphNode(graph, actorNodeId);
+  if (!graphNode) {
+    throw new NodeConfigError('Agent graph actor not found', {
+      statusCode: 404,
+      code: 'AGENT_GRAPH_ACTOR_NOT_FOUND',
+    });
+  }
+  if (!isMainAgentGraphNode(graphNode)) {
+    throw new NodeConfigError('Agent graph control requires a Main Agent node', {
+      statusCode: 403,
+      code: 'MAIN_AGENT_REQUIRED',
+    });
+  }
+  const mode = graphLayoutMode(payload);
+  const originX = graphLayoutNumber(payload?.originX, GRAPH_LAYOUT_DEFAULTS.originX);
+  const originY = graphLayoutNumber(payload?.originY, GRAPH_LAYOUT_DEFAULTS.originY);
+  const gapX = graphLayoutNumber(payload?.gapX, GRAPH_LAYOUT_DEFAULTS.gapX);
+  const gapY = graphLayoutNumber(payload?.gapY, GRAPH_LAYOUT_DEFAULTS.gapY);
+  const nodes = Array.isArray(graph.nodes) ? graph.nodes : [];
+  const dockedNodeIds = new Set();
+  for (const link of Array.isArray(graph.capsuleDockLinks) ? graph.capsuleDockLinks : []) {
+    for (const nodeId of link?.nodeIds || []) dockedNodeIds.add(String(nodeId));
+  }
+  const movable = nodes.filter(node => !dockedNodeIds.has(String(node.nodeId || node.id || '')));
+  // Shared inputs for tidy + agent-tree: per-node sizes, dock pairs (offsets
+  // recomputed from current positions), and the edge list. Docked pairs are
+  // INCLUDED and glued by both engines — each capsule keeps its exact
+  // relative offset; per-node sizes make rows size-aware.
+  const buildLayoutInputs = () => {
+    const sizes = (payload && typeof payload === 'object' && payload.sizes) || {};
+    const layoutNodes = nodes.map(node => {
+      const nodeId = String(node.nodeId || node.id || '');
+      const size = sizes[nodeId];
+      return {
+        id: nodeId,
+        width: size?.w,
+        height: size?.h,
+        agentKind: node.agentKind,
+        parentAgentId: node.parentAgentId,
+        parentNodeId: node.parentNodeId,
+      };
+    });
+    const currentPositions = new Map();
+    for (const node of nodes) {
+      const nodeId = String(node.nodeId || node.id || '');
+      const pos = graph.positions?.[nodeId] || node?.position;
+      if (pos && Number.isFinite(Number(pos.x)) && Number.isFinite(Number(pos.y))) {
+        currentPositions.set(nodeId, pos);
+      }
+    }
+    const dockedPairs = [];
+    for (const link of Array.isArray(graph.capsuleDockLinks) ? graph.capsuleDockLinks : []) {
+      const pair = Array.isArray(link?.nodeIds) ? link.nodeIds : [];
+      const aId = cleanString(link?.anchorId || pair[0], '');
+      const bId = cleanString(link?.draggedId || pair[1], '');
+      if (!aId || !bId || aId === bId) continue;
+      const posA = currentPositions.get(aId);
+      const posB = currentPositions.get(bId);
+      if (!posA || !posB) continue;
+      dockedPairs.push({
+        aId,
+        bId,
+        offset: { x: Number(posB.x) - Number(posA.x), y: Number(posB.y) - Number(posA.y) },
+      });
+    }
+    const layoutEdges = [];
+    for (const edge of Array.isArray(graph.edges) ? graph.edges : []) {
+      if (!edge?.from || !edge?.to) continue;
+      layoutEdges.push({ from: edge.from, to: edge.to, direction: edge.direction });
+    }
+    return { layoutNodes, dockedPairs, layoutEdges };
+  };
+  const { positions, placed } = mode === 'grid'
+    ? layoutGraphGridPositions(movable, { originX, originY, gapX, gapY })
+    : mode === 'tidy' || mode === 'agent-tree'
+      ? (() => {
+        // Tidy: hierarchical edge-direction relayout. Agent-tree: agent-core
+        // compact layout (main centered anchor, agent tree below, asset
+        // matrix bands above owners — never touches edges).
+        const { layoutNodes, dockedPairs, layoutEdges } = buildLayoutInputs();
+        const positionsMap = mode === 'tidy'
+          ? tidyPositions(layoutNodes, layoutEdges, {
+              origin: { x: originX, y: originY },
+              gapX,
+              gapY,
+              dockedPairs,
+            })
+          : agentTreePositions(layoutNodes, layoutEdges, {
+              origin: { x: originX, y: originY },
+              // agent-tree uses its own compact defaults (64/48); the handler
+              // passes explicit payload gaps only.
+              ...(payload?.gapX !== undefined ? { gapX } : {}),
+              ...(payload?.gapY !== undefined ? { gapY } : {}),
+              dockedPairs,
+            });
+        return { positions: positionsMap, placed: new Set(Object.keys(positionsMap)) };
+      })()
+      : (() => {
+      // Layered tree relayout: subtree-width blocks centered under parents —
+      // no sibling-subtree collisions, edges point downward, deterministic.
+      const treePositions = layeredTreePositions(movable, { originX, originY });
+      return { positions: treePositions, placed: new Set(Object.keys(treePositions)) };
+    })();
+  // Cycle safety: any movable node the tree traversal could not reach gets a
+  // deterministic fallback slot so no node is ever left without a position.
+  const placedIds = new Set([...placed].map(String));
+  let fallbackIndex = 0;
+  for (const node of movable) {
+    const nodeId = String(node.nodeId || node.id || '');
+    if (!nodeId || placedIds.has(nodeId)) continue;
+    const col = fallbackIndex % 4;
+    const row = Math.floor(fallbackIndex / 4);
+    positions[nodeId] = { x: originX + col * gapX, y: originY + row * gapY };
+    placedIds.add(nodeId);
+    fallbackIndex += 1;
+  }
+  // MED-2: the undo inverse must be able to restore EVERY node, including
+  // docked pair members (anchor and slave) that are not in `positions` — so
+  // the snapshot covers all graph nodes, not just the movable ones.
+  const previousPositions = {};
+  for (const node of nodes) {
+    const nodeId = String(node.nodeId || node.id || '');
+    if (!nodeId) continue;
+    const previous = graph.positions?.[nodeId] || node.position || null;
+    if (previous && Number.isFinite(Number(previous.x))) previousPositions[nodeId] = previous;
+  }
+  const recorded = recordGraphOp(absRoot, {
+    action: 'agent.layout',
+    actor: { kind: 'agent', nodeId: actorNodeId, sessionId: graphNode?.sessionId || '' },
+    inverse: { positions: previousPositions },
+    forward: { positions },
+  });
+  const nextNodes = nodes.map(node => {
+    const nodeId = String(node.nodeId || node.id || '');
+    if (!positions[nodeId]) return node;
+    return { ...node, position: positions[nodeId] };
+  });
+  const written = writeWorkflowGraphMap(absRoot, {
+    ...graph,
+    version: graph.version + 1,
+    nodes: nextNodes,
+    positions: {
+      ...(graph.positions || {}),
+      ...positions,
+    },
+    ...(recorded ? { undoStack: recorded.undoStack, redoStack: recorded.redoStack } : {}),
+  }, { overrideHistory: Boolean(recorded) });
+  return { ok: true, action: 'layout', positions: written.positions || positions };
+}
+
+function sessionGraphNodePosition(graph, nodeId, existingNode = null, session = null) {
+  const existingNodeId = existingNode?.nodeId || existingNode?.id || '';
+  const existingPosition = existingNode?.position
+    || graph.positions?.[nodeId]
+    || (existingNodeId ? graph.positions?.[existingNodeId] : null);
+  if (existingPosition && Number.isFinite(Number(existingPosition.x)) && Number.isFinite(Number(existingPosition.y))) {
+    return {
+      x: Number(existingPosition.x),
+      y: Number(existingPosition.y),
+    };
+  }
+  // Size-aware occupancy (HIGH-1): clearance is computed against REAL node
+  // extents (per-kind visual sizes — agents render at 560x358, other kinds at
+  // the 280x180 slot), never the slot size, so adjacent agents can't overlap.
+  const selfSize = nodeVisualSize(existingNode || { kind: 'terminal-session', agentKind: session?.agentKind || 'subagent' });
+  const existingRects = [];
+  for (const node of Array.isArray(graph.nodes) ? graph.nodes : []) {
+    const candidateId = node.nodeId || node.id || '';
+    if (!candidateId) continue;
+    const pos = graph.positions?.[candidateId] || node.position;
+    if (!pos || !Number.isFinite(Number(pos.x)) || !Number.isFinite(Number(pos.y))) continue;
+    const size = nodeVisualSize(node);
+    existingRects.push({ x: Number(pos.x), y: Number(pos.y), w: size.w, h: size.h });
+  }
+  // HIGH-1: a caller-supplied {position:{x,y}} (client free-spot, AC-001) is
+  // honored when it clears the existing rects; a colliding spot is moved to
+  // the nearest clear position deterministically instead of being honored
+  // blindly.
+  const requested = session?.graphPosition;
+  if (requested && Number.isFinite(Number(requested.x)) && Number.isFinite(Number(requested.y))) {
+    return findClearPosition({
+      requested: { x: Number(requested.x), y: Number(requested.y) },
+      selfSize,
+      existingRects,
+    });
+  }
+  // Occupancy-aware auto-placement (graph-layout.mjs): new nodes land on a
+  // free grid cell — near the parent's column when a parent is known — and
+  // never overlap any existing node, dragged or auto-placed.
+  const parentNodeId = cleanString(existingNode?.parentNodeId || session?.parentNodeId, '');
+  const parentAgentId = cleanString(existingNode?.parentAgentId || session?.parentAgentId, '');
+  let parentPos = null;
+  if (parentNodeId || parentAgentId) {
+    const parentNode = (Array.isArray(graph.nodes) ? graph.nodes : []).find((candidate) => {
+      const candidateId = candidate.nodeId || candidate.id || '';
+      return candidateId === parentNodeId
+        || candidate.sessionId === parentNodeId
+        || candidateId === parentAgentId
+        || candidate.sessionId === parentAgentId
+        || candidateId === `session-${parentAgentId}`;
+    });
+    if (parentNode) {
+      const parentCandidateId = parentNode.nodeId || parentNode.id || '';
+      parentPos = graph.positions?.[parentCandidateId] || parentNode.position || null;
+    }
+  }
+  return autoPlaceNode(graph.positions || {}, { parent: parentPos, selfSize, existingRects });
+}
+
+function workflowGraphNodeForSession(session, graph, existingNode = null) {
+  const nodeId = cleanString(session.graphNodeId, session.sessionId ? `session-${session.sessionId}` : '');
+  const position = sessionGraphNodePosition(graph, nodeId, existingNode, session);
+  return {
+    ...(existingNode || {}),
+    nodeId,
+    kind: 'terminal-session',
+    sessionId: session.sessionId,
+    peerId: session.peerId,
+    agentKind: session.agentKind,
+    runtime: session.runtime,
+    taskId: session.taskId || null,
+    cwd: session.cwd,
+    status: normalizeSessionStatus(session.status),
+    role: session.role,
+    displayName: session.displayName || '',
+    roleTitle: session.roleTitle || '',
+    label: existingNode?.label || sessionGraphNodeLabel(session),
+    objective: session.objective,
+    workflowMode: session.workflowMode || null,
+    subagentMode: session.subagentMode,
+    model: session.model || '',
+    provider: session.provider || '',
+    parentAgentId: session.parentAgentId || null,
+    parentNodeId: session.parentNodeId || null,
+    nodeHomeRel: session.nodeHomeRel || '',
+    nodeInitRel: session.nodeInitRel || '',
+    configRevision: Number(session.configRevision || 0),
+    updatedAt: session.updatedAt || new Date().toISOString(),
+    position,
+  };
+}
+
+function ensureRuntimeSessionGraphNode(absRoot, session) {
+  if (!session?.sessionId || !session.graphNodeId) return loadWorkflowGraphMap(absRoot);
+  const current = loadWorkflowGraphMap(absRoot);
+  const targetNodeId = cleanString(session.graphNodeId, `session-${session.sessionId}`);
+  let existingForPosition = null;
+  let inserted = false;
+  const nodes = [];
+  for (const node of current.nodes || []) {
+    const nodeId = node.nodeId || node.id || '';
+    const matches = nodeId === targetNodeId || node.sessionId === session.sessionId;
+    if (!matches) {
+      nodes.push(node);
+      continue;
+    }
+    if (inserted) continue;
+    existingForPosition = node;
+    nodes.push(workflowGraphNodeForSession(session, current, node));
+    inserted = true;
+  }
+  if (!inserted) {
+    nodes.push(workflowGraphNodeForSession(session, current, existingForPosition));
+  }
+  const position = nodes.find(node => (node.nodeId || node.id) === targetNodeId)?.position
+    || sessionGraphNodePosition(current, targetNodeId, existingForPosition);
+  const positions = { ...(current.positions || {}) };
+  if (existingForPosition) {
+    const previousNodeId = existingForPosition.nodeId || existingForPosition.id || '';
+    if (previousNodeId && previousNodeId !== targetNodeId) delete positions[previousNodeId];
+  }
+  positions[targetNodeId] = position;
+  return writeWorkflowGraphMap(absRoot, {
+    ...current,
+    version: current.version + 1,
+    nodes,
+    positions,
   });
 }
 
@@ -2081,6 +3579,10 @@ async function startWorkflowGraphNode(sr, absRoot, key, payload = {}, terminalHu
       previousSessionId: node.sessionId,
       started: withResumeMetadata(normalizeSessionForApi(liveSession)),
       sessionId: liveSession.sessionId,
+      // Unified resume semantics: a live PTY ATTACHES — resume args are never
+      // passed while the runtime process is still running.
+      resumeUsed: false,
+      resumeArgs: [],
       node: responseNode,
       snapshot,
     };
@@ -2099,6 +3601,63 @@ async function startWorkflowGraphNode(sr, absRoot, key, payload = {}, terminalHu
   const graphNodeId = cleanString(payload.graphNodeId, node.graphNodeId || source.graphNodeId || node.id);
   const config = activeNodeConfig(source, node, payload);
 
+  // P2 resume wiring (unified semantics): resume args are passed ONLY when
+  // there is no live PTY (the alreadyRunning branch above handles attach) AND
+  // the node has a persisted previous agent session that really ran — the
+  // bound session's status is running/exited/stopped, or
+  // restartedFromSessionId records an earlier restart binding. Fresh nodes
+  // never resume. restart defaults to resume=true; plain start defaults to
+  // true only when a previous session exists on the node. payload.resume:false
+  // always opts out.
+  const boundSession = persistedSessionById(absRoot, node.sessionId);
+  const boundStatus = String(boundSession?.status || '').toLowerCase();
+  const boundIsPrevious = boundStatus === 'running' || boundStatus === 'exited' || boundStatus === 'stopped';
+  const previousAgentSessionId = cleanString(
+    (boundIsPrevious ? node.sessionId : '')
+    || node.restartedFromSessionId
+    || source.restartedFromSessionId
+    || source.previousSessionId
+    || '',
+    '',
+  );
+  const resumeDefault = payload.forceRestart === true ? true : Boolean(previousAgentSessionId);
+  const resume = payload.resume !== undefined ? Boolean(payload.resume) : resumeDefault;
+  // Per-runtime resume target: claude/cc and opencode key conversations by the
+  // captured/pre-assigned agentSessionId (claude `--session-id` uuid, opencode
+  // `ses_...` row id); codex keys by its internal rollout UUID (captured from
+  // the previous PTY's sessions dir). When the previous session recorded its
+  // per-runtime id, resume targets it; legacy sessions without one fall back
+  // to the harness session id.
+  const resumeSourceSession = previousAgentSessionId
+    && previousAgentSessionId !== node.sessionId
+    ? persistedSessionById(absRoot, previousAgentSessionId)
+    : source;
+  const previousAgentSessionIdForResume = cleanString(resumeSourceSession?.agentSessionId, '')
+    || previousAgentSessionId;
+  const previousCodexRolloutId = cleanString(resumeSourceSession?.codexRolloutId, '');
+  // Pre-flight resume check: claude/cc resume a conversation only if its
+  // transcript file still exists on disk (~/.claude/projects/<encoded-cwd>/
+  // <sessionId>.jsonl). When the conversation store was cleaned, skip the
+  // resume entirely and start fresh — otherwise the PTY prints
+  // "No conversation found with session ID" and exits immediately.
+  const resumeCwd = canonicalizeProjectPath(resumeSourceSession?.cwd || node.cwd || absRoot);
+  const claudeConversationMissing = (runtime === 'claude' || runtime === 'cc')
+    && !claudeConversationExists(resumeCwd, previousAgentSessionIdForResume);
+  const resumeArgs = resume && !claudeConversationMissing
+    ? resolveRuntimeResumeArgs(runtime, {
+        agentSessionId: previousAgentSessionIdForResume,
+        codexRolloutId: previousCodexRolloutId,
+      })
+    : [];
+  if (resume && claudeConversationMissing && (runtime === 'claude' || runtime === 'cc')) {
+    appendSessionEvent(absRoot, source, {
+      type: 'session.resume-skipped',
+      reason: 'claude-conversation-missing',
+      agentSessionId: previousAgentSessionIdForResume,
+      cwd: resumeCwd,
+    });
+  }
+
   const started = await createRuntimeSession(sr, absRoot, {
     runtime,
     agentKind,
@@ -2108,7 +3667,7 @@ async function startWorkflowGraphNode(sr, absRoot, key, payload = {}, terminalHu
     objective: cleanString(payload.objective, config.prompt || source.objective || node.objective || 'Workflow agent'),
     taskId: payload.taskId !== undefined ? payload.taskId : (source.taskId || node.taskId || null),
     cwd: config.cwd || cleanString(payload.cwd, source.cwd || node.cwd || absRoot),
-    subagentMode: cleanString(payload.subagentMode, source.subagentMode || 'wf-subagents'),
+    subagentMode: cleanString(payload.subagentMode, source.subagentMode || 'built-in-subagents'),
     workflowMode: cleanString(payload.workflowMode, source.workflowMode || node.workflowMode || ''),
     model: config.model || cleanString(payload.model, source.model || node.model || ''),
     provider: config.provider || cleanString(payload.provider, source.provider || node.provider || ''),
@@ -2136,6 +3695,15 @@ async function startWorkflowGraphNode(sr, absRoot, key, payload = {}, terminalHu
     parentNodeId: cleanString(payload.parentNodeId, source.parentNodeId || node.parentNodeId || '') || null,
     controlPlaneUrl: cleanString(payload.controlPlaneUrl, ''),
     controlPlaneToken: cleanString(payload.controlPlaneToken, ''),
+    ...(Object.prototype.hasOwnProperty.call(payload, 'initialInput') ? { initialInput: payload.initialInput } : {}),
+    ...(Object.prototype.hasOwnProperty.call(payload, 'initialPrompt') ? { initialPrompt: payload.initialPrompt } : {}),
+    // Claude pre-assign continuity: the new session record keeps the resumed
+    // (or harness-fallback) id so a later restart resumes the same
+    // conversation; createRuntimeSession only uses it for claude/cc.
+    ...((runtime === 'claude' || runtime === 'cc') && previousAgentSessionIdForResume
+      ? { agentSessionId: previousAgentSessionIdForResume }
+      : {}),
+    resumeArgs,
   }, terminalHub);
 
   replaceWorkflowGraphSessionBinding(absRoot, {
@@ -2160,6 +3728,8 @@ async function startWorkflowGraphNode(sr, absRoot, key, payload = {}, terminalHu
     previousSessionId: node.sessionId,
     started: withResumeMetadata(normalizeSessionForApi(started)),
     sessionId: started.sessionId,
+    resumeUsed: resume && resumeArgs.length > 0,
+    resumeArgs,
     node: responseNode,
     snapshot: nextSnapshot,
   };
@@ -2172,12 +3742,23 @@ async function restartWorkflowGraphNode(sr, absRoot, key, payload = {}, terminal
     ...payload,
     forceRestart: true,
   }, terminalHub);
-  if (sr && typeof sr.get === 'function' && sr.get(previousSessionId)) {
-    stopRuntimeSession(sr, absRoot, previousSessionId, terminalHub);
-  }
   const nextSession = result.sessionId && sr && typeof sr.get === 'function'
     ? sr.get(result.sessionId)
     : persistedSessionById(absRoot, result.sessionId);
+  if (sr && typeof sr.get === 'function' && sr.get(previousSessionId)) {
+    // AC-005 duplicate-node bug: the old session stays live in the registry
+    // until its stop completes, and detachPreviousGraphSession early-returns
+    // for live registry sessions — so a detach scheduled before (or racing)
+    // the stop never persists the graphReplacedBy* markers. The old session
+    // then remains snapshot-visible under the same node id as the new one.
+    // Await the stop here (bounded by gracefulStopPty's hard-kill fallback,
+    // ~6s worst case for claude; codex/opencode hard-kill immediately), THEN
+    // detach — the registry entry is gone by then and the detach persists.
+    // The catch guard keeps a kill failure from failing the whole restart.
+    try {
+      await stopRuntimeSession(sr, absRoot, previousSessionId, terminalHub);
+    } catch { /* best-effort stop; detach below still marks the replacement */ }
+  }
   if (nextSession) detachPreviousGraphSession(sr, absRoot, previousSessionId, nextSession);
   const snapshot = buildWorkflowSnapshot(absRoot, sr);
   const responseNode = findWorkflowSnapshotNode(snapshot, result.graphNodeId)
@@ -2188,6 +3769,8 @@ async function restartWorkflowGraphNode(sr, absRoot, key, payload = {}, terminal
     sessionId: result.sessionId,
     graphNodeId: result.graphNodeId,
     started: result.started,
+    resumeUsed: result.resumeUsed,
+    resumeArgs: result.resumeArgs,
     node: responseNode,
     snapshot,
   };
@@ -2277,50 +3860,120 @@ function nodeHomeDir(absRoot, sessionId) {
   return path.join(absRoot, 'Harness', 'a2a', 'nodes', sessionId);
 }
 
+// Runtime-aware Subagent Strategy guidance (E2/E3/E5 in
+// workflow-subagent-strategy-matrix.test.mjs). The heading structure and the
+// literal `- subagentMode: <built-in-subagents|wf-node-subagents>` placeholder
+// are pinned by B1; the `- When subagentMode is ...` prefixes and the NL
+// trigger lines are pinned by B1/F1/F2/F3, and the Codex guidance lines by
+// E2/E3/E5. Only the guidance lines vary by runtime and subagentMode.
+// Unknown/unspecified runtimes fall back to the Claude Code text.
+function subagentStrategyLines(session) {
+  const runtimeId = String(session.runtime || '').toLowerCase();
+  const wfNodeMode = session.subagentMode === 'wf-node-subagents';
+  const lines = [
+    '## Subagent Strategy',
+    '',
+    '- subagentMode: <built-in-subagents|wf-node-subagents>',
+    '',
+    '- When subagentMode is `built-in-subagents`:',
+  ];
+  if (runtimeId === 'codex') {
+    lines.push(
+      '- Use the Codex native subagent/tool/role path (codex_implement, codex exec, or native agent mechanism); do NOT create WF canvas Agent nodes; record fanoutAttempted, channel, roles evidence. If Codex native subagents are unavailable, record clear degradation evidence (runtime version, capability check result, error message) and inform the user; do not silently skip or pretend native subagents were used.',
+    );
+  } else if (runtimeId === 'opencode') {
+    lines.push(
+      '- Use the OpenCode native subagent mechanism (subagent_depth >= 2 required for nesting); do NOT create WF canvas Agent nodes; record fanoutAttempted, channel, roles evidence. If native subagents are unavailable, record clear degradation evidence and inform the user.',
+    );
+  } else {
+    // claude / cc / unspecified default to Claude Code guidance.
+    lines.push(
+      "- Use the current runtime's native subagent mechanism (Agent tool for Claude Code); do NOT create WF canvas Agent nodes; record fanoutAttempted, channel, roles evidence. If native subagents are unavailable, record clear degradation evidence and inform the user.",
+    );
+  }
+  // A Codex built-in session never gets the wf-node block, so the built-in
+  // prompt cannot instruct WF canvas node creation (E2 doesNotMatch pin).
+  if (runtimeId !== 'codex' || wfNodeMode) {
+    lines.push(
+      '',
+      '- When subagentMode is `wf-node-subagents`:',
+      '- Use `node Harness/scripts/wf-ui-control.mjs create-agent` to create/connect WF Agent nodes; communicate via sendMessage/broadcastMessage/readMessages; all worker nodes are visible on the canvas.',
+    );
+    if (runtimeId === 'codex') {
+      lines.push(
+        '- TIP: Codex main can create Claude Code implementer nodes (runtime: claude) as workers — send implementation tasks, Claude Code workers reply, Codex main aggregates via readMessages',
+      );
+    } else if (runtimeId !== 'opencode') {
+      lines.push('- Worker agents can be Claude Code, Codex, or OpenCode nodes');
+    }
+  }
+  lines.push(
+    '',
+    '- Natural language: "内部助手", "内置子代理", "不要开画布节点", "native subagent", "built-in" → built-in-subagents',
+    '- "画布Agent节点", "开Claude Code节点", "WF node协作", "可视化协作", "canvas worker" → wf-node-subagents',
+    '- Default when unspecified: built-in-subagents',
+    '',
+  );
+  return lines;
+}
+
+// Methodology-only node init prompt: identity, a 5-step runtime discovery
+// loop (help --json / workflow-context / manuals / snapshot /
+// workflow-ontology), invariant rules, and the runtime-aware Subagent
+// Strategy section. The init prompt deliberately carries NO command catalog —
+// the agent discovers commands, context, node manuals, canvas state, and
+// ontology at runtime through the discovery loop.
 function nodeInitMarkdown(session) {
   const agentKind = session.agentKind === 'main' ? 'main' : 'subagent';
   const workflowMode = session.workflowMode ? `/${String(session.workflowMode).replace(/^\//, '')}` : 'none';
+  const homeRel = session.nodeHomeRel || nodeHomeRel(session.sessionId);
   const lines = [
     '# Harness WF Node Init',
     '',
-    `- Session: ${session.sessionId}`,
-    `- Runtime: ${session.runtime}`,
-    `- Agent kind: ${agentKind}`,
-    `- Role: ${session.role || 'terminal-agent'}`,
-    `- Workflow mode: ${workflowMode}`,
+    '## Identity',
+    `- You are: ${String(session.displayName || 'terminal-agent').trim()} (${String(session.roleTitle || 'terminal-agent').trim()}); Agent kind: ${agentKind}`,
+    `- Session: ${session.sessionId} | Runtime: ${session.runtime} | Graph node: ${session.graphNodeId || ''}`,
+    `- Subagent mode: ${session.subagentMode || 'built-in-subagents'} | Workflow mode: ${workflowMode}`,
+    `- Node home: ${homeRel} | This file: ${homeRel}/init.md`,
+    // F15/D12: the identity block appears only when a real role profile exists
+    // (roleProfileRef is set exclusively by the create-agent profile path);
+    // legacy sessions without a profile keep the previous init shape even
+    // though the registry defaults roleTitle/displayName to 'terminal-agent'.
+    ...(session.roleProfileRef
+      ? [
+          `- Display name: ${String(session.displayName || '').trim()}`,
+          `- Role title: ${String(session.roleTitle || '').trim()}`,
+          ...(String(session.responsibility || '').trim()
+            ? [`- Responsibility: ${String(session.responsibility).trim()}`]
+            : []),
+          ...(Array.isArray(session.capabilities) && session.capabilities.some(item => String(item || '').trim())
+            ? [`- Capabilities: ${session.capabilities.map(item => String(item).trim()).filter(Boolean).join(', ')}`]
+            : []),
+          `- Role profile: ${String(session.roleProfileRef || '').trim()} — read this file; it is your identity and mandate.`,
+        ]
+      : []),
     `- Objective: ${session.objective || 'none'}`,
-    `- Prompt: ${session.prompt || session.nodeConfig?.prompt || 'none'}`,
-    `- Config revision: ${Number(session.configRevision || 0)}`,
-    `- Project root: ${session.projectRoot}`,
-    `- Working directory: ${session.cwd}`,
-    `- Node home: ${session.nodeHomeRel || nodeHomeRel(session.sessionId)}`,
-    `- Env node init: HARNESS_NODE_INIT=${session.nodeInitPath || ''}`,
-    `- Env session id: HARNESS_PEER_SESSION_ID=${session.sessionId}`,
-    `- Env graph node id: HARNESS_WORKFLOW_NODE_ID=${session.graphNodeId || ''}`,
-    `- Workflow map source of truth: backend control plane (${session.graphContextPath || 'Harness/a2a/workflow-map.json'})`,
-    `- Node config source of truth: backend session state; hot-edit changes may require restart when restartRequired is true.`,
+    `- Env subagent mode: HARNESS_SUBAGENT_MODE=${session.subagentMode || ''} | Env: HARNESS_NODE_INIT=${session.nodeInitPath || ''} | HARNESS_PEER_SESSION_ID=${session.sessionId} | HARNESS_WORKFLOW_NODE_ID=${session.graphNodeId || ''}`,
     '',
-    '## Required Startup Behavior',
+    '## Working Method — discovery first',
+    'You control the workflow canvas ONLY through typed interfaces. Never edit Harness/a2a/**/state.json or workflow-map.json directly.',
     '',
-    '- Keep terminal startup quiet. Do not print this file unless the operator asks.',
-    '- Treat this file plus Harness environment variables as your node identity. Do not wait for an injected bootstrap prompt.',
-    '- Read the workflow graph with `node Harness/scripts/wf-ui-control.mjs describe --project .` when you need topology.',
-    '- Communicate only with connected managed PTY nodes through wf-bridge routes.',
+    'Discover in this order before acting:',
+    '1. Commands:   node Harness/scripts/wf-ui-control.mjs help --json',
+    '2. Context:    node Harness/scripts/wf-ui-control.mjs workflow-context --project .   ← hydrate EVERY turn, mandatory',
+    '3. Manual:     node Harness/scripts/wf-ui-control.mjs manuals <nodeType>   ← before creating/connecting a node type',
+    '4. Canvas:     node Harness/scripts/wf-ui-control.mjs snapshot --project .',
+    '5. Vocabulary: node Harness/scripts/wf-ui-control.mjs workflow-ontology --project .',
+    '',
+    '## Invariant Rules',
+    '- The Timer is the only wakeup source; the Goal node never wakes agents.',
+    '- Writing/modifying HTML files is normal work and always allowed. When PRESENTING a report or results to the user: if the user has not explicitly named a target file, the default presentation surface is a Display node (display.write). Never open a browser yourself. Guide: node Harness/scripts/wf-ui-control.mjs manuals display',
+    ...(agentKind === 'subagent'
+      ? ['- Subagent must not create nodes, tasks, unmanaged PTYs, or built-in/internal subagents; do assigned work and return concise evidence.']
+      : []),
+    '',
+    ...subagentStrategyLines(session),
   ];
-  if (agentKind === 'main') {
-    lines.push(
-      '- Main Agent has global workflow graph awareness and may modify managed wf-ui graph state through the Harness control plane.',
-      '- Main Agent may create managed subagents with `node Harness/scripts/wf-ui-control.mjs create-agent --project . --agent-kind subagent --objective "..."`.',
-      '- Main Agent may send input to connected sessions with `node Harness/scripts/wf-ui-control.mjs send-input --session <id> --text "..."`.',
-      '- Main Agent should answer wf-bridge messages with `node Harness/scripts/wf-ui-control.mjs send-input --session <id> --text "..."` so both sides of the bridge are recorded.',
-      '- Main Agent may delete stopped graph nodes with `node Harness/scripts/wf-ui-control.mjs delete-node --node <graphNodeIdOrSessionId>`.',
-    );
-  } else {
-    lines.push(
-      '- Subagent must not create nodes, tasks, unmanaged PTYs, or built-in/internal subagents.',
-      '- Subagent should do assigned work and return concise evidence.',
-    );
-  }
   return `${lines.join('\n')}\n`;
 }
 
@@ -2343,6 +3996,9 @@ function writeNodeHome(absRoot, session, graph) {
     nodeHomeRel: session.nodeHomeRel,
     graphContextPath: session.graphContextPath,
     nodeConfig: session.nodeConfig || normalizeNodeConfig(null, session),
+    uiMode: session.uiMode || 'pty',
+    transport: (session.uiMode || 'pty') === 'chat' ? 'stdio' : 'pty',
+    providerSessionId: session.providerSessionId || null,
     restartRequired: Boolean(session.restartRequired),
     restartRequiredFields: Array.isArray(session.restartRequiredFields) ? session.restartRequiredFields : [],
     configRevision: Number(session.configRevision || 0),
@@ -2360,8 +4016,30 @@ function writeNodeHome(absRoot, session, graph) {
 }
 
 function runtimeInitialInput(session, payload) {
-  if (payload.initialInput) return String(payload.initialInput);
+  if (Object.prototype.hasOwnProperty.call(payload, 'initialInput')) return String(payload.initialInput ?? '');
   return '';
+}
+
+function runtimeInitialInputMode(session, payload, initialInput) {
+  if (!initialInput) return '';
+  if (Object.prototype.hasOwnProperty.call(payload, 'initialInput')) return 'explicit';
+  return '';
+}
+
+export function terminalReadyForInitialInput(data, runtime = '') {
+  const text = String(data || '');
+  if (!text) return false;
+  const runtimeId = String(runtime || '').toLowerCase();
+
+  if (runtimeId.includes('claude')) {
+    return text.includes('Claude Code') && (text.includes('bypass permissions') || text.includes('❯'));
+  }
+
+  if (runtimeId.includes('codex')) {
+    return text.includes('Codex') && (text.includes('›') || text.includes('❯') || text.includes('bypass permissions'));
+  }
+
+  return text.includes('❯') || text.includes('›');
 }
 
 function runtimeInitialPrompt(session, payload) {
@@ -2421,10 +4099,23 @@ async function createRuntimeSession(sr, absRoot, payload, terminalHub = null) {
   const taskId = optionalTaskId(payload.taskId);
   const runtime = resolveTaskRuntime(absRoot, taskId, cleanString(payload.runtime));
   if (!runtime) throw new Error('Runtime is required');
+  const resumeArgs = Array.isArray(payload.resumeArgs) ? payload.resumeArgs : [];
+  // Claude pre-assign (deterministic capture): claude 2.1.x accepts
+  // `--session-id <uuid>` at spawn, so the harness mints the conversation id
+  // up front instead of polling for it. The id source is the caller-supplied
+  // agentSessionId (the previous session's id on graph resume) or a fresh
+  // uuid — always generated for claude/cc. Resume spawns never re-pre-assign:
+  // the --resume flag already targets the resumed conversation.
+  const isClaudeRuntime = runtime === 'claude' || runtime === 'cc';
+  const claudeAgentSessionId = isClaudeRuntime
+    ? cleanString(payload.agentSessionId, '') || crypto.randomUUID()
+    : null;
+  const attachGraphNode = payload.attachGraphNode === true;
+  const requestedGraphNodeId = cleanString(payload.graphNodeId, '');
   const agentKind = cleanString(payload.agentKind, String(payload.role || '').toLowerCase().includes('ceo') ? 'main' : 'subagent').toLowerCase();
   const role = cleanString(payload.role, 'terminal-agent');
   const objective = cleanString(payload.objective, 'Harness terminal agent');
-  const subagentMode = cleanString(payload.subagentMode, 'wf-subagents');
+  const subagentMode = cleanString(payload.subagentMode, 'built-in-subagents');
   const workflowMode = cleanString(payload.workflowMode, '');
   const model = cleanString(payload.model, '');
   const provider = cleanString(payload.provider, '');
@@ -2479,6 +4170,7 @@ async function createRuntimeSession(sr, absRoot, payload, terminalHub = null) {
     projectRoot: absRoot,
     cwd,
     subagentMode,
+    uiMode: payload.uiMode === 'chat' ? 'chat' : 'pty',
     workflowMode: workflowMode || null,
     model,
     provider,
@@ -2497,12 +4189,61 @@ async function createRuntimeSession(sr, absRoot, payload, terminalHub = null) {
     ceoPrompt,
     launchPolicy,
     graphContext: payload.graphContext || null,
-    graphNodeId: cleanString(payload.graphNodeId, ''),
+    graphNodeId: requestedGraphNodeId,
     graphVersion: Number(payload.graphVersion || 0),
     graphContextPath: cleanString(payload.graphContextPath, currentGraph.graphContextPath || ''),
     parentAgentId: cleanString(payload.parentAgentId, '') || null,
     parentNodeId: cleanString(payload.parentNodeId, '') || null,
   });
+  if (attachGraphNode && !session.graphNodeId) {
+    sr.update(session.sessionId, { graphNodeId: `session-${session.sessionId}` });
+    session = sr.get(session.sessionId) || { ...session, graphNodeId: `session-${session.sessionId}` };
+  }
+  if (claudeAgentSessionId) {
+    sr.update(session.sessionId, { agentSessionId: claudeAgentSessionId });
+    session = sr.get(session.sessionId) || { ...session, agentSessionId: claudeAgentSessionId };
+  }
+  // Role profile (agent-team-cooperation-spec §3, AC-001/AC-007): the
+  // create-agent path writes the profile when the caller supplies profile
+  // fields (displayName / roleTitle / responsibility / capabilities). F15/D12:
+  // the profile is created/read BEFORE the node home init prompt is assembled,
+  // so the init prompt can carry the identity fields + roleProfileRef. Legacy
+  // creates without profile fields stay unchanged.
+  const wantsProfile = Boolean(
+    payload.displayName || payload.roleTitle
+    || payload.responsibility || payload.capabilities
+    || payload.roleProfile === true,
+  );
+  if (wantsProfile && session.graphNodeId) {
+    const profileNodeId = cleanString(session.graphNodeId, `session-${session.sessionId}`);
+    const legacyRoles = new Set(['Subagent', 'Main Agent', 'terminal-agent', 'CEO']);
+    const parentSessionId = cleanString(payload.parentAgentId, '');
+    // AC-004/F6: a subagent created WITHOUT an explicit roleTitle gets the
+    // next distinct canonical role for its parent instead of a fixed default;
+    // an explicit roleTitle is respected as given.
+    const resolvedRoleTitle = cleanString(payload.roleTitle,
+      agentKind === 'main' ? 'ceo'
+        : (role && !legacyRoles.has(role) ? role : nextAvailableRole(parentSessionId, absRoot)));
+    const profile = createRoleProfile({
+      nodeId: profileNodeId,
+      roleTitle: resolvedRoleTitle,
+      displayName: cleanString(payload.displayName, resolvedRoleTitle),
+      responsibility: cleanString(payload.responsibility, objective),
+      agentKind,
+      runtime,
+      provider: cleanString(payload.provider, provider),
+      model: cleanString(payload.model, model),
+      capabilities: Array.isArray(payload.capabilities)
+        ? payload.capabilities.map(item => String(item).trim()).filter(Boolean)
+        : (Array.isArray(nodeConfig.capabilities) ? nodeConfig.capabilities : []),
+      createdBy: cleanString(payload.createdBy, 'agent.create'),
+      parentSessionId,
+    }, absRoot);
+    const sessionFields = profileSessionFields(profile.profile);
+    const updatedSession = { ...(sr.get(session.sessionId) || session), ...sessionFields };
+    if (typeof sr.update === 'function') sr.update(session.sessionId, sessionFields);
+    session = sr.get(session.sessionId) || updatedSession;
+  }
   const nodeHome = writeNodeHome(absRoot, {
     ...session,
     nodeHomeRel: nodeHomeRel(session.sessionId),
@@ -2510,13 +4251,28 @@ async function createRuntimeSession(sr, absRoot, payload, terminalHub = null) {
   sr.update(session.sessionId, nodeHome);
   session = sr.get(session.sessionId) || { ...session, ...nodeHome };
   persistSession(absRoot, session);
+  // HIGH-1: the create payload may carry an optional {position:{x,y}} (client
+  // free-spot). It rides a transient copy — the registry session itself keeps
+  // its fixed shape, so start/reload paths (which pass sr.get sessions with
+  // no graphPosition) are unaffected and existing positions still win.
+  if (attachGraphNode) {
+    ensureRuntimeSessionGraphNode(absRoot, { ...session, graphPosition: payload.position });
+  }
   const initialInput = runtimeInitialInput(session, payload);
+  const initialInputMode = runtimeInitialInputMode(session, payload, initialInput);
   const initialPrompt = runtimeInitialPrompt(session, payload);
   let initialInputScheduled = false;
-  const scheduleInitialInput = () => {
+  const scheduleInitialInput = (reason = 'unknown', delayMs = INITIAL_INPUT_READY_DELAY_MS) => {
     if (!initialInput || initialInputScheduled) return;
     initialInputScheduled = true;
-    setTimeout(() => writePtyInputSequence(session.sessionId, initialInput), INITIAL_INPUT_READY_DELAY_MS);
+    appendSessionEvent(absRoot, session, {
+      type: 'terminal.input.schedule',
+      mode: initialInputMode || 'unknown',
+      bytes: initialInput.length,
+      reason,
+      delayMs,
+    });
+    setTimeout(() => writePtyInputSequence(session.sessionId, initialInput), delayMs);
   };
   appendSessionEvent(absRoot, session, {
     type: 'session.created',
@@ -2527,6 +4283,8 @@ async function createRuntimeSession(sr, absRoot, payload, terminalHub = null) {
     subagentMode,
     bootstrapMode: 'env-node-init',
     nodeInitRel: session.nodeInitRel || null,
+    initialInputMode: initialInputMode || null,
+    initialInputBytes: initialInput ? initialInput.length : 0,
   });
 
   if (payload.deferPtySpawn === true || !runtimeInfo.path || !runtimeInfo.launchable) {
@@ -2540,17 +4298,56 @@ async function createRuntimeSession(sr, absRoot, payload, terminalHub = null) {
         : (runtimeInfo.path ? undefined : `${runtimeInfo.label || runtime} is not detected on PATH`),
     });
     const updated = sr.get(session.sessionId);
-    persistSession(absRoot, updated, { hint: updated.blockedHint || runtimeInfo.hint });
+    const pendingInitialInput = initialInput ? {
+      pendingInitialInputMode: initialInputMode || 'unknown',
+      pendingInitialInputBytes: initialInput.length,
+      pendingInitialInputAt: new Date().toISOString(),
+    } : {};
+    persistSession(absRoot, updated, { hint: updated.blockedHint || runtimeInfo.hint, ...pendingInitialInput });
+    if (attachGraphNode) ensureRuntimeSessionGraphNode(absRoot, updated);
     appendSessionEvent(absRoot, updated, { type: 'session.blocked', reason: updated.blockedReason, hint: updated.blockedHint || runtimeInfo.hint });
+    if (initialInput) {
+      appendSessionEvent(absRoot, updated, {
+        type: 'terminal.input.pending',
+        mode: initialInputMode || 'unknown',
+        bytes: initialInput.length,
+        intent: 'explicit-initial-input',
+        reason: updated.blockedReason,
+      });
+    }
     return updated;
   }
 
-  const spawned = await spawnPty({
+  // Chat mode: same node semantics, but the runtime is spawned through a
+  // structured-stdio chat driver instead of a PTY. TUI ready-gating and
+  // initial typing are skipped — the initial input rides driver.send after
+  // session_ready (or the fallback timeout).
+  if (session.uiMode === 'chat') {
+    return spawnChatRuntimeSession({
+      sr,
+      absRoot,
+      payload,
+      session,
+      runtime,
+      runtimeInfo,
+      resumeArgs,
+      claudeAgentSessionId,
+      isClaudeRuntime,
+      model,
+      cwd,
+      initialInput,
+      attachGraphNode,
+    });
+  }
+
+  const spawned = await ptySpawnGate(() => spawnPty({
     runtime,
     taskId,
     peerId: session.peerId,
     sessionId: session.sessionId,
     command: runtimeInfo.path || runtimeInfo.command,
+    commandArgs: resumeArgs,
+    agentSessionId: isClaudeRuntime && resumeArgs.length === 0 ? claudeAgentSessionId : undefined,
     model,
     initialPrompt,
     launchPolicy: session.launchPolicy,
@@ -2560,6 +4357,7 @@ async function createRuntimeSession(sr, absRoot, payload, terminalHub = null) {
     cwd,
     agentKind: session.agentKind,
     workflowMode: session.workflowMode,
+    subagentMode: session.subagentMode,
     graphNodeId: session.graphNodeId,
     graphContextPath: session.graphContextPath,
     nodeHomePath: session.nodeHomePath,
@@ -2567,7 +4365,11 @@ async function createRuntimeSession(sr, absRoot, payload, terminalHub = null) {
     cols: session.cols,
     rows: session.rows,
     onData: (data) => {
-      scheduleInitialInput();
+      if (terminalReadyForInitialInput(data, runtime)) {
+        scheduleInitialInput('terminal-ready');
+        markTerminalReady(session.sessionId);
+        markAgentNodeTerminalReady(session.sessionId);
+      }
       const current = sr.get(session.sessionId);
       if (!current) return;
       const entry = appendTerminalData(absRoot, current, data, 'stdout');
@@ -2581,25 +4383,172 @@ async function createRuntimeSession(sr, absRoot, payload, terminalHub = null) {
     },
     onControlRequest: (requestEvent) => {
       const current = sr.get(session.sessionId);
-      if (!current || requestEvent.type !== 'codex:update-prompt') return;
-      const request = createCodexUpdateControlRequest(current);
-      sr.update(session.sessionId, { controlRequest: request });
-      const updated = sr.get(session.sessionId);
-      persistSession(absRoot, updated);
-      appendSessionEvent(absRoot, updated, {
-        type: 'codex.update-prompt.detected',
-        requestId: request.requestId,
-        reason: requestEvent.reason,
-      });
-      terminalHub?.broadcastToSession?.(session.sessionId, {
-        ...request,
-        sessionId: session.sessionId,
-      });
+      if (!current) return;
+      if (requestEvent.type === 'codex:update-prompt') {
+        const request = createCodexUpdateControlRequest(current);
+        sr.update(session.sessionId, { controlRequest: request });
+        const updated = sr.get(session.sessionId);
+        persistSession(absRoot, updated);
+        appendSessionEvent(absRoot, updated, {
+          type: 'codex.update-prompt.detected',
+          requestId: request.requestId,
+          reason: requestEvent.reason,
+        });
+        terminalHub?.broadcastToSession?.(session.sessionId, {
+          ...request,
+          sessionId: session.sessionId,
+        });
+        return;
+      }
+      if (requestEvent.type === 'codex:rollout-id') {
+        const rolloutId = String(requestEvent.payload?.rolloutId || '').trim();
+        if (!rolloutId) return;
+        sr.update(session.sessionId, { agentSessionId: rolloutId });
+        const updated = sr.get(session.sessionId);
+        if (!updated) return;
+        // codexRolloutId is not part of the registry schema yet, so it is set
+        // directly (sr.update only merges known keys); persistSession writes it
+        // to the session STATE.json record.
+        updated.codexRolloutId = rolloutId;
+        persistSession(absRoot, updated);
+        appendSessionEvent(absRoot, updated, {
+          type: 'codex.rollout-id.captured',
+          codexRolloutId: rolloutId,
+        });
+        terminalHub?.broadcastToSession?.(session.sessionId, {
+          type: 'codex:rollout-id:captured',
+          sessionId: session.sessionId,
+          codexRolloutId: rolloutId,
+        });
+        return;
+      }
+      if (requestEvent.type === 'opencode:session-id') {
+        const opencodeSessionId = String(requestEvent.payload?.sessionId || '').trim();
+        if (!opencodeSessionId) return;
+        sr.update(session.sessionId, { agentSessionId: opencodeSessionId });
+        const updated = sr.get(session.sessionId);
+        if (!updated) return;
+        // Mirrors the codex:rollout-id handling: sr.update persists the
+        // registry field and the direct set + persistSession lands it on the
+        // session STATE.json record.
+        updated.agentSessionId = opencodeSessionId;
+        persistSession(absRoot, updated);
+        appendSessionEvent(absRoot, updated, {
+          type: 'opencode.session-id.captured',
+          agentSessionId: opencodeSessionId,
+        });
+        terminalHub?.broadcastToSession?.(session.sessionId, {
+          type: 'opencode:session-id:captured',
+          sessionId: session.sessionId,
+          agentSessionId: opencodeSessionId,
+        });
+        return;
+      }
     },
     onExit: ({ exitCode, signal }) => {
       const handleExit = () => {
+        flushTerminalBuffer(absRoot, session.sessionId);
         if (!sr.get(session.sessionId)) {
           unregisterPtyProcess(session.sessionId);
+          clearTerminalState(session.sessionId);
+          clearAgentNodeTerminalState(session.sessionId);
+          return;
+        }
+        // Early-exit fallback: if the PTY exited within 8s of spawn AND this
+        // was a resume attempt, retry once without resume args. This handles
+        // "No conversation found with session ID" from Claude Code when the
+        // conversation store has been cleaned.
+        const earlyExitMs = Date.now() - spawnedAt;
+        if (resumeArgs.length > 0 && earlyExitMs < 8000 && !session._resumeFallbackAttempted) {
+          session._resumeFallbackAttempted = true;
+          sr.update(session.sessionId, { status: 'starting' });
+          persistSession(absRoot, sr.get(session.sessionId));
+          appendSessionEvent(absRoot, sr.get(session.sessionId), {
+            type: 'session.resume-fallback',
+            reason: 'early-exit-after-resume',
+            earlyExitMs,
+            exitCode,
+          });
+          unregisterPtyProcess(session.sessionId);
+          clearTerminalState(session.sessionId);
+          clearAgentNodeTerminalState(session.sessionId);
+          // Respawn without resume args
+          ptySpawnGate(() => spawnPty({
+            runtime,
+            taskId,
+            peerId: session.peerId,
+            sessionId: session.sessionId,
+            command: runtimeInfo.path || runtimeInfo.command,
+            commandArgs: [],
+            agentSessionId: isClaudeRuntime ? (claudeAgentSessionId || crypto.randomUUID()) : undefined,
+            model,
+            initialPrompt,
+            launchPolicy: session.launchPolicy,
+            controlPlaneUrl: cleanString(payload.controlPlaneUrl, ''),
+            controlPlaneToken: cleanString(payload.controlPlaneToken, ''),
+            projectRoot: absRoot,
+            cwd,
+            agentKind: session.agentKind,
+            workflowMode: session.workflowMode,
+            subagentMode: session.subagentMode,
+            graphNodeId: session.graphNodeId,
+            graphContextPath: session.graphContextPath,
+            nodeHomePath: session.nodeHomePath,
+            nodeInitPath: session.nodeInitPath,
+            cols: session.cols,
+            rows: session.rows,
+            onData: (data) => {
+              if (terminalReadyForInitialInput(data, runtime)) {
+                markTerminalReady(session.sessionId);
+                markAgentNodeTerminalReady(session.sessionId);
+              }
+              const current = sr.get(session.sessionId);
+              if (!current) return;
+              const entry = appendTerminalData(absRoot, current, data, 'stdout');
+              terminalHub?.broadcastToSession?.(session.sessionId, {
+                type: 'pty:data',
+                sessionId: session.sessionId,
+                seq: entry.seq,
+                stream: entry.stream,
+                data,
+              });
+            },
+            onExit: ({ exitCode: retryExitCode, signal: retrySignal }) => {
+              flushTerminalBuffer(absRoot, session.sessionId);
+              if (!sr.get(session.sessionId)) {
+                unregisterPtyProcess(session.sessionId);
+                clearTerminalState(session.sessionId);
+                clearAgentNodeTerminalState(session.sessionId);
+                return;
+              }
+              sr.update(session.sessionId, { status: 'exited', exitCode: retryExitCode });
+              const current = sr.get(session.sessionId);
+              persistSession(absRoot, current, { signal: retrySignal });
+              appendSessionEvent(absRoot, current, { type: 'session.exited', exitCode: retryExitCode, signal: retrySignal });
+              terminalHub?.broadcastToSession?.(session.sessionId, {
+                type: 'session:state',
+                sessionId: session.sessionId,
+                state: 'exited',
+              });
+              unregisterPtyProcess(session.sessionId);
+              clearTerminalState(session.sessionId);
+              clearAgentNodeTerminalState(session.sessionId);
+            },
+          })).then((retrySpawned) => {
+            if (retrySpawned.blocked) {
+              sr.update(session.sessionId, { status: 'blocked', blockedReason: retrySpawned.reason });
+              persistSession(absRoot, sr.get(session.sessionId));
+              return;
+            }
+            sr.update(session.sessionId, { status: 'running', pid: retrySpawned.pid, ptyProvider: retrySpawned.ptyProvider || null });
+            persistSession(absRoot, sr.get(session.sessionId));
+            registerPtyProcess(session.sessionId, retrySpawned.ptyProcess);
+            trackTerminalSpawn(session.sessionId);
+            trackAgentNodeTerminalSpawn(session.sessionId);
+          }).catch(() => {
+            sr.update(session.sessionId, { status: 'exited', exitCode });
+            persistSession(absRoot, sr.get(session.sessionId));
+          });
           return;
         }
         sr.update(session.sessionId, { status: 'exited', exitCode });
@@ -2612,6 +4561,8 @@ async function createRuntimeSession(sr, absRoot, payload, terminalHub = null) {
           state: 'exited',
         });
         unregisterPtyProcess(session.sessionId);
+        clearTerminalState(session.sessionId);
+        clearAgentNodeTerminalState(session.sessionId);
       };
       if (typeof sr.withLock === 'function') {
         sr.withLock(session.sessionId, handleExit).catch(() => unregisterPtyProcess(session.sessionId));
@@ -2619,12 +4570,13 @@ async function createRuntimeSession(sr, absRoot, payload, terminalHub = null) {
         handleExit();
       }
     },
-  });
+  }));
 
   if (spawned.blocked) {
     sr.update(session.sessionId, { status: 'blocked', blockedReason: spawned.reason, blockedHint: spawned.hint });
     const updated = sr.get(session.sessionId);
     persistSession(absRoot, updated, { hint: spawned.hint, details: spawned.details || [] });
+    if (attachGraphNode) ensureRuntimeSessionGraphNode(absRoot, updated);
     appendSessionEvent(absRoot, updated, {
       type: 'session.blocked',
       reason: spawned.reason,
@@ -2634,15 +4586,159 @@ async function createRuntimeSession(sr, absRoot, payload, terminalHub = null) {
     return updated;
   }
 
+  const spawnedAt = Date.now();
   sr.update(session.sessionId, { status: 'running', pid: spawned.pid, ptyProvider: spawned.ptyProvider || null });
   const updated = sr.get(session.sessionId);
   persistSession(absRoot, updated);
+  if (attachGraphNode) ensureRuntimeSessionGraphNode(absRoot, updated);
   appendSessionEvent(absRoot, updated, { type: 'session.running', pid: spawned.pid, ptyProvider: spawned.ptyProvider || null });
   registerPtyProcess(session.sessionId, spawned.ptyProcess);
+  trackTerminalSpawn(session.sessionId);
+  trackAgentNodeTerminalSpawn(session.sessionId);
   if (initialInput) {
-    setTimeout(scheduleInitialInput, INITIAL_INPUT_FALLBACK_DELAY_MS);
+    setTimeout(() => scheduleInitialInput('fallback-timeout', 0), INITIAL_INPUT_FALLBACK_DELAY_MS);
     appendTerminalData(absRoot, updated, initialInput, 'stdin');
-    appendSessionEvent(absRoot, updated, { type: 'terminal.input.injected', bytes: initialInput.length, delayed: true });
+    appendSessionEvent(absRoot, updated, {
+      type: 'terminal.input.injected',
+      mode: initialInputMode || 'unknown',
+      bytes: initialInput.length,
+      delayed: true,
+      schedule: 'terminal-ready-or-fallback',
+      fallbackDelayMs: INITIAL_INPUT_FALLBACK_DELAY_MS,
+    });
+  }
+  return updated;
+}
+
+// ── Chat-mode spawn path ──
+// Mirrors the PTY spawn bookkeeping (status transitions, persistence, graph
+// attach, events) but launches through chat-driver on structured stdio with
+// TERM=dumb identity env. No TUI ready-gating: initial input is sent via
+// driver.send once session_ready arrives, or after the fallback timeout.
+async function spawnChatRuntimeSession({
+  sr,
+  absRoot,
+  payload,
+  session,
+  runtime,
+  runtimeInfo,
+  resumeArgs,
+  claudeAgentSessionId,
+  isClaudeRuntime,
+  model,
+  cwd,
+  initialInput,
+  attachGraphNode,
+}) {
+  const launchArgs = [
+    ...resolveRuntimeLaunchArgs(runtime, { model, launchPolicy: session.launchPolicy }),
+    ...resumeArgs,
+  ];
+  if (isClaudeRuntime && resumeArgs.length === 0 && claudeAgentSessionId) {
+    launchArgs.push('--session-id', String(claudeAgentSessionId));
+  }
+  const env = buildHarnessEnvSession({
+    runtime,
+    agentKind: session.agentKind,
+    workflowMode: session.workflowMode,
+    graphNodeId: session.graphNodeId,
+    graphContextPath: session.graphContextPath,
+    nodeHomePath: session.nodeHomePath,
+    nodeInitPath: session.nodeInitPath,
+    subagentMode: session.subagentMode,
+    controlPlaneUrl: cleanString(payload.controlPlaneUrl, ''),
+    taskId: session.taskId || '',
+    peerId: session.peerId,
+    sessionId: session.sessionId,
+  }, { term: 'dumb' });
+
+  let initialInputSent = false;
+  let fallbackTimer = null;
+  const sendInitialInput = (reason) => {
+    if (!initialInput || initialInputSent) return;
+    if (fallbackTimer) { clearTimeout(fallbackTimer); fallbackTimer = null; }
+    initialInputSent = true;
+    const current = sr.get(session.sessionId);
+    if (!current) return;
+    appendTerminalData(absRoot, current, initialInput, 'stdin');
+    appendSessionEvent(absRoot, current, { type: 'chat.initial-input.sent', reason, bytes: initialInput.length });
+    sendToChatDriver(session.sessionId, initialInput, {});
+  };
+  if (initialInput) {
+    fallbackTimer = setTimeout(() => sendInitialInput('fallback-timeout'), INITIAL_INPUT_FALLBACK_DELAY_MS);
+    fallbackTimer.unref?.();
+  }
+
+  let startedHandle = null;
+  try {
+    startedHandle = await ptySpawnGate(async () => {
+      const driver = await createChatDriver(runtime, {
+        sessionId: session.sessionId,
+        session: { sessionId: session.sessionId, taskId: session.taskId || null, runtime },
+        projectRoot: absRoot,
+        command: runtimeInfo.path || runtimeInfo.command || '',
+        args: launchArgs,
+        cwd,
+        env,
+        model,
+        providerSessionId: session.agentSessionId || '',
+        onSessionReady: (providerSessionId) => {
+          // Same pattern as the codex/opencode agentSessionId capture:
+          // registry field + direct set + persistSession lands it on disk.
+          const current = sr.get(session.sessionId);
+          if (!current) return;
+          const resolvedProviderSessionId = cleanString(providerSessionId, '') || current.providerSessionId || null;
+          sr.update(current.sessionId, { providerSessionId: resolvedProviderSessionId });
+          const updated = sr.get(current.sessionId);
+          if (!updated) return;
+          updated.agentSessionId = updated.providerSessionId || updated.agentSessionId;
+          persistSession(absRoot, updated);
+          try { writeNodeHome(absRoot, updated, loadWorkflowGraphMap(absRoot)); } catch { /* node-home refresh stays best-effort */ }
+          appendSessionEvent(absRoot, updated, { type: 'chat.provider-session.ready', providerSessionId: updated.providerSessionId });
+          sendInitialInput('session-ready');
+        },
+        onEnded: () => {
+          const current = sr.get(session.sessionId);
+          if (!current || ['exited', 'stopped', 'blocked'].includes(current.status)) return;
+          sr.update(current.sessionId, { status: 'exited' });
+          const updated = sr.get(current.sessionId);
+          if (!updated) return;
+          persistSession(absRoot, updated);
+          appendSessionEvent(absRoot, updated, { type: 'session.exited', reason: 'chat-driver-ended' });
+        },
+      });
+      const started = await driver.start();
+      return { driver, pid: Number(started?.pid) || null };
+    });
+  } catch (err) {
+    if (fallbackTimer) clearTimeout(fallbackTimer);
+    sr.update(session.sessionId, { status: 'blocked', blockedReason: 'chat-driver-spawn-failed', blockedHint: String(err?.message || err) });
+    const updated = sr.get(session.sessionId);
+    persistSession(absRoot, updated, { hint: updated.blockedHint });
+    if (attachGraphNode) ensureRuntimeSessionGraphNode(absRoot, updated);
+    appendSessionEvent(absRoot, updated, {
+      type: 'session.blocked',
+      reason: 'chat-driver-spawn-failed',
+      hint: String(err?.message || err),
+    });
+    return updated;
+  }
+
+  sr.update(session.sessionId, { status: 'running', pid: startedHandle.pid, ptyProvider: 'chat-stdio' });
+  const updated = sr.get(session.sessionId);
+  persistSession(absRoot, updated);
+  if (attachGraphNode) ensureRuntimeSessionGraphNode(absRoot, updated);
+  appendSessionEvent(absRoot, updated, { type: 'session.running', pid: startedHandle.pid, ptyProvider: 'chat-stdio' });
+  trackTerminalSpawn(session.sessionId);
+  trackAgentNodeTerminalSpawn(session.sessionId);
+  markTerminalReady(session.sessionId);
+  markAgentNodeTerminalReady(session.sessionId);
+  if (initialInput) {
+    appendSessionEvent(absRoot, updated, {
+      type: 'chat.initial-input.pending',
+      bytes: initialInput.length,
+      trigger: 'session-ready-or-fallback',
+    });
   }
   return updated;
 }
@@ -2679,11 +4775,28 @@ function startCleanupScheduler(projectRoot, sr) {
   return timer;
 }
 
+// ── Task group index (startup-only regeneration) ──
+// Regenerate Harness/tasks/GROUPS.md once per backend start from the live
+// task capsules (group field in STATE.json). Startup-only by design — no
+// periodic timer. Any failure is non-fatal (log only): the index is derived,
+// regenerable data and must never block the control plane.
+async function regenerateTaskGroupIndex(absRoot) {
+  try {
+    const { scanTaskGroups, renderGroupsMd } = await import('../../Harness/scripts/task-group-index.mjs');
+    const tasksRoot = path.join(absRoot, 'Harness', 'tasks');
+    const model = scanTaskGroups({ tasksRoot });
+    fs.mkdirSync(tasksRoot, { recursive: true });
+    fs.writeFileSync(path.join(tasksRoot, 'GROUPS.md'), renderGroupsMd(model), 'utf8');
+  } catch (err) {
+    console.error(`[wf-ui] task-group-index generation skipped: ${err?.message || err}`);
+  }
+}
+
 export function startServer(opts = {}) {
   const projectRoot = canonicalizeProjectPath(opts.projectRoot || process.cwd());
   const host = opts.host || '127.0.0.1';
   const port = opts.port !== undefined ? opts.port : 0;
-  const token = opts.token || generateToken();
+  const token = opts.token || '';
 
   const server = createServer({
     projectRoot,
@@ -2694,29 +4807,182 @@ export function startServer(opts = {}) {
   });
   const cleanupTimer = startCleanupScheduler(projectRoot, opts.sessionRegistry);
   if (cleanupTimer) server.once('close', () => clearInterval(cleanupTimer));
+  const eventsWs = opts.eventsWs === false
+    ? null
+    : attachServerEventsWs(server, token, projectRoot, opts.eventsWsOptions || {});
+  const chatWs = opts.chatWs === false
+    ? null
+    : attachServerChatWs(server, token, projectRoot, opts.sessionRegistry);
 
   return new Promise((resolve, reject) => {
-    server.listen(port, host, () => {
+    server.listen(port, host, async () => {
       const addr = server.address();
       const actualPort = addr.port;
+      // Startup-only session state reconciliation: build the in-memory session
+      // index (one disk scan) and persist the orphan downgrade for every disk
+      // session still marked running/starting from a previous server lifetime.
+      try {
+        buildSessionIndex(projectRoot);
+        const downgraded = persistOrphanDowngradeAtStartup(projectRoot);
+        if (downgraded.length > 0) console.log(`[wf-ui] downgraded ${downgraded.length} orphaned live session(s)`);
+      } catch (e) {
+        console.error('[wf-ui] startup session reconciliation failed:', e?.message || e);
+      }
+      // Startup-only group-index regeneration (never rejects; log-only on error).
+      await regenerateTaskGroupIndex(projectRoot);
+      // AC-3 (task-upgrade-file-node W1): watch workspace files bound to file
+      // nodes for external edits; broadcast file.changed over WS and persist a
+      // session event when the bound node carries a sessionId. The watcher is
+      // rebuilt naturally on the next server start.
+      attachFileNodeWatcher(server, projectRoot, {
+        sessionRegistry: opts.sessionRegistry,
+        eventsWs,
+      });
       resolve({
         server,
         port: actualPort,
         token,
-        url: `http://${host}:${actualPort}/?token=${encodeURIComponent(token)}`,
+        url: `http://${host}:${actualPort}/`,
+        eventsWs,
       });
     });
     server.on('error', reject);
   });
 }
 
+function attachServerEventsWs(server, token, projectRoot, options = {}) {
+  if (server[EVENTS_WS_HANDLE]) return server[EVENTS_WS_HANDLE];
+  const handle = attachEventsWs(server, token, projectRoot, options);
+  server[EVENTS_WS_HANDLE] = handle;
+  server.once('close', () => {
+    if (server[EVENTS_WS_HANDLE] === handle) {
+      server[EVENTS_WS_HANDLE] = null;
+      handle.close().catch(() => {});
+    }
+  });
+  return handle;
+}
+
+// Chat-mode WS hub (/ws/chat/:sessionId). Attached inside the server module
+// (unlike ws-terminal, which the CLI entry attaches) so chat sessions work
+// for every startServer consumer; disable with opts.chatWs === false.
+function attachServerChatWs(server, token, projectRoot, sessionRegistry) {
+  if (server[CHAT_WS_HANDLE]) return server[CHAT_WS_HANDLE];
+  const handle = attachChatWs(server, token, sessionRegistry, { projectRoot });
+  server[CHAT_WS_HANDLE] = handle;
+  server.once('close', () => {
+    if (server[CHAT_WS_HANDLE] === handle) {
+      server[CHAT_WS_HANDLE] = null;
+      handle.close().catch(() => {});
+    }
+  });
+  return handle;
+}
+
+// Resolve the session record for a file node change event so the event can be
+// persisted to the session log. Component nodes normally carry no sessionId
+// (skip), but when a bound node does, prefer the live registry then disk.
+function sessionForFileChange(projectRoot, nodeId, sessionRegistry) {
+  try {
+    const graph = loadWorkflowGraphMap(projectRoot);
+    const node = (graph.nodes || []).find(item => (item.nodeId || item.id) === nodeId);
+    const sessionId = node && node.sessionId ? String(node.sessionId).trim() : '';
+    if (!sessionId) return null;
+    const live = sessionRegistry && typeof sessionRegistry.get === 'function'
+      ? sessionRegistry.get(sessionId)
+      : null;
+    if (live) return live;
+    const disk = listTerminalSessions(projectRoot).find(item => item.sessionId === sessionId);
+    return disk || { sessionId, taskId: null, runtime: '' };
+  } catch {
+    return null;
+  }
+}
+
+function attachFileNodeWatcher(server, projectRoot, { sessionRegistry = null, eventsWs = null } = {}) {
+  if (server[FILE_WATCHER_HANDLE]) return server[FILE_WATCHER_HANDLE];
+  const handle = watchFileNodes(projectRoot, {
+    onChange: (event) => {
+      // WS broadcast to every connected /ws/events client (AC-3).
+      if (eventsWs && typeof eventsWs.broadcast === 'function') {
+        eventsWs.broadcast('file.changed', {
+          nodeId: event.nodeId,
+          path: event.path,
+          etag: event.etag,
+        });
+      }
+      // Durable copy in the bound session's event log when one exists.
+      const session = sessionForFileChange(projectRoot, event.nodeId, sessionRegistry);
+      if (session) {
+        appendSessionEvent(projectRoot, session, {
+          type: 'file.changed',
+          nodeId: event.nodeId,
+          path: event.path,
+          etag: event.etag,
+        });
+      }
+      // Component file nodes carry no sessionId (D6): persist to a dedicated
+      // project-level log so the event is durable regardless of binding.
+      try {
+        const logPath = path.join(projectRoot, 'Harness', 'a2a', 'events', 'file-changed.jsonl');
+        fs.mkdirSync(path.dirname(logPath), { recursive: true });
+        fs.appendFileSync(
+          logPath,
+          `${JSON.stringify({ ts: new Date().toISOString(), nodeId: event.nodeId, path: event.path, etag: event.etag })}\n`,
+          'utf8',
+        );
+      } catch {
+        /* best-effort durable copy */
+      }
+    },
+  });
+  server[FILE_WATCHER_HANDLE] = handle;
+  server.once('close', () => {
+    if (server[FILE_WATCHER_HANDLE] === handle) {
+      server[FILE_WATCHER_HANDLE] = null;
+      try {
+        handle.stop();
+      } catch {
+        /* ignore */
+      }
+    }
+  });
+  return handle;
+}
+
 export function stopServer(server) {
   return new Promise((resolve, reject) => {
-    if (!server || !server.listening) return resolve();
-    server.close((err) => {
-      if (err) return reject(err);
-      resolve();
-    });
+    Promise.resolve()
+      .then(async () => {
+        // Teardown (F4): the bounded timer wakeup scheduler must stop with the
+        // server so no interval handle outlives the close.
+        stopTimerScheduler();
+        const eventsWs = server?.[EVENTS_WS_HANDLE];
+        if (eventsWs) {
+          server[EVENTS_WS_HANDLE] = null;
+          await eventsWs.close();
+        }
+        const chatWs = server?.[CHAT_WS_HANDLE];
+        if (chatWs) {
+          server[CHAT_WS_HANDLE] = null;
+          await chatWs.close();
+        }
+        const fileWatcher = server?.[FILE_WATCHER_HANDLE];
+        if (fileWatcher) {
+          server[FILE_WATCHER_HANDLE] = null;
+          try {
+            fileWatcher.stop();
+          } catch {
+            /* ignore */
+          }
+        }
+        if (!server || !server.listening) return resolve();
+        server.close((err) => {
+          if (err) return reject(err);
+          resolve();
+        });
+      })
+      .catch(reject);
   });
 }
 

@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-release-0819-formal",
+  "status": "archived",
+  "mode": "wf",
+  "defaultRuntime": "codex",
+  "defaultAgentRuntime": "codex",
+  "tier": "standard",
+  "phase": "archived",
+  "gate": "mirror-sync-blocked",
+  "updatedAt": "2026-08-28T02:36:16.478Z",
+  "activeQuestion": null,
+  "nextAction": "Release task is blocked by mirror/tag drift after local package moved to 0.8.20: npm run check:mirrors passes canonical LiWeny16 main, but legacy zingspark main still reports generator 0.8.19 and both canonical/legacy v0.8.20 tags return 404. Do not archive or claim formal release until mirrors/tags are synchronized.",
+  "acceptance": [
+    {
+      "id": "AC-001",
+      "criterion": "npm has create-harness-vibe-coding@0.8.19 published and dist-tag latest points to 0.8.19.",
+      "status": "passed"
+    },
+    {
+      "id": "AC-002",
+      "criterion": "Canonical LiWeny16 and legacy zingspark GitHub repos expose main plus v0.8.19 tag/release with generator 0.8.19 manifest parity.",
+      "status": "passed"
+    },
+    {
+      "id": "AC-003",
+      "criterion": "Release verification passes: npm run check:mirrors, pre-push gate, install smoke, update smoke, validator, and scan-clean.",
+      "status": "blocked"
+    }
+  ],
+  "queues": {
+    "ready": [],
+    "running": [],
+    "blocked": [],
+    "done": [
+      "memory-preflight",
+      "local-release-audit",
+      "github-release-fix",
+      "mirror-verification",
+      "explicit-package-smoke",
+      "npm-latest-dist-tag",
+      "mirror-tag-sync-0.8.20"
+    ]
+  },
+  "dispatchLedger": [],
+  "decisions": [
+    {
+      "decision": "Treat this as WF-Standard release work.",
+      "reason": "The goal spans npm, GitHub canonical repo, legacy mirror, and independent verification.",
+      "date": "2026-07-31"
+    }
+  ],
+  "risks": [
+    {
+      "risk": "Missing publish credentials could prevent npm dist-tag or GitHub release repair.",
+      "mitigation": "Probe auth before mutating remote state and report exact blocker only if credentials fail.",
+      "status": "open"
+    },
+    {
+      "risk": "npm requires 2FA OTP before latest can move from 0.8.18 to 0.8.19.",
+      "mitigation": "Ask user for current OTP and immediately rerun dist-tag plus final verification.",
+      "status": "resolved"
+    }
+  ],
+  "artifacts": [],
+  "links": {
+    "dependsOn": [],
+    "blocks": [],
+    "related": []
+  },
+  "workItems": []
+}

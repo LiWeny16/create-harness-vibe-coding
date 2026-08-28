@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-add-web-agent-node",
+  "status": "active",
+  "mode": "wf-max",
+  "tier": "standard",
+  "phase": "intake",
+  "gate": null,
+  "updatedAt": "2026-08-28T02:30:56.689Z",
+  "activeQuestion": "MVP 范围三问：1) 后端只做 claude+codex 还是含 opencode？2) web-agent 是否参与 subagent 树还是先做单体会话？3) 审批粒度三键即可还是要 permission-mode 切换 UI？",
+  "nextAction": "等待用户回答后写 Mini PRD + AC，再进 W1 架构",
+  "acceptance": [],
+  "links": {
+    "dependsOn": [],
+    "blocks": [],
+    "related": []
+  },
+  "queues": {
+    "ready": [],
+    "running": [],
+    "blocked": [],
+    "done": []
+  },
+  "workItems": [],
+  "dispatchLedger": [],
+  "decisions": [],
+  "risks": [],
+  "artifacts": [],
+  "defaultRuntime": "codex",
+  "defaultAgentRuntime": "codex"
+}

@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-action-registry-consolidation",
+  "status": "archived",
+  "mode": "wf-max",
+  "defaultRuntime": "claude",
+  "tier": "full",
+  "phase": "archived",
+  "gate": "D-GATE",
+  "updatedAt": "2026-08-28T02:35:58.918Z",
+  "activeQuestion": null,
+  "nextAction": "dispatch W1 registry population worker",
+  "acceptance": [
+    "R1: registry contains all ~72 implemented actions (audit inventory)",
+    "R2: schema validation passes",
+    "R3: template mirror byte-identical",
+    "R4: ontology endpoint catalog generated from registry",
+    "R5: ontology tests no regression",
+    "R6: context availableActions/affordances from registry",
+    "R7: context tests no regression",
+    "R8: CLI help --json reads registry with embedded fallback",
+    "R9: manuals <nodeType> command works",
+    "R10: cli-surface tests no regression",
+    "R11-R13: manuals prose-only, injected commands generated",
+    "R14: init.md <=40 lines, no command catalog",
+    "R15: 5-step discovery loop present",
+    "R16: anti-drift no regression",
+    "R17: two-way drift test active",
+    "R18: full existing suite green"
+  ],
+  "queues": {
+    "ready": [
+      "W1-registry-population"
+    ],
+    "running": [],
+    "blocked": [],
+    "done": []
+  },
+  "dispatchLedger": [],
+  "decisions": [
+    "D1: registry lives at Harness/a2a/action-registry.json (agent-visible, mirrored, read by backend + CLI)",
+    "D2: actor field defines gates AS-IS; P0 enforcement fix is a separate task",
+    "D3: manuals keep prose only; command sections merged at injection time from registry",
+    "D4: init.md rewritten to methodology-only (~30 lines, 5-step discovery loop)",
+    "D5: CLI keeps embedded registry copy as offline fallback",
+    "D6: drift test is two-way (implemented-but-not-registered fails; registered-but-not-implemented fails)"
+  ],
+  "risks": [
+    "M1: uncommitted working tree — user approved continuing; baseline regression run before W6",
+    "M2: schema may not capture special-action semantics — special flag + W1 coverage test",
+    "M3: manual injection merge changes agent context shape — snapshot test"
+  ],
+  "artifacts": [],
+  "links": {
+    "dependsOn": [],
+    "blocks": [],
+    "related": [
+      "task-terminal-full-control",
+      "task-subagent-strategy-2x2-matrix"
+    ]
+  },
+  "defaultAgentRuntime": "claude"
+}

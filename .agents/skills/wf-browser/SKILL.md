@@ -277,7 +277,7 @@ insufficient.
 | --- | --- | --- |
 | `observe.route` | current URL, route id, title, viewport, feature flags | compact JSON |
 | `observe.capabilities` | agent-operable registry for current route/window | compact JSON |
-| `observe.uiTree` | semantic UI tree: role/name/testId/dataAttrs/registeredCapabilityIds/bounds/state | JSON artifact |
+| `observe.uiTree` | semantic UI tree: role/name/testId/componentId/registeredCapabilityIds/bounds/state | JSON artifact |
 | `observe.screenshot` | viewport, full page, element, component, or region image | image artifact |
 | `observe.state` | selected app stores, router state, component state | JSON artifact |
 | `observe.logs` | console, frontend error boundary, unhandled rejection, custom app logs | JSONL artifact |
@@ -298,7 +298,7 @@ fallback drivers.
 | Primitive | Purpose |
 | --- | --- |
 | `act.intent` | route/component semantic command such as `connectNodes` |
-| `act.click` / `act.contextMenu` | virtual-cursor click or right-click on a resolved target |
+| `act.click` | virtual-cursor click on a resolved target |
 | `act.focus` | focus a resolved input, editable region, listbox, or terminal surface |
 | `act.type` | focus target and type text with visible cursor/focus trail |
 | `act.clear` | clear a resolved text/editable target |
@@ -314,7 +314,7 @@ fallback drivers.
 Every action result should include:
 
 - `commandId`, `agentId`, `sessionId`, `windowId`, `runId`, `leaseId`
-- target resolution details, including stable `data-*` attrs when available
+- target resolution details
 - before/after observation ids
 - event/log/network deltas
 - screenshot or cursor trail path when visual behavior matters

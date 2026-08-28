@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "workflows": [
+    {
+      "id": "wf-standard",
+      "command": "/wf",
+      "label": "WF Standard",
+      "description": "CEO-led workflow with A2A terminal orchestration and acceptance gates.",
+      "defaultCeoPrompt": "Act as the Harness /wf CEO. Create a concise plan, choose terminal agents only when useful, coordinate A2A READ/WRITE/GLOB evidence, and keep task binding optional unless explicitly needed."
+    },
+    {
+      "id": "wf-max",
+      "command": "/wf-max",
+      "label": "WF Max",
+      "description": "Deeper CEO workflow for broader architecture and verification passes.",
+      "defaultCeoPrompt": "Act as the Harness /wf-max CEO. Expand exploration only where it improves decisions, then coordinate terminal agents through Harness A2A evidence."
+    },
+    {
+      "id": "wf-browser",
+      "command": "/wf-browser",
+      "label": "WF Browser",
+      "description": "Browser verification workflow with terminal agents and E2E evidence.",
+      "defaultCeoPrompt": "Act as the Harness /wf-browser CEO. Coordinate implementation terminals and browser verification, then report evidence."
+    },
+    {
+      "id": "wf-review",
+      "command": "/wf-review",
+      "label": "WF Review",
+      "description": "Independent review workflow for risks, regressions, and missing tests.",
+      "defaultCeoPrompt": "Act as the Harness /wf-review CEO. Inspect the current changes, ask terminal peers for independent findings when useful, and return prioritized review evidence."
+    }
+  ]
+}

@@ -1,0 +1,173 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-upgrade-markdown-node-rendering",
+  "status": "archived",
+  "mode": "wf",
+  "defaultRuntime": "codex",
+  "defaultAgentRuntime": "codex",
+  "tier": "WF-Standard",
+  "phase": "archived",
+  "gate": null,
+  "updatedAt": "2026-08-28T02:35:58.913Z",
+  "activeQuestion": null,
+  "nextAction": "实现完成：W1-W6 全部落地，m7 e2e 7/7 绿，m3 markdown 6/6 + m2 settings 9/9 回归通过，typecheck+build 通过。待 W7 安全 review（DOMPurify/mermaid 注入面/SRI）后收尾。",
+  "acceptance": [
+    {
+      "id": "AC-001",
+      "status": "verified",
+      "text": "含 mermaid 代码块的 md 在联网时渲染为 SVG 图；首次出现时显示加载占位，CDN 脚本仅在此时请求一次"
+    },
+    {
+      "id": "AC-002",
+      "status": "verified",
+      "text": "CDN 加载失败/离线/mermaid parse 错误时渲染原始代码块并带错误提示，页面不崩溃"
+    },
+    {
+      "id": "AC-003",
+      "status": "verified",
+      "text": "mermaid 安全基线：securityLevel strict + secure 数组锁定；含 %%{init:{\"securityLevel\":\"loose\"}}%% 的图不降级；输出经 DOMPurify"
+    },
+    {
+      "id": "AC-004",
+      "status": "verified",
+      "text": "File 大视图 md 分支：GFM 表格/任务列表/警示块/KaTeX/mermaid 全部渲染，保存流程不变（fileWriteText 回归通过）"
+    },
+    {
+      "id": "AC-005",
+      "status": "verified",
+      "text": "TaskList 预览切换到共享渲染管线，HTML 保持转义/净化（html:false + DOMPurify），GFM/mermaid 可用"
+    },
+    {
+      "id": "AC-006",
+      "status": "verified",
+      "text": "全屏编辑器新增预览 Tab：用共享管线渲染 markdown（含 mermaid/math），编辑 Tab 行为不变"
+    },
+    {
+      "id": "AC-007",
+      "status": "verified",
+      "text": "节点卡片新增预览模式 toggle：表格/图片/代码块按 markdown 渲染；编辑模式（contentEditable/源码）行为不变"
+    },
+    {
+      "id": "AC-008",
+      "status": "verified",
+      "text": "工程验收：typecheck + vite build 通过；主 bundle 不含 mermaid；CDN 版本+SRI 记录在代码注释并有再生成脚本；全部新用例 Playwright 通过"
+    }
+  ],
+  "queues": {
+    "ready": [],
+    "running": [],
+    "blocked": [],
+    "done": []
+  },
+  "dispatchLedger": [
+    {
+      "agent": "codebase-explorer (explorer-md-map)",
+      "role": "渲染地图调研",
+      "status": "done",
+      "result": "PROBLEM.md P-001..P-008"
+    },
+    {
+      "agent": "researcher (researcher-md-ecosystem)",
+      "role": "外部生态调研",
+      "status": "done",
+      "result": "research-results.md + REFERENCES.md；推荐方案 A"
+    },
+    {
+      "agent": "implementer (impl-w1-render-core)",
+      "role": "W1 渲染内核（被用户终止；产物 5 文件+依赖已落盘，katex override 问题已上报）",
+      "status": "done",
+      "result": "src/ui/src/components/markdown/* + package.json 三依赖；katex 0.6 隔离问题 → D-008"
+    },
+    {
+      "agent": "test-writer (test-writer-m7)",
+      "role": "AC 链 e2e 先行（被用户终止，未交付）",
+      "status": "done",
+      "result": "无产物；由 tw-m7-spec 接续"
+    },
+    {
+      "agent": "implementer (impl-w1-finish)",
+      "role": "W1 收尾：pnpm override D-008 + install/typecheck/build + API 契约",
+      "status": "done",
+      "result": "DONE：override 落地（katex 0.6 从 lockfile 消失）、typecheck/build 通过、dist 无 mermaid、SRI=sha384-T/0lMUdJpd2S1ZHtRiofG3htU3xPCrFVeAQ1UUE2TJwlEJSV5NUwn30kP28n238E @ mermaid@11.16.0、API 契约已返回（MarkdownPreview 命名导出 / renderMarkdown / renderMermaidDiagrams）"
+    },
+    {
+      "agent": "test-writer (tw-m7-spec)",
+      "role": "AC 链 e2e RED spec（接续）",
+      "status": "done",
+      "result": "RED 交付：wf-ui-m7-markdown-rendering.spec.ts 7 用例干净失败（4 卡片面 + 1 全屏 Tab 元素缺失待 W45；AC-004/005 为 P-009 内核缺陷，FIX A 已修）。独立复现 foreignObject 缺陷。真 mermaid.min.js fulfill（.pnpm/mermaid@11.16.0）非 stub。跟进中：断言兼容 FIX A 复查 + AC-004/005 提前转绿重跑"
+    },
+    {
+      "agent": "implementer (impl-w2-bigview)",
+      "role": "W2 File 大视图接入（MDEditor edit + MarkdownPreview 分栏）",
+      "status": "done",
+      "result": "DONE_WITH_CONCERNS：50/50 分栏落地、typecheck/build 通过、dist 仅 mermaidLoader chunk（无 mermaid 入包）；m4 回归 6/7 过，W38-6（Skills Hub）A/B 实证为预存在失败非本任务引入；该组件本身是分支未提交新文件"
+    },
+    {
+      "agent": "implementer (impl-w3-tasklist)",
+      "role": "W3 TaskList 换共享管线",
+      "status": "done",
+      "result": "DONE_WITH_CONCERNS：管线切换完成、build 通过；发现内核 P-009（foreignObject 净化剥标签）→ FIX A 已派回 W1 owner；AC-005 待内核修复后重跑"
+    },
+    {
+      "agent": "implementer (impl-w45-node)",
+      "role": "W4+W5 全屏预览 Tab + 卡片预览 toggle + 设置消费/清理（同文件合并串行）",
+      "status": "done",
+      "result": "DONE_WITH_CONCERNS：卡片 toggle/全屏预览 Tab/fontSize+wordWrap 消费/死设置移除全部落地；m3 markdown 6/6、m2 9/9 过。暴露预存在 P-010（MDXEditor 无 codeBlockPlugin）"
+    },
+    {
+      "agent": "impl-w6-i18n（429 失败）+ controller",
+      "role": "W6 收尾：i18n 补键 + AC-006 fixture 修复 + codeBlockPlugin(P-010) + 全量 e2e + 安全 review",
+      "status": "done",
+      "result": "代理 429 挂，controller 直接收尾：i18n 4 键中英补全；AC-006 fixture 改 MD_MERMAID_TABLE；P-010 加 codeBlockPlugin+catch-all descriptor；m7 e2e 7/7 绿，m3 6/6 + m2 9/9 回归绿，typecheck+build 通过；安全 review PASS（双层净化 + strict/secure 锁 + SRI + textarea 代码编辑无 innerHTML）"
+    }
+  ],
+  "decisions": [
+    {
+      "id": "D-001",
+      "text": "方案 A 仅渲染层升级：保留编辑器，新增共享 markdown-it 管线 + 懒加载 mermaid",
+      "status": "adopted"
+    },
+    {
+      "id": "D-002",
+      "text": "mermaid 走 CDN 懒加载（jsDelivr 锁定版本 + SRI + crossorigin），离线降级原始代码块",
+      "status": "adopted"
+    },
+    {
+      "id": "D-003",
+      "text": "ByteMD/Vditor 拒绝（INACTIVE）；Milkdown 列为未来 WYSIWYG 路线图",
+      "status": "adopted"
+    },
+    {
+      "id": "D-004",
+      "text": "卡片预览 toggle；fontSize/wordWrap 实现消费；editorMode/autoSave 死设置移除（用户确认）",
+      "status": "adopted"
+    },
+    {
+      "id": "D-007",
+      "text": "用户 2026-08-14 拍板：卡片=预览 toggle；死设置=部分消费+部分移除；mermaid=CDN 懒加载+离线降级；全屏=保留 MDXEditor+预览 Tab",
+      "status": "adopted"
+    },
+    {
+      "id": "D-008",
+      "text": "pnpm override：markdown-it-katex>katex → 0.18.4（src/ui/pnpm-workspace.yaml）。原因：插件自带 katex ^0.6.0（2016），pnpm 严格布局下 unicode/矩阵数学实测失败；override 后实证修复",
+      "status": "adopted"
+    },
+    {
+      "id": "D-005",
+      "text": "自定义 mermaid fence 规则（官方插件过时）；新直接依赖 dompurify + markdown-it-katex + katex",
+      "status": "adopted"
+    },
+    {
+      "id": "D-006",
+      "text": "WF-Standard 分层；实现阶段 1 个安全/XSS 优先 review 视角",
+      "status": "adopted"
+    }
+  ],
+  "risks": [],
+  "artifacts": [],
+  "links": {
+    "dependsOn": [],
+    "blocks": [],
+    "related": []
+  }
+}

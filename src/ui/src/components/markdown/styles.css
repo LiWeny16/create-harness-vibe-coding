@@ -1,0 +1,203 @@
+/* Shared markdown preview typography + mermaid placeholder / error / fallback
+   states. Light theme follows src/index.css variables (--fg/--border/--muted/
+   --radius/--surface); the dark block mirrors the index.css dark overrides. */
+
+.markdown-preview {
+  color: var(--fg);
+  font-size: 13px;
+  line-height: 1.55;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.markdown-preview h1,
+.markdown-preview h2,
+.markdown-preview h3,
+.markdown-preview h4 {
+  margin: 12px 0 6px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.markdown-preview h1 {
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+  font-size: 20px;
+}
+
+.markdown-preview h2 {
+  padding-bottom: 5px;
+  border-bottom: 1px solid var(--border);
+  font-size: 16px;
+}
+
+.markdown-preview h3 { font-size: 14px; }
+.markdown-preview h4 { font-size: 13px; }
+
+.markdown-preview p,
+.markdown-preview ul,
+.markdown-preview ol,
+.markdown-preview table,
+.markdown-preview pre,
+.markdown-preview blockquote {
+  margin: 0 0 10px;
+}
+
+.markdown-preview ul,
+.markdown-preview ol {
+  padding-left: 20px;
+}
+
+.markdown-preview a {
+  color: #0969da;
+  text-decoration: underline;
+}
+
+.markdown-preview code {
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: #eff1f3;
+  font-family: "Cascadia Mono", Consolas, monospace;
+  font-size: 85%;
+}
+
+.markdown-preview pre {
+  padding: 10px;
+  overflow: auto;
+  border-radius: var(--radius);
+  background: #f6f8fa;
+}
+
+.markdown-preview pre code {
+  padding: 0;
+  background: transparent;
+  font-size: 11px;
+}
+
+.markdown-preview table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.markdown-preview th,
+.markdown-preview td {
+  padding: 5px 7px;
+  border: 1px solid var(--border);
+}
+
+.markdown-preview th {
+  background: #f6f8fa;
+  font-weight: 700;
+}
+
+.markdown-preview blockquote {
+  padding: 0 10px;
+  color: var(--muted);
+  border-left: 3px solid var(--border);
+}
+
+.markdown-preview img {
+  max-width: 100%;
+}
+
+.markdown-preview li.task-list-item {
+  list-style: none;
+}
+
+.markdown-preview li.task-list-item .task-list-item-checkbox {
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+/* wide KaTeX display equations scroll instead of overflowing the card */
+.markdown-preview .katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 2px 0;
+}
+
+/* mermaid placeholder (pending state), SVG result and degraded fallback */
+.markdown-preview .markdown-mermaid {
+  min-height: 64px;
+  display: grid;
+  place-items: center;
+  padding: 14px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.markdown-preview .markdown-mermaid svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+}
+
+.markdown-preview .markdown-mermaid-error {
+  display: block;
+  margin-bottom: 8px;
+  padding: 4px 8px;
+  border: 1px solid #fecaca;
+  border-radius: var(--radius);
+  background: #fef2f2;
+  color: #991b1b;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.markdown-preview .markdown-mermaid pre {
+  width: 100%;
+  margin: 0;
+  padding: 10px;
+  overflow: auto;
+  text-align: left;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #f6f8fa;
+}
+
+.markdown-preview .markdown-mermaid pre code {
+  background: transparent;
+  font-size: 11px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Dark theme — mirrors src/index.css [data-theme="dark"] */
+[data-theme="dark"] .markdown-preview a {
+  color: #58a6ff;
+}
+
+[data-theme="dark"] .markdown-preview code {
+  background: #374151;
+}
+
+[data-theme="dark"] .markdown-preview pre {
+  background: #1f2937;
+}
+
+[data-theme="dark"] .markdown-preview th {
+  background: #1f2937;
+}
+
+[data-theme="dark"] .markdown-preview .markdown-mermaid {
+  border-color: var(--border);
+  background: var(--surface);
+}
+
+[data-theme="dark"] .markdown-preview .markdown-mermaid pre {
+  background: #1f2937;
+}
+
+[data-theme="dark"] .markdown-preview .markdown-mermaid-error {
+  border-color: #7f1d1d;
+  background: rgba(127, 29, 29, 0.25);
+  color: #fca5a5;
+}

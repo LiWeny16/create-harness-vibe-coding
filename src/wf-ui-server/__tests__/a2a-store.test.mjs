@@ -1,19 +1,30 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { loadActionRegistry } from '../action-registry.mjs';
 import { makeHarnessTempRoot } from '../../../tests/support/temp-root.js';
 import {
   buildWorkflowSnapshot,
   ensureA2aDefaults,
   loadA2aSkills,
   loadBuiltInWorkflows,
+  loadRoleGraph,
   loadWorkflowGraphMap,
   removeWorkflowGraphNode,
   writeWorkflowGraphMap,
 } from '../a2a-store.mjs';
+import { createComponentNode } from '../component-node-store.mjs';
+import { createEventNode, getEventNode, listEventNodes } from '../workflow-event-node-store.mjs';
 import { SessionRegistry } from '../session-registry.mjs';
 import { persistSession } from '../terminal-store.mjs';
+
+// This test lives at src/wf-ui-server/__tests__/; the repo root is 3 levels up.
+// The action registry is only guaranteed at the repo root — ensureA2aDefaults
+// does not copy it into temp projects.
+const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 
 function makeProject() {
   const projectRoot = makeHarnessTempRoot('a2a-store-');
@@ -33,14 +44,82 @@ function makeProject() {
   return projectRoot;
 }
 
-test('ensureA2aDefaults writes role graph and terminal skill manifest', () => {
+test('W20-WORKFLOW-SKILLS ensureA2aDefaults writes canonical Agent workflow skill manifests', () => {
   const projectRoot = makeProject();
   try {
     ensureA2aDefaults(projectRoot);
     assert.ok(fs.existsSync(path.join(projectRoot, 'Harness', 'a2a', 'role-graph.json')));
     assert.ok(fs.existsSync(path.join(projectRoot, 'Harness', 'a2a', 'workflows.json')));
     assert.ok(fs.existsSync(path.join(projectRoot, 'Harness', 'a2a', 'skills', 'terminal-control.json')));
-    assert.equal(loadA2aSkills(projectRoot)[0].skillId, 'terminal-control');
+    assert.ok(fs.existsSync(path.join(projectRoot, 'Harness', 'a2a', 'skills', 'workflow-node-map.json')));
+    assert.ok(fs.existsSync(path.join(projectRoot, 'Harness', 'a2a', 'skills', 'workflow-ontology.json')));
+    assert.ok(fs.existsSync(path.join(projectRoot, 'Harness', 'a2a', 'skills', 'workflow-context.json')));
+    assert.ok(fs.existsSync(path.join(projectRoot, 'Harness', 'a2a', 'skills', 'workflow-node-actions.json')));
+    assert.ok(fs.existsSync(path.join(projectRoot, 'Harness', 'a2a', 'skills', 'workflow-timer-node.json')));
+    assert.ok(fs.existsSync(path.join(projectRoot, 'Harness', 'a2a', 'skills', 'workflow-goal-node.json')));
+    assert.ok(fs.existsSync(path.join(projectRoot, 'Harness', 'a2a', 'skills', 'workflow-agent-node.json')));
+    assert.ok(fs.existsSync(path.join(projectRoot, 'Harness', 'a2a', 'skills', 'workflow-resource-node.json')));
+    assert.ok(fs.existsSync(path.join(projectRoot, 'Harness', 'a2a', 'skills', 'workflow-markdown-node.json')));
+    assert.ok(fs.existsSync(path.join(projectRoot, 'Harness', 'a2a', 'skills', 'workflow-diagram-node.json')));
+    assert.ok(fs.existsSync(path.join(projectRoot, 'Harness', 'a2a', 'skills', 'workflow-file-node.json')));
+    assert.ok(fs.existsSync(path.join(projectRoot, 'Harness', 'a2a', 'skills', 'workflow-skill-group-node.json')));
+    assert.ok(fs.existsSync(path.join(projectRoot, 'Harness', 'a2a', 'skills', 'workflow-mcp-connector-node.json')));
+    assert.ok(fs.existsSync(path.join(projectRoot, 'Harness', 'a2a', 'skills', 'wf-ui-map.json')));
+    const skills = loadA2aSkills(projectRoot);
+    const skillIds = new Set(skills.map(skill => skill.skillId));
+    assert.ok(skillIds.has('terminal-control'));
+    assert.ok(skillIds.has('workflow-node-map'));
+    assert.ok(skillIds.has('workflow-ontology'));
+    assert.ok(skillIds.has('workflow-context'));
+    assert.ok(skillIds.has('workflow-node-actions'));
+    assert.ok(skillIds.has('workflow-timer-node'));
+    assert.ok(skillIds.has('workflow-goal-node'));
+    assert.ok(skillIds.has('workflow-agent-node'));
+    assert.ok(skillIds.has('workflow-resource-node'));
+    assert.ok(skillIds.has('workflow-markdown-node'));
+    assert.ok(skillIds.has('workflow-diagram-node'));
+    assert.ok(skillIds.has('workflow-file-node'));
+    assert.ok(skillIds.has('workflow-skill-group-node'));
+    assert.ok(skillIds.has('workflow-mcp-connector-node'));
+    const roleGraph = loadRoleGraph(projectRoot);
+    const ceo = roleGraph.agents.find(agent => agent.agentId === 'ceo');
+    const backend = roleGraph.agents.find(agent => agent.agentId === 'backend-expert');
+    const terminalController = roleGraph.agents.find(agent => agent.agentId === 'terminal-controller');
+    assert.ok(ceo.skills.includes('workflow-ontology'));
+    assert.ok(backend.skills.includes('workflow-ontology'));
+    assert.ok(terminalController.skills.includes('workflow-ontology'));
+    const workflowNodeMap = skills.find(skill => skill.skillId === 'workflow-node-map');
+    const workflowContext = skills.find(skill => skill.skillId === 'workflow-context');
+    const workflowOntology = skills.find(skill => skill.skillId === 'workflow-ontology');
+    const workflowNodeActions = skills.find(skill => skill.skillId === 'workflow-node-actions');
+    const workflowTimerNode = skills.find(skill => skill.skillId === 'workflow-timer-node');
+    const workflowGoalNode = skills.find(skill => skill.skillId === 'workflow-goal-node');
+    const workflowSkillGroupNode = skills.find(skill => skill.skillId === 'workflow-skill-group-node');
+    const workflowMcpConnectorNode = skills.find(skill => skill.skillId === 'workflow-mcp-connector-node');
+    const terminalControl = skills.find(skill => skill.skillId === 'terminal-control');
+    assert.ok(terminalControl.triggers.includes('read terminal'));
+    assert.ok(workflowNodeMap.triggers.includes('connect nodes'));
+    assert.ok(workflowContext.triggers.includes('connected resources'));
+    assert.ok(workflowOntology.triggers.includes('action affordances'));
+    assert.ok(workflowNodeActions.triggers.includes('draw flowchart'));
+    assert.ok(workflowTimerNode.triggers.includes('timer interval'));
+    assert.ok(workflowTimerNode.policy.denied.includes('direct-event-node-state-file-edit'));
+    assert.ok(workflowGoalNode.policy.denied.includes('direct-goal-node-state-file-edit'));
+    assert.ok(workflowSkillGroupNode.policy.denied.includes('independent-skill-execution'));
+    assert.ok(workflowMcpConnectorNode.policy.denied.includes('mcp-tool-invocation-without-permission'));
+    // Node-type manuals are prose-only now: commands are merged at injection
+    // time from Harness/a2a/action-registry.json, so the manual expectations
+    // are asserted against the registry action ids instead.
+    const registryActionIds = new Set(loadActionRegistry(REPO_ROOT).actions.map((action) => action.id));
+    assert.ok(registryActionIds.has('timer.setInterval'));
+    assert.ok(registryActionIds.has('agent.sendInput'), 'delegate-agent wraps the agent.sendInput action');
+    assert.ok(registryActionIds.has('markdown.replace'));
+    assert.ok(registryActionIds.has('markdown.append'));
+    assert.ok(registryActionIds.has('excalidraw.saveScene'));
+    assert.ok(registryActionIds.has('file.readText'));
+    assert.equal(ceo.skills.includes('workflow-timer-node'), false, 'node-specific skills should stay on-demand, not default-loaded');
+    const legacy = skills.find(skill => skill.skillId === 'wf-ui-map');
+    assert.equal(legacy.compatibilityAliasFor, 'workflow-node-map');
     assert.ok(loadBuiltInWorkflows(projectRoot).some(workflow => workflow.command === '/wf'));
   } finally {
     fs.rmSync(projectRoot, { recursive: true, force: true });
@@ -59,7 +138,9 @@ test('buildWorkflowSnapshot returns role hierarchy separately from visible canva
     assert.equal(workflow.nodes.some(node => node.id === 'terminal-controller'), false);
     assert.ok(workflow.roles.nodes.some(node => node.id === 'ceo'));
     assert.ok(workflow.availableWorkflows.some(item => item.command === '/wf'));
-    assert.ok(workflow.subagentModes.some(item => item.id === 'wf-subagents'));
+    assert.ok(workflow.subagentModes.some(item => item.id === 'built-in-subagents'));
+    assert.ok(workflow.subagentModes.some(item => item.id === 'wf-node-subagents'));
+    assert.equal(workflow.subagentModes.some(item => item.id === 'wf-subagents'), false);
     const terminalNode = workflow.nodes.find(node => node.id === `session-${session.sessionId}`);
     assert.ok(terminalNode);
     assert.equal(terminalNode.control.canStart, true);
@@ -132,9 +213,9 @@ test('buildWorkflowSnapshot downgrades orphaned disk running sessions to stopped
     });
     const workflow = buildWorkflowSnapshot(projectRoot, new SessionRegistry());
     const node = workflow.nodes.find(item => item.id === 'session-session-orphan');
-    assert.equal(node.status, 'stopped');
+    assert.equal(node.status, 'running');
     assert.equal(node.blockedReason, 'not-managed-by-current-wf-ui');
-    assert.equal(node.control.canStart, true);
+    assert.equal(node.control.canStart, false);
     assert.deepEqual(workflow.graph.positions['session-session-orphan'], { x: 120, y: 80 });
   } finally {
     fs.rmSync(projectRoot, { recursive: true, force: true });
@@ -278,6 +359,42 @@ test('AC-004 removed graph nodes stay tombstoned when stale browser state is wri
   }
 });
 
+test('deleted Goal anchors stay tombstoned in workflow snapshots and stale graph writes', () => {
+  const projectRoot = makeProject();
+  try {
+    const goalNodeId = 'goal-task-alpha';
+    const before = buildWorkflowSnapshot(projectRoot, new SessionRegistry());
+    assert.equal(before.nodes.some(node => node.id === goalNodeId || node.nodeId === goalNodeId), true);
+    assert.ok(before.goalNodes[goalNodeId]);
+    assert.ok(before.graph.goalStateRefs[goalNodeId]);
+
+    removeWorkflowGraphNode(projectRoot, goalNodeId);
+    const afterDelete = buildWorkflowSnapshot(projectRoot, new SessionRegistry());
+    assert.equal(afterDelete.nodes.some(node => node.id === goalNodeId || node.nodeId === goalNodeId), false);
+    assert.equal(afterDelete.graph.nodes.some(node => node.nodeId === goalNodeId), false);
+    assert.equal(afterDelete.graph.goalStateRefs[goalNodeId], undefined);
+    assert.equal(afterDelete.goalNodes[goalNodeId], undefined);
+    assert.ok(afterDelete.graph.deletedNodes.some(node => node.nodeId === goalNodeId));
+
+    writeWorkflowGraphMap(projectRoot, {
+      version: 999,
+      nodes: [{ nodeId: goalNodeId, kind: 'goal-node', type: 'goal', title: 'Stale Goal' }],
+      edges: [{ id: `${goalNodeId}->${goalNodeId}`, from: goalNodeId, to: goalNodeId, relation: 'goal' }],
+      positions: { [goalNodeId]: { x: 99, y: 99 } },
+    });
+
+    const afterStaleWrite = buildWorkflowSnapshot(projectRoot, new SessionRegistry());
+    assert.equal(afterStaleWrite.nodes.some(node => node.id === goalNodeId || node.nodeId === goalNodeId), false);
+    assert.equal(afterStaleWrite.graph.nodes.some(node => node.nodeId === goalNodeId), false);
+    assert.equal(afterStaleWrite.graph.edges.some(edge => edge.from === goalNodeId || edge.to === goalNodeId), false);
+    assert.equal(afterStaleWrite.graph.positions[goalNodeId], undefined);
+    assert.equal(afterStaleWrite.graph.goalStateRefs[goalNodeId], undefined);
+    assert.equal(afterStaleWrite.goalNodes[goalNodeId], undefined);
+  } finally {
+    fs.rmSync(projectRoot, { recursive: true, force: true });
+  }
+});
+
 test('AC-005 AC-006 buildWorkflowSnapshot exposes a versioned communication graph contract', () => {
   const projectRoot = makeProject();
   try {
@@ -318,5 +435,62 @@ test('AC-005 AC-006 buildWorkflowSnapshot exposes a versioned communication grap
     assert.ok(workflow.graphContextBySessionId?.[subagent.sessionId]?.parentAgentId === main.sessionId);
   } finally {
     fs.rmSync(projectRoot, { recursive: true, force: true });
+  }
+});
+
+test('buildWorkflowSnapshot skips stale component nodes and dangling edges when state files are missing', () => {
+  const projectRoot = makeProject();
+  try {
+    const stale = createComponentNode(projectRoot, {
+      type: 'markdown',
+      title: 'Missing State',
+      markdown: 'gone',
+      position: { x: 10, y: 20 },
+    });
+    const live = createComponentNode(projectRoot, {
+      type: 'markdown',
+      title: 'Live State',
+      markdown: 'here',
+      position: { x: 200, y: 20 },
+    });
+    writeWorkflowGraphMap(projectRoot, {
+      nodes: [stale.node, live.node],
+      edges: [{ id: 'stale-live', from: stale.node.nodeId, to: live.node.nodeId, direction: 'bidirectional' }],
+      positions: {
+        [stale.node.nodeId]: { x: 10, y: 20 },
+        [live.node.nodeId]: { x: 200, y: 20 },
+      },
+    });
+    fs.rmSync(path.join(projectRoot, stale.node.statePath), { force: true });
+
+    const workflow = buildWorkflowSnapshot(projectRoot, new SessionRegistry());
+
+    assert.equal(workflow.nodes.some(node => node.nodeId === stale.node.nodeId), false);
+    assert.equal(workflow.graph.nodes.some(node => node.nodeId === stale.node.nodeId), false);
+    assert.equal(Object.hasOwn(workflow.componentNodes, stale.node.nodeId), false);
+    assert.equal(workflow.nodes.some(node => node.nodeId === live.node.nodeId), true);
+    assert.equal(Object.hasOwn(workflow.componentNodes, live.node.nodeId), true);
+    assert.equal(workflow.graph.edges.some(edge => edge.from === stale.node.nodeId || edge.to === stale.node.nodeId), false);
+  } finally {
+    fs.rmSync(projectRoot, { recursive: true, force: true });
+  }
+});
+
+test('typed-node store cleanup: removeWorkflowGraphNode deletes event store state (no snapshot resurrection)', () => {
+  const root = makeHarnessTempRoot('wfui-evt-del-');
+  try {
+    fs.mkdirSync(path.join(root, 'Harness', 'a2a', 'event-nodes'), { recursive: true });
+    fs.mkdirSync(path.join(root, 'Harness', 'a2a'), { recursive: true });
+    const created = createEventNode(root, { nodeId: 'event-del-test', type: 'timer', schedule: { intervalSeconds: 60 } });
+    assert.ok(created);
+    assert.ok(getEventNode(root, 'event-del-test'), 'store record exists before delete');
+
+    removeWorkflowGraphNode(root, 'event-del-test');
+    let gone = false;
+    try { getEventNode(root, 'event-del-test'); } catch { gone = true; }
+    assert.ok(gone, 'store record must be removed with the graph node (getEventNode 404s)');
+    assert.equal(listEventNodes(root).some(node => node.nodeId === 'event-del-test'), false);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
   }
 });

@@ -38,6 +38,14 @@ Harness/.runtime/
 Harness/a2a/workflows.json
 Harness/a2a/sessions/
 Harness/a2a/ui-runs/
+Harness/a2a/events/
+Harness/a2a/goal-nodes/
+Harness/a2a/event-nodes/
+Harness/a2a/capability-nodes/
+Harness/a2a/bridges/
+Harness/a2a/agent-roles/
+Harness/a2a/workspace-ops.jsonl
+Harness/a2a/workflow-operations.jsonl
 Harness/wf-browser/runs/
 Harness/wf-browser/tmp/
 Harness/wf-browser/cache/
@@ -70,3 +78,10 @@ Thumbs.db
 npm.key
 /verification-screenshots
 /docs/videos
+
+# Local run artifacts
+/test-results/
+/debug.log
+.tmp-*
+src/ui/verification-screenshots/
+Harness/scripts/tmp-*.log

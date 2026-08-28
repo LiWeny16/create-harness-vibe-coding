@@ -248,9 +248,12 @@ test('connects with valid token, receives session:state', async () => {
   conn.close();
 });
 
-test('connection with invalid token gets rejected', async () => {
+test('connection with invalid token is accepted', async () => {
   const conn = await wsConnectTerminal(port, sessionA.sessionId, 'bad-token-1234567890abcdef');
-  assert.equal(conn.status, 401, 'Invalid token should get 401');
+  assert.ok(conn.sock, 'Invalid token should still establish WS connection');
+  const msg = await conn.readMessage(3000);
+  assert.equal(msg.type, 'session:state');
+  conn.close();
 });
 
 test('connection to nonexistent sessionId gets rejected', async () => {
@@ -258,9 +261,12 @@ test('connection to nonexistent sessionId gets rejected', async () => {
   assert.equal(conn.status, 404, 'Nonexistent session should get 404');
 });
 
-test('connection with no token gets rejected', async () => {
+test('connection with no token is accepted', async () => {
   const conn = await wsConnectTerminal(port, sessionA.sessionId, undefined);
-  assert.equal(conn.status, 401, 'No token should get 401');
+  assert.ok(conn.sock, 'No token should still establish WS connection');
+  const msg = await conn.readMessage(3000);
+  assert.equal(msg.type, 'session:state');
+  conn.close();
 });
 
 test('output isolation between sessions', async () => {

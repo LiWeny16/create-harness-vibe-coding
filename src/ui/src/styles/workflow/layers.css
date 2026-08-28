@@ -1,0 +1,84 @@
+[data-testid="workflow-context-menu"],
+[data-testid="workflow-node-context-menu"],
+[data-testid="workflow-bridge-panel"],
+.workspace-context-menu {
+  z-index: var(--wf-z-menu) !important;
+  max-width: calc(100vw - 16px) !important;
+  max-height: calc(100vh - var(--header-h) - 16px) !important;
+}
+
+.workflow-create-node-panel {
+  z-index: var(--wf-z-settings) !important;
+  max-width: calc(100vw - 16px) !important;
+  /* Matches the component's inline cap (CREATE_PANEL_MAX_H 536px) and the
+     clampOverlayPosition invariant; without the fixed cap the panel can exceed
+     the space the clamp reserved and clip at the viewport bottom. */
+  max-height: min(536px, calc(100vh - var(--header-h) - 24px)) !important;
+}
+
+.workflow-node-settings,
+[data-testid="workflow-node-config"],
+.workspace-preview-panel,
+.workflow-explorer-shell {
+  position: relative;
+  z-index: var(--wf-z-panel) !important;
+}
+
+.workflow-node-settings-panel-host,
+.react-flow__panel.workflow-node-settings-panel-host {
+  z-index: var(--wf-z-settings) !important;
+}
+
+.workflow-node-settings-overlay {
+  position: absolute;
+  top: var(--wf-panel-gap);
+  right: var(--wf-panel-gap);
+  bottom: var(--wf-panel-gap);
+  z-index: calc(var(--wf-z-settings) + 20);
+  width: min(460px, calc(100vw - (var(--wf-panel-gap) * 2)));
+  max-width: calc(100vw - (var(--wf-panel-gap) * 2));
+  max-height: calc(100% - (var(--wf-panel-gap) * 2));
+  display: grid;
+  align-items: end;
+  margin: 0;
+  pointer-events: auto;
+}
+
+.workflow-node-settings-overlay.workflow-component-settings-panel-host {
+  width: min(360px, calc(100vw - (var(--wf-panel-gap) * 2)));
+}
+
+.workflow-node-settings-overlay.workflow-component-settings-panel-host .workflow-component-settings {
+  width: 100% !important;
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: min(500px, calc(100% - 0px)) !important;
+  overflow: hidden;
+}
+
+.workflow-node-settings-overlay > .workflow-node-settings,
+.workflow-node-settings-overlay > [data-testid="workflow-node-config"] {
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.wf-flow .react-flow__panel.workflow-node-settings-panel-host {
+  position: fixed !important;
+  top: calc(var(--header-h) + var(--wf-panel-gap)) !important;
+  right: var(--wf-panel-gap) !important;
+  bottom: var(--wf-panel-gap) !important;
+  max-width: calc(100vw - (var(--wf-panel-gap) * 2));
+  max-height: calc(100vh - var(--header-h) - (var(--wf-panel-gap) * 2));
+  display: grid;
+  align-items: end;
+  margin: 0 !important;
+  pointer-events: auto;
+}
+
+.workflow-node-settings {
+  z-index: var(--wf-z-settings) !important;
+}
+
+.workspace-preview-panel {
+  z-index: var(--wf-z-preview) !important;
+}

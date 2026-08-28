@@ -2,7 +2,7 @@
 
 Purpose: route humans and agents to the smallest useful context. `CLAUDE.md` is the session entry router; `Harness/README.md` is the primary Harness documentation router.
 
-Default load: `CLAUDE.md`. For workflow commands (`/wf`, `/wf-max`, `/wf-auto`, `/wf-review`, `/wf-learn`, `/wf-readme`, `/wf-remove`, `/wf-browser`, `/wf-auto-spark`), also load `Harness/MEMORY.md` (index only per Memory Preflight), this file, and `Harness/PROGRESS.md` when work is active.
+Default load: `CLAUDE.md`. Workflow commands (`/wf`, `/wf-max`, `/wf-auto`, `/wf-review`, `/wf-learn`, `/wf-readme`, `/wf-remove`, `/wf-browser`, `/wf-auto-spark`) also load `Harness/MEMORY.md` (index only), this file, and `Harness/PROGRESS.md` when work is active.
 
 `/wf-help` `$wf-help` `/skills wf-help`, `/wf-update` `$wf-update` `/skills wf-update`, `/wf-task-record` `$wf-task-record` `/skills wf-task-record`, `/wf-task-list` `$wf-task-list` `/skills wf-task-list`, `/wf-task-archive` `$wf-task-archive` `/skills wf-task-archive`, `/wf-command-create` `$wf-command-create` `/skills wf-command-create`, `/wf-ui` `$wf-ui` `/skills wf-ui` are **direct/compat commands**: skip router, skip `Harness/MEMORY.md`, never enter WF. Claude/OpenCode use command files; Codex uses shims.
 
@@ -93,7 +93,7 @@ Keywords are retrieval hints, not project facts.
 
 Load the matching row only. Add adjacent docs only when the loaded doc directly names them.
 
-Routing priority: **direct mode is the default** when no explicit WF token is present. Complex tasks may still plan, test, and use subagents without entering WF. If a request contains an explicit WF token (`/wf`, `$wf`, `/skills wf`, `/wf-max`, `$wf-max`, `/skills wf-max`), follow the WF contract. WF mode has three tiers: **WF-Light** (low-risk, explicit `/wf` — planner/test/verifier; no mandatory research/architecture/cross-review/reflector), **WF-Standard** (multi-file or behavior change — compact ACs, one implementer, one independent validation/review), **WF-Full** (high-risk, cross-layer, security/data-loss, browser/API, ambiguous architecture, or user asks for full role chain). `/wf-max` has two modes: **WF-Max-Useful** (default — fan-out only where write sets or review lenses are meaningfully independent) and **WF-Max-Strict** (explicit strict override preserving unconditional fan-out).
+Routing priority: **direct mode is the default** without an explicit WF token. Complex tasks may still plan, test, and use subagents outside WF. Explicit WF tokens (`/wf`, `$wf`, `/skills wf`, `/wf-max`, `$wf-max`, `/skills wf-max`) enter WF. Tiers: **WF-Light** (low-risk `/wf`), **WF-Standard** (multi-file or behavior change), **WF-Full** (high-risk/cross-layer/security/data-loss/browser/API/ambiguous architecture). `/wf-max`: **WF-Max-Useful** by default, **WF-Max-Strict** only with strict override.
 
 | When to Read | Keywords | Load | Output |
 | --- | --- | --- | --- |
