@@ -1,6 +1,6 @@
 {
   "generator": "0.8.20",
-  "generated": "2026-08-28T02:30:50.833Z",
+  "generated": "2026-08-28T02:44:37.042Z",
   "options": [],
   "autoCheck": true,
   "source": "https://raw.githubusercontent.com/LiWeny16/create-harness-vibe-coding/main/templates/common/",
@@ -144,7 +144,7 @@
     "Harness/a2a/skills/workflow-skill-group-node.json": "sha256-98d43dd9b9183b1e976e02cecd3a2302a152ceb77fc540dad10be959c5d56725",
     "Harness/a2a/skills/workflow-timer-node.json": "sha256-a195c46ee5c0231bd2970ccf4e81b355f982aedc87b46fdb93dbe2c886e6fa95",
     "Harness/a2a/workflows.json": "sha256-5244fabb115dfcfa93234872bbfe8779696efac683fe38e79ede0e3d16b0d591",
-    "Harness/ownership.manifest.json": "sha256-0ff5d2192bf293f5860535cfb2fa979af0b2e0abf207b963a7138cc0e26932e8",
+    "Harness/ownership.manifest.json": "sha256-5b364cc5428ee3676647cd2123530205d68695d1edd3b5388786f048267effa1",
     "Harness/project/architecture.md": "sha256-6d3b4d773d768854b610e85099245e0789543149acc1e5c4a3a8205d2af81eb2",
     "Harness/research/README.md": "sha256-b7a542c0d919cabc185b6e7a1e6ef265dc5160978d0c1dd804f2c6547d0202a4",
     "Harness/scripts/README.md": "sha256-b97601aca4c042f09aa387cdf8764a242a3e67d40888fd5eb27c1ff2c86926f6",
@@ -564,13 +564,16 @@
   ],
   "releaseNotes": {
     "version": "0.8.20",
-    "date": "2026-07-31",
+    "date": "2026-08-28",
     "highlights": [
-      "Fix `/wf-ui` direct command startup by adding detached server handoff, so OpenCode command timeouts do not stop the local control panel.",
-      "Preserve Agent terminal output when the drawer is minimized and restored by keeping the xterm instance mounted and replaying only missing terminal history.",
-      "Harden Windows PTY launch under detached UI servers by using the bundled ConPTY cleanup path by default, avoiding `AttachConsole failed` noise from the Homebridge PTY helper.",
-      "Detect Codex CLI update menus inside Harness-managed PTY sessions and let the wf-ui terminal prompt the user to skip this session or skip until the next version.",
-      "Add wf-ui storage cleanup controls for stopped session logs and detached launch temp logs, with retention settings and safer workflow node hover feedback."
+      "Ship the wf-ui workflow canvas as a full agent-team surface: goal, event, timer, display, and capability node types with typed action surfaces, skills hub, magnetic docking, and undoable versioned graph edits.",
+      "Add agent team cooperation: structured peer requests with request ids, timer wakeup delivery, runtime-aware role profiles, and a subagent strategy matrix covering built-in helpers and visible wf-node agents with depth resume docking.",
+      "Consolidate all agent actions into a single `Harness/a2a/action-registry.json` source of truth (72 actions) with loader validation, derived `help --json`/`manuals` surfaces, and structural anti-drift tests against ghost/phantom actions.",
+      "Upgrade the file node with xlsx/pdf/zip format adapters, preview caching, write locks, `file.changed` watch broadcasts, and security hardening (Zip Slip guards, entry/size clamps, per-page PDF reads).",
+      "Rebuild markdown rendering on a shared markdown-it pipeline with lazy CDN mermaid (SRI-pinned, offline fallback), KaTeX, GFM task lists, and preview toggles for node cards, file big view, and the fullscreen editor.",
+      "Add task capsule groups with `--group`/`--by-group` filtering and whole-group batch archive, plus a task group index for grouped overviews.",
+      "Add real PTY-backed chat sessions (chat driver, Claude stream-json support, WS chat events) alongside terminal-based agent control.",
+      "Harden wf-ui terminal orchestration: full terminal input control, Codex rollout-id capture via PTY scan and sessions-dir polling, PTY resource usage reporting, and per-session terminal transcript ranges."
     ]
   }
 }
