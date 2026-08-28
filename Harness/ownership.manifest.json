@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "generator": "0.8.20",
   "source": "https://raw.githubusercontent.com/LiWeny16/create-harness-vibe-coding/main/templates/common/",
-  "generated": "2026-08-28T02:44:37.042Z",
+  "generated": "2026-08-28T03:20:56.782Z",
   "preserve": [
     "Harness/PROGRESS.md",
     "Harness/tasks/**",
@@ -212,6 +212,11 @@
       "overwrite": "safe"
     },
     {
+      "path": ".agents/skills/wf-init/SKILL.md",
+      "kind": "skill",
+      "overwrite": "safe"
+    },
+    {
       "path": ".agents/skills/wf-learn/SKILL.md",
       "kind": "skill",
       "overwrite": "safe"
@@ -387,6 +392,11 @@
       "overwrite": "safe"
     },
     {
+      "path": ".claude/commands/wf-init.md",
+      "kind": "command",
+      "overwrite": "safe"
+    },
+    {
       "path": ".claude/commands/wf-learn.md",
       "kind": "command",
       "overwrite": "safe"
@@ -493,6 +503,11 @@
     },
     {
       "path": ".claude/skills/wf-help/SKILL.md",
+      "kind": "skill",
+      "overwrite": "safe"
+    },
+    {
+      "path": ".claude/skills/wf-init/SKILL.md",
       "kind": "skill",
       "overwrite": "safe"
     },
@@ -678,6 +693,11 @@
     },
     {
       "path": ".opencode/commands/wf-help.md",
+      "kind": "command",
+      "overwrite": "safe"
+    },
+    {
+      "path": ".opencode/commands/wf-init.md",
       "kind": "command",
       "overwrite": "safe"
     },

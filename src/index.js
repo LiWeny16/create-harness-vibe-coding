@@ -33,6 +33,15 @@ if (raw[0] === 'wf-ui') {
   process.exit(0);
 }
 
+// init subcommand: bind an existing project to the global Harness runtime.
+// The global runtime (installed once via npm i -g) is the single version
+// source of truth; the project keeps only bridge docs plus its own state.
+if (raw[0] === 'init') {
+  runInit(raw.slice(1));
+  await flushStdout();
+  process.exit(0);
+}
+
 const parsed = parseArgs(raw);
 const showHelp = parsed.flags.help || parsed.flags.h;
 const skipPrompts = parsed.flags.yes || parsed.flags.y;
@@ -51,10 +60,13 @@ if (showHelp) {
   console.log('');
   console.log('  Usage:');
   console.log('    npx create-harness-vibe-coding@latest [project-name] [target-dir] [flags]');
+  console.log('    create-harness-vibe-coding init [target-dir] [flags]');
+  console.log('    create-harness-vibe-coding wf-ui --project . [flags]');
   console.log('');
   console.log('  Arguments:');
   console.log('    project-name   Name for the new project (default: my-vibe-project)');
   console.log('    target-dir     Directory to create the project in (default: ./<project-name>)');
+  console.log('    init           Bind an existing project to the global Harness runtime (thin bridge; global runtime is the single version source of truth)');
   console.log('');
   console.log('  Flags:');
   console.log('    -y, --yes                    Skip all prompts, use defaults or provided args');
@@ -84,6 +96,8 @@ if (showHelp) {
   console.log('    npx create-harness-vibe-coding@latest web ./web -y --preset web-app');
   console.log('    npx create-harness-vibe-coding@latest api ./api -y --preset fullstack --without github-pr-review');
   console.log('    npx create-harness-vibe-coding@latest app ./app -y --install-scope global');
+  console.log('    create-harness-vibe-coding init .             # Per-project init against the global runtime');
+  console.log('    create-harness-vibe-coding init . --dry-run');
   console.log('');
   process.exit(0);
 }
@@ -731,6 +745,106 @@ function flushStdout() {
     }
     process.stdout.write('', resolve);
   });
+}
+
+// init: bind an existing project to the global Harness runtime (non-interactive).
+// Project bridge docs + local state stay in the project; framework files,
+// commands, skills, and scripts live once in the global runtime, which is the
+// single version source of truth. Safe to re-run: user-authored files are
+// preserved under the default `skip` conflict policy.
+function runInit(args) {
+  const valueFlags = new Set(['--global-dir', '--host-global-dir', '--on-conflict']);
+  const positional = args.find((arg, idx) => !arg.startsWith('-') && !valueFlags.has(args[idx - 1]));
+  const targetDir = positional || '.';
+  const scan = scanTarget(targetDir);
+
+  if (scan.hasHarness) {
+    if (hasFlag(args, '--json')) {
+      console.log(JSON.stringify({ success: false, reason: 'harness-already-installed', targetDir }, null, 2));
+      process.exit(1);
+    }
+    console.log(pc.yellow(`\nHarness already detected in ${targetDir}. Nothing to init.`));
+    runUpdateSwitch(scan, { json: false });
+    process.exit(0);
+  }
+
+  const result = generate({
+    projectName: path.basename(path.resolve(process.cwd(), targetDir)),
+    targetDir,
+    dryRun: hasFlag(args, '--dry-run'),
+    onConflict: extractFlag(args, '--on-conflict') || 'skip',
+    withOptions: [],
+    withoutOptions: [],
+    externalOptions: [],
+    preset: undefined,
+    installScope: 'global',
+    globalDir: extractFlag(args, '--global-dir'),
+    hostGlobalDir: extractFlag(args, '--host-global-dir'),
+    json: hasFlag(args, '--json'),
+  });
+
+  if (hasFlag(args, '--json')) {
+    console.log(JSON.stringify({
+      success: result.success,
+      installScope: result.installScope,
+      globalDir: result.globalDir || null,
+      createdCount: result.created.length,
+      project: result.summary || null,
+      globalRuntime: result.globalSummary || null,
+      hosts: result.hostSummary || [],
+      errors: result.errors,
+      warnings: result.warnings,
+    }, null, 2));
+    if (!result.success) process.exit(1);
+    return;
+  }
+
+  if (!result.success) {
+    console.log(pc.red('\nInit failed:'));
+    for (const err of result.errors) {
+      console.log(pc.red(`  - ${err}`));
+    }
+    process.exit(1);
+  }
+
+  if (result.dryRun) {
+    console.log(pc.yellow('\nDry run: no files or directories were written.'));
+  } else {
+    console.log(pc.green('\nInit complete.\n'));
+  }
+  console.log(pc.bold('Project bridge:'));
+  printInitSummary(result.summary);
+  if (result.globalSummary) {
+    console.log(pc.bold('\nGlobal runtime (single version source of truth):'));
+    console.log(`  Directory   ${pc.cyan(result.globalDir)}`);
+    printInitSummary(result.globalSummary);
+  }
+  for (const host of result.hostSummary || []) {
+    console.log(pc.bold(`\nHost copy (${host.host}):`));
+    console.log(`  Directory   ${pc.cyan(host.root)}`);
+    printInitSummary(host.summary);
+  }
+  printInitWarnings(result);
+
+  console.log(pc.bold('\nNext steps:'));
+  console.log(`  ${pc.cyan('/wf-ui')}            # Open the control panel; the global runtime serves this project`);
+  console.log(`  ${pc.cyan('/wf <task>')}       # Start a workflow task in this project`);
+  console.log(pc.dim('\n  Project state (Harness/tasks, memory, PROGRESS.md) stays local to this project.'));
+  console.log(pc.dim('  Update the global runtime with /wf-update or `npm i -g create-harness-vibe-coding@latest`; every project picks it up.'));
+  console.log('');
+}
+
+function printInitSummary(summary) {
+  if (!summary) return;
+  console.log(`  Created ${summary.created}, skipped ${summary.skipped}, overwritten ${summary.overwritten}, backed up ${summary.backedUp}, conflicts ${summary.conflicts}`);
+}
+
+function printInitWarnings(result) {
+  if (!result.warnings || result.warnings.length === 0) return;
+  console.log(pc.yellow('\nWarning(s):'));
+  for (const warning of result.warnings) {
+    console.log(pc.yellow(`  - ${warning}`));
+  }
 }
 
 function writeStdoutLine(line) {

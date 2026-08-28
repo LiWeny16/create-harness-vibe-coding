@@ -67,7 +67,7 @@ After reading this README, the agent selects the path that matches the project:
 | Existing `Harness/` but missing `Harness/scripts/wf-update-check.mjs` | `npx create-harness-vibe-coding@latest my-project . -y --on-conflict skip --json`. Then run `node Harness/scripts/wf-update-check.mjs --json` |
 | After install or update | `node Harness/scripts/validate-harness.mjs --strict` |
 
-Install scope: project-local is the default. To seed a shared machine-level runtime, use `--install-scope global --global-dir <dir>`; commands/skills/agents are copied into Claude Code, Codex, and OpenCode host-global directories, while `Harness/tasks/`, `Harness/PROGRESS.md`, project memory, project facts, and project settings stay inside each target project.
+Install scope: global-first is recommended. Install once per machine with `npm i -g create-harness-vibe-coding`, then run `create-harness-vibe-coding init .` (or the `/wf-init` command) inside each project. The global runtime is the single version source of truth: commands, skills, agents, scripts, and the wf-ui server/assets live there, and every project picks up updates from it. Each project keeps only bridge docs (CLAUDE.md, AGENTS.md) and its own state (`Harness/tasks/`, `Harness/PROGRESS.md`, project memory, project facts, and project settings). Project-local installs (the table above) still work; `--install-scope global --global-dir <dir>` seeds the shared runtime manually with host copies into Claude Code, Codex, and OpenCode global directories.
 
 After installation, hand off by phase: use `CLAUDE.md` as the normal session entry, use `Harness/specs/guides/SETUP.md` only for install/bootstrap, migration, or upgrade decisions, and use `Harness/README.md` as the Harness workflow router when a routed task needs it. Preserve project boundaries; research and plan before editing; run tests, validation, and review before claiming completion.
 
@@ -89,7 +89,8 @@ When in doubt, use `/wf-help` (or `$wf-help` in Codex). It returns the full comm
 | `/wf-ui` | Open the Harness control panel for task management, workflow graphs, agents, and settings | Directly starts the local backend and browser UI on 127.0.0.1 | `/wf-ui` |
 | `/wf-readme <task>` | README, install docs, architecture diagrams, or project docs need work | Preserves facts while improving structure, setup, and usage guidance | `/wf-readme improve the Chinese README` |
 | `/wf-update` | Harness is already installed and needs an update | Compares versions, applies safe changes, leaves semantic conflicts to the agent, and reports release highlights from the changelog metadata | `/wf-update` |
-| `/wf-remove` | You need to uninstall Harness | Removes safe files, preserves user data, and asks before touching conflicts | `/wf-remove` |
+| `/wf-remove` | You need to uninstall Harness | Removes safe files, preserves user data, and asks before touching conflicts |
+| `/wf-init` | You installed the global runtime and want a new project to use it | Writes only project bridge docs and project-local state; framework files and versioning stay in the global runtime | `/wf-remove` |
 | `/wf-help` | You do not know which command to use | Returns command usage without starting a workflow | `/wf-help` |
 
 Claude Code uses `/wf-*`; Codex uses the matching `$wf-*`; OpenCode uses the registered command or Agent instruction. Browser E2E guidance is built into `wf-browser`. `/wf-auto` and `/wf-auto-spark` are continuous modes, so give the agent a clear goal, scope, and acceptance criteria before starting.

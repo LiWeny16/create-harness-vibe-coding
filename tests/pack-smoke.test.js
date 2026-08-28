@@ -21,7 +21,7 @@ test('npm pack includes core and optional templates', () => {
   assert.match(output, /CHANGELOG\.md/);
   assert.doesNotMatch(output, /templates\/common\/docs\/README\.md|templates\\common\\docs\\README\.md/);
   assert.match(output, /templates\/common\/\.claude\/commands\/wf-help\.md|templates\\common\\.claude\\commands\\wf-help\.md/);
-  for (const command of ['wf', 'wf-max', 'wf-auto', 'wf-auto-spark', 'wf-review', 'wf-learn', 'wf-browser', 'wf-readme', 'wf-remove', 'wf-ui']) {
+  for (const command of ['wf', 'wf-init', 'wf-max', 'wf-auto', 'wf-auto-spark', 'wf-review', 'wf-learn', 'wf-browser', 'wf-readme', 'wf-remove', 'wf-ui']) {
     const escaped = command.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     assert.match(output, new RegExp(`templates/common/\\.claude/commands/${escaped}\\.md|templates\\\\common\\\\.claude\\\\commands\\\\${escaped}\\.md`));
     assert.match(output, new RegExp(`templates/common/\\.opencode/commands/${escaped}\\.md|templates\\\\common\\\\.opencode\\\\commands\\\\${escaped}\\.md`));
@@ -35,6 +35,9 @@ test('npm pack includes core and optional templates', () => {
   assert.match(output, /src\/ui\/dist\/index\.html|src\\ui\\dist\\index\.html/);
   assert.match(output, /src\/ui\/dist\/assets\/index-[^/\\]+\.js|src\\ui\\dist\\assets\\index-[^/\\]+\.js/);
   assert.match(output, /src\/ui\/dist\/assets\/index-[^/\\]+\.css|src\\ui\\dist\\assets\\index-[^/\\]+\.css/);
+  assert.doesNotMatch(output, /\.js\.map|\.css\.map/, 'shipped sourcemaps bloat the package; exclude src/ui/dist/**/*.map');
+  assert.doesNotMatch(output, /src\/ui\/src\/|src\\ui\\src\\/, 'frontend dev sources are dev-only; exclude src/ui/src from the package');
+  assert.doesNotMatch(output, /src\/ui\/e2e\/|src\\ui\\e2e\\/, 'e2e specs are dev-only; exclude src/ui/e2e from the package');
   assert.match(output, /README-CN\.md/);
   assert.doesNotMatch(output, /\.agents\.bak|\\agents\.bak/);
 });

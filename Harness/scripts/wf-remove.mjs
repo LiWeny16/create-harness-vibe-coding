@@ -153,11 +153,13 @@ const BUILT_IN_SKILL_NAMES = [
   'wf-task-list',
   'wf-task-record',
   'wf-ui',
+  'wf-init',
   'wf-update',
 ];
 
 const BUILT_IN_COMMAND_NAMES = [
   'wf',
+  'wf-init',
   'wf-auto',
   'wf-auto-spark',
   'wf-browser',
@@ -220,6 +222,7 @@ const CLEANUP_DIRS = [
   '.claude/skills/wf-task-record',
   '.claude/skills/wf-update',
   '.claude/skills/wf-ui',
+  '.claude/skills/wf-init',
   '.claude/skills/wf-remove',
   '.claude/skills/subagent-orchestrator',
   '.claude/skills',
@@ -244,6 +247,7 @@ const CLEANUP_DIRS = [
   '.agents/skills/wf-task-record',
   '.agents/skills/wf-update',
   '.agents/skills/wf-ui',
+  '.agents/skills/wf-init',
   '.agents/skills/wf-remove',
   '.agents/skills/subagent-orchestrator',
   '.agents/skills',

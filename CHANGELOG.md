@@ -2,6 +2,8 @@
 
 ## [0.8.20] - 2026-08-28
 
+- Add global-first install flow: `npm i -g create-harness-vibe-coding` once per machine, then `create-harness-vibe-coding init .` (or the new `/wf-init` direct command) per project; the global runtime is the single version source of truth and each project keeps only bridge docs plus its own state.
+- Slim the npm package from 17.9 MB to 7.8 MB by shipping without frontend sourcemaps and dev-only UI sources; the wf-ui runtime bundle keeps full functionality.
 - Ship the wf-ui workflow canvas as a full agent-team surface: goal, event, timer, display, and capability node types with typed action surfaces, skills hub, magnetic docking, and undoable versioned graph edits.
 - Add agent team cooperation: structured peer requests with request ids, timer wakeup delivery, runtime-aware role profiles, and a subagent strategy matrix covering built-in helpers and visible wf-node agents with depth resume docking.
 - Consolidate all agent actions into a single `Harness/a2a/action-registry.json` source of truth (72 actions) with loader validation, derived `help --json`/`manuals` surfaces, and structural anti-drift tests against ghost/phantom actions.

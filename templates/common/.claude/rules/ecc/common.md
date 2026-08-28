@@ -8,7 +8,7 @@ alwaysApply: true
 ## Context
 
 - Start with `CLAUDE.md`. When `Harness/` exists, also read `Harness/memory/startup-hints.md` (L2 lightweight digest, not full router).
-- When the user explicitly invokes a workflow command (`/wf-*`, `$wf-*`, or `/skills wf-*`), excluding `/wf-help`, `$wf-help`, `/skills wf-help`, `/wf-update`, `$wf-update`, `/skills wf-update`, `/wf-task-record`, `$wf-task-record`, `/skills wf-task-record`, `/wf-task-list`, `$wf-task-list`, `/skills wf-task-list`, `/wf-task-archive`, `$wf-task-archive`, `/skills wf-task-archive`, `/wf-command-create`, `$wf-command-create`, `/skills wf-command-create`, `/wf-ui`, `$wf-ui`, and `/skills wf-ui`, load `Harness/MEMORY.md` and `Harness/README.md`.
+- When the user explicitly invokes a workflow command (`/wf-*`, `$wf-*`, or `/skills wf-*`), excluding `/wf-help`, `$wf-help`, `/skills wf-help`, `/wf-update`, `$wf-update`, `/skills wf-update`, `/wf-task-record`, `$wf-task-record`, `/skills wf-task-record`, `/wf-task-list`, `$wf-task-list`, `/skills wf-task-list`, `/wf-task-archive`, `$wf-task-archive`, `/skills wf-task-archive`, `/wf-command-create`, `$wf-command-create`, `/skills wf-command-create`, `/wf-ui`, `$wf-ui`, and `/skills wf-ui`, `/wf-init`, `$wf-init`, and `/skills wf-init`, load `Harness/MEMORY.md` and `Harness/README.md`.
 - For simple single-step tasks without `/wf-*`, operate in direct mode: skip the Harness router and execute directly.
 - Do not bulk-read `Harness/`. Load by router trigger.
 - Keep `Harness/tasks/<task-id>/PROGRESS.md` and `Harness/tasks/<task-id>/PLAN.md` current when work has multiple steps, files, or agents.

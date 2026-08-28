@@ -425,7 +425,7 @@ test('generated scaffold stores harness-owned payload under root Harness directo
   assert.match(docsReadme, /\| `\/wf-ui`, `\$wf-ui` \|/);
   const workflowSummary = docsReadme.split(/\r?\n/).find(line => line.startsWith('Workflow commands:')) || '';
   assert.doesNotMatch(workflowSummary.split(' with matching ')[0], /\/wf-ui/);
-  assert.match(workflowSummary, /\/wf-update` and `\/wf-ui` remain direct/);
+  assert.match(workflowSummary, /\/wf-update`, `\/wf-ui`, and `\/wf-init` remain direct/);
   assert.match(docsReadme, /Need context\/cache\/token efficiency/);
   assert.match(docsReadme, /cache-first context layout/);
   assert.match(docsReadme, /scripts\/l2-cache-telemetry\.mjs/);

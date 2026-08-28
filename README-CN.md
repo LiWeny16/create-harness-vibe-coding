@@ -56,7 +56,7 @@ Agent 读取本 README 后，按项目状态选择路径：
 | 已有 `Harness/` 但缺少 `Harness/scripts/wf-update-check.mjs` | `npx create-harness-vibe-coding@latest my-project . -y --on-conflict skip --json`。然后执行 `node Harness/scripts/wf-update-check.mjs --json` |
 | 安装或更新完成 | `node Harness/scripts/validate-harness.mjs --strict` |
 
-安装范围：默认是项目内安装。要写入一份机器级共享 runtime，用 `--install-scope global --global-dir <dir>`；commands/skills/agents 会以 copy 方式写入 Claude Code、Codex、OpenCode 的全局可发现目录，但每个项目自己的 `Harness/tasks/`、`Harness/PROGRESS.md`、项目 memory、项目事实和项目 settings 仍然留在项目内。
+安装范围：推荐全局优先。每台机器先执行一次 `npm i -g create-harness-vibe-coding`，然后在每个项目里运行 `create-harness-vibe-coding init .`（或 `/wf-init` 命令）。全局 runtime 是唯一的版本基准：commands、skills、agents、scripts 和 wf-ui 服务/资源都只在全局装一份，所有项目共享同一版本更新。每个项目只保留桥接文件（CLAUDE.md、AGENTS.md）和自己的状态（`Harness/tasks/`、`Harness/PROGRESS.md`、项目 memory、项目事实和项目 settings）。上表的项目内安装仍然可用；`--install-scope global --global-dir <dir>` 可手动播种共享 runtime，并把 commands/skills/agents 以 copy 方式写入 Claude Code、Codex、OpenCode 的全局目录。
 
 用户不需要手动执行这些命令。Agent 负责安装、冲突处理、校验和汇报。
 
@@ -82,6 +82,7 @@ Agent 读取本 README 后，按项目状态选择路径：
 | `/wf-readme <任务>` | README、安装文档、架构图或项目说明需要整理 | 保留事实，整理结构，补充安装和使用说明 | `/wf-readme 优化中文 README` |
 | `/wf-update` | 已安装 Harness，需要检查和应用框架更新 | 比较版本，自动处理安全变更，把语义冲突留给 Agent | `/wf-update` |
 | `/wf-remove` | 需要卸载 Harness | 自动清理安全文件，保留用户数据，冲突文件先确认 | `/wf-remove` |
+| `/wf-init` | 已装全局 runtime，想让新项目接入 | 只写入项目桥接文件和项目状态；框架文件与版本管理以全局 runtime 为准 |
 
 Claude Code 使用 `/wf-*`；Codex 使用对应的 `$wf-*`；OpenCode 使用已注册命令或 Agent instruction。常见任务起点见 [WF-AUTO-ANGLES.md](Harness/specs/workflows/WF-AUTO-ANGLES.md)。
 

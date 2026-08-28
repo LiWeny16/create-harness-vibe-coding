@@ -224,6 +224,20 @@
         "codexSkill": true,
         "helpRow": true
       }
+    },
+    {
+      "id": "wf-init",
+      "classification": "direct",
+      "aliases": ["/wf-init", "$wf-init", "/skills wf-init"],
+      "entersWf": false,
+      "taskCapsulePolicy": "none",
+      "surfaces": {
+        "claudeCommand": true,
+        "opencodeCommand": true,
+        "claudeSkill": true,
+        "codexSkill": true,
+        "helpRow": true
+      }
     }
   ]
 }

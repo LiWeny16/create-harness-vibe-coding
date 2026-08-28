@@ -27,6 +27,7 @@ which returns this same table without loading `Harness/MEMORY.md` or entering WF
 | `/wf-task-archive [--apply]` | direct command | `/wf-task-archive --apply` | Archive completed task capsules (dry-run by default). |
 | `/wf-command-create <wf-command-id>` | direct command | `/wf-command-create wf-report --direct` | Create or modify wf-* command surfaces atomically from the command registry. |
 | `/wf-ui` | direct command | `/wf-ui` | Start the local Harness backend and browser control panel. |
+| `/wf-init` | direct command | `/wf-init` | Initialize this project against the global Harness runtime (thin bridge; global version is authoritative). |
 
 Source of truth: `Harness/README.md#Skill Commands` plus installed skills under
 `.claude/skills/` (Claude Code and OpenCode adapters) or `.agents/skills/`

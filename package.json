@@ -9,6 +9,12 @@
   "files": [
     "bin/",
     "src/",
+    "!src/ui/src",
+    "!src/ui/e2e",
+    "!src/ui/test-results",
+    "!src/ui/verification-screenshots",
+    "!src/ui/playwright-report",
+    "!src/ui/**/*.map",
     "templates/",
     "docs/images/harness-icon.png",
     "docs/images/harness-architecture-light.png",
