@@ -426,6 +426,16 @@ test('AC-002 input larger than 1 MiB exits 1 with an explicit size error', () =>
   assert.match(result.stdout + result.stderr, /1\s*MiB|size|large/i);
 });
 
+test('AC-002 stdin larger than 1 MiB exits 1 with an explicit size error without buffering past the limit', () => {
+  // A bounded read must enforce MAX_INPUT_BYTES on the stream itself; this
+  // probe feeds 1 MiB + slack so a read-all-then-check implementation still
+  // fails, while a stream-limit implementation fails fast on the cap.
+  const payload = '{"schemaVersion":1,"padding":"' + 'x'.repeat(1024 * 1024 + 4096) + '"}';
+  const result = run(['validate', '--input', '-'], { stdin: payload });
+  assert.equal(result.status, 1, result.stdout);
+  assert.match(result.stdout + result.stderr, /1\s*MiB|size|large/i);
+});
+
 test('AC-002 unknown subcommand, missing --input, and unknown flags all exit 1 with actionable errors', () => {
   const unknownCommand = run(['frobnicate', '--input', fixture('valid-compare.json')]);
   assert.equal(unknownCommand.status, 1, unknownCommand.stdout);
@@ -542,6 +552,27 @@ test('AC-002 render isolates Markdown syntax in source titles', () => {
   assert.equal(result.status, 0, result.stderr || result.stdout);
   assert.ok(!result.stdout.includes('[x](https://evil.example)'), result.stdout);
   assert.ok(result.stdout.includes('&#93;'), result.stdout);
+});
+
+test('AC-002 render neutralizes escaped-bracket markdown link injection in text fields', () => {
+  const report = JSON.parse(fs.readFileSync(fixture('valid-compare.json'), 'utf8'));
+  const hostile = '[x\\]](https://evil.example)';
+  report.question = hostile;
+  report.claims[0].text = hostile;
+  report.sources[0].excerpt = hostile;
+  const { file } = copyInput('hostile-escaped-bracket', report);
+  const result = run(['render', '--input', file]);
+  assert.equal(result.status, 0, result.stdout);
+  assert.ok(!result.stdout.includes('](https://evil.example)'), `escaped-bracket link injection survived: ${result.stdout}`);
+});
+
+test('AC-002 render neutralizes bracket-markdown injection via parenthesized nesting in text fields', () => {
+  const report = JSON.parse(fs.readFileSync(fixture('valid-compare.json'), 'utf8'));
+  report.question = 'a [b](c(d)https://evil.example)';
+  const { file } = copyInput('hostile-nested-paren', report);
+  const result = run(['render', '--input', file]);
+  assert.equal(result.status, 0, result.stdout);
+  assert.ok(!result.stdout.includes('](https://evil.example)'), `nested-paren injection survived: ${result.stdout}`);
 });
 
 // ---------------------------------------------------------------- G. no write side effects

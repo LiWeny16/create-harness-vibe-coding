@@ -11,6 +11,11 @@ function realpath(value, label) {
   try { return fs.realpathSync(value); }
   catch (error) { throw new Error(`${label || 'Path'} cannot be resolved: ${error.message}`); }
 }
+function isLink(value) {
+  // lstat sees the link itself; existsSync skips dangling links, so link
+  // detection must not depend on the target existing.
+  try { return fs.lstatSync(value).isSymbolicLink(); } catch { return false; }
+}
 function scopedPath(root, candidate, { allowRoot = false, mustExist = false, label = 'Path' } = {}) {
   const lexicalRoot = path.resolve(String(root));
   const lexicalCandidate = path.resolve(String(candidate));
@@ -19,9 +24,10 @@ function scopedPath(root, candidate, { allowRoot = false, mustExist = false, lab
   const realRoot = realpath(lexicalRoot, 'Allowed root');
   let realCandidate;
   if (fs.existsSync(lexicalCandidate)) realCandidate = realpath(lexicalCandidate, label);
+  else if (isLink(lexicalCandidate)) realCandidate = realpath(lexicalCandidate, label);
   else {
     let cursor = lexicalCandidate; const suffix = [];
-    while (!fs.existsSync(cursor)) { const parent = path.dirname(cursor); if (parent === cursor) throw new Error(`${label} has no existing parent: ${lexicalCandidate}`); suffix.unshift(path.basename(cursor)); cursor = parent; }
+    while (!fs.existsSync(cursor) && !isLink(cursor)) { const parent = path.dirname(cursor); if (parent === cursor) throw new Error(`${label} has no existing parent: ${lexicalCandidate}`); suffix.unshift(path.basename(cursor)); cursor = parent; }
     realCandidate = path.join(realpath(cursor, label), ...suffix);
   }
   if (!isWithin(realRoot, realCandidate, allowRoot)) throw new Error(`${label} resolves outside allowed root: ${realCandidate}`);
@@ -170,9 +176,12 @@ export function validateResearchResult(input) {
 }
 
 function plain(value) { return String(value ?? '').replace(/\[([^\]]+)\]\((?:[^()]|\([^)]*\))*\)/g, '$1').replace(/<[^>]*>/g, '').replace(/javascript\s*:/gi, 'unsafe:'); }
-function escape(value) { return plain(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
+// Square brackets are escaped in ALL text output (not just link labels) so
+// escaped-bracket tricks like `[x\]](https://evil.example)` can never leave a
+// residual bracket pair that a Markdown renderer would re-form into a link.
+function escape(value) { return plain(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/\[/g, '&#91;').replace(/\]/g, '&#93;'); }
 function safeMarkdownUrl(value) { return value.replace(/[\\()[\]<>"`]/g, character => `%${character.codePointAt(0).toString(16).toUpperCase().padStart(2, '0')}`); }
-function escapeMarkdownLabel(value) { return escape(value).replace(/\[/g, '&#91;').replace(/\]/g, '&#93;'); }
+function escapeMarkdownLabel(value) { return escape(value); }
 function portablePath(value) { return String(value).split(path.sep).join('/'); }
 export function renderResearchResult(value) {
   const checked = value?.normalized && Array.isArray(value.errors) ? value : validateResearchResult(value); if (!checked.ok) return null; const result = checked.normalized;
@@ -185,5 +194,19 @@ export function resolveSaveTarget({ project, task, id }) {
   const root = scopedProject(project, { label: '--project' }); if (typeof id !== 'string' || !ID_RE.test(id)) throw new Error('--id must be a safe report id'); const researchDir = scopedPath(root, path.join(root, 'Harness', 'research', 'search', id), { label: 'Research report target' }); const tasksDir = path.join(root, 'Harness', 'tasks'); if (task) scopedPath(root, tasksDir, { mustExist: true, label: 'Harness/tasks' }); const output = { reportId: id, projectRoot: portablePath(root), researchDir: portablePath(researchDir), tasksDir: portablePath(path.resolve(tasksDir)) }; if (task) { const taskDir = scopedTaskDirectory(root, task, { requireState: true }); output.taskDir = portablePath(taskDir); output.taskEvidenceDir = portablePath(scopedPath(taskDir, path.join(taskDir, 'evidence', 'wf-search', id), { label: 'Task evidence target' })); } return output;
 }
 export function readInput(input) {
-  if (!input) throw new Error('--input is required'); let data; if (input === '-') { data = fs.readFileSync(0); } else { const file = path.resolve(input); const stat = fs.statSync(file); if (!stat.isFile()) throw new Error('--input must be a file'); if (stat.size > MAX_INPUT_BYTES) throw new Error('input exceeds 1 MiB'); data = fs.readFileSync(file); } if (data.byteLength > MAX_INPUT_BYTES) throw new Error('input exceeds 1 MiB'); try { return JSON.parse(data.toString('utf8')); } catch (error) { throw new Error(`invalid JSON: ${error.message}`); }
+  if (!input) throw new Error('--input is required'); let data; if (input === '-') { data = readStdinBounded(); } else { const file = path.resolve(input); const stat = fs.statSync(file); if (!stat.isFile()) throw new Error('--input must be a file'); if (stat.size > MAX_INPUT_BYTES) throw new Error('input exceeds 1 MiB'); data = fs.readFileSync(file); } try { return JSON.parse(data.toString('utf8')); } catch (error) { throw new Error(`invalid JSON: ${error.message}`); }
+}
+// Stream stdin instead of readFileSync(0): the 1 MiB limit must be enforced
+// during the read so an oversized stream aborts instead of buffering first.
+function readStdinBounded() {
+  const chunks = []; let received = 0;
+  while (true) {
+    const chunk = Buffer.alloc(64 * 1024);
+    let bytes;
+    try { bytes = fs.readSync(0, chunk, 0, chunk.length); } catch (error) { if (error.code === 'EAGAIN') continue; throw error; }
+    if (bytes === 0) break;
+    received += bytes; if (received > MAX_INPUT_BYTES) throw new Error('input exceeds 1 MiB');
+    chunks.push(chunk.subarray(0, bytes));
+  }
+  return Buffer.concat(chunks);
 }

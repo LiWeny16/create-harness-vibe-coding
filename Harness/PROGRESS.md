@@ -4,7 +4,7 @@ Global task index. Load at session start to see what is active and what was done
 
 ## Active Task
 
-- task-add-web-agent-node
+- task-implement-wf-search-093
 
 ## Task Index
 
@@ -12,10 +12,13 @@ Non-archived tasks only (max 5). Archived tasks are listed in `Harness/tasks/_ar
 
 | ID | Goal | Phase | Closed |
 |----|------|-------|--------|
+| task-implement-wf-search-093 | 实现 wf-search V1 并完成 0.9.3 正式发布：先审计候选归属，Claude 实现候选，Codex 独立验收后发布。 | Closeout | - |
 | task-add-web-agent-node | 新增原生 web chat agent node（非 PTY）：参考 agentre 的 claude stream-json / codex app-server 接入模式，结构化事件流+工具卡片+审批环 | Intake | - |
-| task-fix-wf-ui-ux-issues | Fix 7 wf-ui UX issues: single settings panel, black cursor, skills hub consolidation + compose/drag to skills group, responsive create-node panel, remove dead config button, magnet drift, node creation loading animation | Intake | - |
+| task-fix-wf-ui-ux-issues | Fix 7 wf-ui UX issues: single settings panel, black cursor, skills hub consolidation + compose/drag to skills group, responsive create-node panel, remove dead config button, magnet drift, node creation loading animation | Closeout | 2026-09-10 |
 | task-homepage-act1-flat-layout | Redesign Act 1 opening: 5 flat staggered boxes, zero tilt, no float, no singled-out openable box | Implementation | - |
+| task-make-wf-lifecycle-0908 | Implement explicit WF activation, durable cross-session resume, no direct-to-WF promotion, no WF exit/downgrade, and ensure wf-ui project/task views consume the same project/task state and indexes. Preserve compatibility and keep the architecture minimal. | Validation | - |
 | task-simplify-skills-hub-pack-prompt | Attempt native subagent fan-out (W0 explore + W1 architect), then W2 implementation waves | Implementation | - |
+| task-upgrade-harness-092 | 升级 Harness 协同与可恢复执行架构至 0.9.2；Luna 多代理实现与初验，主模型指挥和终验；跨 Codex/Claude/OpenCode/A2A/PTY/UI；禁止 npm publish；保留现有用户脏改动、3080.md/png 与 Harness/a2a 本地状态。 | Validation | - |
 
 ## Cross-Task Decisions
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.9.5] - 2026-09-14
+
+- Harden `/wf-search` rendering: square brackets in all text output are HTML-escaped so escaped-bracket Markdown link injection (`[x\]](https://evil.example)`) can never survive as a clickable link.
+- Harden `/wf-search` save-path validation: dangling symlink/junction segments of `Harness/research` are now resolved through realpath and rejected instead of being treated as plain directory names.
+- Harden `/wf-search` stdin handling: `--input -` enforces the 1 MiB limit during the read (64 KiB bounded chunks) instead of buffering the entire stream first.
+- Found by independent cross-review of the released 0.9.3; full verification matrix (75 wf-search tests, 458-test suite, mirror parity, version checksums) re-run on the fix candidate.
+- Keep the wf-ui agent terminal, wf-search command surfaces, and installation safeguards covered by the release validation suite.
+
 ## [0.9.4] - 2026-09-14
 
 - Publish the verified mainline as a clean, reproducible maintenance release with synchronized template manifests and package metadata.

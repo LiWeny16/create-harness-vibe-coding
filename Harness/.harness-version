@@ -1,6 +1,6 @@
 {
-  "generator": "0.9.4",
-  "generated": "2026-09-14T04:01:46.796Z",
+  "generator": "0.9.5",
+  "generated": "2026-09-14T04:25:27.167Z",
   "options": [],
   "autoCheck": true,
   "source": "https://raw.githubusercontent.com/LiWeny16/create-harness-vibe-coding/main/templates/common/",
@@ -166,7 +166,7 @@
     "Harness/a2a/skills/workflow-skill-group-node.json": "sha256-98d43dd9b9183b1e976e02cecd3a2302a152ceb77fc540dad10be959c5d56725",
     "Harness/a2a/skills/workflow-timer-node.json": "sha256-a195c46ee5c0231bd2970ccf4e81b355f982aedc87b46fdb93dbe2c886e6fa95",
     "Harness/a2a/workflows.json": "sha256-31501e2b022ee95f745131d7776ae7b4342e3e3431d50f47adc81a60dfbb7b69",
-    "Harness/ownership.manifest.json": "sha256-d1b44142b74fc559ac332497b3595b7c1705ece59adb6ba5423e3b61a6d56435",
+    "Harness/ownership.manifest.json": "sha256-e7f61c67191bdaeec7b54b19211b8d221f455d33153ac6db632c41b02744717a",
     "Harness/project/architecture.md": "sha256-35fbf29a3ad7357cfa3aa74800db2b7c98337709ec111fe73009f4724fc747c8",
     "Harness/research/README.md": "sha256-7cfe4678bf1c2227f3e23c6ffdac48079e06c39cc3c366b10631392615fb3d59",
     "Harness/scripts/README.md": "sha256-928febc2ce3df0495f9a9ad827feab933e1e67dc22699f1642a44f8d6fbaac64",
@@ -177,7 +177,7 @@
     "Harness/scripts/lib/memory-context.mjs": "sha256-604cc1156a538fd1f70ba22af144a4ab8f11272c433eec801e68423e37cc0234",
     "Harness/scripts/lib/path-scope.mjs": "sha256-401a0d4c33d9ce69eb01930c3d7e9f10eb04b9caa5e41dc22271943ba03ae9de",
     "Harness/scripts/lib/research-policy.mjs": "sha256-5a4edc4a5854291110175c52d4a8938bc4807e656196a3797b4e77efb9a97252",
-    "Harness/scripts/lib/wf-search.mjs": "sha256-0b34a5d3a5b6e998a75f5ebeeb20abb49fa0b2d0660bf9d88943c5c3605de8d1",
+    "Harness/scripts/lib/wf-search.mjs": "sha256-a0806b030d67245c3404318770fecb084060845f63539d46983c996def27504b",
     "Harness/scripts/memory-context.mjs": "sha256-a339ff07be34aaf04053a64e8766f655c99945ee6781adcc6681e813b92958b3",
     "Harness/scripts/research-policy.mjs": "sha256-d7769cf2fdf114973d7c3c66eeb8daa152afa613d41372378e880eea35a6480e",
     "Harness/scripts/scan-clean.mjs": "sha256-6c4b2a4d15a8cd758214a360f8d3be11a835368d409c95719242c75ccf466c8a",
@@ -448,6 +448,8 @@
     "Harness/specs/workflows/WF-MAX.md": "Harness/specs/workflows/WF-MAX.md",
     "Harness/specs/workflows/WF-STATE.md": "Harness/specs/workflows/WF-STATE.md",
     "Harness/specs/workflows/WF.md": "Harness/specs/workflows/WF.md",
+    "Harness/tasks/INDEX.json": "Harness/tasks/INDEX.json",
+    "Harness/tasks/INDEX.md": "Harness/tasks/INDEX.md",
     "Harness/tasks/_template/NAMING.md": "Harness/tasks/_template/NAMING.md",
     "Harness/tasks/_template/PLAN.md": "Harness/tasks/_template/PLAN.md",
     "Harness/tasks/_template/PROBLEM.md": "Harness/tasks/_template/PROBLEM.md",
@@ -625,11 +627,14 @@
     }
   ],
   "releaseNotes": {
-    "version": "0.9.4",
+    "version": "0.9.5",
     "date": "2026-09-14",
     "highlights": [
-      "Publish the verified mainline as a clean, reproducible maintenance release with synchronized template manifests and package metadata.",
-      "Keep the existing wf-ui agent terminal, wf-search, cross-runtime command surfaces, and installation safeguards covered by the release validation suite."
+      "Harden `/wf-search` rendering: square brackets in all text output are HTML-escaped so escaped-bracket Markdown link injection (`[x\\]](https://evil.example)`) can never survive as a clickable link.",
+      "Harden `/wf-search` save-path validation: dangling symlink/junction segments of `Harness/research` are now resolved through realpath and rejected instead of being treated as plain directory names.",
+      "Harden `/wf-search` stdin handling: `--input -` enforces the 1 MiB limit during the read (64 KiB bounded chunks) instead of buffering the entire stream first.",
+      "Found by independent cross-review of the released 0.9.3; full verification matrix (75 wf-search tests, 458-test suite, mirror parity, version checksums) re-run on the fix candidate.",
+      "Keep the wf-ui agent terminal, wf-search command surfaces, and installation safeguards covered by the release validation suite."
     ]
   }
 }

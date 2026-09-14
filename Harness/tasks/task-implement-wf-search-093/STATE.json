@@ -1,0 +1,270 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-implement-wf-search-093",
+  "status": "active",
+  "mode": "wf",
+  "defaultRuntime": "codex",
+  "defaultAgentRuntime": "codex",
+  "tier": "full",
+  "phase": "closeout",
+  "gate": "handoff-ready/implementation-not-started",
+  "project": "create-harness-vibe-coding",
+  "tags": [
+    "wf-search",
+    "release-0.9.3"
+  ],
+  "createdAt": "2026-09-13T08:52:59.444Z",
+  "startedAt": "2026-09-13T08:52:59.444Z",
+  "closedAt": null,
+  "updatedAt": "2026-09-14T03:13:03.643Z",
+  "activeQuestion": null,
+  "nextAction": "接手 Agent 读取 Harness/tasks/task-implement-wf-search-093/claude-wf-search-0.9.3-implementation-prompt.md 与 PLAN.md；首先记录当前 HEAD、分支、暂存/未暂存/未跟踪文件，建立 0.9.3 included/excluded/unresolved 前置候选归属清单，再推进设计/测试门禁。",
+  "acceptance": [
+    {
+      "id": "AC-001",
+      "criterion": "四模式/三预算档搜索协议、真实能力发现、来源原文/反证/不确定性处理符合任务提示词。",
+      "status": "pending",
+      "evidence": ""
+    },
+    {
+      "id": "AC-002",
+      "criterion": "无状态 validate/render 数据合同、stdin、输入限制、引用/日期/预算/URL/转义与无写入副作用通过测试。",
+      "status": "pending",
+      "evidence": ""
+    },
+    {
+      "id": "AC-003",
+      "criterion": "命令注册、三端入口、Skill references、镜像/帮助/上下文预算与 project/global/host-global 安装一致。",
+      "status": "pending",
+      "evidence": ""
+    },
+    {
+      "id": "AC-004",
+      "criterion": "可选保存路径安全、幂等、更新/卸载保护与旧研究记录/只读角色合同兼容。",
+      "status": "pending",
+      "evidence": ""
+    },
+    {
+      "id": "AC-005",
+      "criterion": "候选归属明确；全部适用发布门禁、真实 Agent 场景、UI/服务端/安装回归有最终 SHA 证据。",
+      "status": "pending",
+      "evidence": ""
+    },
+    {
+      "id": "AC-006",
+      "criterion": "独立 Codex 验收、WF-Full cross-review 与 reflector PASS；同 SHA/tgz 发布并完成 npm/GitHub/mirror 与安装后核验。",
+      "status": "pending",
+      "evidence": ""
+    }
+  ],
+  "queues": {
+    "ready": [
+      "baseline"
+    ],
+    "running": [],
+    "blocked": [],
+    "done": []
+  },
+  "workItems": [
+    {
+      "id": "baseline",
+      "status": "ready",
+      "phase": "plan",
+      "agent": "planner",
+      "dependsOn": [],
+      "readSet": [
+        "CLAUDE.md",
+        "README.md",
+        "Harness/tasks/task-upgrade-harness-092/STATE.json",
+        "Harness/tasks/task-implement-wf-search-093/claude-wf-search-0.9.3-implementation-prompt.md"
+      ],
+      "writeSet": [
+        "Harness/tasks/task-implement-wf-search-093/**"
+      ],
+      "next": "先记录 HEAD/branch/status，审计 included/excluded/unresolved 与前置候选归属；重验历史失败线索。"
+    },
+    {
+      "id": "design",
+      "status": "pending",
+      "phase": "explore",
+      "agent": "architect",
+      "dependsOn": [
+        "baseline"
+      ],
+      "readSet": [
+        "Harness/tasks/task-implement-wf-search-093/**",
+        "templates/common/Harness/specs/runtime/command-surface.json"
+      ],
+      "writeSet": [
+        "Harness/tasks/task-implement-wf-search-093/**"
+      ],
+      "next": "重读当前架构证据，完成 PRD/AC/CONTRACT gate、按需只读研究与第二版计划。"
+    },
+    {
+      "id": "tests",
+      "status": "pending",
+      "phase": "plan",
+      "agent": "test-writer",
+      "dependsOn": [
+        "design"
+      ],
+      "readSet": [
+        "Harness/tasks/task-implement-wf-search-093/**",
+        "tests/**"
+      ],
+      "writeSet": [
+        "tests/wf-search*.test.js",
+        "tests/fixtures/wf-search/**"
+      ],
+      "next": "编写 AC 关联测试与真实 Agent 验证方案，通过 TEST-GATE 后实现。"
+    },
+    {
+      "id": "implementation",
+      "status": "pending",
+      "phase": "implement",
+      "agent": "implementer",
+      "dependsOn": [
+        "tests"
+      ],
+      "readSet": [
+        "Harness/tasks/task-implement-wf-search-093/**",
+        "templates/common/**",
+        "src/generator.js"
+      ],
+      "writeSet": [
+        "详见本目录实现提示词第5/9/10/12/13节；派发前拆成无重叠精确writeSet"
+      ],
+      "next": "按既定 V1 实现并同步源码/模板/文档。"
+    },
+    {
+      "id": "verify",
+      "status": "pending",
+      "phase": "verify",
+      "agent": "verifier",
+      "dependsOn": [
+        "implementation"
+      ],
+      "readSet": [
+        "Harness/tasks/task-implement-wf-search-093/**",
+        "候选checkout与tgz"
+      ],
+      "writeSet": [
+        "Harness/tasks/task-implement-wf-search-093/evidence/**"
+      ],
+      "next": "对最终候选执行完整适用验证；失败交最小修复并重验。"
+    },
+    {
+      "id": "cross-review",
+      "status": "pending",
+      "phase": "review",
+      "agent": "reviewer",
+      "dependsOn": [
+        "verify"
+      ],
+      "readSet": [
+        "Harness/tasks/task-implement-wf-search-093/**",
+        "候选diff"
+      ],
+      "writeSet": [],
+      "next": "独立交叉检查需求/代码/安装保护与发布证据，要求 PASS。"
+    },
+    {
+      "id": "reflect",
+      "status": "pending",
+      "phase": "reflect",
+      "agent": "reflector",
+      "dependsOn": [
+        "cross-review"
+      ],
+      "readSet": [
+        "Harness/tasks/task-implement-wf-search-093/**"
+      ],
+      "writeSet": [],
+      "next": "核对矛盾、遗漏和 WF-Full 最终门禁，要求 PASS。"
+    },
+    {
+      "id": "codex-accept",
+      "status": "pending",
+      "phase": "verify",
+      "agent": "Codex independent verifier",
+      "dependsOn": [
+        "reflect"
+      ],
+      "readSet": [
+        "Harness/tasks/task-implement-wf-search-093/**",
+        "最终SHA/tgz"
+      ],
+      "writeSet": [
+        "Harness/tasks/task-implement-wf-search-093/evidence/**"
+      ],
+      "next": "独立 Codex 验收；Claude 候选执行至交接点停止，不自行发布。"
+    },
+    {
+      "id": "release",
+      "status": "pending",
+      "phase": "closeout",
+      "agent": "controller",
+      "dependsOn": [
+        "codex-accept"
+      ],
+      "readSet": [
+        "README.md",
+        "Harness/tasks/task-implement-wf-search-093/**"
+      ],
+      "writeSet": [
+        "经独立验收的同一SHA/tgz发布及渠道元数据"
+      ],
+      "next": "重新核验版本/refs，发布0.9.3并完成registry安装及mirrors验证后才关闭任务。"
+    }
+  ],
+  "dispatchLedger": [],
+  "decisions": [],
+  "risks": [],
+  "artifacts": [],
+  "group": "create-harness-vibe-coding",
+  "links": {
+    "dependsOn": [],
+    "blocks": [],
+    "related": [
+      "task-upgrade-harness-092"
+    ]
+  },
+  "context": {
+    "intent": {
+      "original": "用户决定 wf-search 纳入 0.9.3；先给 Claude 架构实现提示词，其实现后由 Codex 校验，目标发布 0.9.3 正式版本。用户显式 $wf 要求先登记为 open task 供其 Agent 后续执行。",
+      "current": "登记完成，等待用户自己的 Agent 接手实现；最终目标仍为 0.9.3 正式发布。",
+      "changes": []
+    },
+    "constraints": [
+      "本轮仅登记，不启动实现或发布。",
+      "接手复用此 task；候选实现与独立 Codex 验收分离，验收前不得发布。",
+      "保留原用户工作树/暂存区与既有任务；不得通过删除任务或忽略门禁凑绿。"
+    ],
+    "facts": [],
+    "assumptions": [],
+    "decisions": [],
+    "evidence": [
+      {
+        "id": "implementation-brief",
+        "path": "Harness/tasks/task-implement-wf-search-093/claude-wf-search-0.9.3-implementation-prompt.md",
+        "claim": "完整实施/验收/发布交接要求。",
+        "status": "recorded"
+      },
+      {
+        "id": "architecture-audit",
+        "path": "Harness/tasks/task-implement-wf-search-093/wf-search-architecture-audit.md",
+        "claim": "历史只读架构调查；实施前核对当前源码。",
+        "status": "recorded"
+      }
+    ],
+    "attempts": [],
+    "handoff": {
+      "summary": "仅完成任务登记；没有产品改动、测试通过或发布完成声明。后续按 WF-Full 角色链执行。",
+      "unresolved": [
+        "前置候选的 included/excluded/unresolved 归属未收敛。",
+        "旧任务失败门禁与UI历史失败须当前候选重验，不能假定已解决。",
+        "0.9.3线上版本/refs、认证/发布权限、真实宿主行为及跨平台兼容待核实。"
+      ]
+    }
+  }
+}

@@ -483,6 +483,25 @@ test('AC-004 resolve-save-target rejects a junction escape of Harness/research',
   assertNoModuleCrash(result, 'junction escape');
 });
 
+test('AC-004 resolve-save-target rejects a dangling link of Harness/research', t => {
+  const project = tmpRoot('wf-search-dangling-');
+  fs.mkdirSync(path.join(project, 'Harness'), { recursive: true });
+  // A link pointing at a target that does not exist must still be rejected:
+  // existsSync skips dangling links, so path validation must not treat the
+  // link as a plain directory. Junctions need no privilege on Windows; skip
+  // when link creation is unavailable (non-Windows without symlink rights).
+  try {
+    fs.symlinkSync(path.join(project, 'Harness', 'no-such-target'), path.join(project, 'Harness', 'research'), 'junction');
+  } catch (error) {
+    t.skip(`cannot create junction/symlink for the dangling fixture: ${error.code || error.message}`);
+    return;
+  }
+
+  const result = runRootHelper(['resolve-save-target', '--project', project, '--id', 'good-report-1']);
+  assert.equal(result.status, 1, `a dangling-link Harness/research must not be accepted as a save root: ${result.stdout}`);
+  assertNoModuleCrash(result, 'dangling link escape');
+});
+
 // ================================================================ 6. npm pack coverage
 
 function assertPacked(output, posixPath) {

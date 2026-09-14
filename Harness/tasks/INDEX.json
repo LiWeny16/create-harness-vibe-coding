@@ -1,0 +1,171 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-09-14T03:14:41.099Z",
+  "sourceOfTruth": "Harness/tasks/*/STATE.json",
+  "activeTask": "task-implement-wf-search-093",
+  "resumeTask": {
+    "taskId": "task-implement-wf-search-093",
+    "mode": "wf",
+    "status": "active",
+    "project": "create-harness-vibe-coding"
+  },
+  "resumeRequired": true,
+  "projects": {
+    "default": [
+      "task-add-web-agent-node",
+      "task-fix-wf-ui-ux-issues",
+      "task-homepage-act1-flat-layout",
+      "task-make-wf-lifecycle-0908",
+      "task-simplify-skills-hub-pack-prompt"
+    ],
+    "create-harness-vibe-coding": [
+      "task-implement-wf-search-093"
+    ],
+    "harness-upgrade": [
+      "task-upgrade-harness-092"
+    ]
+  },
+  "tasks": [
+    {
+      "id": "task-add-web-agent-node",
+      "project": "default",
+      "group": "default",
+      "title": "新增原生 web chat agent node（非 PTY）：参考 agentre 的 claude stream-json / codex app-server 接入模式，结构化事件流+工具卡片+审批环",
+      "status": "active",
+      "mode": "wf-max",
+      "wfManaged": true,
+      "resumeRequired": true,
+      "phase": "intake",
+      "tags": [],
+      "createdAt": "2026-09-08T06:39:46.331Z",
+      "startedAt": "2026-09-08T06:39:46.331Z",
+      "updatedAt": "2026-09-08T06:39:46.331Z",
+      "closedAt": null,
+      "dependsOn": [],
+      "blocks": [],
+      "path": "Harness/tasks/task-add-web-agent-node"
+    },
+    {
+      "id": "task-fix-wf-ui-ux-issues",
+      "project": "default",
+      "group": "default",
+      "title": "Fix 7 wf-ui UX issues: single settings panel, black cursor, skills hub consolidation + compose/drag to skills group, responsive create-node panel, remove dead config button, magnet drift, node creation loading animation",
+      "status": "closed",
+      "mode": "wf-max",
+      "wfManaged": true,
+      "resumeRequired": false,
+      "phase": "closeout",
+      "tags": [],
+      "createdAt": "2026-09-08T06:39:46.331Z",
+      "startedAt": "2026-09-08T06:39:46.331Z",
+      "updatedAt": "2026-09-10T02:31:06.919Z",
+      "closedAt": "2026-09-10T02:31:06.919Z",
+      "dependsOn": [],
+      "blocks": [],
+      "path": "Harness/tasks/task-fix-wf-ui-ux-issues"
+    },
+    {
+      "id": "task-homepage-act1-flat-layout",
+      "project": "default",
+      "group": "default",
+      "title": "Redesign Act 1 opening: 5 flat staggered boxes, zero tilt, no float, no singled-out openable box",
+      "status": "active",
+      "mode": "direct",
+      "wfManaged": false,
+      "resumeRequired": false,
+      "phase": "implement",
+      "tags": [],
+      "createdAt": "2026-09-13T10:58:05.545Z",
+      "startedAt": "2026-09-13T10:58:05.545Z",
+      "updatedAt": "2026-09-13T10:58:05.545Z",
+      "closedAt": null,
+      "dependsOn": [],
+      "blocks": [],
+      "path": "Harness/tasks/task-homepage-act1-flat-layout"
+    },
+    {
+      "id": "task-implement-wf-search-093",
+      "project": "create-harness-vibe-coding",
+      "group": "create-harness-vibe-coding",
+      "title": "实现 wf-search V1 并完成 0.9.3 正式发布：先审计候选归属，Claude 实现候选，Codex 独立验收后发布。",
+      "status": "active",
+      "mode": "wf",
+      "wfManaged": true,
+      "resumeRequired": true,
+      "phase": "closeout",
+      "tags": [
+        "wf-search",
+        "release-0.9.3"
+      ],
+      "createdAt": "2026-09-13T08:52:59.444Z",
+      "startedAt": "2026-09-13T08:52:59.444Z",
+      "updatedAt": "2026-09-14T03:13:03.643Z",
+      "closedAt": null,
+      "dependsOn": [],
+      "blocks": [],
+      "path": "Harness/tasks/task-implement-wf-search-093"
+    },
+    {
+      "id": "task-make-wf-lifecycle-0908",
+      "project": "default",
+      "group": "default",
+      "title": "Implement explicit WF activation, durable cross-session resume, no direct-to-WF promotion, no WF exit/downgrade, and ensure wf-ui project/task views consume the same project/task state and indexes. Preserve compatibility and keep the architecture minimal.",
+      "status": "active",
+      "mode": "direct",
+      "wfManaged": false,
+      "resumeRequired": false,
+      "phase": "verify",
+      "tags": [],
+      "createdAt": "2026-09-13T10:58:05.545Z",
+      "startedAt": "2026-09-13T10:58:05.545Z",
+      "updatedAt": "2026-09-13T10:58:05.545Z",
+      "closedAt": null,
+      "dependsOn": [],
+      "blocks": [],
+      "path": "Harness/tasks/task-make-wf-lifecycle-0908"
+    },
+    {
+      "id": "task-simplify-skills-hub-pack-prompt",
+      "project": "default",
+      "group": "default",
+      "title": "Attempt native subagent fan-out (W0 explore + W1 architect), then W2 implementation waves",
+      "status": "active",
+      "mode": "wf-max",
+      "wfManaged": true,
+      "resumeRequired": true,
+      "phase": "implement",
+      "tags": [],
+      "createdAt": "2026-09-08T06:39:46.331Z",
+      "startedAt": "2026-09-08T06:39:46.331Z",
+      "updatedAt": "2026-09-08T06:39:46.331Z",
+      "closedAt": null,
+      "dependsOn": [],
+      "blocks": [],
+      "path": "Harness/tasks/task-simplify-skills-hub-pack-prompt"
+    },
+    {
+      "id": "task-upgrade-harness-092",
+      "project": "harness-upgrade",
+      "group": "harness-upgrade",
+      "title": "升级 Harness 协同与可恢复执行架构至 0.9.2；Luna 多代理实现与初验，主模型指挥和终验；跨 Codex/Claude/OpenCode/A2A/PTY/UI；禁止 npm publish；保留现有用户脏改动、3080.md/png 与 Harness/a2a 本地状态。",
+      "status": "active",
+      "mode": "wf",
+      "wfManaged": true,
+      "resumeRequired": true,
+      "phase": "verify",
+      "tags": [
+        "architecture-migration",
+        "release-092",
+        "luna",
+        "xhigh"
+      ],
+      "createdAt": "2026-09-08T18:11:58.729Z",
+      "startedAt": "2026-09-08T18:11:58.729Z",
+      "updatedAt": "2026-09-09T07:56:12.221Z",
+      "closedAt": null,
+      "dependsOn": [],
+      "blocks": [],
+      "path": "Harness/tasks/task-upgrade-harness-092"
+    }
+  ]
+}
