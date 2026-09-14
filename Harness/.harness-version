@@ -1,6 +1,6 @@
 {
   "generator": "0.9.5",
-  "generated": "2026-09-14T04:25:27.167Z",
+  "generated": "2026-09-14T04:53:14.660Z",
   "options": [],
   "autoCheck": true,
   "source": "https://raw.githubusercontent.com/LiWeny16/create-harness-vibe-coding/main/templates/common/",
@@ -166,7 +166,7 @@
     "Harness/a2a/skills/workflow-skill-group-node.json": "sha256-98d43dd9b9183b1e976e02cecd3a2302a152ceb77fc540dad10be959c5d56725",
     "Harness/a2a/skills/workflow-timer-node.json": "sha256-a195c46ee5c0231bd2970ccf4e81b355f982aedc87b46fdb93dbe2c886e6fa95",
     "Harness/a2a/workflows.json": "sha256-31501e2b022ee95f745131d7776ae7b4342e3e3431d50f47adc81a60dfbb7b69",
-    "Harness/ownership.manifest.json": "sha256-e7f61c67191bdaeec7b54b19211b8d221f455d33153ac6db632c41b02744717a",
+    "Harness/ownership.manifest.json": "sha256-abb0233f97749efd782c7cdf29bba45d7fc54681707df8de04be20ec435cb418",
     "Harness/project/architecture.md": "sha256-35fbf29a3ad7357cfa3aa74800db2b7c98337709ec111fe73009f4724fc747c8",
     "Harness/research/README.md": "sha256-7cfe4678bf1c2227f3e23c6ffdac48079e06c39cc3c366b10631392615fb3d59",
     "Harness/scripts/README.md": "sha256-928febc2ce3df0495f9a9ad827feab933e1e67dc22699f1642a44f8d6fbaac64",
