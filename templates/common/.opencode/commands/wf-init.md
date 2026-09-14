@@ -23,7 +23,7 @@ node bin/create-harness-vibe-coding.js init .
 Otherwise use the package fallback:
 
 ```bash
-npx create-harness-vibe-coding@0.8.21 init .
+npx create-harness-vibe-coding@latest init .
 ```
 
 Install scopes:

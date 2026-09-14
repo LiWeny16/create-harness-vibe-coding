@@ -238,9 +238,28 @@ async function installWorkflowFixture(page: Page): Promise<HarnessNetwork> {
     status: 'open',
     phase: 'planning-dgate',
   }]));
+  await page.route('**/api/workflow/compositions/**', route => {
+    const compositionId = decodeURIComponent(new URL(route.request().url()).pathname.split('/').pop() || 'e2e-workflow-m1');
+    return jsonResponse(route, {
+      schemaVersion: 1,
+      compositionId,
+      graphVersion: 1,
+      compositionVersion: 1,
+      stateVersion: 1,
+      fsm: { state: 'ready', transitions: [] },
+      timer: { nodes: [], count: 0 },
+      agents: [],
+      edges: [],
+      lastTransitions: [],
+    });
+  });
   await page.route('**/api/a2a/snapshot**', route => jsonResponse(route, workflowSnapshot()));
   await page.route('**/api/a2a/graph-map**', route => jsonResponse(route, { ok: true, revision: 2 }));
   await page.route('**/api/sessions?all=1**', route => jsonResponse(route, workflowSnapshot().sessions));
+  await page.route('**/api/a2a/nodes/**/start', route => jsonResponse(route, {
+    ok: true,
+    started: { sessionId, runtime: 'codex', status: 'running', kind: 'terminal-session', nodeId: graphNodeId },
+  }));
   await page.route('**/api/terminals/**/range**', route => jsonResponse(route, {
     entries: [{ seq: 1, stream: 'stdout', data: '\r\nM1 terminal fixture ready\r\n' }],
   }));

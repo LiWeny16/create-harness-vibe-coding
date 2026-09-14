@@ -1,6 +1,6 @@
 ---
 name: wf-readme
-description: Use when a project README already exists and the user asks to preserve, merge, modernize, optimize, or clarify repository documentation during harness install or documentation work.
+description: Use for /wf-readme in Claude Code, $wf-readme or /skills wf-readme in Codex, or when a project README needs preservation, merging, modernization, optimization, or clarification during Harness work.
 ---
 
 # README Optimizer

@@ -348,6 +348,21 @@ async function installPerformanceFixture(page: Page): Promise<PerfNetwork> {
     status: 'open',
     phase: 'm5-red',
   }]));
+  await page.route('**/api/workflow/compositions/**', route => {
+    const compositionId = decodeURIComponent(new URL(route.request().url()).pathname.split('/').pop() || 'e2e-workflow-m5');
+    return jsonResponse(route, {
+      schemaVersion: 1,
+      compositionId,
+      graphVersion: 1,
+      compositionVersion: 1,
+      stateVersion: 1,
+      fsm: { state: 'ready', transitions: [] },
+      timer: { nodes: [], count: 0 },
+      agents: [],
+      edges: [],
+      lastTransitions: [],
+    });
+  });
   await page.route('**/api/a2a/snapshot**', route => jsonResponse(route, snapshot));
   await page.route('**/api/a2a/graph-map**', route => {
     const record = {
@@ -393,6 +408,15 @@ async function installPerformanceFixture(page: Page): Promise<PerfNetwork> {
     });
   });
   await page.route('**/api/sessions?all=1**', route => jsonResponse(route, snapshot.sessions));
+  await page.route('**/api/a2a/nodes/**/start', route => jsonResponse(route, {
+    ok: true,
+    started: { sessionId, runtime: 'codex', status: 'running', kind: 'terminal-session', nodeId: graphNodeId },
+  }));
+  await page.route('**/api/workflow/nodes/**/actions/file.preview', route => jsonResponse(route, {
+    ok: true,
+    action: 'file.preview',
+    result: { path: 'package.json', previewKind: 'text', textSnippet: '{"perf":true}' },
+  }));
   await page.route('**/api/terminals/**/range**', route => jsonResponse(route, {
     entries: [{ seq: 1, stream: 'stdout', data: '\r\nM5 performance fixture ready\r\n' }],
   }));

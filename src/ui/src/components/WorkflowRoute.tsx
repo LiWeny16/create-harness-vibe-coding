@@ -7758,22 +7758,7 @@ function WorkflowRouteInner({ onSelectSession }: Props) {
     });
   }, [canvasControlGestureGuardActive, nodeClipboard?.items.length]);
 
-  useEffect(() => {
-    if (loading) return undefined;
-    const handleContextMenu = (event: MouseEvent) => {
-      const wrapper = flowWrapperRef.current;
-      const targetNode = event.target instanceof Node ? event.target : null;
-      if (!wrapper || !targetNode || !wrapper.contains(targetNode)) return;
-      if (!shouldOpenCanvasContextMenu(event.target)) return;
-      event.preventDefault();
-      event.stopPropagation();
-      openPaneMenu(event);
-    };
-    document.addEventListener('contextmenu', handleContextMenu, true);
-    return () => document.removeEventListener('contextmenu', handleContextMenu, true);
-  }, [loading, openPaneMenu]);
-
-  const openNodeMenuAt = (
+  const openNodeMenuAt = useCallback((
     event: Pick<ReactMouseEvent | globalThis.MouseEvent, 'preventDefault' | 'stopPropagation' | 'clientX' | 'clientY'>,
     nodeId: string,
   ) => {
@@ -7802,7 +7787,7 @@ function WorkflowRouteInner({ onSelectSession }: Props) {
       flowY: flowPosition.y,
       nodeId: node.id,
     });
-  };
+  }, [canvasNodeById]);
 
   const openNodeMenu: NodeMouseHandler<FlowNode> = (event, node) => {
     openNodeMenuAt(event, node.id);
@@ -7820,7 +7805,38 @@ function WorkflowRouteInner({ onSelectSession }: Props) {
     if (shouldOpenCanvasContextMenu(event.target)) {
       openPaneMenu(event);
     }
-  }, [canvasNodeById, canvasNodes, openPaneMenu]);
+  }, [canvasNodeById, canvasNodes, openNodeMenuAt, openPaneMenu]);
+
+  useEffect(() => {
+    if (loading) return undefined;
+    const handleContextMenu = (event: MouseEvent) => {
+      const wrapper = flowWrapperRef.current;
+      const targetNode = event.target instanceof Node ? event.target : null;
+      const targetElement = event.target instanceof Element ? event.target : null;
+      const terminalOverlay = targetElement?.closest('[data-testid="terminal-window"]');
+      const stackedElements = terminalOverlay && typeof document.elementsFromPoint === 'function'
+        ? document.elementsFromPoint(event.clientX, event.clientY)
+        : [];
+      const underlyingNodeElement = stackedElements
+        .map(element => element.closest<HTMLElement>('[data-testid="workflow-node"], [data-testid="workflow-node-terminal"], [data-testid="workflow-component-node"], [data-testid="workflow-event-node"], [data-testid="workflow-capability-node"], [data-testid="workflow-goal-node"]'))
+        .find(Boolean);
+      const nodeKey = underlyingNodeElement?.getAttribute('data-node-id') || '';
+      const underlyingNode = nodeKey
+        ? canvasNodeById.get(nodeKey) || canvasNodes.find(item => item.graphNodeId === nodeKey)
+        : null;
+      if (underlyingNode) {
+        openNodeMenuAt(event, underlyingNode.id);
+        return;
+      }
+      if (!wrapper || !targetNode || !wrapper.contains(targetNode)) return;
+      if (!shouldOpenCanvasContextMenu(event.target)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      openPaneMenu(event);
+    };
+    document.addEventListener('contextmenu', handleContextMenu, true);
+    return () => document.removeEventListener('contextmenu', handleContextMenu, true);
+  }, [canvasNodeById, canvasNodes, loading, openNodeMenuAt, openPaneMenu]);
 
   const selectNode: NodeMouseHandler<FlowNode> = (_event, node) => {
     setContextMenu(null);

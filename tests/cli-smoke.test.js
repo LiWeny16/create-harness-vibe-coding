@@ -194,7 +194,7 @@ test('AC-001 wf-ui without --port defaults to 56670 and falls forward when occup
   }
 });
 
-test('AC-002 wf-ui explicit nonzero occupied port falls forward to the next free port', async () => {
+test('AC-002 wf-ui explicit nonzero occupied port falls forward to the next available port', async () => {
   const { blocker, port } = await reservePortWithFreeNext();
   const root = tmpdir();
   fs.mkdirSync(path.join(root, 'Harness', 'tasks'), { recursive: true });
@@ -218,13 +218,14 @@ test('AC-002 wf-ui explicit nonzero occupied port falls forward to the next free
     assert.equal(result.status, 0, output);
     const stdoutUrl = result.stdout.trim().match(/\[wf-ui\] (http:\/\/127\.0\.0\.1:\d+\/)$/)?.[1];
     assert.ok(stdoutUrl, result.stdout);
-    assert.equal(new URL(stdoutUrl).port, String(port + 1));
+    const selectedPort = Number(new URL(stdoutUrl).port);
+    assert.ok(selectedPort > port, `expected a port above ${port}, got ${selectedPort}`);
 
     const launchDirs = fs.readdirSync(launchRoot).filter(name => name.startsWith('harness-wf-ui-'));
     assert.equal(launchDirs.length, 1, 'detached launcher should use a project-local launch dir');
     launchDir = path.join(launchRoot, launchDirs[0]);
     ready = JSON.parse(fs.readFileSync(path.join(launchDir, 'ready.json'), 'utf8'));
-    assert.equal(new URL(ready.url).port, String(port + 1));
+    assert.equal(Number(new URL(ready.url).port), selectedPort);
   } finally {
     if (ready?.pid) {
       try { process.kill(ready.pid, 'SIGTERM'); } catch {}

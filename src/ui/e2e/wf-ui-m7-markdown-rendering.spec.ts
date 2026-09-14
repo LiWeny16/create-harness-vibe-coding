@@ -524,6 +524,21 @@ async function installWorkflowFixture(
   }
 
   const currentSnapshot = () => workflowSnapshot([...components.values()]);
+  await page.route('**/api/workflow/compositions/**', route => {
+    const compositionId = decodeURIComponent(new URL(route.request().url()).pathname.split('/').pop() || 'e2e-workflow-m7');
+    return jsonResponse(route, {
+      schemaVersion: 1,
+      compositionId,
+      graphVersion: 1,
+      compositionVersion: 1,
+      stateVersion: 1,
+      fsm: { state: 'ready', transitions: [] },
+      timer: { nodes: [], count: 0 },
+      agents: [],
+      edges: [],
+      lastTransitions: [],
+    });
+  });
   await page.route('**/api/a2a/snapshot**', route => jsonResponse(route, currentSnapshot()));
   await page.route('**/api/a2a/graph-map**', route => {
     const snapshot = currentSnapshot();

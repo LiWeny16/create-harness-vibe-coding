@@ -95,7 +95,7 @@ function stateColor(state: string, connected: boolean) {
 }
 
 function initialPosition(): Point {
-  const width = Math.min(980, Math.max(680, window.innerWidth * 0.62));
+  const width = Math.min(640, Math.max(540, window.innerWidth * 0.52));
   return {
     x: Math.max(16, window.innerWidth - width - 28),
     y: 82,
@@ -104,7 +104,9 @@ function initialPosition(): Point {
 
 function initialSize(): Size {
   return {
-    width: Math.min(980, Math.max(680, window.innerWidth * 0.62)),
+    // Keep the floating terminal usable while leaving the default canvas
+    // workspace visible for node selection and context-menu actions.
+    width: Math.min(640, Math.max(540, window.innerWidth * 0.52)),
     height: Math.min(680, Math.max(460, window.innerHeight * 0.68)),
   };
 }

@@ -93,6 +93,28 @@ test('template source stores harness docs under categorized templates/common/Har
   assert.ok(fs.existsSync(path.join(process.cwd(), 'templates', 'common', '.claude', 'skills', 'wf-browser', 'SKILL.md')));
 });
 
+test('WF command fallbacks do not pin an obsolete package version', () => {
+  const files = [
+    '.claude/commands/wf-init.md',
+    '.claude/commands/wf-ui.md',
+    '.opencode/commands/wf-init.md',
+    '.opencode/commands/wf-ui.md',
+    '.claude/skills/wf-ui/SKILL.md',
+    '.agents/skills/wf-ui/SKILL.md',
+    'templates/common/.claude/commands/wf-init.md',
+    'templates/common/.claude/commands/wf-ui.md',
+    'templates/common/.opencode/commands/wf-init.md',
+    'templates/common/.opencode/commands/wf-ui.md',
+    'templates/common/.claude/skills/wf-ui/SKILL.md',
+  ];
+
+  for (const rel of files) {
+    const body = fs.readFileSync(path.join(process.cwd(), ...rel.split('/')), 'utf8');
+    assert.doesNotMatch(body, /create-harness-vibe-coding@0\.8\.21/);
+    assert.match(body, /create-harness-vibe-coding@latest/);
+  }
+});
+
 test('optional catalog includes recommendation-only external capability choices', () => {
   const catalog = getOptionalCatalog();
   const ids = catalog.externalRecommendations.map(item => item.id);

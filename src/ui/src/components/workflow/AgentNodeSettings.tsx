@@ -67,6 +67,21 @@ export default function AgentNodeSettings({ node, onClose, onDelete, loading = f
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
 
+  // The settings shell mounts immediately with a loading preview node and
+  // replaces it with the runtime node after the GET resolves.  Keep the form
+  // state aligned with that runtime response so a preview default cannot
+  // overwrite persisted identity fields on the first open or after reopen.
+  useEffect(() => {
+    if (loading) return;
+    const values = node.settings?.values || {};
+    const nextDefaultRoleTitle = values.agentKind === 'main' ? 'ceo' : 'implementer';
+    setDisplayName(String(values.displayName || ''));
+    setRoleTitle(String(values.roleTitle || nextDefaultRoleTitle));
+    setResponsibility(String(values.responsibility || ''));
+    setCapabilitiesText(capabilitiesToText(values.capabilities));
+    setSubagentMode(values.subagentMode === 'wf-node-subagents' ? 'wf-node-subagents' : 'built-in-subagents');
+  }, [loading, node.nodeId, node.settings?.revision]);
+
   // The snapshot's subagentModes catalog drives the dropdown options.
   useEffect(() => {
     let alive = true;

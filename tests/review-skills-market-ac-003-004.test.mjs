@@ -93,13 +93,34 @@ test.after(() => {
 });
 
 test('AC-003 GET /api/workflow/skills-market exposes the market contract', async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url) => {
+    if (!String(url).includes('skillstore.io/api/packs')) return originalFetch(url);
+    return new Response(JSON.stringify({
+      data: [{
+        slug: 'market-fixture-pack',
+        name: 'Market fixture pack',
+        description: 'Deterministic test pack',
+        skillCount: 1,
+        scenarioTags: ['testing'],
+      }],
+      pagination: { total: 1 },
+    }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
+  };
   await withServer(async baseUrl => {
-    const response = await request(baseUrl, '/api/workflow/skills-market?scope=project');
-    assert.equal(response.status, 200, JSON.stringify(response.body));
-    assert.equal(response.body?.ok, true, JSON.stringify(response.body));
-    assert.equal(response.body?.kind, 'skills-market');
-    assert.equal(typeof response.body?.schemaVersion, 'number');
-    assert.ok(Array.isArray(response.body?.packs), 'market response must expose packs[]');
+    try {
+      const response = await request(baseUrl, '/api/workflow/skills-market?scope=project');
+      assert.equal(response.status, 200, JSON.stringify(response.body));
+      assert.equal(response.body?.ok, true, JSON.stringify(response.body));
+      assert.equal(response.body?.kind, 'skills-market');
+      assert.equal(typeof response.body?.schemaVersion, 'number');
+      assert.ok(Array.isArray(response.body?.packs), 'market response must expose packs[]');
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
   });
 });
 

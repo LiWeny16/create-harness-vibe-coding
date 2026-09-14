@@ -23,7 +23,7 @@ node bin/create-harness-vibe-coding.js wf-ui --project . --host 127.0.0.1 --port
 Otherwise use the package fallback:
 
 ```bash
-npx create-harness-vibe-coding@0.8.21 wf-ui --project . --host 127.0.0.1 --port 56670 --open --detach
+npx create-harness-vibe-coding@latest wf-ui --project . --host 127.0.0.1 --port 56670 --open --detach
 ```
 
 Rules:
