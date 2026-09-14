@@ -39,7 +39,7 @@ storage, cleanup, and compact summaries for agents.
 | Backend Control Broker | sessions, window pool, leases, command queue, artifact index | HTTP/WS endpoints and run manifests |
 | Observation Primitives | route/UI tree/screenshot/state/log/network/AST capture | artifacts under `Harness/wf-browser/` |
 | Action Primitives | atomic visible user-like operations and semantic component commands | action results and replay log |
-| Network Trace Collector | frontend/backend request summary and fallback CDP/Playwright traces | JSONL artifact and assertion output |
+| Network Trace Collector | frontend/backend request summary, BrowserOS Neo evidence, and explicit fallback CDP/Playwright traces | JSONL artifact and assertion output |
 | Artifact Workspace | screenshots, UI trees, state, logs, network, AST, replay, analysis | `Harness/wf-browser/runs/<runId>/...` |
 
 ## UI Capability Contract
@@ -324,8 +324,12 @@ Recommended channels:
   snapshots, cleanup.
 - WebSocket: frontend registration, command dispatch, acks/results, events,
   heartbeats, and lease lifecycle.
-- Fallback driver: Playwright/CDP/Browser Use/MCP for pages without the
-  first-party client.
+- Browser driver: BrowserOS Neo is the default real browser for navigation,
+  interaction, screenshots, downloads, and browser-visible verification.
+- Fallback driver: Playwright/CDP/Browser Use/MCP only for explicitly approved
+  capabilities that BrowserOS Neo and the first-party client cannot provide.
+- BrowserOS Neo prerequisite: if it is unavailable, ask the user to download,
+  install, and start it manually; never download or install it automatically.
 
 Message types:
 
@@ -393,9 +397,10 @@ When source cannot be changed:
 2. Generate a temporary semantic tree from accessibility roles, labels, visible
    text, bounds, and editable state.
 3. Let the agent add temporary target aliases for the current run.
-4. Use Playwright, CDP, Browser Use, or Playwright MCP only for unsupported
-   navigation, native input, permissions, screenshots, downloads, or hostile
-   pages.
+4. Use BrowserOS Neo for navigation, native input, permissions, screenshots,
+   downloads, and hostile pages. Use Playwright, CDP, Browser Use, or
+   Playwright MCP only for an explicitly approved capability that BrowserOS Neo
+   cannot provide.
 
 The output shape must still match the first-party artifact and action-result
 schema.
@@ -505,5 +510,6 @@ Minimum checks:
 - disabled/loading behavior prevents duplicate submission
 - error state for network failure
 
-Trace evidence belongs under `Harness/wf-browser/runs/<runId>/network/` or
-Playwright `test-results/` when using fallback tests.
+Trace evidence belongs under `Harness/wf-browser/runs/<runId>/network/` for
+BrowserOS Neo and first-party bridge runs, or under Playwright `test-results/`
+when an approved fallback test is used.

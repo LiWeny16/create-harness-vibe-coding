@@ -4,6 +4,15 @@
 `wf-browser`, the Harness Bridge, and fallback browser drivers. Keep high-volume
 runtime data here instead of in chat, task state, or long markdown logs.
 
+## Browser Driver Policy
+
+BrowserOS Neo is the default real browser for `wf-browser`. It must be
+downloaded, installed, and started by the user. If BrowserOS Neo is unavailable,
+the agent must stop and ask the user to set it up; Harness never downloads,
+installs, or launches BrowserOS Neo automatically. Playwright, CDP, Browser Use,
+and MCP remain explicit fallbacks for capabilities that BrowserOS Neo and the
+first-party bridge cannot provide.
+
 ## Layout
 
 ```text

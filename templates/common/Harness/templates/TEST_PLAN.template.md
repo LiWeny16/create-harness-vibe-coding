@@ -2,7 +2,7 @@
 
 | AC ID | Test Level | File/Command | Evidence |
 | --- | --- | --- | --- |
-| AC-001 | wf-browser control run + fallback Playwright/CDP when needed | `Harness/wf-browser/runs/<runId>/...` or `npx playwright test {{SPEC_FILE}} --trace on` | run manifest, action log, screenshot, UI tree, logs, network, trace |
+| AC-001 | BrowserOS Neo wf-browser control run; explicit Playwright/CDP fallback only when approved | `Harness/wf-browser/runs/<runId>/...` or an approved `npx playwright test {{SPEC_FILE}} --trace on` fallback | run manifest, action log, screenshot, UI tree, logs, network, trace |
 
 Required checks:
 

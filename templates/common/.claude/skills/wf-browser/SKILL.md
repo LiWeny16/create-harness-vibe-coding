@@ -1,15 +1,15 @@
 ---
 name: wf-browser
-description: Built-in agent-operable web UI architecture and runtime-control workflow. Use for /wf-browser, $wf-browser, designing UI debug/control bridges, UI capability contracts, WebSocket control loops, browser automation, UI debugging, screenshots, logs, multi-window/subagent browser testing, Playwright/CDP fallback, and browser-visible acceptance.
+description: Built-in agent-operable web UI architecture and runtime-control workflow. Use BrowserOS Neo as the default real browser for /wf-browser, $wf-browser, UI control, screenshots, logs, multi-window testing, and browser-visible acceptance; never auto-download or install BrowserOS Neo.
 ---
 
 # WF Browser
 
 `wf-browser` is the Harness design contract for web UIs that agents can
-understand, control, debug, verify, and replay. It is not primarily a
-Playwright/CDP wrapper. Playwright, CDP, Browser Use, Playwright MCP, and
-external browser agents are fallback drivers. The preferred path is a first-party
-Agent-Operable Web Runtime:
+understand, control, debug, verify, and replay. BrowserOS Neo is the default
+real browser surface for navigation, login, screenshots, downloads, and
+browser-visible verification. The preferred control path inside an editable app
+is still a first-party Agent-Operable Web Runtime:
 
 ```text
 agent script/skill <-> Harness backend broker <-> WebSocket <-> frontend debug client
@@ -18,6 +18,23 @@ agent script/skill <-> Harness backend broker <-> WebSocket <-> frontend debug c
 The goal is to make the web page a human-visible, agent-controllable, and
 system-recorded runtime. If project source can be changed, improve the UI
 control contract before writing brittle browser scripts.
+
+## BrowserOS Neo Requirement
+
+Use BrowserOS Neo for every browser-visible `wf-browser` operation. Before
+starting runtime control, check that BrowserOS Neo is connected and use a
+task-owned tab/session. If it is unavailable, stop and tell the user:
+
+> Please download, install, and start BrowserOS Neo yourself, then retry
+> `wf-browser`. Harness will not download, install, or launch BrowserOS Neo
+> automatically.
+
+Never use `curl`, `wget`, a package manager, an installer, or a hidden download
+step to obtain BrowserOS Neo. Do not silently switch to an in-app browser,
+headless browser, Playwright, CDP, Browser Use, or another driver when
+BrowserOS Neo is unavailable. User-requested downloads from a web page are
+allowed after BrowserOS Neo is connected; this rule only covers obtaining or
+installing BrowserOS Neo itself.
 
 ## Two Jobs
 
@@ -39,7 +56,7 @@ Use these levels to classify the current web surface and choose the next move:
 
 | Level | Name | Meaning |
 | --- | --- | --- |
-| L0 | Fallback-only | third-party or uneditable page; use injection, accessibility tree, Playwright/CDP, or Browser Use |
+| L0 | Fallback-only | third-party or uneditable page; use BrowserOS Neo accessibility/visual control and record any unsupported capability |
 | L1 | Selector-ready | critical UI has stable `data-testid`, accessible labels/roles, durable keys, and visible states |
 | L2 | Capability-ready | frontend exposes semantic capability ids, serializable state, supported actions, and captures |
 | L3 | Bridge-ready | WebSocket debug client and backend broker support `observe.*`, `act.*`, artifacts, logs, network, and replay |
@@ -58,7 +75,9 @@ without lease enforcement that prevents two agents from mutating the same window
   `references/BROWSER_CONTROL_PATTERNS.md`.
 - Project run/build/test instructions
 - Existing UI contracts, API contracts, component docs, and route ownership
-- Fallback driver docs only when needed: Browser Use, Playwright, CDP, or MCP
+- BrowserOS Neo connection and operation guidance; fallback driver docs only
+  when an explicitly approved unsupported capability needs Playwright, CDP,
+  Browser Use, or MCP
 
 ## Mode Selection
 
@@ -132,7 +151,8 @@ isolates concurrent agents, and cleans up artifacts.
 
 When controlling an existing page, execute a closed loop:
 
-1. Create or resume a run and acquire `agentId`, `sessionId`, `windowId`,
+1. Confirm BrowserOS Neo is connected, open or resume a task-owned tab, then
+   create or resume a run and acquire `agentId`, `sessionId`, `windowId`,
    `runId`, and `leaseId`.
 2. Run `observe.route`, `observe.capabilities`, `observe.uiTree`, and focused
    logs/network/state observations before acting.
@@ -148,8 +168,9 @@ When controlling an existing page, execute a closed loop:
 8. Release leases and clean up unreferenced windows/artifacts when done.
 
 If any step cannot run because the bridge lacks a primitive, record the missing
-contract and either add the first-party capability or normalize fallback driver
-output into the same run layout.
+contract and either add the first-party capability or normalize an explicitly
+approved fallback-driver result into the same run layout. If BrowserOS Neo is
+not connected, block and show the manual download/install/start prompt above.
 
 ## Control Reliability Rules
 
@@ -399,13 +420,12 @@ owned by another agent.
 
 For third-party pages or apps whose source cannot be changed:
 
-1. Try an injected lightweight debug client that builds a temporary semantic
-   tree from accessibility roles, labels, visible text, bounds, and editable
-   state.
+1. Use BrowserOS Neo for the page and build a temporary semantic tree from
+   accessibility roles, labels, visible text, bounds, and editable state.
 2. Let the agent add temporary tags or aliases to targets for the current run.
-3. Use Playwright MCP, Browser Use, CDP, or another browser driver as a fallback
-   for navigation, native input, permissions, screenshots, downloads, and pages
-   that block injection.
+3. Use Playwright MCP, Browser Use, CDP, or another browser driver only for an
+   explicitly approved capability that BrowserOS Neo cannot provide, and
+   normalize its output into the same run layout.
 4. Keep the same artifact and action-result shape so first-party and third-party
    evidence remains comparable.
 
@@ -435,8 +455,9 @@ publish artifacts outside the workspace without explicit user approval.
 
 ## Fallback Drivers
 
-Use fallback drivers only for capabilities the first-party bridge cannot yet
-provide:
+Use BrowserOS Neo as the default real-browser driver. Use fallback drivers only
+for capabilities the first-party bridge and BrowserOS Neo cannot yet provide,
+and only after the fallback is explicitly selected for the task:
 
 - Playwright: repeatable E2E smoke, browser contexts, real navigation, trace
   capture, and compatibility checks.
@@ -446,6 +467,9 @@ provide:
   accessibility-snapshot workflows.
 
 Fallback output should be normalized into the same run/window artifact layout.
+Do not install a fallback driver as a way to replace missing BrowserOS Neo. If
+BrowserOS Neo is missing, ask the user to download, install, and start it
+manually.
 
 ## Quality Gates
 
@@ -469,6 +493,7 @@ Before calling a `wf-browser` result complete, verify the relevant gates:
 When returning from `wf-browser`, include:
 
 - mode used: architecture design, runtime control, recovery, or mixed
+- BrowserOS Neo connection/session used, or the manual prerequisite prompt shown
 - readiness level before and after the work
 - design outputs updated: route inventory, capability map, UI contract, broker
   contract, fixture contract, evidence contract, and fallback contract

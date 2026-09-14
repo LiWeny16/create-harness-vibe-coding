@@ -1714,6 +1714,9 @@ if (fs.existsSync(path.join(root, '.claude/skills/wf-browser/SKILL.md'))) {
   requireText('.claude/skills/wf-browser/SKILL.md', 'Multi-Agent Window Contract', 'wf-browser multi-agent window contract');
   requireText('.claude/skills/wf-browser/SKILL.md', 'window.create', 'wf-browser window pool operations');
   requireText('.claude/skills/wf-browser/SKILL.md', 'leaseId', 'wf-browser window lease identity');
+  requireText('.claude/skills/wf-browser/SKILL.md', 'BrowserOS Neo Requirement', 'wf-browser BrowserOS Neo policy');
+  requireText('.claude/skills/wf-browser/SKILL.md', 'download, install, and start BrowserOS Neo yourself', 'wf-browser manual BrowserOS Neo setup prompt');
+  requireText('.claude/skills/wf-browser/SKILL.md', 'never auto-download or install BrowserOS Neo', 'wf-browser no automatic BrowserOS Neo install policy');
   requireText('.claude/skills/wf-browser/SKILL.md', 'Third-Party Pages', 'wf-browser third-party fallback guidance');
   requireText('.claude/skills/wf-browser/SKILL.md', 'Harness/wf-browser/', 'wf-browser artifact workspace');
   requireText('.claude/skills/wf-browser/SKILL.md', 'Playwright', 'wf-browser Playwright fallback');

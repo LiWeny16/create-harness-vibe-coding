@@ -71,7 +71,7 @@ Install scope policy: the CLI defaults to `global` for a new or empty target, an
 
 After installation, hand off by phase: use `CLAUDE.md` as the normal session entry, use `Harness/specs/guides/SETUP.md` only for install/bootstrap, migration, or upgrade decisions, and use `Harness/README.md` as the Harness workflow router when a routed task needs it. Preserve project boundaries; research and plan before editing; run tests, validation, and review before claiming completion.
 
-The user does not need to run commands manually. The agent handles installation, conflict handling, validation, and the handoff.
+The agent handles Harness installation, conflict handling, validation, and the handoff. BrowserOS Neo is a separate user-provided prerequisite for `/wf-browser`: download, install, and start it yourself; Harness never downloads or installs it automatically.
 
 ## Which WF command should you use?
 
@@ -85,7 +85,7 @@ When in doubt, use `/wf-help` (or `$wf-help` in Codex). It returns the full comm
 | `/wf-auto-spark` | You need external inspiration, competitive direction, or a long-term roadmap | Searches for sparks, anchors work to a North Star and milestones, and guards scope drift | `/wf-auto-spark explore product growth directions` |
 | `/wf-review [focus]` | You need a second opinion, peer review, or a pre-release check | Uses clean Harness-native reviewer subagents with bounded intelligent fan-out and classifies findings by severity | `/wf-review focus on security and data loss` |
 | `/wf-learn` | The same mistakes keep recurring or a completed task needs to become reusable knowledge | Extracts generalized methods with anti-overfitting and route-load checks | `/wf-learn summarize why this task needed rework` |
-| `/wf-browser <task>` | Browser smoke tests, E2E, screenshots, forms, or UI verification | Uses a real browser and returns screenshots, traces, and evidence | `/wf-browser verify login and checkout` |
+| `/wf-browser <task>` | Browser smoke tests, E2E, screenshots, forms, or UI verification | Uses BrowserOS Neo and returns screenshots, traces, and evidence; you must download and start BrowserOS Neo yourself | `/wf-browser verify login and checkout` |
 | `/wf-ui` | Open the Harness control panel for task management, workflow graphs, agents, and settings | Directly starts the local backend and browser UI on 127.0.0.1 | `/wf-ui` |
 | `/wf-readme <task>` | README, install docs, architecture diagrams, or project docs need work | Preserves facts while improving structure, setup, and usage guidance | `/wf-readme improve the Chinese README` |
 | `/wf-update` | Harness is already installed and needs an update | Compares versions, applies safe changes, leaves semantic conflicts to the agent, and reports release highlights from the changelog metadata | `/wf-update` |
@@ -94,7 +94,7 @@ When in doubt, use `/wf-help` (or `$wf-help` in Codex). It returns the full comm
 | `/wf-init` | You installed the global runtime and want a new project to use it | Writes only project bridge docs and project-local state; framework files and versioning stay in the global runtime | `/wf-remove` |
 | `/wf-help` | You do not know which command to use | Returns command usage without starting a workflow | `/wf-help` |
 
-Claude Code uses `/wf-*`; Codex uses the matching `$wf-*`; OpenCode uses the registered command or Agent instruction. Browser E2E guidance is built into `wf-browser`. `/wf-auto` and `/wf-auto-spark` are continuous modes, so give the agent a clear goal, scope, and acceptance criteria before starting.
+Claude Code uses `/wf-*`; Codex uses the matching `$wf-*`; OpenCode uses the registered command or Agent instruction. Browser E2E guidance is built into `wf-browser`, which uses BrowserOS Neo as its default real browser and asks the user to install it manually when it is unavailable. `/wf-auto` and `/wf-auto-spark` are continuous modes, so give the agent a clear goal, scope, and acceptance criteria before starting.
 
 Common starting points: Web/API work starts with correctness, security, reliability, and verification; CLI/SDK work starts with contracts, compatibility, error UX, and docs; AI-agent work starts with context quality, tool safety, evaluation, and recovery; data jobs start with idempotency, failure recovery, and observability. See the full [WF-AUTO-ANGLES.md](Harness/specs/workflows/WF-AUTO-ANGLES.md) selection protocol.
 

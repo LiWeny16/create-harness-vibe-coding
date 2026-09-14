@@ -78,7 +78,7 @@ Agent 读取本 README 后，按项目状态选择路径：
 | `/wf-auto-spark` | 需要外部灵感、竞品方向或长期路线图 | 搜索外部 spark，绑定 North Star 和里程碑，限制偏离范围 | `/wf-auto-spark 探索产品增长方向` |
 | `/wf-review [重点]` | 需要第二意见、同行审查或上线前复核 | 只使用 Harness 原生的干净 reviewer 子代理，按风险智能控制并发数量 | `/wf-review 重点检查安全和数据丢失` |
 | `/wf-learn` | 同类错误反复出现，或一次任务结束后要沉淀经验 | 汇总上下文、记忆和项目经验 | `/wf-learn 总结这次返修原因` |
-| `/wf-browser <任务>` | 浏览器冒烟、E2E、截图、表单或页面验证 | 使用真实浏览器并提供截图、trace 或状态证据 | `/wf-browser 验证登录和支付流程` |
+| `/wf-browser <任务>` | 浏览器冒烟、E2E、截图、表单或页面验证 | 默认使用 BrowserOS Neo 并提供截图、trace 或状态证据；需要用户自行下载、安装并启动 BrowserOS Neo，Harness 不会自动下载或安装 | `/wf-browser 验证登录和支付流程` |
 | `/wf-readme <任务>` | README、安装文档、架构图或项目说明需要整理 | 保留事实，整理结构，补充安装和使用说明 | `/wf-readme 优化中文 README` |
 | `/wf-update` | 已安装 Harness，需要检查和应用框架更新 | 比较版本，自动处理安全变更，把语义冲突留给 Agent | `/wf-update` |
 | `/wf-search` | 任务需要一次可验证的真实工具搜索 | 把一次搜索组织成结构化台账（操作/来源/结论），用无状态 Node helper 校验并渲染成 Markdown 证据报告；`--save` 后保存在 `Harness/research/search/` | `/wf-search --mode fact "node:test runner 退出码"` |

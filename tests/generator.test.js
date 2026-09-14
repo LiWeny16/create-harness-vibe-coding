@@ -1317,6 +1317,10 @@ test('built-in wf-browser skill defines agent-operable browser control runtime',
   assert.match(browserWorkflow, /window\.create/);
   assert.match(browserWorkflow, /leaseId/);
   assert.match(browserWorkflow, /Harness\/wf-browser\//);
+  assert.match(browserWorkflow, /BrowserOS Neo Requirement/);
+  assert.match(browserWorkflow, /Use BrowserOS Neo as the default real-browser driver/);
+  assert.match(browserWorkflow, /download, install, and start BrowserOS Neo yourself/);
+  assert.match(browserWorkflow, /never auto-download or install BrowserOS Neo/);
   assert.match(browserWorkflow, /Third-Party Pages/);
   assert.match(browserWorkflow, /Playwright/);
   assert.match(browserWorkflow, /CDP/);
