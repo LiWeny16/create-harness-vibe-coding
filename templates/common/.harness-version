@@ -1,18 +1,20 @@
 {
-  "generator": "0.9.5",
-  "generated": "2026-09-14T07:30:42.734Z",
+  "generator": "0.9.4",
+  "generated": "2026-09-14T07:45:14.902Z",
   "options": [],
   "autoCheck": true,
   "source": "https://raw.githubusercontent.com/LiWeny16/create-harness-vibe-coding/main/templates/common/",
   "releaseNotes": {
-    "version": "0.9.5",
+    "version": "0.9.4",
     "date": "2026-09-14",
     "highlights": [
       "Harden `/wf-search` rendering: square brackets in all text output are HTML-escaped so escaped-bracket Markdown link injection (`[x\\]](https://evil.example)`) can never survive as a clickable link.",
       "Harden `/wf-search` save-path validation: dangling symlink/junction segments of `Harness/research` are now resolved through realpath and rejected instead of being treated as plain directory names.",
       "Harden `/wf-search` stdin handling: `--input -` enforces the 1 MiB limit during the read (64 KiB bounded chunks) instead of buffering the entire stream first.",
       "Found by independent cross-review of the released 0.9.3; full verification matrix (75 wf-search tests, 458-test suite, mirror parity, version checksums) re-run on the fix candidate.",
-      "Keep the wf-ui agent terminal, wf-search command surfaces, and installation safeguards covered by the release validation suite."
+      "Keep the wf-ui agent terminal, wf-search command surfaces, and installation safeguards covered by the release validation suite.",
+      "Publish the verified mainline as a clean, reproducible maintenance release with synchronized template manifests and package metadata.",
+      "Keep the existing wf-ui agent terminal, wf-search, cross-runtime command surfaces, and installation safeguards covered by the release validation suite."
     ]
   },
   "moves": [
@@ -317,7 +319,7 @@
     "Harness/a2a/skills/workflow-skill-group-node.json": "sha256-98d43dd9b9183b1e976e02cecd3a2302a152ceb77fc540dad10be959c5d56725",
     "Harness/a2a/skills/workflow-timer-node.json": "sha256-a195c46ee5c0231bd2970ccf4e81b355f982aedc87b46fdb93dbe2c886e6fa95",
     "Harness/a2a/workflows.json": "sha256-31501e2b022ee95f745131d7776ae7b4342e3e3431d50f47adc81a60dfbb7b69",
-    "Harness/ownership.manifest.json": "sha256-b4350a6256128d12e61243a40eb9f1c24e4b8874a53b6999843d8bc3b99b7746",
+    "Harness/ownership.manifest.json": "sha256-6f9783b20bbb121d9b7ef25bf4a9214a370a66314c07f8b31c77f930e72d7b61",
     "Harness/project/architecture.md": "sha256-35fbf29a3ad7357cfa3aa74800db2b7c98337709ec111fe73009f4724fc747c8",
     "Harness/research/README.md": "sha256-7cfe4678bf1c2227f3e23c6ffdac48079e06c39cc3c366b10631392615fb3d59",
     "Harness/scripts/README.md": "sha256-928febc2ce3df0495f9a9ad827feab933e1e67dc22699f1642a44f8d6fbaac64",
