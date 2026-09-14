@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
   "taskId": "task-fix-wf-ui-ux-issues",
-  "status": "in_progress",
+  "status": "archived",
   "mode": "wf-max",
   "defaultRuntime": "claude",
   "tier": "standard",
-  "phase": "intake",
+  "phase": "archived",
   "gate": "REVIEW-GATE",
-  "updatedAt": "2026-08-28T02:35:39.461Z",
+  "updatedAt": "2026-09-14T04:42:54.364Z",
   "activeQuestion": null,
   "nextAction": "User browser check (visual ACs) + commit on user request; then archive task",
   "acceptance": [
@@ -30,12 +30,8 @@
   },
   "queues": {
     "ready": [],
-    "running": [
-      "W3a-e5-removal"
-    ],
-    "blocked": [
-      "W3b-behavior-changes"
-    ],
+    "running": [],
+    "blocked": [],
     "done": [
       "W0-E1-settings-panel",
       "W0-E2-cursor",
@@ -102,5 +98,9 @@
   "artifacts": [],
   "closedBy": "goal-complete",
   "preCompletePhase": "verified",
-  "defaultAgentRuntime": "claude"
+  "defaultAgentRuntime": "claude",
+  "tags": [],
+  "createdAt": "2026-09-14T04:41:50.354Z",
+  "startedAt": "2026-09-14T04:41:50.354Z",
+  "closedAt": "2026-09-10T02:31:06.919Z"
 }

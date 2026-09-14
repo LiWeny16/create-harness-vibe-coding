@@ -72,6 +72,10 @@
 | `task-agent-team-cooperation-layer` | 2026/08/28 | 2026-08-28 |
 | `task-release-0819-formal` | 2026/08/28 | 2026-08-28 |
 
+| `task-implement-wf-search-093` | 2026/09/14 | 2026-09-14 |
+
+| `task-fix-wf-ui-ux-issues` | 2026/09/14 | 2026-09-14 |
+
 ## Task Graph
 
 ### Roots (no dependencies)
@@ -86,7 +90,6 @@
 - `task-stabilize-workflow-agent-control` → blocks: none
 - `task-upgrade-workflow-agent-canvas` → blocks: none
 - `task-wf-ui-control-260729` → blocks: none
-- `task-optimize-graph-layout` → blocks: none
 - `task-upgrade-file-node` → blocks: none
 - `task-wf-ui-ms-latency` → blocks: none
 - `task-upgrade-markdown-node-rendering` → blocks: none
@@ -101,20 +104,46 @@
 - `task-terminal-input-control` → blocks: none
 - `task-wf-ui-control-260729` → blocks: none
 - `task-wf-ui-terminal-explorer-ux` → blocks: none
+- `task-harden-update-compatibility` → blocks: none
+- `task-improve-harness-foundations` → blocks: none
+- `task-fix-wf-ui-ux-issues` → blocks: none
+- `task-implement-wf-search-093` → blocks: none
 
 ### Dependencies
 ```
+  task-fix-wf-ui-ux-issues  ──▶  task-optimize-graph-layout
   task-action-registry-consolidation  ──▶  task-agent-control-parity
   task-subagent-strategy-2x2-matrix  ──▶  task-terminal-full-control
 ```
 
 | From | To |
 |------|----|
+| `task-fix-wf-ui-ux-issues` | `task-optimize-graph-layout` |
 | `task-action-registry-consolidation` | `task-agent-control-parity` |
 | `task-subagent-strategy-2x2-matrix` | `task-terminal-full-control` |
 
 ## Task Details
 
+### `task-fix-wf-ui-ux-issues` {#taskfixwfuiuxissues}
+- **Archived:** 2026/09/14
+- **Status:** archived  **Phase:** archived
+- **Goal:** - Outcome: fix 7 wf-ui UX issues reported by the user on 2026-08-14:
+- **Depends on:** -  **Blocks:** -
+### `task-implement-wf-search-093` {#taskimplementwfsearch093}
+- **Archived:** 2026/09/14
+- **Status:** archived  **Phase:** archived
+- **Goal:** 实现 /wf-search V1，纳入 0.9.3；Claude 完成候选，Codex 独立验收后发布正式版本。当前仅登记 open task，未开始实现。
+- **Depends on:** -  **Blocks:** -
+### `task-harden-update-compatibility` {#taskhardenupdatecompatibility}
+- **Archived:** 2026/09/08
+- **Status:** archived  **Phase:** archived
+- **Goal:** Harden backward-compatible install/update flows with minimal state, bounded writes, transactional recovery, task view sy...
+- **Depends on:** -  **Blocks:** -
+### `task-improve-harness-foundations` {#taskimproveharnessfoundations}
+- **Archived:** 2026/09/08
+- **Status:** archived  **Phase:** archived
+- **Goal:** Make the Harness install, task, and review foundations production-grade while
+- **Depends on:** -  **Blocks:** -
 ### `task-action-registry-consolidation` {#taskactionregistryconsolidation}
 - **Archived:** 2026/08/28
 - **Status:** archived  **Phase:** archived

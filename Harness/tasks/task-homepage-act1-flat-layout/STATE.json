@@ -27,7 +27,7 @@
     "AC6 browser evidence"
   ],
   "schemaVersion": 1,
-  "status": "in_progress",
+  "status": "active",
   "mode": "direct",
   "queues": {
     "ready": [
@@ -45,7 +45,12 @@
   "decisions": [],
   "risks": [],
   "artifacts": [],
-  "updatedAt": "2026-08-01T15:42:22.467Z",
+  "updatedAt": "2026-09-14T04:41:50.354Z",
   "defaultRuntime": "codex",
-  "defaultAgentRuntime": "codex"
+  "defaultAgentRuntime": "codex",
+  "tags": [],
+  "createdAt": "2026-09-14T04:41:50.354Z",
+  "startedAt": "2026-09-14T04:41:50.354Z",
+  "closedAt": null,
+  "workItems": []
 }

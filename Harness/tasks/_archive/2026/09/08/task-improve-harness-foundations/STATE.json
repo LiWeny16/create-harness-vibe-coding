@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-improve-harness-foundations",
+  "status": "archived",
+  "mode": "direct",
+  "defaultRuntime": "codex",
+  "defaultAgentRuntime": "codex",
+  "tier": "none",
+  "phase": "archived",
+  "gate": null,
+  "updatedAt": "2026-09-08T07:32:38.957Z",
+  "activeQuestion": null,
+  "nextAction": "Implementation and verification complete; remote mirror publication remains an external release follow-up.",
+  "acceptance": [],
+  "queues": {
+    "ready": [],
+    "running": [],
+    "blocked": [],
+    "done": []
+  },
+  "dispatchLedger": [],
+  "decisions": [],
+  "risks": [],
+  "artifacts": [],
+  "links": {
+    "dependsOn": [],
+    "blocks": [],
+    "related": []
+  },
+  "createdAt": "2026-09-07T08:46:38.117Z",
+  "startedAt": "2026-09-07T09:52:16.507Z",
+  "closedAt": "2026-09-07T10:02:03.837Z",
+  "project": "harness-foundations",
+  "group": "harness-foundations",
+  "tags": [
+    "install",
+    "task-routing",
+    "wf-review"
+  ]
+}

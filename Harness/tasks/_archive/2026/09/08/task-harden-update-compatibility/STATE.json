@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-harden-update-compatibility",
+  "status": "archived",
+  "mode": "direct",
+  "defaultRuntime": "codex",
+  "defaultAgentRuntime": "codex",
+  "tier": "none",
+  "phase": "archived",
+  "gate": null,
+  "project": "harness-foundations",
+  "tags": [
+    "compatibility",
+    "update",
+    "efficiency"
+  ],
+  "createdAt": "2026-09-08T06:33:30.841Z",
+  "startedAt": "2026-09-08T06:33:30.841Z",
+  "closedAt": "2026-09-08T07:37:14.374Z",
+  "updatedAt": "2026-09-08T07:56:44.647Z",
+  "activeQuestion": null,
+  "nextAction": "Architecture hardening complete; remote 0.8.21 publication remains an external release follow-up.",
+  "acceptance": [],
+  "queues": {
+    "ready": [],
+    "running": [],
+    "blocked": [],
+    "done": []
+  },
+  "dispatchLedger": [],
+  "decisions": [],
+  "risks": [],
+  "artifacts": [],
+  "group": "harness-foundations",
+  "links": {
+    "dependsOn": [],
+    "blocks": [],
+    "related": []
+  }
+}

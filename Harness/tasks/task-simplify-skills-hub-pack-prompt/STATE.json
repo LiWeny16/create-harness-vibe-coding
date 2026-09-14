@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
   "taskId": "task-simplify-skills-hub-pack-prompt",
-  "status": "in_progress",
+  "status": "active",
   "mode": "wf-max",
   "tier": "WF-Standard",
   "phase": "implement",
   "gate": "d-gate",
-  "updatedAt": "2026-08-28T02:30:56.689Z",
+  "updatedAt": "2026-09-14T04:41:50.354Z",
   "activeQuestion": null,
   "nextAction": "Attempt native subagent fan-out (W0 explore + W1 architect), then W2 implementation waves",
   "acceptance": [
@@ -155,5 +155,9 @@
   ],
   "artifacts": [],
   "defaultRuntime": "codex",
-  "defaultAgentRuntime": "codex"
+  "defaultAgentRuntime": "codex",
+  "tags": [],
+  "createdAt": "2026-09-14T04:41:50.354Z",
+  "startedAt": "2026-09-14T04:41:50.354Z",
+  "closedAt": null
 }

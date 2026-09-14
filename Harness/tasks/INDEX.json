@@ -1,25 +1,16 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-09-14T03:14:41.099Z",
+  "generatedAt": "2026-09-14T04:42:54.447Z",
   "sourceOfTruth": "Harness/tasks/*/STATE.json",
-  "activeTask": "task-implement-wf-search-093",
-  "resumeTask": {
-    "taskId": "task-implement-wf-search-093",
-    "mode": "wf",
-    "status": "active",
-    "project": "create-harness-vibe-coding"
-  },
-  "resumeRequired": true,
+  "activeTask": null,
+  "resumeTask": null,
+  "resumeRequired": false,
   "projects": {
     "default": [
       "task-add-web-agent-node",
-      "task-fix-wf-ui-ux-issues",
       "task-homepage-act1-flat-layout",
       "task-make-wf-lifecycle-0908",
       "task-simplify-skills-hub-pack-prompt"
-    ],
-    "create-harness-vibe-coding": [
-      "task-implement-wf-search-093"
     ],
     "harness-upgrade": [
       "task-upgrade-harness-092"
@@ -37,32 +28,13 @@
       "resumeRequired": true,
       "phase": "intake",
       "tags": [],
-      "createdAt": "2026-09-08T06:39:46.331Z",
-      "startedAt": "2026-09-08T06:39:46.331Z",
-      "updatedAt": "2026-09-08T06:39:46.331Z",
+      "createdAt": "2026-09-14T04:41:50.354Z",
+      "startedAt": "2026-09-14T04:41:50.354Z",
+      "updatedAt": "2026-09-14T04:41:50.354Z",
       "closedAt": null,
       "dependsOn": [],
       "blocks": [],
       "path": "Harness/tasks/task-add-web-agent-node"
-    },
-    {
-      "id": "task-fix-wf-ui-ux-issues",
-      "project": "default",
-      "group": "default",
-      "title": "Fix 7 wf-ui UX issues: single settings panel, black cursor, skills hub consolidation + compose/drag to skills group, responsive create-node panel, remove dead config button, magnet drift, node creation loading animation",
-      "status": "closed",
-      "mode": "wf-max",
-      "wfManaged": true,
-      "resumeRequired": false,
-      "phase": "closeout",
-      "tags": [],
-      "createdAt": "2026-09-08T06:39:46.331Z",
-      "startedAt": "2026-09-08T06:39:46.331Z",
-      "updatedAt": "2026-09-10T02:31:06.919Z",
-      "closedAt": "2026-09-10T02:31:06.919Z",
-      "dependsOn": [],
-      "blocks": [],
-      "path": "Harness/tasks/task-fix-wf-ui-ux-issues"
     },
     {
       "id": "task-homepage-act1-flat-layout",
@@ -75,35 +47,13 @@
       "resumeRequired": false,
       "phase": "implement",
       "tags": [],
-      "createdAt": "2026-09-13T10:58:05.545Z",
-      "startedAt": "2026-09-13T10:58:05.545Z",
-      "updatedAt": "2026-09-13T10:58:05.545Z",
+      "createdAt": "2026-09-14T04:41:50.354Z",
+      "startedAt": "2026-09-14T04:41:50.354Z",
+      "updatedAt": "2026-09-14T04:41:50.354Z",
       "closedAt": null,
       "dependsOn": [],
       "blocks": [],
       "path": "Harness/tasks/task-homepage-act1-flat-layout"
-    },
-    {
-      "id": "task-implement-wf-search-093",
-      "project": "create-harness-vibe-coding",
-      "group": "create-harness-vibe-coding",
-      "title": "实现 wf-search V1 并完成 0.9.3 正式发布：先审计候选归属，Claude 实现候选，Codex 独立验收后发布。",
-      "status": "active",
-      "mode": "wf",
-      "wfManaged": true,
-      "resumeRequired": true,
-      "phase": "closeout",
-      "tags": [
-        "wf-search",
-        "release-0.9.3"
-      ],
-      "createdAt": "2026-09-13T08:52:59.444Z",
-      "startedAt": "2026-09-13T08:52:59.444Z",
-      "updatedAt": "2026-09-14T03:13:03.643Z",
-      "closedAt": null,
-      "dependsOn": [],
-      "blocks": [],
-      "path": "Harness/tasks/task-implement-wf-search-093"
     },
     {
       "id": "task-make-wf-lifecycle-0908",
@@ -135,9 +85,9 @@
       "resumeRequired": true,
       "phase": "implement",
       "tags": [],
-      "createdAt": "2026-09-08T06:39:46.331Z",
-      "startedAt": "2026-09-08T06:39:46.331Z",
-      "updatedAt": "2026-09-08T06:39:46.331Z",
+      "createdAt": "2026-09-14T04:41:50.354Z",
+      "startedAt": "2026-09-14T04:41:50.354Z",
+      "updatedAt": "2026-09-14T04:41:50.354Z",
       "closedAt": null,
       "dependsOn": [],
       "blocks": [],

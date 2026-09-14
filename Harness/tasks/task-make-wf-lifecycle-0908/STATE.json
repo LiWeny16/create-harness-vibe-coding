@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-make-wf-lifecycle-0908",
+  "status": "active",
+  "mode": "direct",
+  "defaultRuntime": "codex",
+  "defaultAgentRuntime": "codex",
+  "tier": "none",
+  "phase": "verify",
+  "gate": null,
+  "project": "default",
+  "tags": [],
+  "createdAt": "2026-09-13T10:58:05.545Z",
+  "startedAt": "2026-09-13T10:58:05.545Z",
+  "closedAt": null,
+  "updatedAt": "2026-09-13T10:58:05.545Z",
+  "activeQuestion": null,
+  "nextAction": "Review task state.",
+  "acceptance": [],
+  "queues": {
+    "ready": [],
+    "running": [],
+    "blocked": [],
+    "done": []
+  },
+  "workItems": [],
+  "dispatchLedger": [],
+  "decisions": [],
+  "risks": [],
+  "artifacts": []
+}

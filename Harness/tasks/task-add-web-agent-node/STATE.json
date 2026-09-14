@@ -6,7 +6,7 @@
   "tier": "standard",
   "phase": "intake",
   "gate": null,
-  "updatedAt": "2026-08-28T02:30:56.689Z",
+  "updatedAt": "2026-09-14T04:41:50.354Z",
   "activeQuestion": "MVP 范围三问：1) 后端只做 claude+codex 还是含 opencode？2) web-agent 是否参与 subagent 树还是先做单体会话？3) 审批粒度三键即可还是要 permission-mode 切换 UI？",
   "nextAction": "等待用户回答后写 Mini PRD + AC，再进 W1 架构",
   "acceptance": [],
@@ -27,5 +27,9 @@
   "risks": [],
   "artifacts": [],
   "defaultRuntime": "codex",
-  "defaultAgentRuntime": "codex"
+  "defaultAgentRuntime": "codex",
+  "tags": [],
+  "createdAt": "2026-09-14T04:41:50.354Z",
+  "startedAt": "2026-09-14T04:41:50.354Z",
+  "closedAt": null
 }

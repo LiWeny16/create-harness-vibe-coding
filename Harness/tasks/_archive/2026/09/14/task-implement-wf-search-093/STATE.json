@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
   "taskId": "task-implement-wf-search-093",
-  "status": "active",
+  "status": "archived",
   "mode": "wf",
   "defaultRuntime": "codex",
   "defaultAgentRuntime": "codex",
   "tier": "full",
-  "phase": "closeout",
+  "phase": "archived",
   "gate": "handoff-ready/implementation-not-started",
   "project": "create-harness-vibe-coding",
   "tags": [
@@ -15,8 +15,8 @@
   ],
   "createdAt": "2026-09-13T08:52:59.444Z",
   "startedAt": "2026-09-13T08:52:59.444Z",
-  "closedAt": null,
-  "updatedAt": "2026-09-14T03:13:03.643Z",
+  "closedAt": "2026-09-14T04:41:50.354Z",
+  "updatedAt": "2026-09-14T04:42:16.272Z",
   "activeQuestion": null,
   "nextAction": "接手 Agent 读取 Harness/tasks/task-implement-wf-search-093/claude-wf-search-0.9.3-implementation-prompt.md 与 PLAN.md；首先记录当前 HEAD、分支、暂存/未暂存/未跟踪文件，建立 0.9.3 included/excluded/unresolved 前置候选归属清单，再推进设计/测试门禁。",
   "acceptance": [
@@ -58,12 +58,12 @@
     }
   ],
   "queues": {
-    "ready": [
-      "baseline"
-    ],
+    "ready": [],
     "running": [],
     "blocked": [],
-    "done": []
+    "done": [
+      "baseline"
+    ]
   },
   "workItems": [
     {
