@@ -680,6 +680,56 @@ console.log(JSON.stringify({ success: true, status: 'ok', projectRoot: process.c
   assert.equal(data.recoveryNote, undefined);
 });
 
+test('legacy project install migrates to global while preserving project state', () => {
+  const root = tmpdir();
+  const target = path.join(root, 'legacy-project');
+  const globalDir = path.join(root, 'global-runtime');
+  const hostGlobalDir = path.join(root, 'host-global');
+
+  execFileSync(process.execPath, [
+    bin,
+    'legacy-project',
+    target,
+    '-y',
+    '--install-scope',
+    'project',
+  ], { encoding: 'utf8' });
+
+  const taskFile = path.join(target, 'Harness', 'tasks', 'keep-me', 'PROGRESS.md');
+  fs.mkdirSync(path.dirname(taskFile), { recursive: true });
+  fs.writeFileSync(taskFile, 'user task state\n', 'utf8');
+  fs.writeFileSync(path.join(target, 'README.md'), 'user README\n', 'utf8');
+
+  const output = execFileSync(process.execPath, [
+    bin,
+    'init',
+    target,
+    '--scope',
+    'global',
+    '--migrate',
+    '--global-dir',
+    globalDir,
+    '--host-global-dir',
+    hostGlobalDir,
+    '--json',
+  ], { encoding: 'utf8' });
+  const data = JSON.parse(output.trim());
+
+  assert.equal(data.success, true, JSON.stringify(data, null, 2));
+  assert.equal(data.installScope, 'global');
+  assert.equal(data.migration.from, 'project');
+  assert.equal(data.migration.to, 'global');
+  assert.ok(data.migration.cleanup.safeFrameworkFiles.length > 0);
+  assert.ok(data.migration.cleanup.preservedUserData.includes('Harness/PROGRESS.md'));
+  assert.ok(fs.existsSync(taskFile), 'project task state survives migration');
+  assert.equal(fs.readFileSync(path.join(target, 'README.md'), 'utf8'), 'user README\n');
+  assert.equal(fs.existsSync(path.join(target, '.claude', 'commands', 'wf.md')), false);
+  assert.equal(fs.existsSync(path.join(target, 'Harness', 'scripts', 'wf-update-check.mjs')), false);
+  assert.equal(fs.existsSync(path.join(target, 'Harness', '.harness-version')), true);
+  assert.equal(JSON.parse(fs.readFileSync(path.join(target, 'Harness', '.harness-version'), 'utf8')).installMode, 'bridge');
+  assert.equal(fs.existsSync(path.join(globalDir, '.claude', 'commands', 'wf.md')), true);
+});
+
 test('AC-001 missing global bridge runtime never falls back to project recovery', () => {
   const root = tmpdir();
   const target = path.join(root, 'bridge-project');

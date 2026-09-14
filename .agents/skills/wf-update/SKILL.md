@@ -47,6 +47,27 @@ Scope resolution is deterministic:
 - Current project has no Harness install: update only the global runtime and host-global copies. Do not scaffold or modify the project unless the user explicitly asks to install Harness there.
 `Harness/scripts/wf-update-runner.mjs` implements this multi-scope routing. Older installs that do not have the runner fall back to `Harness/scripts/wf-update-check.mjs`.
 
+## Legacy project-local migration
+
+The supported default is one global Harness runtime with project-local user
+state. When the update JSON contains `migration.status: "recommended"`, report
+the recommendation and ask the user whether to migrate before deleting the
+project framework.
+
+After the user accepts, run:
+
+```bash
+npm install --global create-harness-vibe-coding@latest
+create-harness-vibe-coding init . --scope global --migrate
+```
+
+The migration removes only safe Harness-owned prompt-engineering framework
+files and old local metadata. It preserves tasks, progress, memory, research,
+project facts, README/package files, and modified or user-authored
+Harness-interest files. If declined, continue the project-local update. If an
+older checker has no `migration` field, use `installScope: "project"` in
+`Harness/.harness-version` as the same recommendation.
+
 All update paths are bounded: pass `--timeout-ms <positive-ms>` or set
 `WF_UPDATE_TIMEOUT_MS`; timeout exits with code `3`, an active update lock with
 code `4`, and successful transaction state is removed from `Harness/.temp`.

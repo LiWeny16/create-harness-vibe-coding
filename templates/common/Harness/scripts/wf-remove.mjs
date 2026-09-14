@@ -66,6 +66,15 @@ const USER_DATA_PATTERNS = [
   /^package-lock\.json$/,
 ];
 
+/** Content markers required before removing an untracked framework file. */
+const HARNESS_OWNED_CONTENT_MARKERS = [
+  /^harness:\s*(?:wf-agent|wf-framework|create-harness-vibe-coding)\b/im,
+  /\bcreate-harness-vibe-coding\b/i,
+  /\bproject harness\b/i,
+  /\bHarness\/(?:specs|WF|MEMORY|tasks|scripts|subagents|dispatch|context-loading|lifecycle|SETUP)\b/i,
+  /\bWF-(?:MAX|AUTO|KERNEL|STATE)\b/i,
+];
+
 /** Harness user-data paths that can be removed only with explicit purge flags. */
 const PURGEABLE_HARNESS_DATA_PATTERNS = [
   /^Harness\/PROGRESS\.md$/,
@@ -98,6 +107,15 @@ function isHarnessOwned(file) {
 
 function isFrameworkTaskFile(file) {
   return FRAMEWORK_TASK_PATTERNS.some(p => p.test(file));
+}
+
+function hasHarnessOwnershipMarker(file) {
+  try {
+    const content = readFileSync(file, 'utf8');
+    return HARNESS_OWNED_CONTENT_MARKERS.some(pattern => pattern.test(content));
+  } catch {
+    return false;
+  }
 }
 
 function isPurgeableHarnessData(file, { keepTasks }) {
@@ -516,12 +534,19 @@ async function main() {
           // opencode.json without provenance — may pre-date Harness install.
           // Only auto-remove when checksum proves Harness created it.
           modified.push({ file, currentHash, storedHash: 'none', reason: 'not in checksums (may be pre-existing user config)' });
-        } else {
+        } else if (hasHarnessOwnershipMarker(diskPath)) {
           safe.push({
             file,
             currentHash,
             storedHash: currentHash,
-            reason: 'known framework file missing from legacy checksums',
+            reason: 'known framework file with Harness ownership marker missing from legacy checksums',
+          });
+        } else {
+          modified.push({
+            file,
+            currentHash,
+            storedHash: currentHash,
+            reason: 'known framework path without a Harness ownership marker',
           });
         }
       } else {

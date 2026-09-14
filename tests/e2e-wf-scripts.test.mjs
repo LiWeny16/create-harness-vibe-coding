@@ -24,6 +24,7 @@ const TMP_GUARD = resolve(ROOT, 'tests', '.tmp-e2e-guard');
 const TMP_EXTERNAL = resolve(ROOT, 'tests', '.tmp-e2e-external');
 const TMP_OPTIONAL = resolve(ROOT, 'tests', '.tmp-e2e-optional');
 const TMP_OPTIONAL_REMOTE = resolve(ROOT, 'tests', '.tmp-e2e-optional-remote');
+const TMP_COLLISION = resolve(ROOT, 'tests', '.tmp-e2e-user-collision');
 const REMOVE = join(SCRIPTS, 'wf-remove.mjs');
 const UPDATE = join(SCRIPTS, 'wf-update-check.mjs');
 const SCAN = join(SCRIPTS, 'scan-clean.mjs');
@@ -89,6 +90,7 @@ rmSync(TMP_GUARD, { recursive: true, force: true });
 rmSync(TMP_EXTERNAL, { recursive: true, force: true });
 rmSync(TMP_OPTIONAL, { recursive: true, force: true });
 rmSync(TMP_OPTIONAL_REMOTE, { recursive: true, force: true });
+rmSync(TMP_COLLISION, { recursive: true, force: true });
 mkdirSync(TMP, { recursive: true });
 
 // Create mock .harness-version with known checksums
@@ -141,11 +143,11 @@ const untrackedResidualFiles = {
   'Harness/research/research-results.md': 'my research results',
   'Harness/tasks/_template/PLAN.md': 'framework task template',
   'Harness/tasks/continuous/PLAN.md': 'auto task framework plan',
-  '.claude/agents/reviewer.md': 'legacy reviewer agent',
-  '.claude/commands/wf-help.md': 'legacy wf-help command',
-  '.claude/skills/wf-max/SKILL.md': 'legacy wf-max skill',
-  '.agents/skills/wf-max/SKILL.md': 'legacy wf-max skill',
-  '.agents/skills/wf-review/SKILL.md': 'legacy wf-review skill',
+  '.claude/agents/reviewer.md': 'harness: wf-agent\nlegacy reviewer agent',
+  '.claude/commands/wf-help.md': 'Harness/MEMORY.md\nlegacy wf-help command',
+  '.claude/skills/wf-max/SKILL.md': 'WF-MAX\nlegacy wf-max skill',
+  '.agents/skills/wf-max/SKILL.md': 'WF-MAX\nlegacy wf-max skill',
+  '.agents/skills/wf-review/SKILL.md': 'project harness workflow review\nlegacy wf-review skill',
   '.claude/skills/custom-user-skill/SKILL.md': 'user custom skill',
   '.agents/skills/custom-user-skill/SKILL.md': 'user custom skill',
 };
@@ -249,6 +251,13 @@ for (const es of expectedSafe) {
 assert(!safeFiles.includes('.claude/skills/custom-user-skill/SKILL.md'), 'custom Claude skill is not SAFE');
 assert(!safeFiles.includes('.agents/skills/custom-user-skill/SKILL.md'), 'custom Codex skill is not SAFE');
 
+// Untracked same-name user files must stay reviewable instead of being removed
+// solely because their path is a built-in Harness path.
+mkdirSync(join(TMP_COLLISION, '.opencode', 'commands'), { recursive: true });
+writeFileSync(join(TMP_COLLISION, '.opencode', 'commands', 'wf-help.md'), 'user-authored wf-help command\n', 'utf-8');
+const collisionPlan = JSON.parse(runNode(REMOVE, '--json', TMP_COLLISION).stdout.trim());
+assert(collisionPlan.modified.includes('.opencode/commands/wf-help.md'), 'untracked same-name user command requires review');
+
 // Test 6.5: thorough purge plan removes Harness project facts but keeps real task records
 const purgePlanResult = runNode(REMOVE, '--json --purge-user-data --keep-tasks', TMP);
 const purgePlan = JSON.parse(purgePlanResult.stdout.trim());
@@ -330,6 +339,9 @@ assert(!existsSync(join(TMP, '.agents', 'skills', 'wf-max', 'SKILL.md')), '--app
 assert(!existsSync(join(TMP, '.agents', 'skills', 'wf-review', 'SKILL.md')), '--apply --yes removes legacy unchecksummed Codex review skill');
 assert(existsSync(join(TMP, '.claude', 'skills', 'custom-user-skill', 'SKILL.md')), '--apply --yes preserves custom Claude skill');
 assert(existsSync(join(TMP, '.agents', 'skills', 'custom-user-skill', 'SKILL.md')), '--apply --yes preserves custom Codex skill');
+const collisionApply = runNode(REMOVE, '--apply --yes', TMP_COLLISION);
+assert(collisionApply.ok, '--apply --yes handles untracked same-name user command');
+assert(existsSync(join(TMP_COLLISION, '.opencode', 'commands', 'wf-help.md')), '--apply --yes preserves untracked same-name user command');
 	// Test 8.1: opencode.json without provenance is NOT auto-removed (preserve pre-existing user config)
 	const TMP_OPENCODE_PREEXIST = resolve(ROOT, 'tests', '.tmp-e2e-opencode-preexist');
 	rmSync(TMP_OPENCODE_PREEXIST, { recursive: true, force: true });
@@ -709,6 +721,7 @@ rmSync(TMP_GUARD, { recursive: true, force: true });
 rmSync(TMP_EXTERNAL, { recursive: true, force: true });
 rmSync(TMP_OPTIONAL, { recursive: true, force: true });
 rmSync(TMP_OPTIONAL_REMOTE, { recursive: true, force: true });
+rmSync(TMP_COLLISION, { recursive: true, force: true });
 console.log('\n🧹 Cleaned up temp files.');
 
 // ── Summary ────────────────────────────────────────────────────────

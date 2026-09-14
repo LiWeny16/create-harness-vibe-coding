@@ -1,6 +1,11 @@
 # Changelog
 
-## [0.9.4] - 2026-09-14
+## [0.9.5] - 2026-09-14
+
+- Recommend the global runtime with project-local state, and add an explicit migration path for legacy project-local installs.
+- Preserve user tasks, progress, memory, research, project facts, README, package files, and modified or user-authored files during migration and removal.
+- Route `wf-browser` through BrowserOS Neo and require users to download BrowserOS Neo themselves when it is unavailable.
+- Keep global update, project task routing, weekly task archiving, wf-ui, and wf-search behavior covered by the release validation suite.
 
 - Harden `/wf-search` rendering: square brackets in all text output are HTML-escaped so escaped-bracket Markdown link injection (`[x\]](https://evil.example)`) can never survive as a clickable link.
 - Harden `/wf-search` save-path validation: dangling symlink/junction segments of `Harness/research` are now resolved through realpath and rejected instead of being treated as plain directory names.

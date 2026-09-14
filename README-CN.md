@@ -56,7 +56,7 @@ Agent 读取本 README 后，按项目状态选择路径：
 | 已有 `Harness/` 但缺少 `Harness/scripts/wf-update-check.mjs` | `npx create-harness-vibe-coding@latest my-project . -y --on-conflict skip --json`。然后执行 `node Harness/scripts/wf-update-check.mjs --json` |
 | 安装或更新完成 | `node Harness/scripts/validate-harness.mjs --strict` |
 
-安装范围：推荐全局优先。每台机器先执行一次 `npm i -g create-harness-vibe-coding`，然后在每个项目里运行 `create-harness-vibe-coding init .`（或 `/wf-init` 命令）。全局 runtime 是唯一的版本基准：commands、skills、agents、scripts 和 wf-ui 服务/资源都只在全局装一份，所有项目共享同一版本更新。每个项目只保留桥接文件（CLAUDE.md、AGENTS.md）和自己的状态（`Harness/tasks/`、`Harness/PROGRESS.md`、项目 memory、项目事实和项目 settings）。上表的项目内安装仍然可用；`--install-scope global --global-dir <dir>` 可手动播种共享 runtime，并把 commands/skills/agents 以 copy 方式写入 Claude Code、Codex、OpenCode 的全局目录。
+安装范围：推荐全局优先。每台机器先执行一次 `npm i -g create-harness-vibe-coding`，然后在每个项目里运行 `create-harness-vibe-coding init .`（或 `/wf-init` 命令）。全局 runtime 是唯一的版本基准：commands、skills、agents、scripts 和 wf-ui 服务/资源都只在全局装一份，所有项目共享同一版本更新。每个项目只保留桥接文件（CLAUDE.md、AGENTS.md）和自己的状态（`Harness/tasks/`、`Harness/PROGRESS.md`、项目 memory、项目事实和项目 settings）。旧的项目级安装执行 `/wf-update` 时会推荐迁移到全局，并在迁移前询问用户；确认后只清理 Harness 自己的 prompt-engineering 工程文件，用户留下的文件和用户改过的 Harness 文件都会保留。迁移命令是 `npm install --global create-harness-vibe-coding@latest`，然后 `create-harness-vibe-coding init . --scope global --migrate`。上表的项目内安装仍然可用；`--install-scope global --global-dir <dir>` 可手动播种共享 runtime，并把 commands/skills/agents 以 copy 方式写入 Claude Code、Codex、OpenCode 的全局目录。
 
 用户不需要手动执行这些命令。Agent 负责安装、冲突处理、校验和汇报。
 

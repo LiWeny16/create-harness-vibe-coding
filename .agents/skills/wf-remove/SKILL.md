@@ -29,7 +29,8 @@ and keep user decisions in task progress rather than chat transcript.
 1. On plain `/wf-remove`, run `node Harness/scripts/wf-remove.mjs --json` for
    the machine-readable plan, then run the safe default apply command yourself.
 2. Auto-remove only SAFE files that still match stored checksums or exact
-   built-in Harness discovery files recognized by the script.
+   built-in Harness discovery files carrying a Harness ownership marker.
+   An untracked same-name user file is MODIFIED/uncertain and stays for review.
 3. Ask the user before every MODIFIED or uncertain file.
 4. Preserve USER DATA by default. For an explicit thorough uninstall, use
    `--purge-user-data` (alias `--purge`); add `--keep-tasks` when the user wants task records

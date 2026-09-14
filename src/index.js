@@ -82,6 +82,7 @@ if (showHelp) {
   console.log('    --install-scope <scope>      project or global (new project default: global; existing target keeps project compatibility)');
   console.log('    --global-dir <dir>           Global Harness runtime directory for --install-scope global');
   console.log('    --host-global-dir <dir>      Base directory for Claude/Codex/OpenCode global copies');
+  console.log('    --migrate                    With init --scope global, remove safe legacy project framework files and preserve user state');
   console.log('    --list-options               Print optional workflow skills and presets');
   console.log('    --json                       Output machine-readable JSON (use with --dry-run for planning)');
   console.log('');
@@ -99,6 +100,7 @@ if (showHelp) {
   console.log('    npx create-harness-vibe-coding@latest api ./api -y --preset fullstack --without github-pr-review');
   console.log('    npx create-harness-vibe-coding@latest app ./app -y --install-scope global');
   console.log('    create-harness-vibe-coding init .             # Per-project init against the global runtime');
+  console.log('    create-harness-vibe-coding init . --scope global --migrate');
   console.log('    create-harness-vibe-coding init . --dry-run');
   console.log('');
   process.exit(0);
@@ -766,6 +768,9 @@ function flushStdout() {
 // machine-level global runtime — the single version source of truth.
 // Scope `project` keeps the classic full project-level install: the whole
 // framework is copied into the project so it stays self-contained.
+// `--migrate` is an explicit confirmation to remove the old project-local
+// framework files before binding the project to the global runtime. The
+// removal script is ownership-aware and preserves user data and modified files.
 // Safe to re-run: user-authored files are preserved under the default `skip`
 // conflict policy.
 function runInit(args) {
@@ -776,11 +781,27 @@ function runInit(args) {
     console.error(pc.red(`[init] unknown --scope "${scopeRaw}". Use project or global.`));
     process.exit(1);
   }
+  const migrateToGlobal = installScope === 'global' && (hasFlag(args, '--migrate') || hasFlag(args, '--migrate-global'));
   const positional = args.find((arg, idx) => !arg.startsWith('-') && !valueFlags.has(args[idx - 1]));
   const targetDir = positional || '.';
-  const scan = scanTarget(targetDir);
+  let scan = scanTarget(targetDir);
 
-  if (scan.hasHarness) {
+  let migration = null;
+  if (migrateToGlobal && scan.hasHarness) {
+    const outcome = migrateProjectInstallToGlobal(scan, { dryRun: hasFlag(args, '--dry-run') });
+    if (!outcome.success) {
+      if (hasFlag(args, '--json')) {
+        console.log(JSON.stringify(outcome, null, 2));
+      } else {
+        console.error(pc.red(`\nGlobal migration failed: ${outcome.error}`));
+      }
+      process.exit(1);
+    }
+    migration = outcome.migration;
+    scan = scanTarget(targetDir);
+  }
+
+  if (scan.hasHarness && !migrateToGlobal) {
     if (hasFlag(args, '--json')) process.exit(runUpdateSwitch(scan, { json: true }));
     console.log(pc.yellow(`\nHarness already detected in ${targetDir}. Nothing to init.`));
     process.exit(runUpdateSwitch(scan, { json: false }));
@@ -800,6 +821,7 @@ function runInit(args) {
     hostGlobalDir: installScope === 'global' ? extractFlag(args, '--host-global-dir') : undefined,
     json: hasFlag(args, '--json'),
   });
+  if (migration) result.migration = migration;
 
   if (hasFlag(args, '--json')) {
     console.log(JSON.stringify({
@@ -812,6 +834,7 @@ function runInit(args) {
       hosts: result.hostSummary || [],
       errors: result.errors,
       warnings: result.warnings,
+      migration: result.migration || null,
     }, null, 2));
     if (!result.success) process.exit(1);
     return;
@@ -843,6 +866,13 @@ function runInit(args) {
     printInitSummary(host.summary);
   }
   printInitWarnings(result);
+  if (result.migration) {
+    const cleanup = result.migration.cleanup || {};
+    console.log(pc.bold('\nLegacy project install migration:'));
+    console.log(`  Removed safe framework files     ${cleanup.safeFrameworkFiles?.length || 0}`);
+    console.log(`  Preserved modified framework    ${cleanup.preservedModifiedFrameworkFiles?.length || 0}`);
+    console.log(`  Preserved user files             ${cleanup.preservedUserData?.length || 0}`);
+  }
 
   console.log(pc.bold('\nNext steps:'));
   console.log(`  ${pc.cyan('/wf-ui')}            # Open the control panel${installScope === 'global' ? '; the global runtime serves this project' : ''}`);
@@ -854,6 +884,98 @@ function runInit(args) {
     console.log(pc.dim('\n  The full Harness framework lives in this project; update it per project with /wf-update.'));
   }
   console.log('');
+}
+
+function parseJsonOutput(stdout) {
+  if (!stdout || !stdout.trim()) return null;
+  try {
+    return JSON.parse(stdout.trim());
+  } catch {
+    return null;
+  }
+}
+
+function migrateProjectInstallToGlobal(scan, { dryRun = false } = {}) {
+  const removeScript = path.join(scan.resolvedDir, 'Harness', 'scripts', 'wf-remove.mjs');
+  if (!fs.existsSync(removeScript)) {
+    return {
+      success: false,
+      error: 'Harness/scripts/wf-remove.mjs is missing. Run wf-update or the safe recovery command first so ownership-aware cleanup is available.',
+    };
+  }
+
+  const planResult = spawnSync(process.execPath, [removeScript, '--json'], {
+    cwd: scan.resolvedDir,
+    encoding: 'utf8',
+    timeout: updateTimeoutMs(),
+    killSignal: 'SIGTERM',
+    env: { ...process.env, WF_ROOT: scan.resolvedDir },
+  });
+  const plan = parseJsonOutput(planResult.stdout);
+  if (planResult.status !== 0 || !plan || !Array.isArray(plan.safe)) {
+    return {
+      success: false,
+      error: `Could not build the ownership-aware cleanup plan.${planResult.stderr ? ` ${planResult.stderr.trim()}` : ''}`,
+    };
+  }
+
+  const migration = {
+    from: 'project',
+    to: 'global',
+    recommended: true,
+    cleanup: {
+      safeFrameworkFiles: plan.safe,
+      preservedModifiedFrameworkFiles: plan.modified || [],
+      preservedUserData: plan.user || [],
+      command: 'node Harness/scripts/wf-remove.mjs --apply --yes',
+    },
+    preservedPaths: [
+      'Harness/PROGRESS.md',
+      'Harness/tasks/**',
+      'Harness/memory/**',
+      'Harness/research/**',
+      'Harness/project/**',
+      'README.md',
+      'package.json',
+      'package-lock.json',
+      'modified or user-authored Harness-interest files',
+    ],
+  };
+
+  if (dryRun) {
+    return { success: true, migration: { ...migration, dryRun: true } };
+  }
+
+  const applyResult = spawnSync(process.execPath, [removeScript, '--apply', '--yes'], {
+    cwd: scan.resolvedDir,
+    encoding: 'utf8',
+    timeout: updateTimeoutMs(),
+    killSignal: 'SIGTERM',
+    env: { ...process.env, WF_ROOT: scan.resolvedDir },
+  });
+  if (applyResult.status !== 0) {
+    return {
+      success: false,
+      error: `Ownership-aware cleanup failed.${applyResult.stderr ? ` ${applyResult.stderr.trim()}` : ''}`,
+      migration,
+    };
+  }
+
+  const versionFile = path.join(scan.resolvedDir, 'Harness', '.harness-version');
+  if (fs.existsSync(versionFile)) {
+    try {
+      if (fs.lstatSync(versionFile).isSymbolicLink()) {
+        return { success: false, error: 'Refusing to remove a symbolic-link Harness/.harness-version.', migration };
+      }
+      fs.rmSync(versionFile, { force: true });
+      migration.removedMetadata = 'Harness/.harness-version';
+    } catch (error) {
+      return { success: false, error: `Could not replace the old Harness metadata: ${error.message}`, migration };
+    }
+  }
+
+  migration.applied = true;
+  return { success: true, migration };
 }
 
 function printInitSummary(summary) {

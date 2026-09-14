@@ -161,6 +161,34 @@ function discoverTargets(projectRoot) {
   return dedupeTargets(targets);
 }
 
+function migrationRecommendation(projectRoot, targets) {
+  const project = targets.find(target => target.scope === 'project');
+  if (!project) return null;
+  return {
+    status: 'recommended',
+    from: 'project',
+    to: 'global',
+    requiresConfirmation: true,
+    reason: 'Project-local Harness is a legacy compatibility install. The recommended setup is one global runtime with project-local user state.',
+    projectRoot: normalizePath(projectRoot),
+    installCommand: 'npm install --global create-harness-vibe-coding@latest',
+    migrateCommand: 'create-harness-vibe-coding init . --scope global --migrate',
+    cleanupPolicy: 'Remove only safe Harness-owned framework files. Preserve tasks, progress, memory, research, project facts, README, package files, and modified or user-authored files.',
+    preservedPaths: [
+      'Harness/PROGRESS.md',
+      'Harness/tasks/**',
+      'Harness/memory/**',
+      'Harness/research/**',
+      'Harness/project/**',
+      'README.md',
+      'package.json',
+      'package-lock.json',
+      'modified or user-authored Harness-interest files',
+    ],
+    next: 'Ask the user whether to migrate. If accepted, install/update the global package, then run the migrate command. If declined, continue project-local update.',
+  };
+}
+
 function parseTimeoutMs(args) {
   const raw = readFlagValue(args, '--timeout-ms') || process.env.WF_UPDATE_TIMEOUT_MS;
   if (!raw) return DEFAULT_UPDATE_TIMEOUT_MS;
@@ -292,6 +320,14 @@ function printText(result) {
       if (post.stderr) process.stderr.write(post.stderr);
     }
   }
+  if (result.migration) {
+    console.log('\n[recommended migration]');
+    console.log(`Project-local Harness detected at ${result.migration.projectRoot}.`);
+    console.log(result.migration.reason);
+    console.log(`Install: ${result.migration.installCommand}`);
+    console.log(`Migrate: ${result.migration.migrateCommand}`);
+    console.log('User data and modified/user-authored Harness files are preserved by the migration cleanup.');
+  }
 }
 
 function main() {
@@ -300,6 +336,7 @@ function main() {
   const effectiveArgs = JSON_OUT ? ensureJsonArg(forwardArgs) : forwardArgs;
   const deadlineAt = Date.now() + parseTimeoutMs(rawArgs);
   const targets = discoverTargets(projectRoot);
+  const migration = migrationRecommendation(projectRoot, targets);
 
   if (targets.length === 0) {
     const result = {
@@ -308,6 +345,7 @@ function main() {
       projectRoot: normalizePath(projectRoot),
       message: 'No project Harness updater or global Harness runtime was found. No project files were modified.',
       targets: [],
+      migration: null,
     };
     if (JSON_OUT) console.log(JSON.stringify(result, null, 2));
     else printText(result);
@@ -347,6 +385,7 @@ function main() {
       ...target,
       root: normalizePath(target.root),
     })),
+    migration,
     ...(failures.length ? { failures } : {}),
   };
 

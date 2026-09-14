@@ -33,11 +33,15 @@ Install scopes:
 
 Useful flags:
 
+- `--migrate` with `--scope global` migrates an existing project-level install: it removes safe Harness-owned framework files, keeps project/user state, and writes the global bridge.
+
 - `--dry-run` — print the plan without writing.
 - `--on-conflict <policy>` — `fail`, `skip` (default), `backup`, or `overwrite`. Keep `skip` so user-authored files are never clobbered.
 - `--global-dir <dir>` / `--host-global-dir <dir>` — override the global runtime and host-copy locations (global scope only).
 
 Rules:
+
+- For a legacy project-level install, ask before using `--scope global --migrate`; migration preserves tasks, progress, memory, research, project facts, README/package files, and modified or user-authored Harness-interest files.
 
 - Never overwrite user-authored files; the default conflict policy is `skip`.
 - If Harness already exists in the project, report the update path and stop — do not re-init.

@@ -106,6 +106,26 @@ test('runner updates project install and discovered global runtime together', ()
   assert.deepEqual(payload.targets.map(target => target.scope), ['project', 'global']);
   assert.deepEqual(payload.targets.map(target => target.update.json.label), ['project', 'global']);
   assert.ok(payload.targets.find(target => target.scope === 'global').post.some(step => step.step === 'sync-host-global'));
+  assert.equal(payload.migration.status, 'recommended');
+  assert.equal(payload.migration.from, 'project');
+  assert.equal(payload.migration.to, 'global');
+});
+
+test('runner recommends global migration for a project-only install', () => {
+  const root = tmpdir();
+  const project = path.join(root, 'project');
+  fs.mkdirSync(project, { recursive: true });
+  writeVersion(project, { generator: '0.8.18', installScope: 'project' });
+  writeStubUpdater(project, 'project');
+  copyRunner(project);
+
+  const payload = runRunner(project, project, { HARNESS_GLOBAL_HOME: path.join(root, 'no-global') });
+
+  assert.equal(payload.success, true);
+  assert.deepEqual(payload.targets.map(target => target.scope), ['project']);
+  assert.equal(payload.migration.status, 'recommended');
+  assert.match(payload.migration.migrateCommand, /--scope global --migrate/);
+  assert.match(payload.migration.cleanupPolicy, /Preserve tasks/);
 });
 
 test('runner in an uninstalled project updates only the global runtime', () => {
