@@ -1,0 +1,13 @@
+{
+  "url": "https://github.com/EvolvingLMMs-Lab/LongVT",
+  "title": "LongVT",
+  "version": "main@2026-09-18",
+  "license": "Apache-2.0",
+  "reason": "Adapt the global-to-local crop_video and timestamp-targeted inspection strategy for the VLM video contract; do not install its heavyweight multi-GPU stack by default.",
+  "checkedAt": "2026-09-18T00:00:00Z",
+  "sourceType": "official",
+  "decision": "adapt",
+  "acIds": ["AC-005", "AC-006"],
+  "counterexample": "Its published runtime assumptions are too heavy for a default Harness extension.",
+  "recheckTrigger": "A lighter compatible temporal VLM runtime becomes available"
+}

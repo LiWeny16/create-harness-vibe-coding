@@ -1,2 +1,5 @@
+packages:
+  - "packages/*"
+
 allowBuilds:
   '@homebridge/node-pty-prebuilt-multiarch': true

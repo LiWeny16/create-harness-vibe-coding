@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-fix-ai-command-semantics",
+  "status": "archived",
+  "mode": "direct",
+  "tier": "standard",
+  "phase": "archived",
+  "gate": "acceptance",
+  "updatedAt": "2026-09-17T03:04:59.671Z",
+  "activeQuestion": null,
+  "nextAction": "Verified command semantics locally and on the remote AI host; evidence recorded",
+  "acceptance": [
+    {
+      "id": "AC-001",
+      "status": "pending"
+    },
+    {
+      "id": "AC-002",
+      "status": "pending"
+    },
+    {
+      "id": "AC-003",
+      "status": "pending"
+    }
+  ],
+  "links": {
+    "dependsOn": [],
+    "blocks": [],
+    "related": [
+      "task-implement-wf-search-media"
+    ]
+  },
+  "queues": {
+    "ready": [
+      "AC-001",
+      "AC-002",
+      "AC-003"
+    ],
+    "running": [],
+    "blocked": [],
+    "done": []
+  },
+  "workItems": [],
+  "dispatchLedger": [],
+  "decisions": [],
+  "risks": [],
+  "artifacts": [],
+  "defaultRuntime": "codex",
+  "defaultAgentRuntime": "codex",
+  "tags": [],
+  "createdAt": "2026-09-17T03:04:52.609Z",
+  "startedAt": "2026-09-17T03:04:52.609Z",
+  "closedAt": "2026-09-17T03:04:52.609Z"
+}

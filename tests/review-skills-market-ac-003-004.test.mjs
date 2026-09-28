@@ -92,47 +92,14 @@ test.after(() => {
   }
 });
 
-test('AC-003 GET /api/workflow/skills-market exposes the market contract', async () => {
-  const originalFetch = globalThis.fetch;
-  globalThis.fetch = async (url) => {
-    if (!String(url).includes('skillstore.io/api/packs')) return originalFetch(url);
-    return new Response(JSON.stringify({
-      data: [{
-        slug: 'market-fixture-pack',
-        name: 'Market fixture pack',
-        description: 'Deterministic test pack',
-        skillCount: 1,
-        scenarioTags: ['testing'],
-      }],
-      pagination: { total: 1 },
-    }), {
-      status: 200,
-      headers: { 'content-type': 'application/json' },
-    });
-  };
+test('AC-006 Skills Market list and install routes are not wired to the hub surface', async () => {
   await withServer(async baseUrl => {
-    try {
-      const response = await request(baseUrl, '/api/workflow/skills-market?scope=project');
-      assert.equal(response.status, 200, JSON.stringify(response.body));
-      assert.equal(response.body?.ok, true, JSON.stringify(response.body));
-      assert.equal(response.body?.kind, 'skills-market');
-      assert.equal(typeof response.body?.schemaVersion, 'number');
-      assert.ok(Array.isArray(response.body?.packs), 'market response must expose packs[]');
-    } finally {
-      globalThis.fetch = originalFetch;
-    }
-  });
-});
-
-test('AC-004 POST /api/workflow/skills-market/install rejects an unknown pack through its JSON contract', async () => {
-  await withServer(async baseUrl => {
-    const response = await request(baseUrl, '/api/workflow/skills-market/install', {
+    const list = await request(baseUrl, '/api/workflow/skills-market?scope=project');
+    assert.equal(list.status, 404, JSON.stringify(list.body));
+    const install = await request(baseUrl, '/api/workflow/skills-market/install', {
       method: 'POST',
       body: { packId: 'pack:missing-ac-004-fixture' },
     });
-    assert.notEqual(response.status, 404, `install route is missing: ${JSON.stringify(response.body)}`);
-    assert.ok(response.status >= 400 && response.status < 500, JSON.stringify(response.body));
-    assert.equal(response.body?.ok, false, JSON.stringify(response.body));
-    assert.ok(response.body?.error || response.body?.code, 'install failure must be structured JSON');
+    assert.equal(install.status, 404, JSON.stringify(install.body));
   });
 });

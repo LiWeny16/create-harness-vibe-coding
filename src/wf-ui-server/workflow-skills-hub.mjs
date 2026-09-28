@@ -340,13 +340,12 @@ export function listSkillsHub(projectRoot, options = {}) {
     kind: 'skills-hub',
     generatedAt: new Date().toISOString(),
     query: { scope, q: query, limit },
-    roots: roots.map(({ rootPath, ...root }) => root),
+    roots,
     summary: {
       skillCount: skills.length,
       groupCount: groups.length,
       sourceCount: roots.filter(root => root.exists).length,
     },
-    installTargets: skillInstallTargets(projectRoot, { includeUser: true }),
     nodeSemantics: {
       role: 'agent-attached-capability-provider',
       defaultConnection: 'bidirectional capability/status port to Agent nodes',

@@ -61,8 +61,8 @@ test('startup and router docs agree on direct-mode thin startup', () => {
   const claude = read('CLAUDE.md');
   const readme = read('Harness/README.md');
 
-  assert.match(claude, /Default installed-project startup is thin/);
-  assert.match(claude, /This is NOT loading `Harness\/MEMORY\.md`, `Harness\/README\.md`, or PROGRESS/);
+  assert.match(claude, /Default startup is thin/);
+  assert.match(claude, /This is NOT loading `Harness\/MEMORY\.md`, `Harness\/README\.md`, or (?:`?Harness\/PROGRESS\.md`?|PROGRESS)/);
   assert.match(claude, /In direct mode, do not load the full Harness router/);
 
   assert.match(readme, /Direct mode \(default\)[^\n]*Nothing beyond CLAUDE\.md/);

@@ -25,6 +25,7 @@ export interface WorkflowOperation {
 export interface WorkflowRuntimeNode {
   nodeId: string;
   kind: 'markdown' | 'excalidraw' | 'file' | 'display' | 'agent' | 'timer' | 'github-trigger' | 'skill-group' | 'mcp-connector' | 'goal';
+  presentation?: string;
   version: number;
   lifecycle: string;
   status: { state: string; reason?: string; updatedAt: string };
@@ -130,6 +131,7 @@ export interface WorkflowSkillsHubResponse {
     scope: 'project' | 'user' | string;
     runtime: string;
     exists: boolean;
+    rootPath: string;
     path: string;
   }>;
   summary: {
@@ -137,7 +139,6 @@ export interface WorkflowSkillsHubResponse {
     groupCount: number;
     sourceCount: number;
   };
-  installTargets?: WorkflowSkillInstallTarget[];
   nodeSemantics: {
     role: string;
     defaultConnection: string;
@@ -145,78 +146,6 @@ export interface WorkflowSkillsHubResponse {
   };
   skills: WorkflowSkillHubSkill[];
   groups: WorkflowSkillHubGroup[];
-}
-
-export interface WorkflowSkillInstallTarget {
-  id: string;
-  label: string;
-  scope: 'project' | 'user' | string;
-  runtime: string;
-  default?: boolean;
-  path: string;
-}
-
-export interface WorkflowSkillsMarketPack {
-  id: string;
-  provider: string;
-  providerLabel?: string;
-  slug: string;
-  packSlug: string;
-  name: string;
-  description: string;
-  category?: string;
-  tags?: string[];
-  skillCount: number;
-  installCount?: number;
-  updatedAt?: string;
-  detailUrl?: string;
-  manifestUrl?: string;
-  lockfileUrl?: string;
-  installable: boolean;
-  installed: boolean;
-  lockRef?: string;
-  installedTarget?: string;
-}
-
-export interface WorkflowSkillsMarketResponse {
-  ok: boolean;
-  schemaVersion: number;
-  kind: 'skills-market';
-  generatedAt: string;
-  provider: string;
-  providers: Array<{ id: string; label: string; hosted?: boolean }>;
-  query: { provider: string; q: string; limit: number };
-  installTargets: WorkflowSkillInstallTarget[];
-  summary: { packCount: number; totalPackCount: number; installedPackCount: number };
-  packs: WorkflowSkillsMarketPack[];
-}
-
-export interface WorkflowSkillsMarketInstallRequest {
-  packId?: string;
-  provider?: string;
-  packSlug?: string;
-  targetScope?: string;
-  createGroup?: boolean;
-  groupNodeId?: string;
-  groupTitle?: string;
-  groupDescription?: string;
-  position?: { x: number; y: number };
-  category?: string;
-  tags?: string[];
-}
-
-export interface WorkflowSkillsMarketInstallResponse {
-  ok: boolean;
-  schemaVersion: number;
-  kind: 'skills-market-install';
-  provider: string;
-  packSlug: string;
-  target: WorkflowSkillInstallTarget;
-  install?: Record<string, unknown>;
-  lockRef?: string;
-  installedSkills?: Array<{ id: string; name: string; title?: string }>;
-  installedFiles?: Array<Record<string, unknown>>;
-  group?: WorkflowRuntimeNodeResponse | null;
 }
 
 export interface WorkflowMcpHubSource {
@@ -431,6 +360,7 @@ export async function fetchNode(nodeId: string): Promise<WorkflowRuntimeNode> {
 
 export async function createNode(payload: {
   type: 'markdown' | 'excalidraw' | 'file' | 'display' | 'timer' | 'github-trigger' | 'skill-group' | 'mcp-connector' | 'goal';
+  presentation?: string;
   title?: string;
   position?: { x: number; y: number };
   enabled?: boolean;
@@ -465,6 +395,7 @@ export async function createNode(payload: {
 
 export async function createNodeResponse(payload: {
   type: 'markdown' | 'excalidraw' | 'file' | 'display' | 'timer' | 'github-trigger' | 'skill-group' | 'mcp-connector' | 'goal';
+  presentation?: string;
   title?: string;
   position?: { x: number; y: number };
   enabled?: boolean;
@@ -849,25 +780,9 @@ export async function fetchNodeContext(nodeId: string): Promise<unknown> {
 
 export async function fetchSkillsHub(query = ''): Promise<WorkflowSkillsHubResponse> {
   const params = new URLSearchParams();
-  params.set('scope', 'project');
+  params.set('scope', 'all');
   if (query.trim()) params.set('q', query.trim());
   return apiJson<WorkflowSkillsHubResponse>(`${BASE}/skills-hub?${params.toString()}`);
-}
-
-export async function fetchSkillsMarket(query = ''): Promise<WorkflowSkillsMarketResponse> {
-  const params = new URLSearchParams();
-  params.set('scope', 'project');
-  if (query.trim()) params.set('q', query.trim());
-  return apiJson<WorkflowSkillsMarketResponse>(`${BASE}/skills-market?${params.toString()}`);
-}
-
-export async function installSkillsMarketPack(
-  payload: WorkflowSkillsMarketInstallRequest,
-): Promise<WorkflowSkillsMarketInstallResponse> {
-  return apiJson<WorkflowSkillsMarketInstallResponse>(`${BASE}/skills-market/install`, {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  });
 }
 
 export async function fetchMcpHub(query = ''): Promise<WorkflowMcpHubResponse> {

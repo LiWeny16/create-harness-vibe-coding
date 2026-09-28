@@ -202,6 +202,14 @@ Invariants:
   allowed skill roots, defaults to project scope, reads only bounded `SKILL.md`
   files, and returns `schemaVersion`, `query`, `roots`, `summary`,
   `nodeSemantics`, `skills`, and `groups`.
+- Skills Hub roots cover Codex, Claude, OpenCode, Pi, and Copilot default
+  locations in user and project scope where a conventional path exists. Each
+  root reports runtime, scope, path, and `exists`; absent optional roots remain
+  visible with `exists: false`. Skill families use the prefix before the first
+  `-` or `:` and are collapsed by default in the hub UI.
+- The global Skills Hub is a display and selection surface: users select or
+  drag skills into a skill-group node. It has no Market or install-target
+  surface. The selected-skill primary action creates one `skill-group` node.
 - Hub responses must not expose absolute local paths, skill bodies, secrets, or
   executable command output. Source locations are project-relative or `~/...`
   display paths only.
@@ -233,8 +241,13 @@ Invariants:
   `effectiveSkills` to that Agent context. The link uses relation `capability`,
   `direction: "bidirectional"`, and `executor: "agent"`.
 - Skill group nodes may store only bounded metadata: group id/label/kind, skill
-  names, source summaries, and counts. They must not persist skill bodies,
-  absolute local paths, command output, secrets, or MCP credential probes.
+  names, source summaries, and counts, plus an optional user-authored `prompt`
+  string. They must not persist skill bodies, absolute local paths, command
+  output, secrets, or MCP credential probes.
+- When a skill-group is connected to an Agent, its skill names and optional
+  prompt are included in `effectiveSkillGroups`. If the pack prompt is empty,
+  context derives: `You have the following skills available in this pack
+  (<title>): <names>. Use them when the task needs them.`
 - `GET /api/workflow/mcp-hub` is a no-spawn, no-secret, read-only metadata
   endpoint. It indexes project MCP config files only, exposes redacted server
   metadata and summary counts, and never launches servers, tests credentials, or
@@ -403,8 +416,14 @@ Current required contract:
   context fields: `identity`, `workspace`, `connectedResourceRefs`, `connectedAgentRefs`,
   `connectedEventRefs`, `connectedCapabilityRefs`,
   `connectedCapabilityNodeRefs`, `connectedGoalRefs`, `defaultSkills`,
-  `effectiveSkills`, `skillTriggers`, `ontology`, `affordances`, and
-  `outputRouting`.
+  `effectiveSkills`, `effectiveSkillGroups`, `skillTriggers`, `ontology`,
+  `affordances`, and `outputRouting`.
+- Each `effectiveSkillGroups` entry exposes the connected pack's `skillNames`,
+  optional authored `prompt`, and the resolved `promptText` supplied to the
+  Agent. With no custom prompt, `promptText` is derived from the pack title and
+  skill names so a connection always tells the Agent which skills are
+  available. Context projections must not include skill bodies or absolute
+  paths.
 - Default Agent skills are machine-readable capabilities, not only prompt text:
   `workflow-ontology`, `workflow-context`, `workflow-node-actions`,
   `workflow-node-map`, and `terminal-control`. Each workflow skill must include

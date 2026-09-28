@@ -2,18 +2,19 @@
 
 ## Status
 
-- Phase: Intake
+- Phase: Closeout
+- Lifecycle: acceptance complete; awaiting canonical state transition.
 
-## Heartbeat
+## Completed
 
-- 2026-08-26 W0 双路探索完成（agentre 引擎模式 + 本地架构地图）。wf-ui 已启动 http://127.0.0.1:56670/。
-- blocker(minor): .claude/agents/codebase-explorer.md 默认模型 "haiku/" 非法导致该角色两次启动失败，已用 explore 角色降级完成。
-
-## Changes
-
-- 无源码变更（research-only）。
+- User decisions recorded: Claude Code/Codex/OpenCode/Pi; standalone session; permission-mode selector; bundled Pi host-gate extension.
+- Implemented provider drivers, canonical chat envelopes, WebSocket history/replay, runtime-specific mode confirmation, correlated approvals, Pi RPC extension, and UI settings/chat surfaces.
+- Focused chat UI E2E: 6/6 passed.
+- Full UI E2E status: passed; 2 existing M3 cases passed on one retry and passed in isolated reruns.
+- Full wf-ui-server suite: 894/894 passed.
+- Root suite: 610 passed, 1 skipped.
+- Root E2E: 177/177 passed; `pack:smoke`: 3/3 passed; UI build passed.
 
 ## Next
 
-1. 用户答 PLAN.md 三问 → 写 Mini PRD + AC。
-2. W1 架构（ChatDriver 接口契约）→ D-GATE → W2 实现。
+- No implementation or verification work remains for this capsule. Keep the capsule live and closed; archiving is a separate operation.

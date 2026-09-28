@@ -1,0 +1,12 @@
+{
+  "url": "https://github.com/yt-dlp/yt-dlp",
+  "title": "yt-dlp",
+  "version": "latest release reviewed@2026-09-18",
+  "license": "Unlicense",
+  "reason": "Adopt as an optional media acquisition adapter for metadata, captions, audio/video, and available comments; install only into the global extension runtime.",
+  "checkedAt": "2026-09-18T00:00:00Z",
+  "sourceType": "official",
+  "decision": "adopt",
+  "acIds": ["AC-003", "AC-005"],
+  "recheckTrigger": "Extractor breakage, platform policy, or release changes"
+}

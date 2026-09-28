@@ -1,7 +1,5 @@
-// ApprovalCard.tsx — permission_request presentation. Three actions
-// 允许一次/总是允许/拒绝 map to approve(requestId, 'allow'|'always'|'deny');
-// buttons disable after the first click so a slow server round-trip can never
-// double-submit (the hook also removes the request optimistically).
+// ApprovalCard.tsx — one-shot permission_request presentation. Buttons disable
+// after the first click so a slow server round-trip cannot double-submit.
 import { useState } from 'react';
 import { ShieldAlert } from 'lucide-react';
 import { useT } from '../../i18n';
@@ -59,6 +57,9 @@ export default function ApprovalCard({ request, onApprove }: Props) {
         <span>{t('Permission required')}</span>
         <span style={{ fontFamily: '"Cascadia Mono", Consolas, monospace', fontSize: 11 }}>{request.tool}</span>
       </div>
+      <span data-testid="chat-approval-request-id" style={{ color: 'var(--muted)', fontFamily: '"Cascadia Mono", Consolas, monospace', fontSize: 10 }}>
+        {request.requestId}
+      </span>
       {summary && (
         <pre
           data-testid="chat-approval-input"
@@ -74,7 +75,7 @@ export default function ApprovalCard({ request, onApprove }: Props) {
           {summary}
         </pre>
       )}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 6 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 6 }}>
         <button
           type="button"
           data-testid="chat-approval-allow"
@@ -91,25 +92,7 @@ export default function ApprovalCard({ request, onApprove }: Props) {
             opacity: disabled ? 0.55 : 1,
           }}
         >
-          {t('Allow once')}
-        </button>
-        <button
-          type="button"
-          data-testid="chat-approval-always"
-          onClick={act('always')}
-          disabled={disabled}
-          style={{
-            minHeight: 26,
-            border: '1px solid #86efac',
-            borderRadius: 'var(--radius)',
-            background: resolved === 'always' ? '#dcfce7' : '#fff',
-            color: '#166534',
-            fontSize: 11,
-            fontWeight: 800,
-            opacity: disabled ? 0.55 : 1,
-          }}
-        >
-          {t('Always allow')}
+          {t('Allow')}
         </button>
         <button
           type="button"

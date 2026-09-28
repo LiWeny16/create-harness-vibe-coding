@@ -16,7 +16,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { loadActionRegistry, actionsForNodeType } from './action-registry.mjs'
-import { componentStateRefs, listLiveComponentNodes } from './component-node-store.mjs'
+import { componentStateRefs, getComponentNode, listLiveComponentNodes } from './component-node-store.mjs'
 import { eventStateRefs } from './workflow-event-node-store.mjs'
 import { capabilityStateRefs } from './workflow-capability-node-store.mjs'
 import { goalStateRefs } from './workflow-goal-node-store.mjs'
@@ -451,7 +451,7 @@ When the user asks for work that needs a team:
 5. Exactly one unambiguous match -> connect that agent.
 6. No match and the task target is clear -> create an agent with a role profile (displayName, roleTitle, responsibility, capabilities).
 7. Multiple matches or an unclear target -> ask the user; never blindly create or connect an agent.
-8. Share durable context through Markdown nodes, referenced by nodeId only.
+8. Share concise, durable team updates in a connected Markdown-backed Billboard using the markdown.append action; read the latest entries from context.sharedBillboards. Format each entry as one sentence: <agentNodeId>/<agentName> tried <X>; result: <Y>; avoid: <Z>; recommend: <W>. Omit fields you do not know. Share long-form context through Markdown nodeId references.
 9. Send structured requests, wait for replies, and aggregate them.
 10. Tick Goal items and complete the Goal when all items are checked; report to the user in plain language.`
 
@@ -1063,6 +1063,7 @@ export function buildConnectedResourceRefs(projectRoot, nodeId, graph) {
         nodeId: connection.peerNodeId,
         kind: 'component-node',
         type,
+        ...(ref.presentation ? { presentation: ref.presentation } : {}),
         title: ref.title || connection.peerNodeId,
         shortId: shortNodeId(connection.peerNodeId),
         displayName: nodeDisplayName(ref.title || connection.peerNodeId, connection.peerNodeId),
@@ -1087,6 +1088,29 @@ export function buildConnectedResourceRefs(projectRoot, nodeId, graph) {
     })
     .filter(Boolean)
     .sort(compareResourceRefs(componentOrder))
+}
+
+function buildConnectedSharedBillboards(projectRoot, connectedResourceRefs = []) {
+  const boards = new Map()
+  for (const ref of connectedResourceRefs) {
+    if (ref?.type !== 'markdown' || ref?.presentation !== 'billboard' || ref?.relation !== 'shared-context') continue
+    const nodeId = String(ref.nodeId || '').trim()
+    if (nodeId && !boards.has(nodeId)) boards.set(nodeId, ref)
+  }
+  return [...boards.values()].map((ref) => {
+    const current = getComponentNode(projectRoot, ref.nodeId)
+    const entries = String(current.state.markdown || '')
+      .split(/\r?\n/)
+      .map(entry => entry.trim())
+      .filter(Boolean)
+      .slice(-20)
+    return {
+      nodeId: current.node.nodeId,
+      title: current.node.title,
+      revision: current.revision,
+      entries,
+    }
+  })
 }
 
 export function buildConnectedEventRefs(projectRoot, nodeId, graph) {
@@ -1238,14 +1262,15 @@ export function effectiveSkillGroupsFor(connectedCapabilityNodeRefs = []) {
     .filter(ref => String(ref?.capabilityKind || ref?.type || '') === 'skill-group')
     .map(ref => {
       const names = (Array.isArray(ref.skillNames) ? ref.skillNames : []).filter(Boolean);
+      const title = ref.title || ref.nodeId;
       const promptText = (ref.prompt && String(ref.prompt).trim())
         ? String(ref.prompt).trim()
-        : (names.length ? `You have these skills available in this pack: ${names.join(', ')}. Use them when the task needs them.` : '');
+        : (names.length ? `You have the following skills available in this pack (${title}): ${names.join(', ')}. Use them when the task needs them.` : '');
       return {
         nodeId: ref.nodeId,
         kind: 'effective-skill-group',
         capabilityKind: 'skill-group',
-        title: ref.title || ref.nodeId,
+        title,
         groupId: ref.sourceGroup?.id || '',
         label: ref.sourceGroup?.label || ref.title || ref.nodeId,
         category: ref.category || ref.sourceGroup?.kind || 'skills',
@@ -1552,6 +1577,7 @@ export function buildAgentContext(projectRoot, graphNode, graph, options = {}) {
   const capabilityRefs = capabilityStateRefs(projectRoot)
   const goalRefs = goalStateRefsForGraph(projectRoot, graph)
   const connectedResourceRefs = buildConnectedResourceRefs(projectRoot, nodeId, graph)
+  const sharedBillboards = buildConnectedSharedBillboards(projectRoot, connectedResourceRefs)
   const connectedAgentRefs = buildConnectedAgentRefs(projectRoot, nodeId, graph, {
     isMainAgent,
   })
@@ -1701,6 +1727,7 @@ export function buildAgentContext(projectRoot, graphNode, graph, options = {}) {
       capabilityStateRefs: capabilityRefs,
       goalStateRefs: goalRefs,
       connectedResourceRefs,
+      sharedBillboards,
       connectedAgentRefs,
       connectedEventRefs,
       connectedCapabilityRefs,

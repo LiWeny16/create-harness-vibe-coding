@@ -20,6 +20,7 @@ const CHAT_DRIVER_MODULES = {
   cc: () => import('./drivers/claude-stream-json.mjs'),
   codex: () => import('./drivers/codex-appserver.mjs'),
   opencode: () => import('./drivers/opencode-server.mjs'),
+  pi: () => import('./drivers/pi-rpc.mjs'),
 };
 
 /** sessionId -> { sessionId, runtime, driver, midTurn, providerSessionId, projectRoot, session, onSessionReady, onEnded, createdAt } */
@@ -42,11 +43,16 @@ export function hasLiveChatDriver(sessionId) {
 export function getLiveChatDriverMeta(sessionId) {
   const entry = liveDrivers.get(String(sessionId || ''));
   if (!entry) return null;
+  const supportedModes = Array.isArray(entry.driver.supportedModes)
+    ? entry.driver.supportedModes
+    : entry.supportedModes;
   return {
     sessionId: entry.sessionId,
     runtime: entry.runtime,
     midTurn: entry.midTurn,
     providerSessionId: entry.providerSessionId,
+    supportedModes: [...supportedModes],
+    permissionMode: String(entry.driver.permissionMode || entry.permissionMode),
   };
 }
 
@@ -71,6 +77,11 @@ export function registerLiveChatDriver(sessionId, driver, meta = {}) {
     sessionId: id,
     runtime: String(meta.runtime || ''),
     driver,
+    supportedModes: Array.isArray(driver.supportedModes)
+      ? [...new Set(driver.supportedModes.map(String).filter(Boolean))]
+      : [],
+    permissionMode: String(driver.permissionMode || ''),
+    pendingApprovals: new Set(),
     midTurn: false,
     providerSessionId: meta.providerSessionId ? String(meta.providerSessionId) : '',
     projectRoot: meta.projectRoot || null,
@@ -94,14 +105,34 @@ function handleDriverEvent(sessionId, event) {
   if (event && typeof event === 'object') {
     if (event.type !== undefined && event.type !== null) type = String(event.type);
     if (event.payload !== undefined) payload = event.payload;
-    else if (event.data !== undefined) payload = { data: event.data };
+    else if (event.data !== undefined) payload = event.data;
+    else {
+      payload = { ...event };
+      for (const key of ['seq', 'ts', 'type', 'sessionId', 'providerSessionId', 'raw']) delete payload[key];
+    }
   } else {
     payload = { data: event === null || event === undefined ? '' : String(event) };
+  }
+  if (type === 'permission_request' && payload && typeof payload === 'object') {
+    const nested = payload.data && typeof payload.data === 'object' ? payload.data : payload;
+    const request = nested.payload && typeof nested.payload === 'object' ? nested.payload : nested;
+    payload = {
+      requestId: nested.requestId ?? request.requestId ?? payload.requestId,
+      tool: request.tool ?? request.toolName ?? nested.method ?? payload.tool ?? 'tool',
+      input: request.input ?? request.params ?? request.payload ?? payload.input ?? {},
+      ...(request.title || nested.title || payload.title ? { title: request.title || nested.title || payload.title } : {}),
+    };
   }
   if (type === 'turn_started') entry.midTurn = true;
   if (type === 'turn_ended' || type === 'done' || type === 'error') entry.midTurn = false;
   if (type === 'session_ready' && payload && payload.providerSessionId) {
     entry.providerSessionId = String(payload.providerSessionId);
+  }
+  if (type === 'permission_request') {
+    const requestId = payload?.requestId ?? payload?.data?.requestId;
+    if (requestId !== undefined && requestId !== null && String(requestId)) {
+      entry.pendingApprovals.add(String(requestId));
+    }
   }
   const envelope = appendChatEnvelope(entry.projectRoot, entry.session, { type, payload });
   if (type === 'session_ready' && entry.onSessionReady) {
@@ -148,6 +179,9 @@ export async function createChatDriver(runtime, opts = {}) {
     effort: String(opts.effort || ''),
     effortVariant: String(opts.effortVariant || ''),
     providerSessionId: opts.providerSessionId ? String(opts.providerSessionId) : '',
+    permissionMode: String(opts.permissionMode || ''),
+    extensionPath: opts.extensionPath ? String(opts.extensionPath) : '',
+    projectRoot: opts.projectRoot || '',
     onEvent: (event) => handleDriverEvent(sessionId, event),
   });
   registerLiveChatDriver(sessionId, driver, {
@@ -193,13 +227,37 @@ export async function interrupt(sessionId) {
 
 export async function approve(sessionId, requestId, result) {
   const entry = liveDrivers.get(String(sessionId || ''));
-  if (!entry || typeof entry.driver.approve !== 'function') return false;
+  const id = String(requestId || '');
+  if (!entry || !id || !['allow', 'deny'].includes(String(result)) || typeof entry.driver.approve !== 'function') return false;
+  if (!entry.pendingApprovals.has(id)) return false;
+  entry.pendingApprovals.delete(id);
   try {
-    entry.driver.approve(String(requestId || ''), result);
-    return true;
+    const outcome = await entry.driver.approve(id, result);
+    return outcome !== false && outcome?.ok !== false && outcome?.success !== false;
   } catch {
     return false;
   }
+}
+
+export async function setPermissionMode(sessionId, mode) {
+  const entry = liveDrivers.get(String(sessionId || ''));
+  const value = String(mode || '');
+  if (!entry) throw new ChatDriverError('No live chat driver for this session', 'CHAT_DRIVER_NOT_FOUND');
+  const supportedModes = Array.isArray(entry.driver.supportedModes)
+    ? entry.driver.supportedModes
+    : entry.supportedModes;
+  if (!supportedModes.includes(value)) {
+    throw new ChatDriverError(`Permission mode '${value}' is not supported by ${entry.runtime}`, 'CHAT_PERMISSION_MODE_UNSUPPORTED');
+  }
+  if (typeof entry.driver.setPermissionMode !== 'function') {
+    throw new ChatDriverError(`Permission mode changes are not supported by ${entry.runtime}`, 'CHAT_PERMISSION_MODE_UNSUPPORTED');
+  }
+  const result = await entry.driver.setPermissionMode(value);
+  if (result === false || result?.ok === false || result?.success === false) {
+    throw new ChatDriverError(`Runtime did not confirm permission mode '${value}'`, 'CHAT_PERMISSION_MODE_UNCONFIRMED');
+  }
+  entry.permissionMode = String(entry.driver.permissionMode || value);
+  return entry.permissionMode;
 }
 
 export async function dispose(sessionId, opts = {}) {

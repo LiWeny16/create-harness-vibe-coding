@@ -29,6 +29,7 @@ which returns this same table without loading `Harness/MEMORY.md` or entering WF
 | `/wf-ui` | direct command | `/wf-ui` | Start the local Harness backend and browser control panel. |
 | `/wf-init` | direct command | `/wf-init` | Initialize this project against the global Harness runtime (thin bridge; global version is authoritative). |
 | `/wf-search` | direct command | `/wf-search <question>` | Evidence-backed search protocol with stateless validate/render helper; optional --save/--task by controller. |
+| `/wf-extension` | direct command | `/wf-extension list` | Manage optional CLI extensions such as wf-ui, media download, ASR, and VLM through the native wf runtime. |
 
 Source of truth: `Harness/README.md#Skill Commands` plus installed skills under
 `.claude/skills/` (Claude Code and OpenCode adapters) or `.agents/skills/`

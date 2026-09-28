@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-active-alpha",
+  "status": "active",
+  "mode": "direct",
+  "defaultRuntime": "codex",
+  "defaultAgentRuntime": "codex",
+  "tier": "none",
+  "phase": "plan",
+  "gate": null,
+  "project": "default",
+  "tags": [],
+  "createdAt": "2026-01-01T00:00:00.000Z",
+  "startedAt": "2026-01-01T00:00:00.000Z",
+  "closedAt": null,
+  "updatedAt": "2026-01-01T00:00:00.000Z",
+  "activeQuestion": null,
+  "nextAction": "Continue active task.",
+  "acceptance": [],
+  "queues": {
+    "ready": ["task-active-alpha-step-1"],
+    "running": [],
+    "blocked": [],
+    "done": []
+  },
+  "workItems": [],
+  "dispatchLedger": [],
+  "decisions": [],
+  "risks": [],
+  "artifacts": [],
+  "group": "default",
+  "links": {
+    "dependsOn": [],
+    "blocks": ["task-blocked-bravo"],
+    "related": []
+  }
+}

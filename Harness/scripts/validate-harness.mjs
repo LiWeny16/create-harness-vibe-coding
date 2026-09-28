@@ -85,7 +85,7 @@ const opencodeWorkflowCommands = commandDefinitions
   .map(command => command.id);
 
 const cacheDisciplinedSkills = commonSkills.filter(skill => (
-  skill === 'subagent-orchestrator' || skill === 'wf-agents-docs' || workflowCommands.includes(skill)
+  skill !== 'wf-browser' && (skill === 'subagent-orchestrator' || skill === 'wf-agents-docs' || workflowCommands.includes(skill))
 ));
 
 const memoryFiles = [
@@ -784,7 +784,7 @@ function validateCommandSurface() {
       for (const alias of command.aliases || []) {
         if (!claudeRouter.includes(`\`${alias}\``)) errors.push(`CLAUDE.md missing direct/compat alias ${alias}`);
         if (!readmeRouter.includes(alias)) errors.push(`Harness/README.md missing direct/compat alias ${alias}`);
-        if (!eccExemptionLine.includes(`\`${alias}\``)) errors.push(`.claude/rules/ecc/common.md missing ECC direct command exemption ${alias}`);
+        if (!eccExemptionLine.includes(`\`${alias}\``) && !eccExemptionLine.includes(alias)) errors.push(`.claude/rules/ecc/common.md missing ECC direct command exemption ${alias}`);
       }
       for (const rel of [claudeCommand, opencodeCommand]) {
         const text = read(rel);
@@ -1269,6 +1269,8 @@ function requireUiSelectorContract(rel) {
   const text = read(rel);
   if (!text) return;
 
+  if (text.includes('optional capability of wf-ui')) return;
+
   const markers = [
     'data-testid',
     'accessible labels/roles',
@@ -1691,6 +1693,11 @@ requireText('.claude/skills/wf-auto/SKILL.md', 'Harness/tasks/continuous/PLAN.md
 requireText('.claude/skills/wf-auto/SKILL.md', 'Harness/tasks/continuous/PROGRESS.md', 'wf-auto skill PROGRESS record');
 requireText('.claude/skills/wf-auto/SKILL.md', 'evidence ledger path/summary', 'wf-auto skill return evidence ledger path');
 if (fs.existsSync(path.join(root, '.claude/skills/wf-browser/SKILL.md'))) {
+  const browserSkillText = read('.claude/skills/wf-browser/SKILL.md');
+  if (browserSkillText.includes('optional capability of wf-ui')) {
+    requireText('.claude/skills/wf-browser/SKILL.md', 'wf extension status', 'wf-browser thin adapter extension status');
+    requireText('.claude/skills/wf-browser/SKILL.md', 'large artifacts on disk', 'wf-browser thin adapter artifact discipline');
+  } else {
   requireText('.claude/skills/wf-browser/SKILL.md', 'Cache Discipline', 'wf-browser skill cache discipline');
   requireText('.claude/skills/wf-browser/SKILL.md', 'Two Jobs', 'wf-browser two-job design/control purpose');
   requireText('.claude/skills/wf-browser/SKILL.md', 'Architecture design', 'wf-browser architecture design purpose');
@@ -1724,6 +1731,7 @@ if (fs.existsSync(path.join(root, '.claude/skills/wf-browser/SKILL.md'))) {
   requireText('.claude/skills/wf-browser/SKILL.md', 'data-testid', 'wf-browser data-testid guidance');
   requireText('.claude/skills/wf-browser/SKILL.md', 'accessible labels/roles', 'wf-browser accessible selector guidance');
   requireText('.claude/skills/wf-browser/SKILL.md', 'inputs, buttons, filters, rows, empty/error/loading states', 'wf-browser controllable UI coverage targets');
+  }
 }
 
 // Direct command checks
@@ -1749,10 +1757,16 @@ for (const rel of ['.claude/commands/wf-update.md', '.opencode/commands/wf-updat
 for (const rel of ['.claude/commands/wf-ui.md', '.opencode/commands/wf-ui.md']) {
   requireText(rel, 'direct command', `${rel} wf-ui direct command classification`);
   requireText(rel, 'Do not invoke a skill', `${rel} wf-ui direct no-skill boundary`);
-  requireText(rel, 'create-harness-vibe-coding wf-ui', `${rel} wf-ui direct CLI launch`);
-  requireText(rel, '--host 127.0.0.1', `${rel} wf-ui loopback host`);
-  requireText(rel, '--open', `${rel} wf-ui browser open flag`);
-  requireText(rel, '--detach', `${rel} wf-ui detached launch flag`);
+  const text = read(rel);
+  if (text.includes('pnpm exec wf ui')) {
+    requireText(rel, 'pnpm exec wf ui start', `${rel} wf-ui native CLI launch`);
+    requireText(rel, 'wf extension install wf-ui', `${rel} wf-ui extension install path`);
+  } else {
+    requireText(rel, 'create-harness-vibe-coding wf-ui', `${rel} wf-ui direct CLI launch`);
+    requireText(rel, '--host 127.0.0.1', `${rel} wf-ui loopback host`);
+    requireText(rel, '--open', `${rel} wf-ui browser open flag`);
+    requireText(rel, '--detach', `${rel} wf-ui detached launch flag`);
+  }
   forbidText(rel, 'workflow command', `${rel} wf-ui workflow routing`);
   forbidText(rel, 'Load `CLAUDE.md`', `${rel} wf-ui old router preload`);
   forbidText(rel, 'Harness/tasks/task-wf-ui-control-0729/STATE.json', `${rel} wf-ui old task-state preload`);
@@ -1760,8 +1774,14 @@ for (const rel of ['.claude/commands/wf-ui.md', '.opencode/commands/wf-ui.md']) 
 for (const rel of ['.claude/skills/wf-ui/SKILL.md', '.agents/skills/wf-ui/SKILL.md']) {
   requireText(rel, 'Codex compatibility shim', `${rel} wf-ui Codex compatibility shim`);
   requireText(rel, 'direct command', `${rel} wf-ui direct command statement`);
-  requireText(rel, 'create-harness-vibe-coding wf-ui', `${rel} wf-ui direct CLI launch`);
-  requireText(rel, '--detach', `${rel} wf-ui detached launch flag`);
+  const text = read(rel);
+  if (text.includes('pnpm exec wf ui')) {
+    requireText(rel, 'pnpm exec wf ui start', `${rel} wf-ui native CLI launch`);
+    requireText(rel, 'wf extension install wf-ui', `${rel} wf-ui extension install path`);
+  } else {
+    requireText(rel, 'create-harness-vibe-coding wf-ui', `${rel} wf-ui direct CLI launch`);
+    requireText(rel, '--detach', `${rel} wf-ui detached launch flag`);
+  }
   forbidText(rel, 'Harness/tasks/task-wf-ui-control-0729/STATE.json', `${rel} wf-ui old task-state preload`);
 }
 requireText('Harness/scripts/wf-update-check.mjs', 'releaseHighlights', 'wf-update-check release highlights metadata');

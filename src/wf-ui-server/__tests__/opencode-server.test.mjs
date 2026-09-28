@@ -25,9 +25,10 @@ function fakeChild() {
 }
 
 // Fake _spawn whose serve prints its bound URL on stdout (as real `opencode serve` does).
-function urlSpawn(url = 'http://127.0.0.1:45990') {
+function urlSpawn(url = 'http://127.0.0.1:45990', capture = null) {
   const child = fakeChild();
-  return () => {
+  return (cmd, args, opts) => {
+    capture?.({ cmd, args, opts });
     setTimeout(() => child.stdout.emit('data', Buffer.from(`opencode serve listening on ${url}\n`)), 0);
     return child;
   };
@@ -90,6 +91,40 @@ function hangBody(chunks) {
           return Promise.resolve();
         },
       };
+    },
+  };
+}
+
+function liveBody() {
+  const queue = [];
+  let wake = null;
+  let closed = false;
+  const body = {
+    getReader() {
+      return {
+        read() {
+          if (queue.length) return Promise.resolve(queue.shift());
+          if (closed) return Promise.resolve({ done: true });
+          return new Promise((resolve) => { wake = resolve; });
+        },
+        cancel() {
+          closed = true;
+          wake?.({ done: true });
+          wake = null;
+          return Promise.resolve();
+        },
+      };
+    },
+  };
+  return {
+    body,
+    push(text) {
+      const value = { done: false, value: enc.encode(text) };
+      if (wake) {
+        const resolve = wake;
+        wake = null;
+        resolve(value);
+      } else queue.push(value);
     },
   };
 }
@@ -376,22 +411,32 @@ test('T7 session.error maps to error envelope', async () => {
 });
 
 test('T8 /doc detects {response} flavor; approve posts detected shape once', async () => {
+  const events = [];
   const f = makeFetch();
-  installRoutes(f, { sessionId: 'ses_perm', doc: DOC_RESPONSE_FLAVOR });
-  const d = createOpencodeServerDriver({ _spawn: urlSpawn(), _fetch: f });
+  const eventFeed = liveBody();
+  installRoutes(f, {
+    sessionId: 'ses_perm',
+    doc: DOC_RESPONSE_FLAVOR,
+    eventResponder: () => resp(200, {}, { body: eventFeed.body }),
+  });
+  const d = createOpencodeServerDriver({ _spawn: urlSpawn(), _fetch: f, onEvent: (e) => events.push(e) });
   try {
     await d.start();
+    eventFeed.push(sse({ type: 'permission.asked', properties: { id: 'perm_1', type: 'bash' } }));
+    await waitFor(() => events.some((e) => e.type === 'permission_request' && e.requestId === 'perm_1'));
     const r1 = await d.approve('perm_1', 'allow');
     assert.equal(r1.ok, true);
     assert.equal(r1.shape, 'response');
     assert.deepEqual(r1.tried, ['response']);
+    eventFeed.push(sse({ type: 'permission.asked', properties: { id: 'perm_2', type: 'bash' } }));
+    await waitFor(() => events.some((e) => e.type === 'permission_request' && e.requestId === 'perm_2'));
     const r2 = await d.approve('perm_2', false);
     assert.equal(r2.ok, true);
     const posts = f.calls.filter((c) => c.method === 'POST' && c.url.includes('/permissions/'));
     assert.equal(posts.length, 2);
-    assert.deepEqual(posts[0].body, { response: 'allow' });
+    assert.deepEqual(posts[0].body, { response: 'once' });
     assert.equal(posts[0].url.endsWith('/session/ses_perm/permissions/perm_1'), true);
-    assert.deepEqual(posts[1].body, { response: 'deny' });
+    assert.deepEqual(posts[1].body, { response: 'reject' });
   } finally {
     await d.dispose({ immediate: true });
   }
@@ -400,23 +445,29 @@ test('T8 /doc detects {response} flavor; approve posts detected shape once', asy
 test('T9 undetected flavor logs info-error and approve tries {response} then {reply}', async () => {
   const events = [];
   const f = makeFetch();
+  const eventFeed = liveBody();
   installRoutes(f, {
     sessionId: 'ses_fb',
+    eventResponder: () => resp(200, {}, { body: eventFeed.body }),
     permissionHandler: (call) => (call.body && call.body.response !== undefined ? resp(400, {}) : resp(204, {})),
   });
   const d = createOpencodeServerDriver({ _spawn: urlSpawn(), _fetch: f, onEvent: (e) => events.push(e) });
   try {
     await d.start();
     assert.ok(events.some((e) => e.type === 'error' && e.recoverable === true && e.phase === 'permission-detection'));
+    assert.deepEqual(d.supportedModes, ['ask']);
+    await assert.rejects(d.setPermissionMode('allow'), /permission gate is unavailable/);
 
+    eventFeed.push(sse({ type: 'permission.asked', properties: { id: 'perm_3', type: 'bash' } }));
+    await waitFor(() => events.some((e) => e.type === 'permission_request' && e.requestId === 'perm_3'));
     const r = await d.approve('perm_3', 'deny');
     assert.equal(r.ok, true);
     assert.equal(r.shape, 'reply');
     assert.deepEqual(r.tried, ['response', 'reply']);
     const posts = f.calls.filter((c) => c.method === 'POST' && c.url.includes('/permissions/'));
     assert.equal(posts.length, 2);
-    assert.deepEqual(posts[0].body, { response: 'deny' });
-    assert.deepEqual(posts[1].body, { reply: 'deny' });
+    assert.deepEqual(posts[0].body, { response: 'reject' });
+    assert.deepEqual(posts[1].body, { reply: 'reject' });
   } finally {
     await d.dispose({ immediate: true });
   }
@@ -424,16 +475,98 @@ test('T9 undetected flavor logs info-error and approve tries {response} then {re
 
 test('T10 approve total failure emits error envelope', async () => {
   const f = makeFetch();
+  const events = [];
+  const eventFeed = liveBody();
   installRoutes(f, {
     sessionId: 'ses_fail',
+    eventResponder: () => resp(200, {}, { body: eventFeed.body }),
     permissionHandler: () => resp(500, {}),
   });
-  const d = createOpencodeServerDriver({ _spawn: urlSpawn(), _fetch: f });
+  const d = createOpencodeServerDriver({ _spawn: urlSpawn(), _fetch: f, onEvent: (e) => events.push(e) });
   try {
     await d.start();
+    eventFeed.push(sse({ type: 'permission.asked', properties: { id: 'perm_x', type: 'bash' } }));
+    await waitFor(() => events.some((e) => e.type === 'permission_request' && e.requestId === 'perm_x'));
     const r = await d.approve('perm_x', 'allow');
     assert.equal(r.ok, false);
     assert.equal(r.status, 500);
+    assert.equal((await d.approve('stale', 'allow')).ignored, true);
+  } finally {
+    await d.dispose({ immediate: true });
+  }
+});
+
+test('OpenCode host gate enforces ask/allow/deny with correlated REST decisions', async () => {
+  const events = [];
+  const spawned = [];
+  const f = makeFetch();
+  const eventFeed = liveBody();
+  installRoutes(f, {
+    sessionId: 'ses_gate',
+    doc: DOC_RESPONSE_FLAVOR,
+    eventResponder: () => resp(200, {}, { body: eventFeed.body }),
+  });
+  const d = createOpencodeServerDriver({
+    _spawn: urlSpawn('http://127.0.0.1:45990', (call) => spawned.push(call)),
+    _fetch: f,
+    onEvent: (e) => events.push(e),
+  });
+  try {
+    await d.start();
+    assert.deepEqual(d.supportedModes, ['ask', 'allow', 'deny']);
+    assert.deepEqual(JSON.parse(spawned[0].opts.env.OPENCODE_PERMISSION), { '*': 'ask' });
+
+    await d.setPermissionMode('allow');
+    eventFeed.push(
+      sse(
+        { type: 'permission.asked', properties: { id: 'allow_1', type: 'bash', input: { cmd: 'ls' } } },
+        { type: 'permission.asked', properties: { id: 'allow_1', type: 'bash', input: { cmd: 'ls' } } },
+      ),
+    );
+    await waitFor(() => f.calls.some((c) => c.url.endsWith('/permissions/allow_1')));
+    await sleep(30);
+    assert.equal(events.some((e) => e.type === 'permission_request' && e.requestId === 'allow_1'), false);
+    const autoAllow = f.calls.filter((c) => c.url.endsWith('/permissions/allow_1'));
+    assert.equal(autoAllow.length, 1);
+    assert.deepEqual(autoAllow[0].body, { response: 'once' });
+
+    await d.setPermissionMode('deny');
+    eventFeed.push(sse({ type: 'permission.asked', properties: { id: 'deny_1', type: 'bash' } }));
+    await waitFor(() => f.calls.some((c) => c.url.endsWith('/permissions/deny_1')));
+    const autoDeny = f.calls.find((c) => c.url.endsWith('/permissions/deny_1'));
+    assert.deepEqual(autoDeny.body, { response: 'reject' });
+
+    await d.setPermissionMode('ask');
+    eventFeed.push(sse({ type: 'permission.asked', properties: { id: 'ask_1', type: 'bash' } }));
+    await waitFor(() => events.some((e) => e.type === 'permission_request' && e.requestId === 'ask_1'));
+    assert.deepEqual(events.find((e) => e.type === 'permission_request' && e.requestId === 'ask_1').input, {});
+    assert.equal((await d.approve('ask_1', 'allow')).ok, true);
+    assert.equal((await d.approve('ask_1', 'deny')).ignored, true);
+    assert.deepEqual(f.calls.find((c) => c.url.endsWith('/permissions/ask_1')).body, { response: 'once' });
+    assert.equal(f.calls.some((c) => c.method === 'PATCH'), false);
+  } finally {
+    await d.dispose({ immediate: true });
+  }
+});
+
+test('OpenCode host gate stays blocked and emits an error when allow reply fails', async () => {
+  const events = [];
+  const f = makeFetch();
+  const eventFeed = liveBody();
+  installRoutes(f, {
+    sessionId: 'ses_gate_fail',
+    doc: DOC_RESPONSE_FLAVOR,
+    eventResponder: () => resp(200, {}, { body: eventFeed.body }),
+    permissionHandler: () => resp(500, {}),
+  });
+  const d = createOpencodeServerDriver({ _spawn: urlSpawn(), _fetch: f, onEvent: (e) => events.push(e) });
+  try {
+    await d.start();
+    await d.setPermissionMode('allow');
+    eventFeed.push(sse({ type: 'permission.asked', properties: { id: 'allow_failed', type: 'bash' } }));
+    await waitFor(() => events.filter((e) => e.type === 'error').length >= 2);
+    assert.equal(events.some((e) => e.type === 'permission_request' && e.requestId === 'allow_failed'), false);
+    assert.deepEqual(f.calls.find((c) => c.url.endsWith('/permissions/allow_failed')).body, { response: 'once' });
   } finally {
     await d.dispose({ immediate: true });
   }

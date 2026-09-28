@@ -1,0 +1,89 @@
+{
+  "schemaVersion": "wf-research/search-provider-catalog.v1",
+  "version": "2026-09-18",
+  "router": "gpt-researcher",
+  "policy": "Providers are optional and selected after a real health/configuration check; credentials stay in the user secret store, never in wf-search JSON or extension payloads.",
+  "providers": [
+    {
+      "id": "tavily",
+      "kind": "hosted-api",
+      "upstream": "https://github.com/assafelovic/gpt-researcher",
+      "integration": "gpt-researcher retriever",
+      "availability": "config-required",
+      "credentialEnv": ["TAVILY_API_KEY"],
+      "role": "LLM-oriented broad web discovery"
+    },
+    {
+      "id": "brave-search",
+      "kind": "hosted-api",
+      "upstream": "https://github.com/assafelovic/gpt-researcher",
+      "integration": "gpt-researcher retriever",
+      "availability": "config-required",
+      "credentialEnv": ["BRAVE_API_KEY"],
+      "role": "independent web discovery"
+    },
+    {
+      "id": "serper",
+      "kind": "hosted-api",
+      "upstream": "https://github.com/assafelovic/gpt-researcher",
+      "integration": "gpt-researcher retriever",
+      "availability": "config-required",
+      "credentialEnv": ["SERPER_API_KEY"],
+      "role": "Google-result discovery"
+    },
+    {
+      "id": "serpapi",
+      "kind": "hosted-api",
+      "upstream": "https://github.com/assafelovic/gpt-researcher",
+      "integration": "gpt-researcher retriever",
+      "availability": "config-required",
+      "credentialEnv": ["SERPAPI_API_KEY"],
+      "role": "multi-engine result discovery"
+    },
+    {
+      "id": "exa",
+      "kind": "hosted-api",
+      "upstream": "https://github.com/assafelovic/gpt-researcher",
+      "integration": "gpt-researcher retriever",
+      "availability": "config-required",
+      "credentialEnv": ["EXA_API_KEY"],
+      "role": "semantic web discovery"
+    },
+    {
+      "id": "duckduckgo",
+      "kind": "public-search",
+      "upstream": "https://github.com/assafelovic/gpt-researcher",
+      "integration": "gpt-researcher retriever",
+      "availability": "probe-required",
+      "role": "no-key fallback discovery"
+    },
+    {
+      "id": "searxng",
+      "kind": "self-hosted-metasearch",
+      "upstream": "https://github.com/searxng/searxng",
+      "integration": "gpt-researcher SearX retriever or HTTP adapter",
+      "availability": "user-hosted-service",
+      "configKey": "backends.searchProviders.searxng.baseUrl",
+      "install": "Use the upstream Docker/Podman deployment; wf-search does not start a service or embed its host.",
+      "role": "privacy-preserving multi-engine aggregation"
+    },
+    {
+      "id": "firecrawl",
+      "kind": "self-hosted-crawler",
+      "upstream": "https://github.com/firecrawl/firecrawl",
+      "integration": "optional crawler adapter",
+      "availability": "user-hosted-service",
+      "configKey": "backends.searchProviders.firecrawl.baseUrl",
+      "install": "Use the upstream Docker Compose self-host guide; wf-search only consumes a configured endpoint.",
+      "role": "dynamic page crawl and extraction"
+    },
+    {
+      "id": "github",
+      "kind": "first-party-source",
+      "upstream": "https://cli.github.com/",
+      "integration": "GitHub CLI/API",
+      "availability": "probe-required",
+      "role": "repositories, issues, releases, and source code"
+    }
+  ]
+}

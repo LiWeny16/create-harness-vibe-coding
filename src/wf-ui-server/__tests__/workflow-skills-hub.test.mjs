@@ -83,6 +83,79 @@ describe('Workflow Skills Hub', () => {
     assert.ok(result.groups.some(group => group.id === 'family:custom' || group.id === 'family:custom-pack'));
   });
 
+  it('scans all five user runtimes and reports missing conventional project roots without throwing', async () => {
+    const projectRoot = tempProjectRoot();
+    const fakeHome = path.join(projectRoot, 'fake-home');
+    roots.push(projectRoot);
+    fs.mkdirSync(fakeHome, { recursive: true });
+    const previousHome = process.env.HOME;
+    const previousUserProfile = process.env.USERPROFILE;
+    process.env.HOME = fakeHome;
+    process.env.USERPROFILE = fakeHome;
+
+    try {
+      writeSkill(fakeHome, '.codex/skills/codex-fixture', 'name: codex-fixture\ndescription: Codex user skill.');
+      writeSkill(fakeHome, '.claude/skills/claude-fixture', 'name: claude-fixture\ndescription: Claude user skill.');
+      writeSkill(fakeHome, '.config/opencode/skills/opencode-fixture', 'name: opencode-fixture\ndescription: OpenCode user skill.');
+      writeSkill(fakeHome, '.pi/skills/pi-fixture', 'name: pi-fixture\ndescription: Pi user skill.');
+      writeSkill(fakeHome, '.copilot/skills/copilot-fixture', 'name: copilot-fixture\ndescription: Copilot user skill.');
+
+      const hub = await import('../workflow-skills-hub.mjs');
+      const userResult = hub.listSkillsHub(projectRoot, { scope: 'user' });
+      assert.equal(userResult.ok, true);
+      assert.deepEqual(
+        [...new Set(userResult.roots.map(root => root.runtime))].sort(),
+        ['claude', 'codex', 'copilot', 'opencode', 'pi'],
+      );
+      for (const name of ['codex-fixture', 'claude-fixture', 'opencode-fixture', 'pi-fixture', 'copilot-fixture']) {
+        assert.ok(userResult.skills.some(skill => skill.name === name), `${name} should be indexed from its runtime root`);
+      }
+      for (const root of userResult.roots) {
+        assert.equal(typeof root.rootPath, 'string');
+        assert.equal(typeof root.path, 'string');
+        assert.equal(typeof root.exists, 'boolean');
+        assert.equal(root.scope, 'user');
+      }
+
+      const emptyHome = path.join(projectRoot, 'empty-home');
+      fs.mkdirSync(emptyHome, { recursive: true });
+      process.env.HOME = emptyHome;
+      process.env.USERPROFILE = emptyHome;
+      const missingUserResult = hub.listSkillsHub(projectRoot, { scope: 'user' });
+      assert.equal(missingUserResult.ok, true, 'missing runtime skill roots should not throw');
+      assert.deepEqual(
+        [...new Set(missingUserResult.roots.map(root => root.runtime))].sort(),
+        ['claude', 'codex', 'copilot', 'opencode', 'pi'],
+      );
+      assert.ok(missingUserResult.roots.every(root => root.exists === false));
+
+      const projectResult = hub.listSkillsHub(projectRoot, { scope: 'project' });
+      assert.equal(projectResult.ok, true);
+      assert.ok(projectResult.roots.some(root => root.exists === false), 'absent project skill directories must be represented with exists:false');
+      assert.ok(projectResult.roots.every(root => root.scope === 'project'));
+    } finally {
+      if (previousHome === undefined) delete process.env.HOME;
+      else process.env.HOME = previousHome;
+      if (previousUserProfile === undefined) delete process.env.USERPROFILE;
+      else process.env.USERPROFILE = previousUserProfile;
+    }
+  });
+
+  it('groups hyphenated and colon-delimited skill names under their first name family', async () => {
+    const root = tempProjectRoot();
+    roots.push(root);
+    writeSkill(root, '.agents/skills/lark-search', 'name: lark-search\ndescription: Search helper.');
+    writeSkill(root, '.agents/skills/lark-calendar-colon', 'name: lark:calendar\ndescription: Calendar helper.');
+
+    const hub = await import('../workflow-skills-hub.mjs');
+    const result = hub.listSkillsHub(root, { scope: 'project' });
+    const family = result.groups.find(group => group.id === 'family:lark');
+
+    assert.ok(family, 'server grouping should use family:lark for both supported separators');
+    assert.equal(family.kind, 'name-family');
+    assert.deepEqual(new Set(family.skillIds), new Set(['skill:lark-search', 'skill:lark:calendar']));
+  });
+
   it('GET /api/workflow/skills-hub returns a searchable project-scoped hub index', async () => {
     const root = tempProjectRoot();
     roots.push(root);

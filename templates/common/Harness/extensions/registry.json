@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "extensions": [
+    {
+      "id": "wf-ui",
+      "version": "0.1.0",
+      "kind": "package",
+      "defaultInstall": false,
+      "description": "Optional Harness UI/browser control runtime.",
+      "package": {
+        "scope": "@zingspark",
+        "name": "@zingspark/wf-extension-ui",
+        "version": "0.1.0",
+        "manager": "pnpm",
+        "capabilities": ["ui.control", "browser.control", "ui.server"]
+      }
+    },
+    {
+      "id": "wf-search-media",
+      "version": "0.1.0",
+      "kind": "package",
+      "defaultInstall": false,
+      "description": "Optional media download, metadata, and media artifact runtime for wf-search.",
+      "package": {
+        "scope": "@zingspark",
+        "name": "@zingspark/wf-extension-search-media",
+        "version": "0.1.0",
+        "manager": "pnpm",
+        "capabilities": ["search.media.download", "search.media.metadata"]
+      }
+    },
+    {
+      "id": "wf-search-asr",
+      "version": "0.1.0",
+      "kind": "package",
+      "defaultInstall": false,
+      "description": "Optional ASR/transcription runtime for wf-search video evidence.",
+      "package": {
+        "scope": "@zingspark",
+        "name": "@zingspark/wf-extension-search-asr",
+        "version": "0.1.0",
+        "manager": "pnpm",
+        "capabilities": ["search.video.asr"]
+      }
+    },
+    {
+      "id": "wf-search-vlm",
+      "version": "0.1.0",
+      "kind": "package",
+      "defaultInstall": false,
+      "description": "Optional VLM/frame-understanding runtime for wf-search video evidence.",
+      "package": {
+        "scope": "@zingspark",
+        "name": "@zingspark/wf-extension-search-vlm",
+        "version": "0.1.0",
+        "manager": "pnpm",
+        "capabilities": ["search.video.vlm", "search.video.frames"]
+      }
+    },
+    {
+      "id": "wf-search-deep",
+      "version": "0.1.0",
+      "kind": "package",
+      "defaultInstall": false,
+      "description": "Optional bundle for deep source-diverse search and all media/video capabilities.",
+      "package": {
+        "scope": "@zingspark",
+        "name": "@zingspark/wf-extension-search-deep",
+        "version": "0.1.0",
+        "manager": "pnpm",
+        "capabilities": ["search.deep", "search.media.download", "search.video.asr", "search.video.vlm"],
+        "includes": ["wf-search-media", "wf-search-asr", "wf-search-vlm"]
+      }
+    }
+  ]
+}
+

@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-architecture-review-wf-0921",
+  "status": "archived",
+  "mode": "direct",
+  "defaultRuntime": "codex",
+  "defaultAgentRuntime": "codex",
+  "tier": "none",
+  "phase": "archived",
+  "gate": null,
+  "project": "default",
+  "tags": [
+    "architecture-review",
+    "wf",
+    "skills",
+    "read-only",
+    "pi-agent",
+    "w7-correction"
+  ],
+  "createdAt": "2026-09-21T12:06:21.102Z",
+  "startedAt": "2026-09-21T12:06:21.102Z",
+  "closedAt": "2026-09-23T09:10:24.227Z",
+  "updatedAt": "2026-09-23T09:10:38.366Z",
+  "activeQuestion": null,
+  "nextAction": "Review deliverable archived; unresolved legacy mirror policy remains tracked by task-cli-release-hardening-0923.",
+  "acceptance": [
+    "REVIEW.md updated with W7 corrections",
+    "PROGRESS.md updated with W7 summary",
+    "REFERENCES.md updated with W7 evidence pointers",
+    "STATE.json phase updated to verify after W7 correction recheck",
+    "No business code, manifest, skill, hook, or file modified or deleted"
+  ],
+  "queues": {
+    "ready": [],
+    "running": [],
+    "blocked": [],
+    "done": []
+  },
+  "workItems": [],
+  "dispatchLedger": [],
+  "decisions": [
+    {
+      "id": "w7-corrections",
+      "date": "2026-09-21",
+      "summary": "W7 evidence corrections applied: F-001 reclassified as release-policy baseline; F-002 corrected as public CLI (not deletable); F-003 downgraded P1→P2; F-004 split into action-registry (correct) and workflow-map (runtime-only, absent from manifest/template, updater-skipped); F-005/F-006 downgraded P1→P3 (conditional); unrun gates marked INCOMPLETE. Verdict remains YELLOW.",
+      "evidence": [
+        "Harness/tasks/task-architecture-review-wf-0921/REVIEW.md §3 findings index",
+        "Harness/tasks/task-architecture-review-wf-0921/REVIEW.md §10 W7 correction log",
+        "Harness/tasks/task-architecture-review-wf-0921/PROGRESS.md",
+        "Harness/tasks/task-architecture-review-wf-0921/REFERENCES.md"
+      ]
+    }
+  ],
+  "risks": [],
+  "artifacts": [],
+  "group": "default",
+  "links": {
+    "dependsOn": [],
+    "blocks": [],
+    "related": []
+  },
+  "archiveEligibleAt": "2026-09-23T09:10:38.366Z"
+}

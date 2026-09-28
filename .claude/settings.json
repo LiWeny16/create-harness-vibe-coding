@@ -38,6 +38,25 @@
           {
             "type": "command",
             "command": "node -e \"const fs=require('fs'),p=require('path'),cp=require('child_process');let d=process.env.CLAUDE_PROJECT_DIR||process.cwd();for(;;){const s=p.join(d,'Harness','scripts','wf-auto-update-prompt.mjs');if(fs.existsSync(s)){const r=cp.spawnSync(process.execPath,[s,'--format','claude'],{stdio:'inherit',cwd:d,env:process.env});process.exitCode=(r.status==null)?0:r.status;break}const u=p.dirname(d);if(u===d)break;d=u}\""
+          },
+          {
+            "type": "command",
+            "command": "node -e \"const fs=require('fs'),p=require('path'),cp=require('child_process');let d=process.env.CLAUDE_PROJECT_DIR||process.cwd();for(;;){const s=p.join(d,'Harness','scripts','auto-archive-session-start.mjs');if(fs.existsSync(s)){const r=cp.spawnSync(process.execPath,[s],{stdio:'inherit',cwd:d,env:process.env});process.exitCode=(r.status==null)?0:r.status;break}const u=p.dirname(d);if(u===d)break;d=u}\"",
+            "timeout": 20,
+            "statusMessage": "Checking auto-archive eligibility"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"const fs=require('fs'),p=require('path'),cp=require('child_process');let d=process.env.CLAUDE_PROJECT_DIR||process.cwd();for(;;){const s=p.join(d,'Harness','scripts','auto-archive-session-start.mjs');if(fs.existsSync(s)){const r=cp.spawnSync(process.execPath,[s,'--stop'],{stdio:'inherit',cwd:d,env:process.env});process.exitCode=(r.status==null)?0:r.status;break}const u=p.dirname(d);if(u===d)break;d=u}\"",
+            "timeout": 20,
+            "statusMessage": "Closeout auto-archive dry-run"
           }
         ]
       }

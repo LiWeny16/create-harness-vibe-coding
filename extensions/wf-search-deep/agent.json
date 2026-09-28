@@ -1,0 +1,66 @@
+{
+  "schemaVersion": "wf-research/agent-profile.v1",
+  "id": "wf-search-deep",
+  "kind": "subagent",
+  "displayName": "WF Search Deep",
+  "roleTitle": "Deep Researcher",
+  "mode": "read-only",
+  "context": {
+    "include": [
+      "source-catalog.json",
+      "toolchain.json",
+      "search-providers.json",
+      "workflow.json",
+      "adapters.json",
+      "skills/manifest.json",
+      "skills/**/SKILL.md",
+      "wf-search evidence contract"
+    ],
+    "exclude": ["raw cookies", "provider keys", "SSH keys", "full media", "unrelated project memory"]
+  },
+  "stages": ["collect", "understand", "decide", "output"],
+  "skillsManifest": "skills/manifest.json",
+  "tools": [
+    "source-planner",
+    "source-discovery",
+    "search-provider-router",
+    "gpt-researcher",
+    "storm",
+    "browseros-neo",
+    "yt-dlp",
+    "media-download",
+    "platform-youtube",
+    "platform-tiktok",
+    "platform-x",
+    "platform-bilibili",
+    "platform-instagram",
+    "platform-xiaohongshu",
+    "platform-wechat",
+    "gallery-dl",
+    "whisper-large",
+    "vlm-endpoint",
+    "video-asr",
+    "video-vlm",
+    "video-temporal-reader",
+    "comment-reader",
+    "evidence-scorer",
+    "evidence-scoring",
+    "report-renderer"
+  ],
+  "input": {
+    "required": ["question"],
+    "optional": ["seedUrls", "platforms", "recency", "outputFormat", "userConstraints"]
+  },
+  "output": {
+    "schema": "wf-research/result.v1",
+    "mustInclude": ["plan", "operations", "evidence", "claims", "decision", "limitations"],
+    "citationRule": "Every material claim must point to kept evidence or be marked insufficient.",
+    "videoRule": "Transcripts, visual segments, and comments carry timestamps/access scope; raw media never enters the result."
+  },
+  "stopConditions": [
+    "evidence is sufficient and independent",
+    "new operations repeat existing evidence",
+    "access is blocked or user session is unavailable",
+    "all remaining evidence is below the score threshold"
+  ]
+}

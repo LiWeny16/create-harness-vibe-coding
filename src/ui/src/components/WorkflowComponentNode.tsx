@@ -9,6 +9,7 @@ import { fileRefresh } from './workflow/nodeRuntimeClient';
 import MarkdownComponentNode from './MarkdownComponentNode';
 import ExcalidrawComponentNode from './ExcalidrawComponentNode';
 import FileComponentNode from './FileComponentNode';
+import BillboardComponentNode from './BillboardComponentNode';
 import ComponentBrandIcon from './ComponentBrandIcon';
 
 export type WorkflowComponentNodeData = Record<string, unknown> & {
@@ -99,6 +100,8 @@ export default function WorkflowComponentNode({ data, selected }: NodeProps<Work
   const [fileReloadKey, setFileReloadKey] = useState(0);
   const [fileRefreshing, setFileRefreshing] = useState(false);
   const type = (state.type || data.workflowNode.componentType || 'markdown') as WorkflowComponentType;
+  const presentation = state.presentation || data.workflowNode.presentation || '';
+  const isBillboard = type === 'markdown' && presentation === 'billboard';
   const zoom = Math.max(0.05, Number(data.viewportZoom || 1));
   const handleScale = 1 / zoom;
   const inputs = uniqueHandleIds(inputIds(state, type), 'input');
@@ -140,10 +143,11 @@ export default function WorkflowComponentNode({ data, selected }: NodeProps<Work
       data-agent-controlled={data.agentControl?.active ? 'true' : undefined}
       data-agent-control-operation-id={data.agentControl?.active ? data.agentControl.operationId : undefined}
       data-component-type={type}
+      data-presentation={presentation || undefined}
       className="workflow-component-node"
       style={{ '--agent-control-color': data.agentControl?.color || '#22c55e' } as CSSProperties}
       onDoubleClick={(event) => {
-        if (!isBidirectionalResourceNode(type)) return;
+        if (!isBidirectionalResourceNode(type) || isBillboard) return;
         event.stopPropagation();
         setLocalFullscreenRequest(Date.now());
       }}
@@ -223,9 +227,9 @@ export default function WorkflowComponentNode({ data, selected }: NodeProps<Work
       <header className="workflow-component-node-header">
         <div>
           <ComponentBrandIcon type={type} size={15} />
-          <span>{state.title || data.workflowNode.label || type}</span>
+          <span>{isBillboard ? 'Billboard' : state.title || data.workflowNode.label || type}</span>
         </div>
-        <span>{type}</span>
+        <span>{isBillboard ? 'shared updates' : type}</span>
       </header>
 
       {type === 'excalidraw' ? (
@@ -296,6 +300,8 @@ export default function WorkflowComponentNode({ data, selected }: NodeProps<Work
             </div>
           )}
         </div>
+      ) : isBillboard ? (
+        <BillboardComponentNode state={state} />
       ) : (
         <MarkdownComponentNode
           state={state}

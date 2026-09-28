@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-01-01T00:00:00.000Z",
+  "sourceOfTruth": "Harness/tasks/_archive/**/STATE.json",
+  "tasks": [
+    {
+      "id": "task-archive-delta",
+      "project": "default",
+      "group": "default",
+      "title": "Archived task for routing",
+      "status": "closed",
+      "mode": "direct",
+      "wfManaged": false,
+      "resumeRequired": false,
+      "phase": "verified",
+      "tags": [],
+      "createdAt": "2025-12-01T00:00:00.000Z",
+      "startedAt": "2025-12-01T00:00:00.000Z",
+      "updatedAt": "2025-12-05T00:00:00.000Z",
+      "closedAt": "2025-12-05T00:00:00.000Z",
+      "dependsOn": [],
+      "blocks": [],
+      "archivePath": "Harness/tasks/_archive/2026/01/01/task-archive-delta"
+    }
+  ]
+}

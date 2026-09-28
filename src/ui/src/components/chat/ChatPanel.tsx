@@ -74,8 +74,22 @@ export default function ChatPanel({ sessionId, live, canSendInput }: Props) {
             {t('Agent working…')}
           </span>
         )}
+        <label style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 10, fontWeight: 700, color: 'var(--muted)' }}>
+          {t('Permission mode')}
+          <select
+            data-testid="chat-permission-mode"
+            aria-label={t('Permission mode')}
+            value={chat.permissionMode}
+            disabled={chat.supportedModes.length === 0 || chat.permissionModePending}
+            onChange={event => chat.requestPermissionMode(event.target.value)}
+            style={{ minHeight: 26, maxWidth: 160, padding: '2px 6px', fontSize: 10, border: '1px solid var(--border)', borderRadius: 'var(--radius)', background: '#fff', color: 'var(--fg)' }}
+          >
+            {chat.supportedModes.length === 0 && <option value="">{t('Loading…')}</option>}
+            {chat.supportedModes.map(mode => <option key={mode} value={mode}>{mode}</option>)}
+          </select>
+        </label>
         {!live && (
-          <span style={{ marginLeft: 'auto', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+          <span style={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
             {t('session stopped')}
           </span>
         )}
@@ -85,6 +99,11 @@ export default function ChatPanel({ sessionId, live, canSendInput }: Props) {
           </span>
         )}
       </div>
+      {chat.permissionModeError && (
+        <div data-testid="chat-permission-mode-error" role="alert" style={{ padding: '5px 10px', borderBottom: '1px solid #fecaca', background: '#fef2f2', color: '#991b1b', fontSize: 11 }}>
+          {chat.permissionModeError}
+        </div>
+      )}
       <MessageList
         messages={chat.messages}
         tools={chat.tools}

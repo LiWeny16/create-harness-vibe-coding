@@ -23,6 +23,7 @@ import { randomUUID } from 'node:crypto';
  */
 
 const ASK_USER_TOOL = /ask[-_]?user/i;
+const SUPPORTED_MODES = Object.freeze(['default', 'acceptEdits', 'plan', 'bypassPermissions']);
 
 function extractArgValue(args, flag) {
   for (let i = 0; i < args.length; i++) {
@@ -45,11 +46,13 @@ export function createClaudeDriver(options = {}) {
     model,
     effort = '',
     providerSessionId = null,
+    permissionMode = 'default',
     onEvent = () => {},
     _spawn = nodeSpawn,
     _graceMs = 300,
     _killGraceMs = 300,
     _uuid = () => randomUUID(),
+    _modeRequestTimeoutMs = 5000,
   } = options;
 
   let seq = 0;
@@ -59,9 +62,11 @@ export function createClaudeDriver(options = {}) {
   let sessionEmitted = false;
   let inTurn = false;
   let doneEmitted = false;
+  let currentPermissionMode = String(permissionMode || 'default');
   let stderrTail = '';
   let closePromise = null;
   const pendingPermissions = new Set();
+  const pendingModeRequests = new Map();
 
   const emit = (type, payload) => {
     seq += 1;
@@ -218,6 +223,21 @@ export function createClaudeDriver(options = {}) {
       case 'control_request':
         handleControlRequest(frame);
         break;
+      case 'control_response': {
+        const response = frame.response && typeof frame.response === 'object' ? frame.response : {};
+        const requestId = response.request_id ?? frame.request_id ?? response.requestId ?? frame.requestId;
+        const pending = requestId == null ? null : pendingModeRequests.get(String(requestId));
+        if (!pending) break;
+        pendingModeRequests.delete(String(requestId));
+        clearTimeout(pending.timer);
+        if (response.subtype === 'success' && !response.error && !frame.error) {
+          currentPermissionMode = pending.mode;
+          pending.resolve(true);
+        } else {
+          pending.reject(new Error(String(response.error?.message || frame.error?.message || 'Claude rejected the permission mode change')));
+        }
+        break;
+      }
       default:
         break;
     }
@@ -319,17 +339,40 @@ export function createClaudeDriver(options = {}) {
   }
 
   function setPermissionMode(mode) {
-    return writeLine({
-      type: 'control_request',
-      request_id: _uuid(),
-      subtype: 'set_permission_mode',
-      mode,
+    const value = String(mode || '');
+    if (!SUPPORTED_MODES.includes(value)) return Promise.reject(new Error(`unsupported Claude permission mode: ${value}`));
+    if (!started || disposed || !child) return Promise.reject(new Error('Claude driver is not running'));
+    const requestId = String(_uuid());
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        if (!pendingModeRequests.delete(requestId)) return;
+        reject(new Error('Claude did not confirm the permission mode change before timeout'));
+      }, _modeRequestTimeoutMs);
+      pendingModeRequests.set(requestId, { mode: value, timer, resolve, reject });
+      if (!writeLine({
+        type: 'control_request',
+        request_id: requestId,
+        request: { subtype: 'set_permission_mode', mode: value },
+      })) {
+        clearTimeout(timer);
+        pendingModeRequests.delete(requestId);
+        reject(new Error('Could not send permission mode request to Claude'));
+      }
     });
+  }
+
+  function rejectPendingModeRequests(message) {
+    for (const pending of pendingModeRequests.values()) {
+      clearTimeout(pending.timer);
+      pending.reject(new Error(message));
+    }
+    pendingModeRequests.clear();
   }
 
   async function dispose() {
     if (disposed) return onceClose();
     disposed = true;
+    rejectPendingModeRequests('Claude driver disposed before confirming permission mode');
     if (!started || !child) return;
     try {
       if (child.stdin && !child.stdin.destroyed) child.stdin.end();
@@ -352,6 +395,8 @@ export function createClaudeDriver(options = {}) {
   return {
     runtime: 'claude',
     transport: 'stream-json',
+    supportedModes: SUPPORTED_MODES,
+    get permissionMode() { return currentPermissionMode; },
     get pid() {
       return child && child.pid != null ? child.pid : null;
     },

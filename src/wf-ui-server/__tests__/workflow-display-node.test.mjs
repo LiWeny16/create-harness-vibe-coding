@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { makeHarnessTempRoot } from '../../../tests/support/temp-root.js';
 import { createComponentNode, getComponentNode, acquireLock } from '../component-node-store.mjs';
 import { write as displayWrite, read as displayRead, renderHtml, reportHtmlPath, defaultDisplayTemplate, DISPLAY_USAGE } from '../workflow-node-types/display-node.mjs';
 import { renderSceneSvg } from '../excalidraw-svg.mjs';

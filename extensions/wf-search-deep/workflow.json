@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "wf-research/workflow.v1",
+  "id": "wf-search-deep",
+  "controller": "wf-search",
+  "subagent": "wf-search-deep",
+  "stages": [
+    { "id": "collect", "purpose": "plan the question into facets, select healthy search providers, and collect first-party, code, and social evidence", "skills": ["source-discovery", "search-provider-router"], "outputs": ["operations", "candidate evidence", "provider decisions"] },
+    { "id": "understand", "purpose": "read text and media; use platform skills to acquire media, then captions/ASR, bounded visual inspection, and comments", "skills": ["media-download", "platform-youtube", "platform-tiktok", "platform-x", "platform-bilibili", "platform-instagram", "platform-xiaohongshu", "platform-wechat", "video-asr", "video-vlm", "comment-reader"], "outputs": ["transcript", "visualSegments", "comments"] },
+    { "id": "decide", "purpose": "deduplicate, score relevance/directness/authority/recency/independence, detect contradictions, discard weak evidence, and replan gaps", "skills": ["evidence-scoring"], "outputs": ["kept evidence", "discarded evidence", "claims"] },
+    { "id": "output", "purpose": "render a table with conclusion, confidence, evidence, source access, and limitations", "outputs": ["wf-research/result.v1", "markdown report"] }
+  ],
+  "videoPolicy": {
+    "globalPass": "Use transcript anchors, scene boundaries, low-rate frames, and semantic retrieval to locate candidate intervals.",
+    "localPass": "Ask the VLM for dense frames only inside candidate intervals; return visual segments with absolute timestamps.",
+    "contextPolicy": "Pass compact timestamped observations and citations to the reasoning model; never pass the full media blob by default.",
+    "maxRounds": 3,
+    "globalMaxFrames": 24,
+    "localMaxFrames": 48,
+    "maxVisualTokens": 6000,
+    "timestampMapping": "Preserve absolute source milliseconds when clips are cropped; include clipStartMs and padding in adapter metadata.",
+    "replanWhen": ["candidate interval has no supporting visual evidence", "transcript and visual evidence contradict", "coverage remains below the claim requirement"]
+  },
+  "replanPolicy": {
+    "trigger": ["no new evidence", "missing required facet", "contradiction", "all sources discarded", "access failure"],
+    "stop": ["sufficient independent evidence", "platform boundary reached", "user stops"]
+  }
+}

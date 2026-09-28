@@ -50,13 +50,7 @@ function scopedTaskDirectory(root, taskId, { requireState = true } = {}) {
 }
 
 export const SCHEMA_VERSION = 1;
-export const BUDGETS = Object.freeze({
-  quick: Object.freeze({ maxSearches: 2, maxReads: 3 }),
-  standard: Object.freeze({ maxSearches: 6, maxReads: 10 }),
-  deep: Object.freeze({ maxSearches: 12, maxReads: 20 }),
-});
 const MODES = new Set(['fact', 'verify', 'compare', 'troubleshoot']);
-const DEPTHS = new Set(Object.keys(BUDGETS));
 const OP_KINDS = new Set(['search', 'read']);
 const OUTCOMES = new Set(['success', 'failed', 'unavailable']);
 const SOURCE_TYPES = new Set(['official', 'source-code', 'issue', 'paper', 'community', 'news', 'other']);
@@ -112,31 +106,17 @@ export function normalizeSourceUrl(value) {
   for (const key of [...url.searchParams.keys()]) if (TRACKING_RE.test(key)) url.searchParams.delete(key);
   return url.toString();
 }
-function validateOverrides(errors, constraints, depth) {
-  if (constraints === undefined) return {};
-  if (!object(constraints)) { typeError(errors, constraints, 'constraints', 'an object'); return {}; }
-  if (constraints.overrides === undefined) return {};
-  if (!object(constraints.overrides)) { typeError(errors, constraints.overrides, 'constraints.overrides', 'an object'); return {}; }
-  const base = BUDGETS[depth] || BUDGETS.standard;
-  for (const [key, value] of Object.entries(constraints.overrides)) {
-    if (!['maxSearches', 'maxReads'].includes(key)) errors.push(issue('WFR-OVR001', `constraints.overrides.${key}`, `unknown budget override: ${key}`));
-    else if (!Number.isInteger(value) || value < 0 || value > base[key]) errors.push(issue(value > base[key] ? 'WFR-OVR002' : 'WFR-OVR001', `constraints.overrides.${key}`, `${key} must be a non-negative integer no greater than ${base[key]}`));
-  }
-  return constraints.overrides;
-}
 
 export function validateResearchResult(input) {
-  if (!object(input)) return { ok: false, errors: [issue('WFR-TYPE001', '$', 'research result must be an object')], warnings: [], normalized: input, summary: { overBudget: false } };
+  if (!object(input)) return { ok: false, errors: [issue('WFR-TYPE001', '$', 'research result must be an object')], warnings: [], normalized: input, summary: {} };
   const result = normalize(input); const errors = []; const warnings = [];
   if (result.schemaVersion !== SCHEMA_VERSION) errors.push(issue('WFR-SCHEMA001', 'schemaVersion', 'schemaVersion must be 1'));
   if (!nonEmpty(result.question, 500)) errors.push(issue('WFR-REQ001', 'question', 'question must be a non-empty string of at most 500 characters'));
-  enumError(errors, result.mode, 'mode', MODES); enumError(errors, result.depth, 'depth', DEPTHS);
+  enumError(errors, result.mode, 'mode', MODES);
   if (!validDate(result.checkedAt)) errors.push(issue('WFR-DATE001', 'checkedAt', 'checkedAt must be a valid date'));
   if (!object(result.constraints)) errors.push(issue(result.constraints === undefined ? 'WFR-REQ001' : 'WFR-TYPE001', 'constraints', 'constraints must be an object'));
   if (!nonEmpty(result.stopReason, 1000)) errors.push(issue('WFR-REQ001', 'stopReason', 'stopReason must be a non-empty string of at most 1000 characters'));
   if (!Array.isArray(result.limitations) || result.limitations.some(item => !nonEmpty(item, 1000))) errors.push(issue(result.limitations === undefined ? 'WFR-REQ001' : 'WFR-TYPE001', 'limitations', 'limitations must be an array of non-empty strings'));
-  const base = BUDGETS[result.depth] || BUDGETS.standard; const overrides = validateOverrides(errors, result.constraints, result.depth);
-  const limits = { maxSearches: overrides.maxSearches ?? base.maxSearches, maxReads: overrides.maxReads ?? base.maxReads };
   for (const field of ['operations', 'sources', 'claims']) if (!Array.isArray(result[field])) typeError(errors, result[field], field, 'an array');
   const operations = Array.isArray(result.operations) ? result.operations : []; const sources = Array.isArray(result.sources) ? result.sources : []; const claims = Array.isArray(result.claims) ? result.claims : [];
   unique(errors, operations, 'operations'); unique(errors, sources, 'sources'); unique(errors, claims, 'claims');
@@ -170,9 +150,8 @@ export function validateResearchResult(input) {
     if (claim.kind === 'community-observation' && /\b(all|every|consensus|everyone|community agrees)\b/i.test(claim.text || '')) warnings.push(issue('WFR-COM001', `${p}.text`, 'community observation may exceed its observed scope'));
   }
   if (hasCycle(claims)) errors.push(issue('WFR-REF002', 'claims', 'claim dependency cycle detected'));
-  const searchCount = operations.filter(op => op?.kind === 'search').length; const readCount = operations.filter(op => op?.kind === 'read').length; const overBudget = searchCount > limits.maxSearches || readCount > limits.maxReads; if (overBudget) errors.push(issue('WFR-EBT001', 'operations', `operation budget exceeded: searches ${searchCount}/${limits.maxSearches}, reads ${readCount}/${limits.maxReads}`));
   if (!['complete', 'incomplete'].includes(result.status)) errors.push(issue('WFR-ENUM001', 'status', 'status must be complete or incomplete')); for (const claim of claims) if (claim?.importance === 'major' && ['disputed', 'insufficient'].includes(claim.status) && result.status === 'complete') errors.push(issue('WFR-STA001', 'status', 'complete reports cannot contain an unresolved disputed or insufficient major claim'));
-  return { ok: errors.length === 0, errors, warnings, normalized: result, summary: { mode: result.mode, depth: result.depth, operations: operations.length, sources: sources.length, claims: claims.length, status: result.status, overBudget } };
+  return { ok: errors.length === 0, errors, warnings, normalized: result, summary: { mode: result.mode, operations: operations.length, sources: sources.length, claims: claims.length, status: result.status } };
 }
 
 function plain(value) { return String(value ?? '').replace(/\[([^\]]+)\]\((?:[^()]|\([^)]*\))*\)/g, '$1').replace(/<[^>]*>/g, '').replace(/javascript\s*:/gi, 'unsafe:'); }

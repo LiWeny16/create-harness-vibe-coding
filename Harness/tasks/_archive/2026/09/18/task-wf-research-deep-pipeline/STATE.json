@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-wf-research-deep-pipeline",
+  "status": "archived",
+  "mode": "direct",
+  "defaultRuntime": "codex",
+  "defaultAgentRuntime": "codex",
+  "tier": "none",
+  "phase": "archived",
+  "gate": null,
+  "project": "default",
+  "tags": [
+    "wf-search",
+    "research",
+    "video",
+    "subagent"
+  ],
+  "createdAt": "2026-09-18T04:53:34.570Z",
+  "startedAt": "2026-09-18T04:53:34.570Z",
+  "closedAt": "2026-09-18T06:08:02.990Z",
+  "updatedAt": "2026-09-18T06:08:26.666Z",
+  "activeQuestion": null,
+  "nextAction": "Design, implement, and verify wf-research as a deep research pipeline: curated source catalog, tool/runtime adapters, dedicated search subagent contract, video visual+ASR+comments evidence, scoring and decision output, and a benchmark research run on VLM video temporal understanding/token efficiency.",
+  "acceptance": [],
+  "queues": {
+    "ready": [],
+    "running": [],
+    "blocked": [],
+    "done": []
+  },
+  "workItems": [],
+  "dispatchLedger": [],
+  "decisions": [],
+  "risks": [],
+  "artifacts": [],
+  "group": "default",
+  "links": {
+    "dependsOn": [],
+    "blocks": [],
+    "related": []
+  }
+}

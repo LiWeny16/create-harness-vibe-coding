@@ -1,0 +1,12 @@
+{
+  "url": "https://github.com/assafelovic/gpt-researcher",
+  "title": "GPT Researcher",
+  "version": "main@2026-09-18",
+  "license": "Apache-2.0",
+  "reason": "Reuse its planner/executor/source-tracking pattern as an optional research-engine adapter; keep Harness ownership of the result schema and evidence scoring.",
+  "checkedAt": "2026-09-18T00:00:00Z",
+  "sourceType": "official",
+  "decision": "adapt",
+  "acIds": ["AC-001", "AC-003", "AC-004"],
+  "recheckTrigger": "Upstream API, install method, or license changes"
+}

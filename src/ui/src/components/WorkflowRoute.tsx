@@ -102,6 +102,7 @@ import {
 import WorkspaceExplorerPanel from './WorkspaceExplorerPanel';
 import WorkflowNodeSettingsPanel from './WorkflowNodeSettingsPanel';
 import AgentNodeSettings from './workflow/AgentNodeSettings';
+import ChatPanel from './chat/ChatPanel';
 import WorkflowComponentNode from './WorkflowComponentNode';
 import type { WorkflowComponentFlowNode } from './WorkflowComponentNode';
 import WorkflowEventNode from './WorkflowEventNode';
@@ -122,8 +123,8 @@ import type {
   WorkflowSkillsOverlayAgent,
   WorkflowSkillsOverlayGroup,
   WorkflowSkillsOverlayGroupRow,
+  WorkflowSkillsOverlayFamily,
   WorkflowSkillsOverlayHub,
-  WorkflowSkillsOverlayPack,
   WorkflowSkillsOverlaySkill,
 } from './WorkflowSkillsHubOverlay';
 import NodeLoadingPlaceholder from './workflow/NodeLoadingPlaceholder';
@@ -139,22 +140,21 @@ import {
   deleteEdge as deleteRuntimeEdge,
   executeNodeActionResponse as executeRuntimeNodeAction,
   fetchMcpHub,
-  fetchSkillsMarket,
   fetchSkillsHub,
   fetchNode as fetchRuntimeNode,
   fetchWorkflowComposition,
-  installSkillsMarketPack,
   patchNodeStateResponse as patchRuntimeNodeState,
   type WorkflowMcpHubResponse,
-  type WorkflowSkillsMarketPack,
-  type WorkflowSkillsMarketResponse,
   type WorkflowSkillsHubResponse,
   type WorkflowRuntimeNode,
   type WorkflowCompositionCapsuleProjection,
   type WorkflowCompositionSnapshot,
 } from './workflow/nodeRuntimeClient';
 
-type Props = { onSelectSession: (sessionId: string) => void };
+type Props = {
+  onSelectSession: (sessionId: string) => void;
+  activeSessionId?: string | null;
+};
 
 type CanvasNode = WorkflowNode & {
   x: number;
@@ -168,11 +168,11 @@ type CanvasNode = WorkflowNode & {
   goalState?: WorkflowGoalNodeState;
 };
 
-type NodeMode = 'card' | 'terminal';
+type NodeMode = 'card' | 'terminal' | 'chat';
 type AgentKind = 'main' | 'subagent';
 type CreateNodeKind = CreateNodeCreateMode;
 type CapabilityHubKind = 'skills' | 'mcp';
-type SkillsHubTab = 'installed' | 'market' | 'groups';
+type SkillsHubTab = 'installed' | 'groups';
 type CapabilityHubState = {
   kind: CapabilityHubKind;
   origin: 'create-panel' | 'canvas-menu' | 'agent-menu' | 'agent-settings' | 'node-config';
@@ -347,6 +347,7 @@ type ComponentNodeOverride = {
 
 type NodeCallbacks = {
   onOpenSession: (sessionId: string) => void;
+  activeSessionId?: string | null;
   onOpenConfig: (nodeId: string) => void;
   onStartNode: (nodeId: string) => void;
   onStopNode: (nodeId: string) => void;
@@ -1872,7 +1873,9 @@ function findCapsuleEdgeForConnection(
 }
 
 function fallbackNodeVisualSize(node: CanvasNode, nodeModes?: Record<string, NodeMode>): NodeVisualSize {
-  if (node.sessionId && nodeModes?.[node.id] === 'terminal') {
+  const persistedMode = node.uiMode ?? node.config?.uiMode;
+  const mode = nodeModes?.[node.id] ?? (persistedMode === 'chat' && isLiveStatus(node.status) ? 'chat' : 'card');
+  if (node.sessionId && (mode === 'terminal' || mode === 'chat')) {
     return { width: TERMINAL_NODE_W, height: TERMINAL_NODE_H };
   }
   if (isComponentNode(node)) {
@@ -2291,6 +2294,7 @@ function componentNodeFromState(state: WorkflowComponentNodeState): WorkflowNode
     kind: 'component-node',
     componentType: state.type,
     type: state.type,
+    ...(state.presentation ? { presentation: state.presentation } : {}),
     level: 0,
     status: 'ready',
     lifecycle: 'stateful',
@@ -2345,6 +2349,7 @@ function componentStateFromRuntime(
     revision,
     statePath: String(runtimeNode.stateRef?.path || raw.statePath || previous?.statePath || defaultState.statePath),
     markdown: raw.markdown !== undefined ? String(raw.markdown) : previous?.markdown ?? defaultState.markdown,
+    presentation: String(raw.presentation || runtimeNode.presentation || previous?.presentation || ''),
     scene: raw.scene !== undefined ? raw.scene : previous?.scene ?? defaultState.scene,
     file: raw.file !== undefined ? raw.file : previous?.file ?? defaultState.file,
     observableInputs: Array.isArray(raw.observableInputs)
@@ -3759,9 +3764,13 @@ function toFlowNodes(
         draggable: true,
       } satisfies WorkflowGoalFlowNode;
     }
-    const mode: NodeMode = node.sessionId && nodeModes[node.id] === 'terminal' ? 'terminal' : 'card';
-    const width = mode === 'terminal' ? TERMINAL_NODE_W : node.width;
-    const height = mode === 'terminal' ? TERMINAL_NODE_H : node.height;
+    const persistedMode = node.uiMode ?? node.config?.uiMode;
+    const mode: NodeMode = node.sessionId
+      ? nodeModes[node.id] ?? (persistedMode === 'chat' && isLiveStatus(node.status) ? 'chat' : 'card')
+      : 'card';
+    const expanded = mode === 'terminal' || mode === 'chat';
+    const width = expanded ? TERMINAL_NODE_W : node.width;
+    const height = expanded ? TERMINAL_NODE_H : node.height;
     const capsule = capsuleByNodeId.get(node.id);
     return {
       id: node.id,
@@ -3851,6 +3860,7 @@ function sameFlowNodes(a: FlowNode[], b: FlowNode[]) {
     if (leftData.stopping !== rightData.stopping) return false;
     if (leftData.deleting !== rightData.deleting) return false;
     if (leftData.viewportZoom !== rightData.viewportZoom) return false;
+    if (leftData.activeSessionId !== rightData.activeSessionId) return false;
     const leftNode = leftData.workflowNode;
     const rightNode = rightData.workflowNode;
     // Client-only loading placeholders carry no workflowNode. Their flow-node
@@ -3957,15 +3967,15 @@ function useAutoLoadedWorkflow() {
   return { workflow, runtimes, tasks, projectRoot, loading, error, setError, reload: load };
 }
 
-export default function WorkflowRoute({ onSelectSession }: Props) {
+export default function WorkflowRoute({ onSelectSession, activeSessionId }: Props) {
   return (
     <ReactFlowProvider>
-      <WorkflowRouteInner onSelectSession={onSelectSession} />
+      <WorkflowRouteInner onSelectSession={onSelectSession} activeSessionId={activeSessionId} />
     </ReactFlowProvider>
   );
 }
 
-function WorkflowRouteInner({ onSelectSession }: Props) {
+function WorkflowRouteInner({ onSelectSession, activeSessionId }: Props) {
   const t = useT();
   const { workflow, runtimes, tasks, projectRoot, loading, error, setError, reload } = useAutoLoadedWorkflow();
   const [compositionSnapshot, setCompositionSnapshot] = useState<WorkflowCompositionSnapshot | null>(null);
@@ -4055,11 +4065,6 @@ function WorkflowRouteInner({ onSelectSession }: Props) {
   const [skillsHub, setSkillsHub] = useState<WorkflowSkillsHubResponse | null>(null);
   const [skillsHubLoading, setSkillsHubLoading] = useState(false);
   const [skillsHubError, setSkillsHubError] = useState('');
-  const [skillsMarket, setSkillsMarket] = useState<WorkflowSkillsMarketResponse | null>(null);
-  const [skillsMarketLoading, setSkillsMarketLoading] = useState(false);
-  const [skillsMarketError, setSkillsMarketError] = useState('');
-  const [skillsMarketInstallTarget, setSkillsMarketInstallTarget] = useState('');
-  const [skillsMarketBusyPackId, setSkillsMarketBusyPackId] = useState('');
   const [mcpHub, setMcpHub] = useState<WorkflowMcpHubResponse | null>(null);
   const [mcpHubLoading, setMcpHubLoading] = useState(false);
   const [mcpHubError, setMcpHubError] = useState('');
@@ -4565,35 +4570,6 @@ function WorkflowRouteInner({ onSelectSession }: Props) {
   }, [capabilityHub, capabilityHubSearch, t]);
 
   useEffect(() => {
-    const marketVisible = (capabilityHub?.kind === 'skills' && skillsHubTab === 'market')
-      || (skillsOverlay.open && skillsOverlay.mode === 'hub');
-    if (!marketVisible) return;
-    let cancelled = false;
-    setSkillsMarketLoading(true);
-    setSkillsMarketError('');
-    fetchSkillsMarket(capabilityHubSearch)
-      .then(result => {
-        if (cancelled) return;
-        setSkillsMarket(result);
-        const defaultTarget = result.installTargets.find(target => target.default)?.id
-          || result.installTargets[0]?.id
-          || 'project-agents';
-        setSkillsMarketInstallTarget(current => result.installTargets.some(target => target.id === current) ? current : defaultTarget);
-      })
-      .catch((e: any) => {
-        if (cancelled) return;
-        setSkillsMarket(null);
-        setSkillsMarketError(e?.message || t('Failed to load Skills Market'));
-      })
-      .finally(() => {
-        if (!cancelled) setSkillsMarketLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [capabilityHub, capabilityHubSearch, skillsHubTab, skillsOverlay.mode, skillsOverlay.open, t]);
-
-  useEffect(() => {
     if (!capabilityHub || capabilityHub.kind !== 'mcp') return;
     let cancelled = false;
     setMcpHubLoading(true);
@@ -4978,7 +4954,10 @@ function WorkflowRouteInner({ onSelectSession }: Props) {
       setShowConfig(true);
       return;
     }
-    const next = nodeModes[nodeId] === 'terminal' ? 'card' : 'terminal';
+    const current = nodeModes[nodeId] ?? ((node.uiMode ?? node.config?.uiMode) === 'chat' ? 'chat' : 'card');
+    const next = current === 'card'
+      ? ((node.uiMode ?? node.config?.uiMode) === 'chat' ? 'chat' : 'terminal')
+      : 'card';
     setNodeModes(current => ({ ...current, [nodeId]: next }));
     setSelectedNodeId(nodeId);
   }, [canvasNodeById, nodeModes]);
@@ -5306,6 +5285,7 @@ function WorkflowRouteInner({ onSelectSession }: Props) {
 
   const callbacks = useMemo(() => ({
     onOpenSession: onSelectSession,
+    activeSessionId,
     onOpenConfig: openConfigForNode,
     onStartNode: startNode,
     onStopNode: stopNode,
@@ -5320,7 +5300,7 @@ function WorkflowRouteInner({ onSelectSession }: Props) {
         return next;
       });
     },
-  }), [onSelectSession, openConfigForNode, startNode, stopNode, requestDeleteNode, toggleNodeMode, saveComponentNode, setFileChangedNodeIds]);
+  }), [activeSessionId, onSelectSession, openConfigForNode, startNode, stopNode, requestDeleteNode, toggleNodeMode, saveComponentNode, setFileChangedNodeIds]);
 
   const applyNodeConfigUpdate = useCallback((
     nodeId: string,
@@ -6188,6 +6168,7 @@ function WorkflowRouteInner({ onSelectSession }: Props) {
     options: {
       position?: GraphPosition;
       title?: string;
+      presentation?: string;
       markdown?: string;
       scene?: WorkflowComponentNodeState['scene'];
       file?: WorkflowComponentNodeState['file'];
@@ -6208,7 +6189,7 @@ function WorkflowRouteInner({ onSelectSession }: Props) {
       occupied: canvasNodes.map(node => nodeRect(node, undefined, nodeModes, flowNodeVisualSizesRef.current)),
     });
     const defaultTitle = type === 'markdown'
-      ? 'Markdown Notes'
+      ? (options.presentation === 'billboard' ? 'Team Billboard' : 'Markdown Notes')
       : type === 'file'
         ? (options.file?.name || options.file?.path?.split('/').pop() || 'File Node')
         : 'Diagram';
@@ -6216,6 +6197,7 @@ function WorkflowRouteInner({ onSelectSession }: Props) {
     try {
       const result = await createRuntimeNode({
         type,
+        ...(options.presentation ? { presentation: options.presentation } : {}),
         title: options.title || defaultTitle,
         position,
         ...(options.markdown !== undefined ? { markdown: options.markdown } : {}),
@@ -6367,6 +6349,14 @@ function WorkflowRouteInner({ onSelectSession }: Props) {
     if (mode === 'markdown') {
       createComponentNode('markdown', { position: { x: createPanel.flowX, y: createPanel.flowY } })
         .catch((e: any) => setError(e?.message || t('Failed to create Markdown node')));
+      return;
+    }
+    if (mode === 'billboard') {
+      createComponentNode('markdown', {
+        position: { x: createPanel.flowX, y: createPanel.flowY },
+        title: 'Team Billboard',
+        presentation: 'billboard',
+      }).catch((e: any) => setError(e?.message || t('Failed to create Billboard')));
       return;
     }
     if (mode === 'diagram') {
@@ -6586,60 +6576,26 @@ function WorkflowRouteInner({ onSelectSession }: Props) {
     }
   }, [capabilityHub?.createPosition, capabilityHubTargetAgent, createSkillGroupAtPosition, skillsOverlay.createPosition, skillsOverlayTargetAgent]);
 
-  const installSkillsPackFromMarket = useCallback(async (pack: WorkflowSkillsMarketPack, targetScopeOverride?: string) => {
-    const packSlug = pack.packSlug || pack.slug;
-    if (!packSlug) return;
-    const target = capabilityHubTargetAgent || skillsOverlayTargetAgent;
-    const targetGroup = capabilityHubTargetCapability && capabilityTypeFromNode(capabilityHubTargetCapability) === 'skill-group'
-      ? capabilityHubTargetCapability
-      : null;
-    const position = capabilityHub?.createPosition || skillsOverlay.createPosition
-      || (target
-        ? { x: target.x + (target.width || CARD_NODE_W) + 96, y: target.y + 140 }
-        : { x: 420, y: 460 });
-    const busyId = pack.id || packSlug;
-    setSkillsMarketBusyPackId(busyId);
-    setSkillsMarketError('');
+  const handleSkillsOverlayCreatePack = useCallback(async (skillIds: string[]) => {
+    const selectedSkills = skillIds
+      .map(skillId => skillsById.get(skillId))
+      .filter((skill): skill is WorkflowSkillsHubResponse['skills'][number] => Boolean(skill));
+    if (selectedSkills.length === 0) return;
+    const label = selectedSkills.map(skill => skill.title || skill.name).join(' + ');
     try {
-      const result = await installSkillsMarketPack({
-        provider: pack.provider || 'skillstore',
-        packSlug,
-        targetScope: targetScopeOverride || skillsMarketInstallTarget || 'project-agents',
-        createGroup: true,
-        groupNodeId: targetGroup ? (targetGroup.graphNodeId || targetGroup.id) : undefined,
-        groupTitle: pack.name || packSlug,
-        position,
+      await createSkillGroupAtPosition({
+        skillIds: selectedSkills.map(skill => skill.id),
+        label,
+        position: skillsOverlay.createPosition || { x: 320, y: 420 },
+        sourceGroup: { id: 'skills-hub:selected-pack', label, kind: 'selected-skills' },
+        sourceGroupKind: 'selected-skills',
       });
-      const installedGroupNode = (result.group as any)?.node || (result.group as any)?.group?.node;
-      const groupNodeId = installedGroupNode?.nodeId || installedGroupNode?.id || '';
-      if (groupNodeId && target && !targetGroup) {
-        const sourceGraphId = target.graphNodeId || target.id;
-        await createRuntimeEdge(sourceGraphId, groupNodeId, {
-          relation: 'capability',
-          direction: 'bidirectional',
-          sourceHandle: 'right',
-          targetHandle: 'capability:left',
-        });
-      }
-      invalidateApiCache('/api/workflow/nodes');
-      invalidateApiCache('/api/a2a/snapshot');
-      await reload(true);
-      if (groupNodeId) {
-        setSelectedNodeId(groupNodeId);
-        setSelectedNodeIds(new Set([groupNodeId]));
-      }
-      alertToast({
-        message: targetGroup ? t('Skill group updated') : t('Skill pack installed'),
-        kind: 'success',
-        durationMs: 2600,
-        dedupeKey: `skills-market-install:${pack.provider}:${packSlug}`,
-      });
-    } catch (e: any) {
-      setSkillsMarketError(e?.message || t('Failed to install skill pack'));
-    } finally {
-      setSkillsMarketBusyPackId(current => current === busyId ? '' : current);
+      setSkillsDragHideActive(false);
+      setSkillsOverlay(current => ({ open: false, mode: current.mode }));
+    } catch {
+      // The shared create helper already reports the error through the hub.
     }
-  }, [alertToast, capabilityHub?.createPosition, capabilityHubTargetAgent, capabilityHubTargetCapability, reload, skillsMarketInstallTarget, skillsOverlay.createPosition, skillsOverlayTargetAgent, t]);
+  }, [createSkillGroupAtPosition, skillsById, skillsOverlay.createPosition]);
 
   const createMcpConnectorNode = useCallback(async (server: WorkflowMcpHubResponse['servers'][number]) => {
     if (!server?.id) {
@@ -8383,6 +8339,41 @@ function WorkflowRouteInner({ onSelectSession }: Props) {
   const handleNodeContextAction = (action: string) => {
     if (!nodeContextMenu) return;
     const selection = nodeContextSelection.length > 0 ? nodeContextSelection : [nodeContextMenu.nodeId];
+    if (action === 'agent.start') {
+      const nodeId = nodeContextMenu.nodeId;
+      const node = canvasNodeById.get(nodeId);
+      setNodeContextMenu(null);
+      if (!node?.sessionId || !canStartNode(node)) return;
+      const graphId = node.graphNodeId || node.id;
+      setPendingStarts(current => new Set(current).add(nodeId));
+      setError(null);
+      void executeRuntimeNodeAction(graphId, 'agent.start', { previousSessionId: node.sessionId })
+        .then(response => {
+          const result = (response.result || {}) as { sessionId?: string; status?: string };
+          invalidateApiCache('/api/a2a/snapshot');
+          invalidateApiCache('/api/sessions');
+          window.dispatchEvent(new CustomEvent('harness:sessions-changed', {
+            detail: {
+              sessionId: result.sessionId || node.sessionId,
+              previousSessionId: node.sessionId,
+              state: result.status || 'starting',
+            },
+          }));
+          setNodeModes(current => {
+            const next = { ...current };
+            delete next[nodeId];
+            return next;
+          });
+          return reload(true);
+        })
+        .catch((error: any) => setError(error?.message || t('Failed to start node')))
+        .finally(() => setPendingStarts(current => {
+          const next = new Set(current);
+          next.delete(nodeId);
+          return next;
+        }));
+      return;
+    }
     if (action === 'settings' || action === 'open-config') {
       openConfigForNode(nodeContextMenu.nodeId);
       return;
@@ -8511,7 +8502,7 @@ function WorkflowRouteInner({ onSelectSession }: Props) {
 
   const skillsOverlayHub = useMemo((): WorkflowSkillsOverlayHub | undefined => (
     skillsOverlay.mode === 'hub'
-      ? { tabs: ['installed', 'market', 'groups'], activeTab: skillsHubTab }
+      ? { tabs: ['installed', 'groups'], activeTab: skillsHubTab }
       : undefined
   ), [skillsHubTab, skillsOverlay.mode]);
 
@@ -8526,30 +8517,16 @@ function WorkflowRouteInner({ onSelectSession }: Props) {
       }));
   }, [capabilityHubSearch, skillsHub]);
 
-  const skillsOverlayAttachedSkillIds = useMemo(() => {
-    const target = skillsOverlayTargetAgent;
-    if (!target) return [];
-    const attached = new Set(skillsForNode(target));
-    return (skillsHub?.skills || [])
-      .filter(skill => attached.has(skill.id) || attached.has(skill.name))
-      .map(skill => skill.id);
-  }, [skillsHub, skillsOverlayTargetAgent]);
-
-  const skillsOverlayPacks = useMemo((): WorkflowSkillsOverlayPack[] => (
-    (skillsMarket?.packs || []).map(pack => ({
-      id: pack.id,
-      provider: pack.provider,
-      packSlug: pack.packSlug || pack.slug,
-      slug: pack.slug,
-      name: pack.name,
-      description: pack.description,
-      category: pack.category,
-      skillCount: pack.skillCount,
-      installCount: pack.installCount,
-      installed: pack.installed,
-      installable: pack.installable,
-    }))
-  ), [skillsMarket]);
+  const skillsOverlayFamilies = useMemo((): WorkflowSkillsOverlayFamily[] => (
+    (skillsHub?.groups || [])
+      .filter(group => group.kind === 'name-family')
+      .map(group => ({
+        id: group.id,
+        label: group.label,
+        skillIds: group.skillIds.filter(skillId => skillsOverlaySkills.some(skill => skill.id === skillId)),
+      }))
+      .filter(group => group.skillIds.length > 0)
+  ), [skillsHub, skillsOverlaySkills]);
 
   const skillsOverlayGroups = useMemo((): WorkflowSkillsOverlayGroupRow[] => (
     (skillsHub?.groups || []).map(group => ({
@@ -8561,11 +8538,6 @@ function WorkflowRouteInner({ onSelectSession }: Props) {
         : group.skillIds.length,
     }))
   ), [capabilityHubSearch, skillsHub, skillsOverlaySkills]);
-
-  const handleSkillsOverlayAttachSkill = useCallback((skillId: string) => {
-    const skill = (skillsHub?.skills || []).find(item => item.id === skillId);
-    if (skill) void attachSkillToTargetAgent(skill);
-  }, [attachSkillToTargetAgent, skillsHub]);
 
   const canvasNodesRef = useRef(canvasNodes);
   canvasNodesRef.current = canvasNodes;
@@ -8983,7 +8955,10 @@ function WorkflowRouteInner({ onSelectSession }: Props) {
                           >
                             <Icon size={16} />
                             <span className="workflow-create-node-option-copy">
-                              <span className="workflow-create-node-option-title">
+                              <span
+                                className="workflow-create-node-option-title"
+                                data-testid={option.createMode === 'billboard' ? 'workflow-create-billboard-node' : undefined}
+                              >
                                 {t(option.label)}
                                 {option.state === 'planned' && <span className="workflow-create-node-option-badge">{t('Planned')}</span>}
                               </span>
@@ -9386,6 +9361,7 @@ function WorkflowRouteInner({ onSelectSession }: Props) {
             </div>
             {[
               { action: 'settings', label: 'Settings', icon: Settings2 },
+              ...(isAgentNode(nodeContextTarget) && canStartNode(nodeContextTarget) ? [{ action: 'agent.start', label: 'Start', icon: Play }] : []),
               ...(isAgentNode(nodeContextTarget) ? [{ action: 'skills-hub', label: 'Skills Hub', icon: Boxes }] : []),
               ...(isAgentNode(nodeContextTarget) ? [{ action: 'mcp-hub', label: 'MCP Hub', icon: Network }] : []),
               { action: 'open-config', label: 'Open Config', icon: ExternalLink },
@@ -9475,6 +9451,10 @@ function WorkflowRouteInner({ onSelectSession }: Props) {
             <AgentNodeSettings
               node={(selectedRuntimeNode?.kind === 'agent' ? selectedRuntimeNode : null) || (agentSettingsPreviewNode as WorkflowRuntimeNode)}
               loading={!selectedRuntimeNode}
+              onUiModeChange={mode => {
+                if (!isLiveStatus(selectedNode.status)) return;
+                setNodeModes(current => ({ ...current, [selectedNode.id]: mode === 'chat' ? 'chat' : 'terminal' }));
+              }}
               onClose={() => setShowConfig(false)}
               onDelete={() => requestDeleteNode(selectedNode.id)}
             />
@@ -9830,29 +9810,16 @@ function WorkflowRouteInner({ onSelectSession }: Props) {
           skills={skillsOverlaySkills}
           search={capabilityHubSearch}
           onSearchChange={setCapabilityHubSearch}
-          packs={skillsOverlayPacks}
-          attachedSkillIds={skillsOverlayAttachedSkillIds}
-          installTargets={(skillsMarket?.installTargets || skillsHub?.installTargets || []).map(target => target.id)}
           groups={skillsOverlayGroups}
+          families={skillsOverlayFamilies}
           onClose={() => {
             // Explicit close: unmount and clear the draft (existing behavior).
             setSkillsDragHideActive(false);
             setSkillsOverlay(current => (current.open ? { open: false, mode: current.mode } : current));
           }}
           onSetSkillEnabled={skillsOverlay.mode === 'group' ? handleSkillsOverlaySetSkillEnabled : undefined}
-          onAttachSkillToAgent={skillsOverlay.mode === 'hub' && skillsOverlayTargetAgent ? handleSkillsOverlayAttachSkill : undefined}
           onAttachToAgent={handleSkillsOverlayAttachToAgent}
-          onInstallPack={(pack, targetScope) => installSkillsPackFromMarket({
-            ...pack,
-            id: pack.id || pack.packSlug,
-            provider: pack.provider || 'skillstore',
-            slug: pack.slug || pack.packSlug,
-            name: pack.name || pack.packSlug,
-            description: pack.description || '',
-            skillCount: pack.skillCount || 0,
-            installed: pack.installed === true,
-            installable: pack.installable !== false,
-          }, targetScope)}
+          onCreateSkillPack={handleSkillsOverlayCreatePack}
           onPickGroup={handleSkillsOverlayPickGroup}
           onDraftDragStart={() => {
             // Hide (don't close) the overlay so the composed-skill drag can
@@ -10399,7 +10366,8 @@ function WfNodeCard({ data, selected, dragging }: NodeProps<AgentFlowNode>) {
   const tone = statusTone(node.status);
   const runtimeColor = runtimeAccentColor(node.runtime);
   const kindColor = agentKindColor(node.agentKind);
-  const isTerminalMode = data.mode === 'terminal' && Boolean(node.sessionId);
+  const isChatMode = data.mode === 'chat' && Boolean(node.sessionId);
+  const isSessionSurface = (data.mode === 'terminal' || isChatMode) && Boolean(node.sessionId);
   const live = isLiveStatus(node.status);
   const canStart = canStartNode(node);
   const canStop = canStopNode(node);
@@ -10413,21 +10381,21 @@ function WfNodeCard({ data, selected, dragging }: NodeProps<AgentFlowNode>) {
     event.stopPropagation();
   };
 
-  if (isTerminalMode) {
+  if (isSessionSurface) {
     return (
       <motion.div
-        key="terminal"
+        key={isChatMode ? 'chat' : 'terminal'}
         layout={!dragging}
         initial={{ rotateY: -8, scale: 0.96 }}
         animate={{ rotateY: 0, scale: 1 }}
         transition={dragging ? { duration: 0 } : { type: 'spring', stiffness: 430, damping: 30, mass: 0.72 }}
         className="wf-node-card"
-        data-mode="terminal"
+        data-mode={isChatMode ? 'chat' : 'terminal'}
         data-dragging={dragging ? 'true' : undefined}
         data-selected={selected ? 'true' : 'false'}
         data-agent-controlled={agentControl?.active ? 'true' : undefined}
         data-agent-control-operation-id={agentControl?.active ? agentControl.operationId : undefined}
-        data-testid="workflow-node-terminal"
+        data-testid={isChatMode ? 'workflow-node' : 'workflow-node-terminal'}
         data-node-id={node.graphNodeId || node.id}
         style={{
           '--agent-control-color': agentControl?.color || '#22c55e',
@@ -10452,11 +10420,11 @@ function WfNodeCard({ data, selected, dragging }: NodeProps<AgentFlowNode>) {
           <span className={live ? 'wf-status-dot is-live' : 'wf-status-dot'} style={{ background: stateColor }} />
           <span data-testid="workflow-node-status" style={{ fontSize: 9, lineHeight: 1, color: tone.color, background: tone.bg, border: `1px solid ${tone.border}`, borderRadius: 999, padding: '3px 6px', fontWeight: 800, letterSpacing: 0, textTransform: 'uppercase', flexShrink: 0 }}>{displaySessionStatus(node.status)}</span>
           <span style={{ flex: 1 }} />
-          <button className="nodrag nopan" title={t('Open drawer terminal')} onPointerDown={stopEvent} onClick={(e) => { e.stopPropagation(); data.onOpenSession(node.sessionId!); }} style={{ width: 24, height: 24, display: 'grid', placeItems: 'center', border: '1px solid var(--border)', borderRadius: 'var(--radius)', color: 'var(--muted)' }}>
+          <button className="nodrag nopan" title={isChatMode ? t('Open drawer chat') : t('Open drawer terminal')} onPointerDown={stopEvent} onClick={(e) => { e.stopPropagation(); data.onOpenSession(node.sessionId!); }} style={{ width: 24, height: 24, display: 'grid', placeItems: 'center', border: '1px solid var(--border)', borderRadius: 'var(--radius)', color: 'var(--muted)' }}>
             <ExternalLink size={11} />
           </button>
           <button className="nodrag nopan" data-testid="workflow-back-to-node" title={t('Back to Node')} onPointerDown={stopEvent} onClick={(e) => { e.stopPropagation(); data.onToggleMode(node.id); }} style={{ height: 24, display: 'flex', alignItems: 'center', gap: 4, padding: '0 8px', border: '1px solid var(--border)', borderRadius: 'var(--radius)', color: 'var(--muted)', fontSize: 10, fontWeight: 700 }}>
-            <Terminal size={11} /> {t('Back to Node')}
+            {isChatMode ? <MessagesSquare size={11} /> : <Terminal size={11} />} {t('Back to Node')}
           </button>
           {canStart && (
             <button className="nodrag nopan" data-testid="workflow-node-start" title={t('Start node')} disabled={data.starting} onPointerDown={stopEvent} onClick={(e) => { e.stopPropagation(); data.onStartNode(node.id); }} style={{ height: 24, display: 'flex', alignItems: 'center', gap: 4, padding: '0 8px', border: '1px solid #86efac', borderRadius: 'var(--radius)', color: WORKFLOW_GREEN_DARK, fontSize: 10, fontWeight: 800, opacity: data.starting ? 0.45 : 1 }}>
@@ -10475,40 +10443,52 @@ function WfNodeCard({ data, selected, dragging }: NodeProps<AgentFlowNode>) {
           )}
         </div>
 
-        <div
-          className="nodrag nopan nowheel"
-          data-testid="workflow-terminal-attach"
-          tabIndex={0}
-          onPointerDown={(event) => {
-            stopEvent(event);
-            announceTerminalInputOwner({ sessionId: node.sessionId!, surface: 'embedded' });
-          }}
-          onClick={(event) => {
-            event.stopPropagation();
-            announceTerminalInputOwner({ sessionId: node.sessionId!, surface: 'embedded' });
-          }}
-          onDragOver={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-          }}
-          onDrop={(event) => {
-            void handleTerminalDrop(event.nativeEvent, { sessionId: node.sessionId!, surface: 'embedded' }).catch((e: any) => {
-              console.warn('embedded terminal drop failed', e);
-            });
-          }}
-          onPaste={(event) => {
-            void handleTerminalPaste(event.nativeEvent, { sessionId: node.sessionId!, surface: 'embedded' }).catch((e: any) => {
-              console.warn('embedded terminal paste failed', e);
-            });
-          }}
-          style={{ minHeight: 0, background: '#0b0d10', outline: 'none' }}
-        >
-          <EmbeddedWorkflowTerminal
-            sessionId={node.sessionId!}
-            live={live}
-            canSendInput={node.control?.canSendInput !== false}
-          />
-        </div>
+        {isChatMode ? (
+          <div className="nodrag nopan nowheel" data-testid="chat-node-surface" style={{ minHeight: 0, background: 'var(--bg)', overflow: 'hidden' }}>
+            {data.activeSessionId === node.sessionId ? (
+              <div data-testid="chat-open-in-drawer" style={{ height: '100%', display: 'grid', placeItems: 'center', padding: 20, color: 'var(--muted)', fontSize: 12, textAlign: 'center' }}>
+                {t('Chat is open in the drawer')}
+              </div>
+            ) : (
+              <ChatPanel sessionId={node.sessionId!} live={live} canSendInput={node.control?.canSendInput !== false} />
+            )}
+          </div>
+        ) : (
+          <div
+            className="nodrag nopan nowheel"
+            data-testid="workflow-terminal-attach"
+            tabIndex={0}
+            onPointerDown={(event) => {
+              stopEvent(event);
+              announceTerminalInputOwner({ sessionId: node.sessionId!, surface: 'embedded' });
+            }}
+            onClick={(event) => {
+              event.stopPropagation();
+              announceTerminalInputOwner({ sessionId: node.sessionId!, surface: 'embedded' });
+            }}
+            onDragOver={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+            }}
+            onDrop={(event) => {
+              void handleTerminalDrop(event.nativeEvent, { sessionId: node.sessionId!, surface: 'embedded' }).catch((e: any) => {
+                console.warn('embedded terminal drop failed', e);
+              });
+            }}
+            onPaste={(event) => {
+              void handleTerminalPaste(event.nativeEvent, { sessionId: node.sessionId!, surface: 'embedded' }).catch((e: any) => {
+                console.warn('embedded terminal paste failed', e);
+              });
+            }}
+            style={{ minHeight: 0, background: '#0b0d10', outline: 'none' }}
+          >
+            <EmbeddedWorkflowTerminal
+              sessionId={node.sessionId!}
+              live={live}
+              canSendInput={node.control?.canSendInput !== false}
+            />
+          </div>
+        )}
         <ConnectionHandles zoom={data.viewportZoom} />
       </motion.div>
     );

@@ -1,0 +1,12 @@
+{
+  "url": "https://github.com/Xrrr1111/deep-research-agent",
+  "title": "deep-research-agent",
+  "version": "main@2026-09-18",
+  "license": "MIT",
+  "reason": "Adapt its planner/search/fetch/evidence-extractor interfaces, persistent research state, gap-triggered replanning, and citation validation ideas into the wf-research result contract.",
+  "checkedAt": "2026-09-18T00:00:00Z",
+  "sourceType": "official",
+  "decision": "adapt",
+  "acIds": ["AC-001", "AC-004", "AC-006"],
+  "recheckTrigger": "Upstream state schema or license changes"
+}

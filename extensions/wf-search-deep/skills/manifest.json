@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "wf-search/skills-manifest.v1",
+  "version": "0.3.0",
+  "bundle": "wf-search-deep",
+  "principle": "wf-search routes; skills own platform and modality-specific capabilities and are loaded lazily.",
+  "skills": [
+    { "id": "source-discovery", "entry": "source-discovery/SKILL.md", "stage": "collect", "capabilities": ["search", "source-routing"], "requires": ["source-catalog.json"] },
+    { "id": "search-provider-router", "entry": "search-provider-router/SKILL.md", "stage": "collect", "capabilities": ["provider-routing"], "requires": ["search-providers.json"] },
+    { "id": "media-download", "entry": "media-download/SKILL.md", "stage": "understand", "capabilities": ["media-acquisition"], "requires": ["yt-dlp"] },
+    { "id": "platform-youtube", "entry": "platform-youtube/SKILL.md", "stage": "understand", "capabilities": ["youtube", "captions"], "requires": ["media-download", "yt-dlp"] },
+    { "id": "platform-tiktok", "entry": "platform-tiktok/SKILL.md", "runtime": "platform-tiktok/run.mjs", "stage": "understand", "capabilities": ["tiktok", "video-download", "metadata"], "requires": ["tiktok-api", "yt-dlp"] },
+    { "id": "platform-x", "entry": "platform-x/SKILL.md", "stage": "understand", "capabilities": ["x", "video-download"], "requires": ["gallery-dl", "browseros-neo"] },
+    { "id": "platform-bilibili", "entry": "platform-bilibili/SKILL.md", "stage": "understand", "capabilities": ["bilibili", "captions"], "requires": ["media-download", "yt-dlp"] },
+    { "id": "platform-instagram", "entry": "platform-instagram/SKILL.md", "stage": "understand", "capabilities": ["instagram"], "requires": ["gallery-dl", "browseros-neo"] },
+    { "id": "platform-xiaohongshu", "entry": "platform-xiaohongshu/SKILL.md", "stage": "understand", "capabilities": ["xiaohongshu"], "requires": ["browseros-neo"] },
+    { "id": "platform-wechat", "entry": "platform-wechat/SKILL.md", "stage": "understand", "capabilities": ["wechat-official-account"], "requires": ["browseros-neo"] },
+    { "id": "video-asr", "entry": "video-asr/SKILL.md", "stage": "understand", "capabilities": ["transcript", "timestamps"], "requires": ["whisper-large"] },
+    { "id": "video-vlm", "entry": "video-vlm/SKILL.md", "runtime": "video-vlm/run.mjs", "stage": "understand", "capabilities": ["visual-segments", "timestamps", "global-local-passes"], "requires": ["vlm-endpoint", "ffmpeg"] },
+    { "id": "comment-reader", "entry": "comment-reader/SKILL.md", "stage": "understand", "capabilities": ["comments", "scope"], "requires": ["browseros-neo-or-platform-adapter"] },
+    { "id": "evidence-scoring", "entry": "evidence-scoring/SKILL.md", "stage": "decide", "capabilities": ["scoring", "contradictions"], "requires": ["evidence-contract"] }
+  ],
+  "loading": { "defaultInstall": false, "scope": "global", "root": "<globalDir>/Harness/extensions/wf-search-deep/<version>", "projectPayload": "metadata-only" }
+}

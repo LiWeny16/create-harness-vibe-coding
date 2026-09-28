@@ -37,6 +37,11 @@ Use `task-context.mjs pack/show` for bounded role packs/pointers. Run
 `research-policy.mjs decide` before web/GitHub/HF lookup; record source/adoption
 evidence. Never preload full logs; structural, not semantic proof.
 
+**Task Header (mandatory):** Every context pack begins with a `## Task Header`
+exposing status/phase/gate/activeQuestion/nextAction/blockers/dependencies, built
+via `task-route.mjs` with synchronous fallback. It counts against the byte budget;
+packs fail if it cannot fit.
+
 Escalation rule: when unsure whether a file is required, prefer targeted
 keyword search or a one-file read over guessing from memory. Escalate from a
 smaller profile to the next targeted profile only when the new file directly

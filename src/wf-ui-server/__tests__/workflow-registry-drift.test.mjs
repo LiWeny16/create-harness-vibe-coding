@@ -86,6 +86,9 @@ const SPECIAL_CASE_IDS = new Set([
   'agent.deleteNode',
   'agent.deleteNodes',
   'agent.readGraph',
+  // Dispatch lifecycle records are persisted by server control routes, not adapters.
+  'agent.dispatchProgress',
+  'agent.dispatchResult',
   // Server-special-cased in server.mjs before adapter dispatch (routes to
   // executeGraphHistoryAction → undoGraphOp / redoGraphOp).
   'graph.undo',

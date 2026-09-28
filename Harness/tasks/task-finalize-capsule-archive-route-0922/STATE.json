@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-finalize-capsule-archive-route-0922",
+  "status": "closed",
+  "mode": "direct",
+  "tier": "none",
+  "phase": "closeout",
+  "gate": null,
+  "updatedAt": "2026-09-28T04:14:59.174Z",
+  "createdAt": "2026-09-22T02:10:00.000Z",
+  "activeQuestion": null,
+  "nextAction": "Acceptance and closeout evidence are recorded; no task work remains.",
+  "title": "Finalize capsule archive route: single writer, safe auto-archive, route rebuild, CLI parity, mirror sync",
+  "acceptance": [
+    "npm test passes",
+    "capsule-routing tests pass",
+    "e2e tests pass",
+    "pack:smoke passes",
+    "validate-harness --strict passes",
+    "mirror checks pass",
+    "git diff --check passes",
+    "route output <= 8KB",
+    "legacy --keep/--group not silently ignored",
+    "closed but not closeout not auto-archived",
+    "focus task not auto-archived",
+    "concurrent SessionStart: only one move",
+    "archive/index write failure preserves old route",
+    "route resolves live and archive by taskId"
+  ],
+  "links": {
+    "dependsOn": [],
+    "blocks": [],
+    "related": []
+  },
+  "queues": {
+    "ready": [],
+    "running": [],
+    "blocked": [],
+    "done": [
+      "extract-performSafeArchive",
+      "add-route-command",
+      "add-history-load-summary",
+      "update-auto-archive-session-start",
+      "update-archive-tasks",
+      "sync-templates",
+      "write-tests",
+      "run-gates"
+    ]
+  },
+  "workItems": [],
+  "dispatchLedger": [],
+  "decisions": [
+    "task-state.mjs remains sole writer; archive/auto-archive/archive-tasks all delegate to performSafeArchive",
+    "safe-auto policy: closed + closeout verified + no owner/lease/lock + not focus task",
+    "two-phase archive: closed -> archiveEligible -> archived with timestamps",
+    "route indexes share routeRevision for consistency",
+    "SessionStart: reindex + safe-auto; Stop: dry-run only"
+  ],
+  "risks": [
+    "SessionStart auto-archive is a behavior change from dry-run to safe-auto; mitigated by policy checks",
+    "Concurrent session start could race; mitigated by global lock file"
+  ],
+  "artifacts": [
+    {
+      "path": "Harness/tasks/task-finalize-capsule-archive-route-0922/CLOSEOUT.md",
+      "kind": "closeout"
+    }
+  ],
+  "defaultRuntime": "codex",
+  "defaultAgentRuntime": "codex",
+  "tags": [],
+  "startedAt": "2026-09-23T08:06:31.454Z",
+  "closedAt": "2026-09-28T04:14:59.174Z"
+}

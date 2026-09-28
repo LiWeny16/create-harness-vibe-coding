@@ -17,8 +17,8 @@ import { fileURLToPath } from 'node:url';
  *      exist for those file kinds.
  *   e. SKILLS OVERLAY — Skill Group double-click opens workflow-skills-overlay
  *      in group mode; toggling a skill calls skill-group.setSkillEnabled.
- *   f. HUB MODE — the top-toolbar Skills Hub button opens the overlay in hub
- *      mode backed by skills-hub / skills-market payloads.
+ *   f. HUB MODE — the top-toolbar Skills Hub button opens the market-free hub
+ *      from the skills-hub index.
  *   g. MISSING FILE — a File node bound to a path missing on disk renders the
  *      missing badge from file.preview and never requests the preview URL
  *      (no /api/workspace/file 404), while existing-file previews are
@@ -82,6 +82,7 @@ type Network = {
   fileActionRequests: JsonRecord[];
   setSkillEnabledRequests: JsonRecord[];
   skillsHubRequests: string[];
+  skillsMarketRequests: string[];
   workspaceFileRequests: string[];
   pageErrors: string[];
   failedResponses: string[];
@@ -417,6 +418,7 @@ async function installWorkflowFixture(page: Page): Promise<{ network: Network; g
     fileActionRequests: [],
     setSkillEnabledRequests: [],
     skillsHubRequests: [],
+    skillsMarketRequests: [],
     workspaceFileRequests: [],
     pageErrors: [],
     failedResponses: [],
@@ -428,6 +430,9 @@ async function installWorkflowFixture(page: Page): Promise<{ network: Network; g
     if (/Minified React error #185|maximum update depth|too many re-renders/i.test(error.message)) {
       network.reactUpdateLoopErrors.push(error.message);
     }
+  });
+  page.on('request', request => {
+    if (request.url().includes('/api/workflow/skills-market')) network.skillsMarketRequests.push(request.url());
   });
   page.on('response', response => {
     if (response.status() >= 400 && !response.url().includes('favicon.ico')) {
@@ -573,7 +578,6 @@ async function installWorkflowFixture(page: Page): Promise<{ network: Network; g
       query: { scope: 'project', q: '', limit: 50 },
       roots: [{ id: 'project-root', label: 'Project', scope: 'project', runtime: 'local', exists: true, path: '.' }],
       summary: { skillCount: 2, groupCount: 1, sourceCount: 1 },
-      installTargets: [{ id: 'project-agents', label: 'Project agents', scope: 'project', runtime: 'local', default: true, path: '.' }],
       nodeSemantics: { role: 'agent-attached-capability-provider', defaultConnection: 'bidirectional capability port to Agent nodes', executor: 'agent' },
       skills: [
         { id: alphaSkillId, name: 'w38-alpha', title: 'W38 Alpha Skill', description: 'alpha fixture skill', kind: 'skill', nodeSemantics: 'agent-attached-capability-provider', attachable: true, state: 'indexed', sources: [{ rootId: 'project-root', label: 'Project', scope: 'project', runtime: 'local', relativePath: 'skills/w38-alpha', path: 'skills/w38-alpha' }] },
@@ -775,7 +779,7 @@ test.describe('WF UI M4 W38 frontend integration', () => {
     expect(network.reactUpdateLoopErrors, 'React update-loop errors').toEqual([]);
   });
 
-  test('W38-6 toolbar Skills Hub button opens the overlay in hub mode backed by hub/market payloads', async ({ page }) => {
+  test('W38-6 toolbar Skills Hub opens the hub without a Market surface or requests', async ({ page }) => {
     const { network } = await installWorkflowFixture(page);
     await openWorkflow(page);
     await waitForCanvasSettlement(page);
@@ -786,21 +790,9 @@ test.describe('WF UI M4 W38 frontend integration', () => {
     await expect(overlay).toHaveAttribute('data-mode', 'hub');
 
     await expect.poll(() => network.skillsHubRequests.length).toBe(1);
-    // Hub Installed rows are compose inputs: users can stage skills before
-    // dragging the draft chip onto the canvas (AC-004 skills-hub drag).
-    await expect(overlay.locator('[data-testid="workflow-skills-overlay-skill-toggle"]').first()).toBeEnabled();
-    await expect(overlay.getByText('W38 Alpha Skill')).toBeVisible();
-
-    // Groups tab lists hub groups; picking an existing group opens group mode.
-    await overlay.locator('[data-testid="workflow-skills-overlay-tab"][data-tab="groups"]').click();
-    const pickGroup = overlay.locator('[data-testid="workflow-skills-overlay-pick-group"][data-group-id="recommended:w38"]');
-    await expect(pickGroup).toBeVisible();
-    await pickGroup.click();
-    await expect(overlay).toHaveAttribute('data-mode', 'group');
-    await expect(overlay).toHaveAttribute('data-node-id', groupNodeId);
-
-    await page.getByTestId('workflow-skills-overlay-close').click();
-    await expect(overlay).toHaveCount(0);
+    await expect(overlay.getByText(/market/i)).toHaveCount(0);
+    await expect(overlay.getByText('Context', { exact: true })).toHaveCount(0);
+    await expect.poll(() => network.skillsMarketRequests.length).toBe(0);
 
     expect(network.pageErrors, 'page errors').toEqual([]);
     expect(network.reactUpdateLoopErrors, 'React update-loop errors').toEqual([]);

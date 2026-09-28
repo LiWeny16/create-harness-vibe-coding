@@ -1,0 +1,12 @@
+{
+  "url": "https://github.com/longvideoagent/LongVideoAgent",
+  "title": "LongVideoAgent",
+  "version": "main@2026-09-18",
+  "license": "repository license checked before installation",
+  "reason": "Adapt its master/grounding/vision-agent decomposition as the dedicated wf-search-deep subagent workflow, while keeping media and model services external.",
+  "checkedAt": "2026-09-18T00:00:00Z",
+  "sourceType": "official",
+  "decision": "adapt",
+  "acIds": ["AC-001", "AC-005"],
+  "recheckTrigger": "Upstream agent protocol or license changes"
+}

@@ -81,7 +81,8 @@ Agent 读取本 README 后，按项目状态选择路径：
 | `/wf-browser <任务>` | 浏览器冒烟、E2E、截图、表单或页面验证 | 默认使用 BrowserOS Neo 并提供截图、trace 或状态证据；需要用户自行下载、安装并启动 BrowserOS Neo，Harness 不会自动下载或安装 | `/wf-browser 验证登录和支付流程` |
 | `/wf-readme <任务>` | README、安装文档、架构图或项目说明需要整理 | 保留事实，整理结构，补充安装和使用说明 | `/wf-readme 优化中文 README` |
 | `/wf-update` | 已安装 Harness，需要检查和应用框架更新 | 比较版本，自动处理安全变更，把语义冲突留给 Agent | `/wf-update` |
-| `/wf-search` | 任务需要一次可验证的真实工具搜索 | 把一次搜索组织成结构化台账（操作/来源/结论），用无状态 Node helper 校验并渲染成 Markdown 证据报告；`--save` 后保存在 `Harness/research/search/` | `/wf-search --mode fact "node:test runner 退出码"` |
+| `/wf-search` | 任务需要可验证的研究结果 | 由原生 Rust CLI 执行基础搜索与证据台账；CLI 未安装时先提示用户安装，视频下载、ASR、VLM、平台适配通过 `wf-extension` 按需安装 | `/wf-search "node:test runner 退出码"` |
+| `/wf-extension` | 需要安装或检查可选能力 | 管理 wf-ui、媒体下载、ASR、VLM 和平台适配等 CLI 扩展 | `/wf-extension list` |
 | `/wf-remove` | 需要卸载 Harness | 自动清理安全文件，保留用户数据，冲突文件先确认 | `/wf-remove` |
 | `/wf-init` | 已装全局 runtime，想让新项目接入 | 只写入项目桥接文件和项目状态；框架文件与版本管理以全局 runtime 为准 |
 
@@ -235,7 +236,7 @@ npm run check:mirrors
 
 - 支持 Claude Code、Codex 和 OpenCode 的共享 Harness 工作流。
 - Node.js >= 18。
-- 运行时无额外依赖；CLI 依赖 `@clack/prompts` 和 `picocolors`。
+- 运行时依赖：`@clack/prompts`、`iconv-lite`、`picocolors`、`read-excel-file`、`unpdf`、`yauzl`；PTY 使用可选依赖 `@homebridge/node-pty-prebuilt-multiarch`。
 - 生成的是工作基础设施，不是业务应用代码。
 
 MIT © [LiWeny16](https://github.com/LiWeny16)

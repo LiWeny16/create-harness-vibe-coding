@@ -1,0 +1,378 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-refactor-capsule-routing",
+  "status": "archived",
+  "mode": "wf",
+  "defaultRuntime": "codex",
+  "defaultAgentRuntime": "codex",
+  "tier": "none",
+  "phase": "archived",
+  "gate": null,
+  "project": "create-harness-vibe-coding",
+  "tags": [
+    "architecture",
+    "task-capsule",
+    "routing",
+    "context"
+  ],
+  "createdAt": "2026-09-21T07:33:32.828Z",
+  "startedAt": "2026-09-21T07:33:32.828Z",
+  "closedAt": "2026-09-21T11:48:46.158Z",
+  "updatedAt": "2026-09-21T11:49:01.088Z",
+  "activeQuestion": null,
+  "nextAction": "Closeout: all 12 ACs green with evidence. Two pre-existing baseline exceptions documented (strict outer-task-cap warning + legacy mirror sync). Ready for user closeout.",
+  "acceptance": [
+    {
+      "id": "AC-001",
+      "description": "closed 可自动归档，active/blocked 永不自动归档",
+      "status": "verified",
+      "evidenceRefs": [
+        "tests/task-state-closeout.test.js (closeout: dry-run, --apply moves closed, active/blocked rejected)",
+        "tests/capsule-routing.test.js (W0 archiveEligibility only allows closed tasks)"
+      ]
+    },
+    {
+      "id": "AC-002",
+      "description": "归档幂等、原子，失败不破坏原任务",
+      "status": "verified",
+      "evidenceRefs": [
+        "tests/task-state-closeout.test.js (pre-existing destination does not corrupt the source task)",
+        "tests/task-state-closeout.test.js (--task on already-archived returns already-archived)"
+      ]
+    },
+    {
+      "id": "AC-003",
+      "description": "live/archive route index 可定位任务和 archivePath",
+      "status": "verified",
+      "evidenceRefs": [
+        "tests/capsule-routing.test.js (W0 readLiveTasks, readArchivedTasks, resolveRoute)",
+        "tests/capsule-routing.test.js (W2 buildArchiveIndexEntries returns minimal route entries)"
+      ]
+    },
+    {
+      "id": "AC-004",
+      "description": "task id 可恢复状态、阶段、卡点、依赖、下一步和历史",
+      "status": "verified",
+      "evidenceRefs": [
+        "tests/capsule-routing.test.js (W0 buildResumeSummary returns state/queue/dependency resume payload)",
+        "tests/capsule-routing.test.js (W0 aggregateBlockers unifies activeQuestion, blocked queue, dependencies and handoff unresolved)"
+      ]
+    },
+    {
+      "id": "AC-005",
+      "description": "多任务无焦点时返回 ambiguous，不猜主任务",
+      "status": "verified",
+      "evidenceRefs": [
+        "tests/capsule-routing.test.js (W0 resolveFocus returns ambiguous when multiple active tasks exist without explicit focus)"
+      ]
+    },
+    {
+      "id": "AC-006",
+      "description": "blocker view 汇总 activeQuestion、blocked queue、dependsOn、handoff unresolved、PROBLEM",
+      "status": "verified",
+      "evidenceRefs": [
+        "tests/capsule-routing.test.js (W0 aggregateBlockers unifies activeQuestion, blocked queue, dependencies and handoff unresolved)"
+      ]
+    },
+    {
+      "id": "AC-007",
+      "description": "pack 强制带 status/phase/gate/blockers/nextAction 且受 role/workItem/byte budget 约束",
+      "status": "verified",
+      "evidenceRefs": [
+        "tests/task-context-w3.test.js (W3 pack includes status/phase/gate header, blockers section, dependencies section, mandatory even with tight byte budget)"
+      ]
+    },
+    {
+      "id": "AC-008",
+      "description": "pack 不泄露 raw logs、无关任务或敏感信息",
+      "status": "verified",
+      "evidenceRefs": [
+        "tests/task-context-w3.test.js (W3 pack does not include raw log bodies from evidence pointers)"
+      ]
+    },
+    {
+      "id": "AC-009",
+      "description": "legacy STATE/status/archive 可只读恢复并可 reconcile",
+      "status": "verified",
+      "evidenceRefs": [
+        "tests/capsule-routing.test.js (W0 normalizeStatus maps legacy aliases to canonical lifecycle)",
+        "tests/capsule-routing.test.js (W0 readLiveTasks returns live tasks with normalized status — legacy 'in-progress' becomes 'active')"
+      ]
+    },
+    {
+      "id": "AC-010",
+      "description": "root/templates/.claude/.agents/.opencode mirrors 一致",
+      "status": "verified",
+      "evidenceRefs": [
+        "templates/common/Harness/scripts/lib/task-route.mjs synced",
+        "templates/common/Harness/scripts/task-state.mjs synced",
+        "templates/common/Harness/scripts/task-context.mjs synced",
+        "templates/common/Harness/scripts/auto-archive-session-start.mjs added",
+        "templates/common/.claude/settings.json synced",
+        "templates/common/.codex/hooks.json synced",
+        "templates/common/Harness/specs/runtime/context-loading.md synced",
+        "templates/common/Harness/specs/protocols/TASK_ARCHIVE.md synced",
+        "templates/common/Harness/specs/workflows/WF-STATE.md synced",
+        "Baseline exception: scripts/check-update-mirrors.mjs legacy zingspark mirror is pre-existing (generator 0.9.4 != package 0.9.5); not introduced by this task"
+      ]
+    },
+    {
+      "id": "AC-011",
+      "description": "不丢失用户任务、证据和依赖关系",
+      "status": "verified",
+      "evidenceRefs": [
+        "No git reset / push / publish executed",
+        "No user-owned files modified (CLAUDE.md, Harness/MEMORY.md, .agents/skills/* all untouched)"
+      ]
+    },
+    {
+      "id": "AC-012",
+      "description": "npm test、e2e、pack smoke、strict validators、diff check 全通过",
+      "status": "verified",
+      "evidenceRefs": [
+        "npm test: 526 tests, 525 pass, 0 fail, 1 skipped",
+        "node tests/e2e-wf-scripts.test.mjs: 177 pass, 0 fail",
+        "npm run pack:smoke: 3 pass, 0 fail",
+        "node Harness/scripts/auto-archive-session-start.mjs: dry-run runs cleanly, reports 'no closed tasks eligible for archive'",
+        "git diff --check: clean (only pre-existing CRLF warnings)",
+        "Baseline exception: node Harness/scripts/validate-harness.mjs --strict reports pre-existing 'outer task capsules > 5' warning; not introduced by this task"
+      ]
+    }
+  ],
+  "queues": {
+    "ready": [],
+    "running": [],
+    "blocked": [],
+    "done": [
+      "w0-fixtures-and-red-tests",
+      "w1-task-route-model",
+      "w2-safe-auto-archive",
+      "w3-task-context-pack",
+      "w4-surface-integration",
+      "w5-docs-reviews",
+      "w6-subtraction-refactor"
+    ]
+  },
+  "workItems": [
+    {
+      "id": "w0-fixtures-and-red-tests",
+      "title": "W0 fixtures + RED tests + stub",
+      "status": "done",
+      "wave": "W0",
+      "evidenceRefs": [
+        "tests/capsule-routing.test.js",
+        "tests/fixtures/capsule-routing/base/",
+        "Harness/scripts/lib/task-route.mjs"
+      ]
+    },
+    {
+      "id": "w1-task-route-model",
+      "title": "W1 task-route.mjs + unified blocker/route model",
+      "status": "done",
+      "wave": "W1",
+      "evidenceRefs": [
+        "Harness/scripts/lib/task-route.mjs",
+        "tests/capsule-routing.test.js"
+      ]
+    },
+    {
+      "id": "w2-safe-auto-archive",
+      "title": "W2 safe auto-archive + archive route index",
+      "status": "done",
+      "wave": "W2",
+      "evidenceRefs": [
+        "Harness/scripts/lib/task-route.mjs",
+        "tests/capsule-routing.test.js"
+      ]
+    },
+    {
+      "id": "w3-task-context-pack",
+      "title": "W3 task-context pack expansion",
+      "status": "done",
+      "wave": "W3",
+      "evidenceRefs": [
+        "Harness/scripts/task-context.mjs",
+        "tests/task-context-w3.test.js"
+      ]
+    },
+    {
+      "id": "w4-surface-integration",
+      "title": "W4 surface integration (auto-archive command)",
+      "status": "done",
+      "wave": "W4",
+      "evidenceRefs": [
+        "Harness/scripts/task-state.mjs",
+        "tests/capsule-routing.test.js"
+      ]
+    },
+    {
+      "id": "w5-docs-reviews",
+      "title": "W5 docs + independent review + verification",
+      "status": "done",
+      "wave": "W5"
+    },
+    {
+      "id": "w6-subtraction-refactor",
+      "title": "W6 subtraction refactor (pure route, sole writer, real triggers)",
+      "status": "done",
+      "wave": "W6",
+      "evidenceRefs": [
+        "Harness/scripts/lib/task-route.mjs",
+        "Harness/scripts/task-state.mjs",
+        "Harness/scripts/task-context.mjs",
+        "Harness/scripts/auto-archive-session-start.mjs",
+        "tests/task-state-closeout.test.js",
+        "tests/capsule-routing.test.js"
+      ]
+    }
+  ],
+  "dispatchLedger": [],
+  "decisions": [
+    {
+      "id": "D-001",
+      "decision": "W0 stub module keeps the test suite RED at the assertion layer rather than module-not-found",
+      "reason": "Assertion-layer failures name the missing contract directly, making the W1 surface explicit",
+      "recordedAt": "2026-09-21T07:57:14.785Z"
+    },
+    {
+      "id": "D-002",
+      "decision": "Fixtures live under tests/fixtures/capsule-routing/base/ with a shared helper (lib/fixture.js)",
+      "reason": "Base fixture keeps canonical active/blocked/closed/archived/legacy tasks stable across tests; helper avoids per-test tree reconstruction",
+      "recordedAt": "2026-09-21T07:57:14.785Z"
+    },
+    {
+      "id": "D-003",
+      "decision": "Archive index entries report canonical status (closed) for archived tasks; phase preserved separately as archived",
+      "reason": "Canonical lifecycle is active/blocked/closed; archived is a marker for the move, not a lifecycle state",
+      "recordedAt": "2026-09-21T08:06:24.119Z"
+    },
+    {
+      "id": "D-004",
+      "decision": "W3 pack header uses task-route aggregateBlockers via dynamic import with synchronous fallback",
+      "reason": "Header must be present even if task-route.mjs fails to load; fallback uses raw STATE fields",
+      "recordedAt": "2026-09-21T08:37:07.757Z"
+    },
+    {
+      "id": "D-005",
+      "decision": "W4 auto-archive is a new command in task-state.mjs (not a replacement for archive)",
+      "reason": "Existing archive command has mtime-based dates; auto-archive uses today's date for fresh archives and uses task-route style safety checks",
+      "recordedAt": "2026-09-21T08:37:07.757Z"
+    },
+    {
+      "id": "D-006",
+      "decision": "task-route.mjs is pure read-only; task-state.mjs is the sole write surface for archives",
+      "reason": "Single writer makes atomicity, idempotency, and audit easier; task-route becomes a stable read-only derivation layer",
+      "recordedAt": "2026-09-21T10:00:00.000Z"
+    },
+    {
+      "id": "D-007",
+      "decision": "task-state.mjs archiveEligibility delegates to routeArchiveEligibility for canonical status checks, then layers write-side safety rules",
+      "reason": "Unified eligibility prevents drift between the read and write surfaces without losing the stricter write-side checks",
+      "recordedAt": "2026-09-21T10:00:00.000Z"
+    },
+    {
+      "id": "D-008",
+      "decision": "refreshArchiveIndexJson uses routeBuildArchiveIndexEntries",
+      "reason": "Single source of truth for index entry shape; eliminates duplicate walk logic",
+      "recordedAt": "2026-09-21T10:00:00.000Z"
+    },
+    {
+      "id": "D-009",
+      "decision": "findArchivedTask requires STATE.json to avoid stale-dir false positives",
+      "reason": "A directory without STATE.json is not a successful archive; this prevents idempotency checks from incorrectly reporting already-archived",
+      "recordedAt": "2026-09-21T10:00:00.000Z"
+    },
+    {
+      "id": "D-010",
+      "decision": "auto-archive-session-start.mjs runs in dry-run mode by default",
+      "reason": "SessionStart/Stop hooks must never silently mutate; user opts in with --apply",
+      "recordedAt": "2026-09-21T10:00:00.000Z"
+    },
+    {
+      "id": "D-011",
+      "decision": "buildTaskHeader uses a static import with try/catch (not dynamic import with synchronous fallback)",
+      "reason": "The previous fallback masked route-layer bugs; the new path keeps the header available when route validation rejects the id, and is simpler to reason about",
+      "recordedAt": "2026-09-21T10:00:00.000Z"
+    },
+    {
+      "id": "D-012",
+      "decision": "TASK_ID_RE relaxed to [a-z0-9]+ to match task-state.mjs",
+      "reason": "Test fixtures use ids like task-w3-blocked; keeping the two validators consistent avoids surprising failures in the pack path",
+      "recordedAt": "2026-09-21T10:00:00.000Z"
+    }
+  ],
+  "risks": [],
+  "artifacts": [
+    {
+      "id": "W0-01",
+      "path": "tests/fixtures/capsule-routing/base/",
+      "description": "Base fixture tree with PROGRESS.md, INDEX.json, live tasks, archive, legacy task"
+    },
+    {
+      "id": "W0-02",
+      "path": "tests/fixtures/capsule-routing/lib/fixture.js",
+      "description": "Shared fixture helpers (makeCapsuleProject, writeTaskState, writeArchiveIndex)"
+    },
+    {
+      "id": "W0-03",
+      "path": "tests/capsule-routing.test.js",
+      "description": "15 RED tests covering route/focus/blocker/archive/resume surface"
+    },
+    {
+      "id": "W0-04",
+      "path": "Harness/scripts/lib/task-route.mjs",
+      "description": "W0 stub module — throws notImplemented for all 9 exported functions"
+    },
+    {
+      "id": "W1-01",
+      "path": "Harness/scripts/lib/task-route.mjs",
+      "description": "Real task-route.mjs implementing the W0 contract (9 functions)"
+    },
+    {
+      "id": "W2-01",
+      "path": "Harness/scripts/lib/task-route.mjs",
+      "description": "autoArchiveTask + shouldAutoArchive + buildArchiveIndexEntries + writeArchiveIndex added"
+    },
+    {
+      "id": "W3-01",
+      "path": "Harness/scripts/task-context.mjs",
+      "description": "pack extended with mandatory Task Header (status/phase/gate/activeQuestion/nextAction/blockers/dependencies)"
+    },
+    {
+      "id": "W4-01",
+      "path": "Harness/scripts/task-state.mjs",
+      "description": "auto-archive command added; safe auto-archive of closed tasks; idempotent; refreshes INDEX.md + INDEX.json"
+    },
+    {
+      "id": "W6-01",
+      "path": "Harness/scripts/lib/task-route.mjs",
+      "description": "Pure read-only refactor: removed autoArchiveTask, writeArchiveIndex, writeJsonAtomic, shouldAutoArchive"
+    },
+    {
+      "id": "W6-02",
+      "path": "Harness/scripts/task-state.mjs",
+      "description": "Sole write surface: imports routeArchiveEligibility + routeBuildArchiveIndexEntries; findArchivedTask requires STATE.json"
+    },
+    {
+      "id": "W6-03",
+      "path": "Harness/scripts/task-context.mjs",
+      "description": "Static import of routeAggregateBlockers; removed dynamic import and synchronous fallback"
+    },
+    {
+      "id": "W6-04",
+      "path": "Harness/scripts/auto-archive-session-start.mjs",
+      "description": "SessionStart / Stop helper that runs task-state auto-archive in dry-run mode by default"
+    },
+    {
+      "id": "W6-05",
+      "path": "tests/task-state-closeout.test.js",
+      "description": "7 integration tests for the real closeout trigger"
+    }
+  ],
+  "group": "create-harness-vibe-coding",
+  "links": {
+    "dependsOn": [],
+    "blocks": [],
+    "related": []
+  }
+}

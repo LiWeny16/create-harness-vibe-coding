@@ -125,7 +125,7 @@ async function seedGraphFixture(root) {
       taskId: null,
     }],
     edges: [
-      { id: 'edge-agent-timer', from: agentNodeId, to: timer.node.nodeId, relation: 'event', direction: 'source-to-target', sourceHandle: 'context', targetHandle: 'event' },
+      { id: 'edge-agent-timer', from: timer.node.nodeId, to: agentNodeId, relation: 'event', direction: 'source-to-target', sourceHandle: 'event', targetHandle: 'context' },
       { id: 'edge-agent-timer-control', from: agentNodeId, to: timer.node.nodeId, relation: 'control', direction: 'source-to-target', sourceHandle: 'context', targetHandle: 'config' },
       { id: 'edge-agent-markdown', from: agentNodeId, to: markdown.node.nodeId, relation: 'default-output', direction: 'bidirectional', sourceHandle: 'output', targetHandle: 'markdown' },
       { id: 'edge-agent-goal', from: agentNodeId, to: goalNodeId, relation: 'goal', direction: 'bidirectional', sourceHandle: 'context', targetHandle: 'goal' },
@@ -145,6 +145,48 @@ async function seedGraphFixture(root) {
     },
   });
   return { registry, sessionId, subSessionId, agentNodeId, markdown: markdown.node.nodeId, timer: timer.node.nodeId, pack: pack.node.nodeId, goalNodeId };
+}
+
+async function seedConnectedSkillPack(root, packPrompt) {
+  const pack = await runtime.createNode(root, {
+    type: 'skill-group',
+    title: 'Agent Skill Pack',
+    sourceGroup: { id: 'source:workflow', label: 'Workflow', kind: 'source' },
+    ...(packPrompt === undefined ? {} : { prompt: packPrompt }),
+    skills: [
+      { id: 'skill:wf-ui', name: 'wf-ui', title: 'WF-UI Adapter', source: 'project' },
+      { id: 'skill:browser-lab', name: 'browser-lab', title: 'Browser Lab', source: 'project' },
+    ],
+  });
+  const agentNodeId = 'session-ac004-prompt-agent';
+  const graph = loadWorkflowGraphMap(root);
+  writeWorkflowGraphMap(root, {
+    ...graph,
+    version: graph.version + 1,
+    nodes: [{
+      nodeId: agentNodeId,
+      sessionId: `${agentNodeId}-pty`,
+      kind: 'terminal-session',
+      agentKind: 'main',
+      runtime: 'codex',
+      status: 'running',
+      role: 'Main Agent',
+      label: 'Main Agent',
+      cwd: root,
+      taskId: null,
+    }],
+    edges: [{
+      id: 'edge-ac004-pack',
+      from: agentNodeId,
+      to: pack.node.nodeId,
+      relation: 'capability',
+      direction: 'bidirectional',
+      sourceHandle: 'right',
+      targetHandle: 'capability:left',
+    }],
+    positions: { [agentNodeId]: { x: 100, y: 100 } },
+  });
+  return { agentNodeId, packNodeId: pack.node.nodeId };
 }
 
 function assertRefsCarryW38e(refs, label) {
@@ -317,6 +359,46 @@ test('sub-builders are independently importable and produce the canonical shapes
     const snapshot = buildAgentSnapshot(root, graphNode, graph);
     assert.equal(snapshot.kind, 'agent');
     assert.equal(snapshot.sessionId, fixture.sessionId);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('AC-004 a connected pack prompt and its skill names appear in Agent context', async () => {
+  const root = makeProject();
+  try {
+    const prompt = 'Use wf-ui for workflow actions and browser-lab for browser research.';
+    const fixture = await seedConnectedSkillPack(root, prompt);
+    const graph = loadWorkflowGraphMap(root);
+    const graphNode = findAgentGraphNode(graph, fixture.agentNodeId);
+    const result = buildAgentContext(root, graphNode, graph);
+    const context = result.context;
+
+    assert.equal(result.ok, true);
+    assert.ok(JSON.stringify(context).includes(prompt), 'connected pack prompt should be surfaced in context');
+    assert.ok(context.effectiveSkills.includes('wf-ui'));
+    assert.ok(context.effectiveSkills.includes('browser-lab'));
+    assert.ok(context.connectedCapabilityNodeRefs.some(ref => ref.nodeId === fixture.packNodeId), 'the pack connection should remain visible');
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('AC-004 a connected pack without an authored prompt gets the derived skills sentence', async () => {
+  const root = makeProject();
+  try {
+    const fixture = await seedConnectedSkillPack(root);
+    const graph = loadWorkflowGraphMap(root);
+    const graphNode = findAgentGraphNode(graph, fixture.agentNodeId);
+    const result = buildAgentContext(root, graphNode, graph);
+
+    assert.equal(result.ok, true);
+    assert.ok(JSON.stringify(result.context).includes(
+      'You have the following skills available in this pack (Agent Skill Pack): wf-ui, browser-lab. Use them when the task needs them.',
+    ));
+    assert.ok(result.context.effectiveSkills.includes('wf-ui'));
+    assert.ok(result.context.effectiveSkills.includes('browser-lab'));
+    assert.ok(result.context.connectedCapabilityNodeRefs.some(ref => ref.nodeId === fixture.packNodeId));
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }

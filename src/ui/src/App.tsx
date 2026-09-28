@@ -206,7 +206,7 @@ export default function App() {
             <Routes>
               <Route path="/" element={<TaskList onSelectSession={setActiveTerminalSession} />} />
               <Route path="/tasks" element={<TaskList onSelectSession={setActiveTerminalSession} />} />
-              <Route path="/workflow" element={<WorkflowRoute onSelectSession={setActiveTerminalSession} />} />
+              <Route path="/workflow" element={<WorkflowRoute onSelectSession={setActiveTerminalSession} activeSessionId={activeTerminalSession} />} />
               <Route path="/agents" element={<AgentsRoute onSelectSession={setActiveTerminalSession} />} />
               <Route path="/roles" element={<RolesRoute />} />
               <Route path="/settings" element={<SettingsRoute />} />

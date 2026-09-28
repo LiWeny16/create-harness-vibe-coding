@@ -1,0 +1,20 @@
+{
+  "name": "@zingspark/wf-cli-linux-arm64-gnu",
+  "version": "0.1.0",
+  "description": "Platform binary for @zingspark/wf-cli (wf-cli-linux-arm64-gnu)",
+  "os": [
+    "linux"
+  ],
+  "cpu": [
+    "arm64"
+  ],
+  "files": [
+    "wf",
+    "README.md"
+  ],
+  "binary": "wf",
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT"
+}

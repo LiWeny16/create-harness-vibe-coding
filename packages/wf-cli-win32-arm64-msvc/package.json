@@ -1,0 +1,20 @@
+{
+  "name": "@zingspark/wf-cli-win32-arm64-msvc",
+  "version": "0.1.0",
+  "description": "Platform binary for @zingspark/wf-cli (wf-cli-win32-arm64-msvc)",
+  "os": [
+    "win32"
+  ],
+  "cpu": [
+    "arm64"
+  ],
+  "files": [
+    "wf.exe",
+    "README.md"
+  ],
+  "binary": "wf.exe",
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT"
+}

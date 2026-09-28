@@ -129,7 +129,7 @@ test('G3: archive --group archives the whole group as a confirmation-less batch 
   // archivable (verified status)
   let result = runTaskState(project, [
     'record', 'task-group-alpha', '--create', '--group', 'release-0819-formal',
-    '--status', 'verified', '--text', 'a', '--apply', '--json',
+    '--status', 'verified', '--phase', 'closeout', '--text', 'a', '--apply', '--json',
   ]);
   assert.equal(result.status, 0, result.stderr);
 
@@ -172,7 +172,9 @@ test('G4: task-group-index scan + render produce correct sections and stale flag
   // completed 12 days ago -> needs archive
   writeFixtureState(tasksRoot, 'task-group-beta', {
     schemaVersion: 1, taskId: 'task-group-beta', status: 'verified', phase: 'verified',
-    group: 'release-0819-formal', updatedAt: new Date(now.getTime() - (12 * DAY_MS + HOUR_MS)).toISOString(),
+    group: 'release-0819-formal',
+    createdAt: new Date(now.getTime() - (12 * DAY_MS + HOUR_MS)).toISOString(),
+    updatedAt: new Date(now.getTime() - (12 * DAY_MS + HOUR_MS)).toISOString(),
   });
   // active with no heartbeat for 8 days
   writeFixtureState(tasksRoot, 'task-group-gamma', {
@@ -202,7 +204,7 @@ test('G4: task-group-index scan + render produce correct sections and stale flag
   const md = renderGroupsMd(model);
   assert.match(md, /## release-0819-formal \(3 tasks\)/);
   assert.match(md, /## default \(1 task\)/);
-  assert.match(md, /\| `task-group-beta` \| verified \| verified \| 2026-08-01 \|/);
+  assert.match(md, /\| `task-group-beta` \| closed \| verified \| 2026-08-01 \|/);
   assert.match(md, /## Needs Archive \(stale\)/);
   assert.match(md, /- task-group-beta: completed 12d ago, not archived/);
   assert.match(md, /- task-group-gamma: no heartbeat 8d \(active\)/);

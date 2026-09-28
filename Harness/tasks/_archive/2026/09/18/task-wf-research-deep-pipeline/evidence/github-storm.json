@@ -1,0 +1,12 @@
+{
+  "url": "https://github.com/stanford-oval/storm",
+  "title": "STORM",
+  "version": "main@2026-09-18",
+  "license": "repository license checked before installation",
+  "reason": "Reuse its retrieval-provider routing and source-grounded knowledge-curation pattern without bundling the Python runtime in the default Harness package.",
+  "checkedAt": "2026-09-18T00:00:00Z",
+  "sourceType": "official",
+  "decision": "adapt",
+  "acIds": ["AC-002", "AC-003"],
+  "recheckTrigger": "Upstream dependency, provider, or license changes"
+}

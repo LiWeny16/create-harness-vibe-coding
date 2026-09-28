@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-review-release-readiness",
+  "status": "archived",
+  "mode": "wf",
+  "defaultRuntime": "codex",
+  "defaultAgentRuntime": "codex",
+  "tier": "none",
+  "phase": "archived",
+  "gate": null,
+  "project": "create-harness-vibe-coding",
+  "tags": [
+    "release",
+    "review"
+  ],
+  "createdAt": "2026-09-21T07:08:37.835Z",
+  "startedAt": "2026-09-21T07:08:37.835Z",
+  "closedAt": "2026-09-21T07:21:12.692Z",
+  "updatedAt": "2026-09-21T07:21:18.505Z",
+  "activeQuestion": null,
+  "nextAction": "审查当前工作区是否达到可发布状态，并归纳新增功能；只读审查，不修改生产代码、不执行发布。",
+  "acceptance": [],
+  "queues": {
+    "ready": [],
+    "running": [],
+    "blocked": [],
+    "done": []
+  },
+  "workItems": [],
+  "dispatchLedger": [],
+  "decisions": [],
+  "risks": [],
+  "artifacts": [],
+  "group": "create-harness-vibe-coding",
+  "links": {
+    "dependsOn": [],
+    "blocks": [],
+    "related": []
+  }
+}

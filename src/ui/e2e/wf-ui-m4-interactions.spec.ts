@@ -30,6 +30,10 @@ type HarnessNetwork = {
   committedGraph: JsonRecord;
   bridgeMessageRequests: string[];
   edgeGesturePhase: 'idle' | 'dragging';
+  terminalRangeRequests: Array<{ sessionId: string; query: string }>;
+  terminalResizeMessages: Array<{ sessionId: string; cols: number; rows: number }>;
+  terminalInputMessages: Array<{ sessionId: string; data: string }>;
+  terminalDeletedSessions: string[];
 };
 
 function jsonResponse(route: Route, body: unknown, status = 200) {
@@ -294,6 +298,10 @@ async function installWorkflowFixture(page: Page): Promise<HarnessNetwork> {
     committedGraph,
     bridgeMessageRequests: [],
     edgeGesturePhase: 'idle',
+    terminalRangeRequests: [],
+    terminalResizeMessages: [],
+    terminalInputMessages: [],
+    terminalDeletedSessions: [],
   };
   const snapshotWithCommittedGraph = () => {
     const snapshot = workflowSnapshot() as JsonRecord;
@@ -348,7 +356,20 @@ async function installWorkflowFixture(page: Page): Promise<HarnessNetwork> {
   });
   await page.route('**/api/a2a/snapshot**', route => jsonResponse(route, snapshotWithCommittedGraph()));
   await page.route('**/api/sessions?all=1**', route => jsonResponse(route, snapshotWithCommittedGraph().sessions));
-  await page.route('**/api/terminals/**/range**', route => jsonResponse(route, { entries: [{ seq: 1, stream: 'stdout', data: '\r\nM4 terminal fixture ready\r\n' }] }));
+  await page.route('**/api/terminals/**/range**', route => {
+    const url = new URL(route.request().url());
+    const sessionId = decodeURIComponent(url.pathname.split('/')[3] || 'unknown');
+    const query = url.search;
+    network.terminalRangeRequests.push({ sessionId, query });
+    const seq = Number(url.searchParams.get('fromSeq') || 1);
+    const label = sessionId === mainSessionId ? 'MAIN' : 'WORKER';
+    const data = network.terminalDeletedSessions.includes(sessionId)
+      ? `${label} replacement history`
+      : `${label} history ${seq}`;
+    return jsonResponse(route, {
+      entries: [{ seq, stream: 'stdout', data: `\r\n${data}\r\n` }],
+    });
+  });
   await page.route('**/api/sessions/**/attach-mode', route => jsonResponse(route, { ok: true }));
   await page.route('**/api/sessions/**/input', route => jsonResponse(route, { ok: true }));
   await page.route('**/api/sessions/**/stop', route => jsonResponse(route, { ok: true }));
@@ -603,7 +624,7 @@ test.describe('WF UI M4 RED interaction acceptance', () => {
     const actionValues = await page.getByTestId('workflow-node-context-action').evaluateAll(elements => (
       elements.map(element => element.getAttribute('data-action')).filter(Boolean).sort()
     ));
-    expect(actionValues).toEqual(['copy', 'cut', 'delete', 'duplicate', 'mcp-hub', 'open-config', 'settings', 'skills-hub'].sort());
+    expect(actionValues).toEqual(['agent.start', 'copy', 'cut', 'delete', 'duplicate', 'mcp-hub', 'open-config', 'settings', 'skills-hub'].sort());
     await assertNoBrowserFailures(page, signals);
   });
 
@@ -748,6 +769,132 @@ test.describe('WF UI M4 RED interaction acceptance', () => {
     const panelZ = await page.getByTestId('workflow-create-node-panel').evaluate(element => Number.parseInt(getComputedStyle(element).zIndex || '0', 10));
     expect(z).toBeGreaterThan(menuZ);
     expect(z).toBeGreaterThan(panelZ);
+    await assertNoBrowserFailures(page, signals);
+  });
+
+  test('task-web-terminal-smoothing AC-001/002/003 preserves sessions, syncs dimensions, and releases deleted sessions', async ({ page }) => {
+    const signals = await installBrowserCollectors(page);
+    const network = await installWorkflowFixture(page);
+    const attachCounts = new Map<string, number>();
+
+    // Force xterm's DOM renderer so terminal output remains accessible to the
+    // user-path assertions even on runners with WebGL enabled.
+    await page.addInitScript(() => {
+      const nativeGetContext = HTMLCanvasElement.prototype.getContext;
+      HTMLCanvasElement.prototype.getContext = function (contextType: string, ...args: any[]) {
+        if (contextType === 'webgl' || contextType === 'webgl2') return null;
+        return nativeGetContext.call(this, contextType, ...args as [any]);
+      } as typeof HTMLCanvasElement.prototype.getContext;
+    });
+
+    await page.routeWebSocket('**/ws/terminal/**', socket => {
+      const sessionId = decodeURIComponent(new URL(socket.url()).pathname.split('/')[3] || 'unknown');
+      socket.onMessage(raw => {
+        const message = JSON.parse(String(raw)) as JsonRecord;
+        if (message.type === 'pty:resize') {
+          network.terminalResizeMessages.push({
+            sessionId,
+            cols: Number(message.cols || 0),
+            rows: Number(message.rows || 0),
+          });
+        } else if (message.type === 'pty:input') {
+          network.terminalInputMessages.push({ sessionId, data: String(message.data || '') });
+        } else if (message.type === 'control:attach-mode') {
+          const attachCount = (attachCounts.get(sessionId) || 0) + 1;
+          attachCounts.set(sessionId, attachCount);
+          socket.send(JSON.stringify({
+            type: 'pty:data',
+            seq: attachCount + 1,
+            data: `\r\n${sessionId} live ${attachCount}\r\n`,
+          }));
+        }
+      });
+    });
+
+    await openWorkflow(page);
+    const mainNode = page.locator(`[data-testid="workflow-node"][data-node-id="${mainNodeId}"]`).first();
+    await expect(mainNode).toBeVisible();
+    await mainNode.dblclick();
+
+    const terminalWindow = page.getByTestId('terminal-window');
+    const terminalRows = page.getByTestId('terminal-output').locator('.xterm-rows');
+    await expect(terminalWindow).toBeVisible();
+    await expect(terminalRows).toContainText('MAIN history 1');
+    await expect.poll(() => network.terminalResizeMessages.length).toBeGreaterThan(0);
+    await expect.poll(() => network.terminalResizeMessages.every(message => message.cols > 0 && message.rows > 0)).toBe(true);
+    expect(network.terminalRangeRequests[0]).toEqual({ sessionId: mainSessionId, query: '?tail=800' });
+
+    await page.getByTestId('terminal-output').click();
+    await page.getByTestId('terminal-output').locator('.xterm-helper-textarea').focus();
+    await page.keyboard.type('QA_PENDING_NO_ENTER');
+    await expect.poll(() => network.terminalInputMessages.map(message => message.data).join('')).toContain('QA_PENDING_NO_ENTER');
+    expect(network.terminalInputMessages.every(message => message.sessionId === mainSessionId)).toBe(true);
+
+    const fullscreenToggle = page.getByTestId('terminal-fullscreen-toggle');
+    await fullscreenToggle.click();
+    await expect(terminalWindow).toHaveAttribute('data-fullscreen', 'true');
+    const fullscreenHost = await page.getByTestId('terminal-output').boundingBox();
+    expect(fullscreenHost?.width).toBeGreaterThan(0);
+    expect(fullscreenHost?.height).toBeGreaterThan(0);
+    await fullscreenToggle.click();
+    await expect(terminalWindow).toHaveAttribute('data-fullscreen', 'false');
+
+    await terminalWindow.getByTitle('Minimize terminal').click();
+    await expect(terminalWindow).toHaveAttribute('aria-hidden', 'true');
+    await page.getByTestId('terminal-minimized').click();
+    await expect(terminalWindow).toHaveAttribute('aria-hidden', 'false');
+
+    const resizeCount = network.terminalResizeMessages.length;
+    const resizeHandle = page.getByTestId('terminal-resize-handle');
+    const handleBox = await resizeHandle.boundingBox();
+    expect(handleBox).not.toBeNull();
+    await page.mouse.move(handleBox!.x + handleBox!.width / 2, handleBox!.y + handleBox!.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(handleBox!.x + handleBox!.width / 2 + 80, handleBox!.y + handleBox!.height / 2 + 60, { steps: 2 });
+    await page.mouse.up();
+    await expect.poll(() => network.terminalResizeMessages.length).toBeGreaterThan(resizeCount);
+    const lastResize = network.terminalResizeMessages.at(-1)!;
+    expect(lastResize.sessionId).toBe(mainSessionId);
+    expect(lastResize.cols).toBeGreaterThan(0);
+    expect(lastResize.rows).toBeGreaterThan(0);
+
+    await terminalWindow.getByTitle('Close terminal').click();
+    await expect(terminalWindow).toHaveCount(0);
+    await mainNode.dblclick();
+    await expect(terminalRows).toContainText('MAIN history 1');
+    await expect(terminalRows).toContainText('MAIN history 4');
+    await expect.poll(() => network.terminalRangeRequests.filter(request => request.sessionId === mainSessionId).length).toBe(3);
+    expect(network.terminalRangeRequests.filter(request => request.sessionId === mainSessionId).map(request => request.query))
+      .toEqual(['?tail=800', '?fromSeq=3', '?fromSeq=4']);
+
+    await terminalWindow.getByTitle('Close terminal').click();
+    await expect(terminalWindow).toHaveCount(0);
+    const workerNode = page.locator(`[data-testid="workflow-node"][data-node-id="${workerNodeId}"]`).first();
+    await workerNode.dblclick();
+    await expect(terminalRows).toContainText('WORKER history 1');
+    await expect(terminalRows).not.toContainText('MAIN history');
+
+    await terminalWindow.getByTitle('Close terminal').click();
+    await expect(terminalWindow).toHaveCount(0);
+    await mainNode.dblclick();
+    await expect.poll(() => network.terminalRangeRequests.filter(request => request.sessionId === mainSessionId).length).toBe(4);
+    await expect(terminalRows).toContainText('MAIN history 5');
+    expect(network.terminalRangeRequests.filter(request => request.sessionId === mainSessionId).map(request => request.query))
+      .toEqual(['?tail=800', '?fromSeq=3', '?fromSeq=4', '?fromSeq=5']);
+
+    await terminalWindow.getByTitle('Close terminal').click();
+    await expect(terminalWindow).toHaveCount(0);
+    network.terminalDeletedSessions.push(mainSessionId);
+    await page.evaluate((deletedSessionId) => {
+      window.dispatchEvent(new CustomEvent('harness:sessions-changed', {
+        detail: { sessionId: deletedSessionId, state: 'deleted' },
+      }));
+    }, mainSessionId);
+    await mainNode.dblclick();
+    await expect(terminalRows).toContainText('MAIN replacement history');
+    await expect(terminalRows).not.toContainText('MAIN history 1');
+    expect(network.terminalRangeRequests.filter(request => request.sessionId === mainSessionId).at(-1)?.query)
+      .toBe('?tail=800');
     await assertNoBrowserFailures(page, signals);
   });
 });

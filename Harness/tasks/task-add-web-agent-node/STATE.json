@@ -1,15 +1,24 @@
 {
   "schemaVersion": 1,
   "taskId": "task-add-web-agent-node",
-  "status": "active",
+  "status": "closed",
   "mode": "wf-max",
   "tier": "standard",
-  "phase": "intake",
-  "gate": null,
-  "updatedAt": "2026-09-14T04:41:50.354Z",
-  "activeQuestion": "MVP 范围三问：1) 后端只做 claude+codex 还是含 opencode？2) web-agent 是否参与 subagent 树还是先做单体会话？3) 审批粒度三键即可还是要 permission-mode 切换 UI？",
-  "nextAction": "等待用户回答后写 Mini PRD + AC，再进 W1 架构",
-  "acceptance": [],
+  "phase": "closeout",
+  "gate": "test-gate",
+  "updatedAt": "2026-09-28T04:15:07.407Z",
+  "activeQuestion": null,
+  "nextAction": "Acceptance and closeout evidence are recorded; no task work remains.",
+  "acceptance": [
+    "AC-1",
+    "AC-2",
+    "AC-3",
+    "AC-4",
+    "AC-5",
+    "AC-6",
+    "AC-7",
+    "AC-8"
+  ],
   "links": {
     "dependsOn": [],
     "blocks": [],
@@ -19,17 +28,54 @@
     "ready": [],
     "running": [],
     "blocked": [],
-    "done": []
+    "done": [
+      "W2-test-writer",
+      "W2-standalone-chat-backend",
+      "W2-standalone-chat-ui",
+      "W3-chat-runtime-verification"
+    ]
   },
   "workItems": [],
-  "dispatchLedger": [],
-  "decisions": [],
+  "dispatchLedger": [
+    {
+      "wave": "W2a-test",
+      "agent": "test-writer",
+      "mode": "write",
+      "ac": [
+        "AC-1",
+        "AC-2",
+        "AC-3",
+        "AC-4",
+        "AC-5",
+        "AC-6",
+        "AC-7",
+        "AC-8"
+      ],
+      "status": "done",
+      "evidence": "Harness/tasks/task-add-web-agent-node/CLOSEOUT.md"
+    }
+  ],
+  "decisions": [
+    "User confirmed runtime scope: Claude Code, Codex, OpenCode, Pi.",
+    "User confirmed chat is a standalone session and does not join the subagent tree in this task.",
+    "User confirmed permission-mode switching UI; map only modes supported by each runtime.",
+    "User approved a bundled Pi host-gate extension; intercept tool_call and route ask-mode decisions through RPC."
+  ],
   "risks": [],
-  "artifacts": [],
+  "artifacts": [
+    {
+      "path": "Harness/tasks/task-add-web-agent-node/CLOSEOUT.md",
+      "kind": "closeout"
+    }
+  ],
   "defaultRuntime": "codex",
   "defaultAgentRuntime": "codex",
   "tags": [],
   "createdAt": "2026-09-14T04:41:50.354Z",
   "startedAt": "2026-09-14T04:41:50.354Z",
-  "closedAt": null
+  "closedAt": "2026-09-28T04:15:07.407Z",
+  "lastRecovery": {
+    "at": "2026-09-23T09:10:23.804Z",
+    "reason": "Mistaken closure by controller; restore unresolved intake question and keep blocked."
+  }
 }

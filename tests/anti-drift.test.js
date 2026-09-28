@@ -124,10 +124,13 @@ test('wf-ui direct command wrappers launch CLI without router load', () => {
   for (const [idx, body] of bodies.entries()) {
     assert.match(body, /direct command/i, `${files[idx]} should be direct`);
     assert.match(body, /Do not invoke a skill/, `${files[idx]} should not invoke a skill`);
-    assert.match(body, /create-harness-vibe-coding wf-ui/, `${files[idx]} should launch the CLI`);
-    assert.match(body, /--host 127\.0\.0\.1/, `${files[idx]} should bind loopback`);
-    assert.match(body, /--open/, `${files[idx]} should request browser open`);
-    assert.match(body, /--detach/, `${files[idx]} should detach the long-running server`);
+    assert.match(body, /pnpm exec wf extension status wf-ui --project \. --json/, `${files[idx]} should check extension status`);
+    assert.match(body, /pnpm exec wf extension install wf-ui --project \. --apply --json/, `${files[idx]} should install the extension`);
+    assert.match(body, /pnpm exec wf ui start --project \. --json/, `${files[idx]} should start the UI runtime`);
+    assert.doesNotMatch(body, /create-harness-vibe-coding wf-ui/, `${files[idx]} should not use the legacy binary`);
+    assert.doesNotMatch(body, /--host\b/, `${files[idx]} should not use the legacy --host flag`);
+    assert.doesNotMatch(body, /--open\b/, `${files[idx]} should not use the legacy --open flag`);
+    assert.doesNotMatch(body, /--detach\b/, `${files[idx]} should not use the legacy --detach flag`);
     assert.doesNotMatch(body, /workflow command/i, `${files[idx]} should not be workflow-routed`);
     assert.doesNotMatch(body, /Load `CLAUDE\.md`/, `${files[idx]} should not preload the router`);
   }
@@ -641,9 +644,18 @@ test('wf-remove built-in registries cover generated agents and skills', () => {
   }
 });
 
+test('root and template CLAUDE.md both carry core thin-startup semantics', () => {
+  for (const rel of ['CLAUDE.md', 'templates/common/CLAUDE.md']) {
+    const body = read(rel);
+    assert.match(body, /startup is thin/i, `${rel} should describe thin startup`);
+    assert.match(body, /startup-hints\.md/, `${rel} should route to the L2 digest`);
+    assert.match(body, /direct mode/i, `${rel} should describe direct mode`);
+    assert.match(body, /do not load the full Harness router/i, `${rel} should forbid full router loading in direct mode`);
+  }
+});
+
 test('route-critical template and dogfood files stay byte-identical', () => {
   const pairs = [
-    ['CLAUDE.md', 'templates/common/CLAUDE.md'],
     ['.claude/rules/ecc/common.md', 'templates/common/.claude/rules/ecc/common.md'],
     ['Harness/specs/runtime/command-surface.json', 'templates/common/Harness/specs/runtime/command-surface.json'],
     ['.claude/commands/wf-help.md', 'templates/common/.claude/commands/wf-help.md'],

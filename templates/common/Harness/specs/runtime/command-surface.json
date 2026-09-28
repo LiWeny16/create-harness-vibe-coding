@@ -4,254 +4,185 @@
     {
       "id": "wf-help",
       "classification": "direct",
+      "execution": "cli-backed",
+      "cli": { "subcommand": "help" },
       "aliases": ["/wf-help", "$wf-help", "/skills wf-help"],
       "entersWf": false,
       "taskCapsulePolicy": "none",
-      "surfaces": {
-        "claudeCommand": true,
-        "opencodeCommand": true,
-        "claudeSkill": true,
-        "codexSkill": true,
-        "helpRow": true
-      }
+      "surfaces": { "claudeCommand": true, "opencodeCommand": true, "claudeSkill": true, "codexSkill": true, "helpRow": true }
     },
     {
       "id": "wf",
       "classification": "workflow",
+      "execution": "skill-controller",
       "aliases": ["/wf", "$wf", "/skills wf"],
       "entersWf": true,
       "taskCapsulePolicy": "required",
-      "surfaces": {
-        "claudeCommand": true,
-        "opencodeCommand": true,
-        "claudeSkill": true,
-        "codexSkill": true,
-        "helpRow": true
-      }
+      "surfaces": { "claudeCommand": true, "opencodeCommand": true, "claudeSkill": true, "codexSkill": true, "helpRow": true }
     },
     {
       "id": "wf-max",
       "classification": "workflow",
+      "execution": "skill-controller",
       "aliases": ["/wf-max", "$wf-max", "/skills wf-max"],
       "entersWf": true,
       "taskCapsulePolicy": "required",
-      "surfaces": {
-        "claudeCommand": true,
-        "opencodeCommand": true,
-        "claudeSkill": true,
-        "codexSkill": true,
-        "helpRow": true
-      }
+      "surfaces": { "claudeCommand": true, "opencodeCommand": true, "claudeSkill": true, "codexSkill": true, "helpRow": true }
     },
     {
       "id": "wf-auto",
       "classification": "workflow",
+      "execution": "skill-controller",
       "aliases": ["/wf-auto", "$wf-auto", "/skills wf-auto"],
       "entersWf": true,
       "taskCapsulePolicy": "auto-capsule-required",
-      "surfaces": {
-        "claudeCommand": true,
-        "opencodeCommand": true,
-        "claudeSkill": true,
-        "codexSkill": true,
-        "helpRow": true
-      }
+      "surfaces": { "claudeCommand": true, "opencodeCommand": true, "claudeSkill": true, "codexSkill": true, "helpRow": true }
     },
     {
       "id": "wf-auto-spark",
       "classification": "workflow",
+      "execution": "skill-controller",
       "aliases": ["/wf-auto-spark", "$wf-auto-spark", "/skills wf-auto-spark"],
       "entersWf": true,
       "taskCapsulePolicy": "auto-capsule-required",
-      "surfaces": {
-        "claudeCommand": true,
-        "opencodeCommand": true,
-        "claudeSkill": true,
-        "codexSkill": true,
-        "helpRow": true
-      }
+      "surfaces": { "claudeCommand": true, "opencodeCommand": true, "claudeSkill": true, "codexSkill": true, "helpRow": true }
     },
     {
       "id": "wf-review",
       "classification": "workflow",
+      "execution": "skill-controller",
       "aliases": ["/wf-review", "$wf-review", "/skills wf-review"],
       "entersWf": true,
       "taskCapsulePolicy": "use-current-or-create-when-needed",
-      "surfaces": {
-        "claudeCommand": true,
-        "opencodeCommand": true,
-        "claudeSkill": true,
-        "codexSkill": true,
-        "helpRow": true
-      }
+      "surfaces": { "claudeCommand": true, "opencodeCommand": true, "claudeSkill": true, "codexSkill": true, "helpRow": true }
     },
     {
       "id": "wf-learn",
       "classification": "workflow",
+      "execution": "skill-controller",
       "aliases": ["/wf-learn", "$wf-learn", "/skills wf-learn"],
       "entersWf": true,
       "taskCapsulePolicy": "use-current-or-create-when-needed",
-      "surfaces": {
-        "claudeCommand": true,
-        "opencodeCommand": true,
-        "claudeSkill": true,
-        "codexSkill": true,
-        "helpRow": true
-      }
+      "surfaces": { "claudeCommand": true, "opencodeCommand": true, "claudeSkill": true, "codexSkill": true, "helpRow": true }
     },
     {
       "id": "wf-browser",
       "classification": "workflow",
+      "execution": "cli-backed",
+      "cli": { "subcommand": "browser" },
       "aliases": ["/wf-browser", "$wf-browser", "/skills wf-browser"],
       "entersWf": true,
       "taskCapsulePolicy": "required",
-      "surfaces": {
-        "claudeCommand": true,
-        "opencodeCommand": true,
-        "claudeSkill": true,
-        "codexSkill": true,
-        "helpRow": true
-      }
+      "surfaces": { "claudeCommand": true, "opencodeCommand": true, "claudeSkill": true, "codexSkill": true, "helpRow": true }
     },
     {
       "id": "wf-readme",
       "classification": "workflow",
+      "execution": "skill-controller",
       "aliases": ["/wf-readme", "$wf-readme", "/skills wf-readme"],
       "entersWf": true,
       "taskCapsulePolicy": "required",
-      "surfaces": {
-        "claudeCommand": true,
-        "opencodeCommand": true,
-        "claudeSkill": true,
-        "codexSkill": true,
-        "helpRow": true
-      }
+      "surfaces": { "claudeCommand": true, "opencodeCommand": true, "claudeSkill": true, "codexSkill": true, "helpRow": true }
     },
     {
       "id": "wf-update",
       "classification": "direct",
+      "execution": "cli-backed",
+      "cli": { "subcommand": "update" },
       "aliases": ["/wf-update", "$wf-update", "/skills wf-update"],
       "entersWf": false,
       "taskCapsulePolicy": "none",
-      "surfaces": {
-        "claudeCommand": true,
-        "opencodeCommand": true,
-        "claudeSkill": true,
-        "codexSkill": true,
-        "helpRow": true
-      }
+      "surfaces": { "claudeCommand": true, "opencodeCommand": true, "claudeSkill": true, "codexSkill": true, "helpRow": true }
     },
     {
       "id": "wf-remove",
       "classification": "workflow",
+      "execution": "cli-backed",
+      "cli": { "subcommand": "remove" },
       "aliases": ["/wf-remove", "$wf-remove", "/skills wf-remove"],
       "entersWf": true,
       "taskCapsulePolicy": "required",
-      "surfaces": {
-        "claudeCommand": true,
-        "opencodeCommand": true,
-        "claudeSkill": true,
-        "codexSkill": true,
-        "helpRow": true
-      }
+      "surfaces": { "claudeCommand": true, "opencodeCommand": true, "claudeSkill": true, "codexSkill": true, "helpRow": true }
     },
     {
       "id": "wf-task-record",
       "classification": "direct",
+      "execution": "cli-backed",
+      "cli": { "subcommand": "task record" },
       "aliases": ["/wf-task-record", "$wf-task-record", "/skills wf-task-record"],
       "entersWf": false,
       "taskCapsulePolicy": "creates-or-updates",
-      "surfaces": {
-        "claudeCommand": true,
-        "opencodeCommand": true,
-        "claudeSkill": true,
-        "codexSkill": true,
-        "helpRow": true
-      }
+      "surfaces": { "claudeCommand": true, "opencodeCommand": true, "claudeSkill": true, "codexSkill": true, "helpRow": true }
     },
     {
       "id": "wf-task-list",
       "classification": "direct",
+      "execution": "cli-backed",
+      "cli": { "subcommand": "task list" },
       "aliases": ["/wf-task-list", "$wf-task-list", "/skills wf-task-list"],
       "entersWf": false,
       "taskCapsulePolicy": "none",
-      "surfaces": {
-        "claudeCommand": true,
-        "opencodeCommand": true,
-        "claudeSkill": true,
-        "codexSkill": true,
-        "helpRow": true
-      }
+      "surfaces": { "claudeCommand": true, "opencodeCommand": true, "claudeSkill": true, "codexSkill": true, "helpRow": true }
     },
     {
       "id": "wf-task-archive",
       "classification": "direct",
+      "execution": "cli-backed",
+      "cli": { "subcommand": "task archive" },
       "aliases": ["/wf-task-archive", "$wf-task-archive", "/skills wf-task-archive"],
       "entersWf": false,
       "taskCapsulePolicy": "none",
-      "surfaces": {
-        "claudeCommand": true,
-        "opencodeCommand": true,
-        "claudeSkill": true,
-        "codexSkill": true,
-        "helpRow": true
-      }
+      "surfaces": { "claudeCommand": true, "opencodeCommand": true, "claudeSkill": true, "codexSkill": true, "helpRow": true }
     },
     {
       "id": "wf-command-create",
       "classification": "direct",
+      "execution": "cli-backed",
+      "cli": { "subcommand": "command create" },
       "aliases": ["/wf-command-create", "$wf-command-create", "/skills wf-command-create"],
       "entersWf": false,
       "taskCapsulePolicy": "required",
-      "surfaces": {
-        "claudeCommand": true,
-        "opencodeCommand": true,
-        "claudeSkill": true,
-        "codexSkill": true,
-        "helpRow": true
-      }
+      "surfaces": { "claudeCommand": true, "opencodeCommand": true, "claudeSkill": true, "codexSkill": true, "helpRow": true }
     },
     {
       "id": "wf-ui",
       "classification": "direct",
+      "execution": "cli-backed",
+      "cli": { "subcommand": "ui" },
       "aliases": ["/wf-ui", "$wf-ui", "/skills wf-ui"],
       "entersWf": false,
       "taskCapsulePolicy": "none",
-      "surfaces": {
-        "claudeCommand": true,
-        "opencodeCommand": true,
-        "claudeSkill": true,
-        "codexSkill": true,
-        "helpRow": true
-      }
+      "surfaces": { "claudeCommand": true, "opencodeCommand": true, "claudeSkill": true, "codexSkill": true, "helpRow": true }
     },
     {
       "id": "wf-init",
       "classification": "direct",
+      "execution": "cli-backed",
+      "cli": { "subcommand": "init" },
       "aliases": ["/wf-init", "$wf-init", "/skills wf-init"],
       "entersWf": false,
       "taskCapsulePolicy": "none",
-      "surfaces": {
-        "claudeCommand": true,
-        "opencodeCommand": true,
-        "claudeSkill": true,
-        "codexSkill": true,
-        "helpRow": true
-      }
+      "surfaces": { "claudeCommand": true, "opencodeCommand": true, "claudeSkill": true, "codexSkill": true, "helpRow": true }
     },
     {
       "id": "wf-search",
       "classification": "direct",
+      "execution": "cli-backed",
+      "cli": { "subcommand": "search", "optionalExtensions": ["wf-search-media", "wf-search-asr", "wf-search-vlm"] },
       "aliases": ["/wf-search", "$wf-search", "/skills wf-search"],
       "entersWf": false,
       "taskCapsulePolicy": "none",
-      "surfaces": {
-        "claudeCommand": true,
-        "opencodeCommand": true,
-        "claudeSkill": true,
-        "codexSkill": true,
-        "helpRow": true
-      }
+      "surfaces": { "claudeCommand": true, "opencodeCommand": true, "claudeSkill": true, "codexSkill": true, "helpRow": true }
+    },
+    {
+      "id": "wf-extension",
+      "classification": "direct",
+      "execution": "cli-backed",
+      "cli": { "subcommand": "extension" },
+      "aliases": ["/wf-extension", "$wf-extension", "/skills wf-extension"],
+      "entersWf": false,
+      "taskCapsulePolicy": "none",
+      "surfaces": { "claudeCommand": true, "opencodeCommand": true, "claudeSkill": true, "codexSkill": true, "helpRow": true }
     }
   ]
 }

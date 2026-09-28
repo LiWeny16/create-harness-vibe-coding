@@ -1830,6 +1830,40 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
   text-align: left;
 }
 
+.workflow-component-node[data-presentation="billboard"] {
+  height: auto;
+  min-height: 74px;
+  max-height: 244px;
+  grid-template-rows: 36px minmax(38px, auto);
+}
+
+.workflow-billboard {
+  min-height: 38px;
+  max-height: 190px;
+  padding: 7px 9px 9px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+}
+
+.workflow-billboard-entry,
+.workflow-billboard-empty {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.workflow-billboard-entry {
+  color: var(--fg);
+}
+
+.workflow-billboard-empty {
+  color: var(--muted);
+}
+
 /* File/display-style cards clip their content at the rounded corners so long
    paths or oversized previews never spill outside the card. */
 .workflow-component-node[data-component-type="file"],

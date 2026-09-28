@@ -9,6 +9,7 @@ import {
   writeTaskStateAtomic,
 } from './task-state.mjs';
 import { scopedPath, scopedProject } from './lib/path-scope.mjs';
+import { aggregateBlockers as routeAggregateBlockers } from './lib/task-route.mjs';
 
 const CONTEXT_KEYS = [
   'intent', 'constraints', 'facts', 'assumptions', 'decisions',
@@ -421,7 +422,45 @@ function packSection(title, body) {
   return `## ${title}\n${body}\n`;
 }
 
-function buildTaskContextPack({ projectRoot, taskId, role, workItem = '', budgetBytes, input } = {}) {
+function buildTaskHeader(projectRoot, task) {
+  // task-route.mjs is the unified blocker source. It validates task ids
+  // strictly; malformed ids fall through to a header with no blockers so
+  // the pack remains available for inspection.
+  let blockers = [];
+  try {
+    const blockerItems = routeAggregateBlockers(projectRoot, task.state.taskId);
+    blockers = (blockerItems.items || []).map(item => String(item.text));
+  } catch {
+    blockers = [];
+  }
+  const dependencies = task.state.links?.dependsOn || [];
+  return buildTaskHeaderText(task.state, blockers, dependencies);
+}
+
+function buildTaskHeaderText(state, blockers, dependencies) {
+  const status = String(state.status || 'active');
+  const phase = String(state.phase || '-');
+  const gate = state.gate ? String(state.gate) : '-';
+  const nextAction = state.nextAction || '';
+  const lines = [];
+  lines.push('## Task Header');
+  lines.push(`- status: ${status}`);
+  lines.push(`- phase: ${phase}`);
+  lines.push(`- gate: ${gate}`);
+  if (state.activeQuestion) lines.push(`- activeQuestion: ${state.activeQuestion}`);
+  if (nextAction) lines.push(`- nextAction: ${nextAction}`);
+  if (blockers.length > 0) {
+    lines.push('- blockers:');
+    for (const b of blockers) lines.push(`  - ${b}`);
+  }
+  if (dependencies.length > 0) {
+    lines.push(`- dependencies: ${dependencies.join(', ')}`);
+  }
+  lines.push('');
+  return lines.join('\n');
+}
+
+async function buildTaskContextPack({ projectRoot, taskId, role, workItem = '', budgetBytes, input } = {}) {
   if (!role || typeof role !== 'string') throw new ContextError('pack requires --role');
   if (!Number.isSafeInteger(budgetBytes) || budgetBytes < 0) throw new ContextError('--budget-bytes must be a non-negative integer');
   const task = loadTask(projectRoot, taskId);
@@ -434,6 +473,8 @@ function buildTaskContextPack({ projectRoot, taskId, role, workItem = '', budget
     if (typeof input.nextAction === 'string' && input.nextAction.trim()) nextAction = input.nextAction.trim();
   }
 
+  const header = buildTaskHeader(projectRoot, task);
+
   const filtered = {};
   for (const key of ['facts', 'assumptions', 'decisions', 'attempts', 'evidence']) filtered[key] = context[key].filter(item => appliesTo(item, role, workItem));
   const unresolved = [...context.handoff.unresolved];
@@ -442,6 +483,7 @@ function buildTaskContextPack({ projectRoot, taskId, role, workItem = '', budget
   }
 
   const mandatory = [
+    header,
     packSection('Current Intent', context.intent.current || context.intent.original || task.state.goal || 'No intent recorded.'),
     packSection('Constraints', formatList(context.constraints)),
     packSection('Unresolved', formatList(unresolved)),
@@ -495,7 +537,7 @@ function printPayload(payload, jsonOutput) {
   console.log(payload.message || `${payload.command}: ${payload.action || 'ok'}`);
 }
 
-function main(argv = process.argv.slice(2)) {
+async function main(argv = process.argv.slice(2)) {
   const { command, taskId, values, flags } = parseArgs(argv);
   const jsonOutput = flags.has('--json');
   if (!['update', 'show', 'pack'].includes(command)) throw new ContextError('Usage: node Harness/scripts/task-context.mjs update|show|pack <taskId> --project <absolutePath> [--input FILE] [--role ROLE] [--work-item ID] [--budget-bytes N] [--apply] [--json]');
@@ -523,19 +565,18 @@ function main(argv = process.argv.slice(2)) {
   const budget = budgetValue(values['--budget-bytes'], true);
   let input;
   if (values['--input']) input = readInput(values['--input'], project);
-  printPayload(buildTaskContextPack({ projectRoot: project, taskId, role, workItem: values['--work-item'] || '', budgetBytes: budget, input }), true);
+  const payload = await buildTaskContextPack({ projectRoot: project, taskId, role, workItem: values['--work-item'] || '', budgetBytes: budget, input });
+  printPayload(payload, true);
 }
 
 const isMain = process.argv[1]
   && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url));
 if (isMain) {
-  try {
-    main();
-  } catch (err) {
+  main().catch((err) => {
     const command = process.argv[2] || 'task-context';
     printPayload({ ok: false, command, errors: [err instanceof Error ? err.message : String(err)], warnings: [] }, process.argv.includes('--json'));
     process.exitCode = 1;
-  }
+  });
 }
 
 export {

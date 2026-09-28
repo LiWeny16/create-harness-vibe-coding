@@ -6,6 +6,7 @@ const HEALTH_POLL_MS = 100;
 const DEFAULT_HEALTH_TIMEOUT_MS = 10000;
 const DEFAULT_SSE_RETRY_DELAY_MS = 250;
 const DEFAULT_KILL_GRACE_MS = 2000;
+const SUPPORTED_MODES = Object.freeze(['ask', 'allow', 'deny']);
 
 const delay = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -50,6 +51,7 @@ export function createOpencodeServerDriver(options = {}) {
     effortVariant = '',
     title,
     providerSessionId = null,
+    permissionMode = 'ask',
     onEvent = () => {},
     _spawn = nodeSpawn,
     _fetch = globalThis.fetch.bind(globalThis),
@@ -68,6 +70,11 @@ export function createOpencodeServerDriver(options = {}) {
   let pendingTurn = false;
   let sseReader = null;
   let permFlavor = null; // 'response' | 'reply' | null
+  const requestedPermissionMode = String(permissionMode || 'ask');
+  let currentPermissionMode = SUPPORTED_MODES.includes(requestedPermissionMode) ? requestedPermissionMode : 'ask';
+  const pendingPermissionIds = new Set();
+  const inFlightPermissionIds = new Set();
+  const resolvedPermissionIds = new Set();
   const startedToolCalls = new Set();
 
   // OpenCode's model/variant selectors belong to the prompt request. They
@@ -129,34 +136,37 @@ export function createOpencodeServerDriver(options = {}) {
   }
 
   async function detectPermissionFlavor() {
-    let allText = '';
     try {
       const res = await _fetch(`${baseUrl}/doc`);
       if (res.ok) {
         const doc = await res.json();
-        allText = JSON.stringify(doc);
         const paths = doc.paths ?? {};
         outer: for (const [p, def] of Object.entries(paths)) {
-          if (!p.includes('/permissions/')) continue;
+          if (!p.includes('/permissions/') || !def?.post) continue;
           const schema = def?.post?.requestBody?.content?.['application/json']?.schema;
           if (!schema) continue;
           const names = [...(schema.required ?? []), ...Object.keys(schema.properties ?? {})];
           if (names.includes('response')) { permFlavor = 'response'; break outer; }
           if (names.includes('reply')) { permFlavor = 'reply'; break outer; }
         }
-        if (!permFlavor && allText.includes('/permissions/')) {
-          if (allText.includes('"reply"')) permFlavor = 'reply';
-          else if (allText.includes('"response"')) permFlavor = 'response';
-        }
       }
     } catch {}
     if (!permFlavor) {
+      currentPermissionMode = 'ask';
       emit('error', {
         message: 'opencode permission flavor undetected via /doc; approve will try {response} then {reply}',
         recoverable: true,
         phase: 'permission-detection',
       }, null);
     }
+  }
+
+  function serveEnvironment() {
+    const result = env ? { ...env } : { ...process.env };
+    // OpenCode must ask the host for every tool permission. The selected mode
+    // is enforced by this driver's permission event gate, not a session PATCH.
+    result.OPENCODE_PERMISSION = JSON.stringify({ '*': 'ask' });
+    return result;
   }
 
   async function initSession() {
@@ -238,9 +248,30 @@ export function createOpencodeServerDriver(options = {}) {
         mapPart(props.part ?? evt.part, props.delta, evt);
         break;
       case 'permission.updated':
-      case 'permission.asked':
-        emit('permission_request', { requestId: props.id, tool: props.type, title: props.title }, evt);
+      case 'permission.asked': {
+        const requestId = props.id ?? props.requestID;
+        if (requestId == null) {
+          emit('error', { message: 'OpenCode permission request has no request ID', recoverable: false }, evt);
+          break;
+        }
+        const key = String(requestId);
+        if (pendingPermissionIds.has(key) || inFlightPermissionIds.has(key) || resolvedPermissionIds.has(key)) break;
+        pendingPermissionIds.add(key);
+        if (currentPermissionMode === 'ask') {
+          emit('permission_request', {
+            requestId: key,
+            tool: props.type ?? props.permission,
+            title: props.title,
+            input: props.metadata ?? props.input ?? props.pattern ?? {},
+          }, evt);
+        } else {
+          const decision = currentPermissionMode;
+          void approve(key, decision).then((result) => {
+            if (!result.ok) emit('error', { message: `OpenCode host ${decision} gate failed closed for permission ${key}`, recoverable: false }, evt);
+          });
+        }
         break;
+      }
       case 'session.idle':
         if (props.sessionID == null || props.sessionID === sessionId) endTurn();
         break;
@@ -333,7 +364,7 @@ export function createOpencodeServerDriver(options = {}) {
     } catch {}
     child = _spawn(command, ['serve', '--port', String(port ?? 0), ...serveLaunch.serveArgs], {
       cwd,
-      env,
+      env: serveEnvironment(),
       stdio: ['ignore', 'pipe', 'pipe'],
     });
     child.on?.('error', (err) => {
@@ -412,8 +443,13 @@ export function createOpencodeServerDriver(options = {}) {
 
   async function approve(requestId, result) {
     if (!started || !sessionId) throw new Error('driver not started');
-    const value = typeof result === 'boolean' ? (result ? 'allow' : 'deny') : String(result ?? 'allow');
-    const url = `${baseUrl}/session/${encodeURIComponent(sessionId)}/permissions/${encodeURIComponent(requestId)}`;
+    const key = String(requestId ?? '');
+    if (!key || !pendingPermissionIds.has(key)) return { ok: false, ignored: true };
+    pendingPermissionIds.delete(key);
+    inFlightPermissionIds.add(key);
+    const decision = typeof result === 'boolean' ? (result ? 'allow' : 'deny') : String(result ?? 'deny');
+    const value = decision === 'allow' ? 'once' : 'reject';
+    const url = `${baseUrl}/session/${encodeURIComponent(sessionId)}/permissions/${encodeURIComponent(key)}`;
     const shapes = permFlavor
       ? [{ key: permFlavor, body: { [permFlavor]: value } }]
       : [
@@ -436,16 +472,37 @@ export function createOpencodeServerDriver(options = {}) {
           body: JSON.stringify(shape.body),
         });
       } catch (err) {
-        if (i === shapes.length - 1) return finishFail({ message: `approve failed: ${err.message}` });
+        if (i === shapes.length - 1) {
+          inFlightPermissionIds.delete(key);
+          pendingPermissionIds.add(key);
+          return finishFail({ message: `approve failed: ${err.message}` });
+        }
         continue;
       }
-      if (res.ok) return { ok: true, shape: shape.key, tried };
+      if (res.ok) {
+        inFlightPermissionIds.delete(key);
+        resolvedPermissionIds.add(key);
+        return { ok: true, shape: shape.key, tried };
+      }
       if (i === shapes.length - 1) {
+        inFlightPermissionIds.delete(key);
+        pendingPermissionIds.add(key);
         emit('error', { message: `approve failed (HTTP ${res.status})` }, null);
         return { ok: false, tried, status: res.status };
       }
     }
+    inFlightPermissionIds.delete(key);
+    pendingPermissionIds.add(key);
     return { ok: false, tried };
+  }
+
+  async function setPermissionMode(mode) {
+    const value = String(mode || '');
+    if (!SUPPORTED_MODES.includes(value)) throw new Error(`unsupported OpenCode permission mode: ${value}`);
+    if (!started || !sessionId || disposed) throw new Error('OpenCode driver not started');
+    if (!permFlavor && value !== currentPermissionMode) throw new Error('OpenCode permission gate is unavailable because /doc did not declare a permissions response API');
+    currentPermissionMode = value;
+    return true;
   }
 
   function closeSse() {
@@ -479,7 +536,10 @@ export function createOpencodeServerDriver(options = {}) {
     steer: (text, meta) => send(text, meta),
     interrupt,
     approve,
+    setPermissionMode,
     dispose,
+    get supportedModes() { return permFlavor ? SUPPORTED_MODES : [currentPermissionMode]; },
+    get permissionMode() { return currentPermissionMode; },
   };
 }
 

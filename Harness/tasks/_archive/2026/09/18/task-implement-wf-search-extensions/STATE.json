@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-implement-wf-search-extensions",
+  "status": "archived",
+  "mode": "wf",
+  "defaultRuntime": "codex",
+  "defaultAgentRuntime": "codex",
+  "tier": "none",
+  "phase": "archived",
+  "gate": null,
+  "project": "create-harness-vibe-coding",
+  "tags": [
+    "wf-search",
+    "extensions"
+  ],
+  "createdAt": "2026-09-18T03:14:09.190Z",
+  "startedAt": "2026-09-18T03:14:09.190Z",
+  "closedAt": "2026-09-18T03:54:31.125Z",
+  "updatedAt": "2026-09-18T03:54:39.401Z",
+  "activeQuestion": null,
+  "nextAction": "Implement global lazy extension runtime for wf-search and align wf-ui/extensions location under Harness/extensions",
+  "acceptance": [],
+  "queues": {
+    "ready": [],
+    "running": [],
+    "blocked": [],
+    "done": []
+  },
+  "workItems": [],
+  "dispatchLedger": [],
+  "decisions": [],
+  "risks": [],
+  "artifacts": [],
+  "group": "create-harness-vibe-coding",
+  "links": {
+    "dependsOn": [],
+    "blocks": [],
+    "related": []
+  }
+}

@@ -1,33 +1,22 @@
 ---
-description: Open the Harness browser control panel for task capsules, workflow graphs, agent peers, settings, and terminal observability
+description: Use the optional wf-ui runtime through the native wf CLI
 ---
 
 # /wf-ui
 
-Start the Harness browser control panel directly. This is a direct command.
-Do not invoke a skill, do not start WF mode, and do not dispatch agents.
+## Native CLI setup
 
-Run from the project root:
+Before invoking the commands below, check `pnpm exec wf --help` in the project. If `wf` is missing, tell the user to install it with `pnpm add --save-dev @zingspark/wf-cli@0.1.0`. Wait for explicit approval; do not install it automatically. After installation, rerun the check before continuing.
 
-```bash
-create-harness-vibe-coding wf-ui --project . --host 127.0.0.1 --port 56670 --open --detach
-```
+This remains a direct command adapter. Do not invoke a skill for this command.
 
-If you are inside the generator source repository and the global binary is not
-available, use the local source entry:
+wf-ui is an optional CLI extension and is not installed by default.
 
-```bash
-node bin/create-harness-vibe-coding.js wf-ui --project . --host 127.0.0.1 --port 56670 --open --detach
-```
+Use:
 
-Otherwise use the package fallback:
+- pnpm exec wf extension status wf-ui --project . --json
+- pnpm exec wf extension install wf-ui --project . --apply --json
+- pnpm exec wf ui start --project . --json
 
-```bash
-npx create-harness-vibe-coding@latest wf-ui --project . --host 127.0.0.1 --port 56670 --open --detach
-```
-
-Rules:
-- Bind only to `127.0.0.1`.
-- Use port `56670`; if occupied, wf-ui tries the next port upward until one opens. Use `--port 0` only when the user explicitly wants an OS-assigned free port.
-- Detach the server so the command returns after printing the URL.
-- Return the local URL printed by the command.
+Do not enter WF mode from this adapter. Require explicit installation before
+starting the UI runtime and return only compact JSON/session references.

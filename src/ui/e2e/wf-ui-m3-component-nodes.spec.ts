@@ -2038,28 +2038,20 @@ test.describe('WF UI M3 RED trusted component nodes acceptance', () => {
     await expect(targetedHub).toBeVisible();
     await expect(targetedHub).toHaveAttribute('data-mode', 'hub');
     await expect(targetedHub).toHaveAttribute('data-target-agent-id', graphNodeId);
-    await targetedHub.getByTestId('workflow-skills-overlay-search').fill('wf');
-    const wfSkillItem = targetedHub.locator('[data-skill-id="skill:wf-ui"]');
-    const attachSkill = wfSkillItem.getByTestId('workflow-skills-overlay-attach');
-    await expect(attachSkill).toBeEnabled();
-    await attachSkill.click();
-    await expect.poll(() => network.nodeConfigPatchRequests.length).toBe(1);
-    expect(network.nodeConfigPatchRequests[0]).toEqual(expect.objectContaining({
-      skills: expect.arrayContaining(['wf-max', 'tdd', 'wf-browser', 'wf-ui']),
-      skillPolicy: 'manual',
-    }));
-    await expect(attachSkill).toHaveText(/Attached/i);
+    // Skills are selected into a skill-pack node; individual skills are no
+    // longer attached directly to an Agent from the hub.
     await targetedHub.locator('[data-testid="workflow-skills-overlay-tab"][data-tab="groups"]').click();
     const groupCreate = targetedHub.locator('[data-testid="workflow-skills-overlay-pick-group"][data-group-id="recommended:workflow"]');
     await expect(groupCreate).toBeVisible();
     await groupCreate.click();
     await expect(page.getByTestId('workflow-capability-node')).toBeVisible();
-    await expect(page.getByTestId('workflow-capability-node')).toHaveAttribute('data-skill-count', '1');
     const skillGroupCreate = network.componentCreateRequests.find(request => request.type === 'skill-group');
+    expect(skillGroupCreate).toBeTruthy();
+    await expect(page.getByTestId('workflow-capability-node')).toHaveAttribute('data-skill-count', String(skillGroupCreate!.skills.length));
     expect(skillGroupCreate).toEqual(expect.objectContaining({
       type: 'skill-group',
       sourceGroup: expect.objectContaining({ id: 'recommended:workflow' }),
-      skills: [expect.objectContaining({ name: 'wf-ui' })],
+      skills: expect.arrayContaining([expect.objectContaining({ name: 'wf-ui' })]),
     }));
     expect(network.workflowEdgeRequests.some(request => (
       request.method === 'POST'

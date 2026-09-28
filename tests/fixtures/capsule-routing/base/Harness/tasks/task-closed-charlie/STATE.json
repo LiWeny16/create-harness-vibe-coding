@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-closed-charlie",
+  "status": "closed",
+  "mode": "direct",
+  "defaultRuntime": "codex",
+  "defaultAgentRuntime": "codex",
+  "tier": "none",
+  "phase": "verified",
+  "gate": null,
+  "project": "default",
+  "tags": [],
+  "createdAt": "2026-01-01T00:00:00.000Z",
+  "startedAt": "2026-01-01T00:00:00.000Z",
+  "closedAt": "2026-01-02T00:00:00.000Z",
+  "updatedAt": "2026-01-02T00:00:00.000Z",
+  "activeQuestion": null,
+  "nextAction": "Archived.",
+  "acceptance": [],
+  "queues": {
+    "ready": [],
+    "running": [],
+    "blocked": [],
+    "done": ["task-closed-charlie-step-1"]
+  },
+  "workItems": [],
+  "dispatchLedger": [],
+  "decisions": [],
+  "risks": [],
+  "artifacts": [],
+  "group": "default",
+  "links": {
+    "dependsOn": [],
+    "blocks": [],
+    "related": []
+  }
+}

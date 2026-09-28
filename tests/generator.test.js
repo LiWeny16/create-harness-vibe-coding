@@ -94,24 +94,37 @@ test('template source stores harness docs under categorized templates/common/Har
 });
 
 test('WF command fallbacks do not pin an obsolete package version', () => {
-  const files = [
+  // wf-init still uses the npm fallback — it must pin @latest, not an old version.
+  const initFiles = [
     '.claude/commands/wf-init.md',
-    '.claude/commands/wf-ui.md',
     '.opencode/commands/wf-init.md',
+    'templates/common/.claude/commands/wf-init.md',
+    'templates/common/.opencode/commands/wf-init.md',
+  ];
+
+  for (const rel of initFiles) {
+    const body = fs.readFileSync(path.join(process.cwd(), ...rel.split('/')), 'utf8');
+    assert.doesNotMatch(body, /create-harness-vibe-coding@0\.8\.21/);
+    assert.match(body, /create-harness-vibe-coding@latest/);
+  }
+
+  // wf-ui files are thin adapters to the optional wf-ui extension; they must
+  // use the native wf CLI (pnpm exec wf ...) rather than the npm fallback.
+  const uiFiles = [
+    '.claude/commands/wf-ui.md',
     '.opencode/commands/wf-ui.md',
     '.claude/skills/wf-ui/SKILL.md',
     '.agents/skills/wf-ui/SKILL.md',
-    'templates/common/.claude/commands/wf-init.md',
     'templates/common/.claude/commands/wf-ui.md',
-    'templates/common/.opencode/commands/wf-init.md',
     'templates/common/.opencode/commands/wf-ui.md',
     'templates/common/.claude/skills/wf-ui/SKILL.md',
   ];
 
-  for (const rel of files) {
+  for (const rel of uiFiles) {
     const body = fs.readFileSync(path.join(process.cwd(), ...rel.split('/')), 'utf8');
     assert.doesNotMatch(body, /create-harness-vibe-coding@0\.8\.21/);
-    assert.match(body, /create-harness-vibe-coding@latest/);
+    assert.match(body, /pnpm exec wf\b/);
+    assert.match(body, /wf extension|wf ui/);
   }
 });
 
@@ -446,8 +459,8 @@ test('generated scaffold stores harness-owned payload under root Harness directo
   assert.match(docsReadme, /\/wf-ui/);
   assert.match(docsReadme, /\| `\/wf-ui`, `\$wf-ui` \|/);
   const workflowSummary = docsReadme.split(/\r?\n/).find(line => line.startsWith('Workflow commands:')) || '';
-  assert.doesNotMatch(workflowSummary.split(' with matching ')[0], /\/wf-ui/);
-  assert.match(workflowSummary, /\/wf-update`, `\/wf-ui`, and `\/wf-init` remain direct/);
+  // wf-ui is now listed in the workflow summary as an optional CLI extension.
+  assert.match(workflowSummary, /\/wf-browser` and `\/wf-ui` use the optional CLI UI extension/);
   assert.match(docsReadme, /Need context\/cache\/token efficiency/);
   assert.match(docsReadme, /cache-first context layout/);
   assert.match(docsReadme, /scripts\/l2-cache-telemetry\.mjs/);
@@ -1232,11 +1245,21 @@ test('generated web workflows require stable accessible selectors and test selec
   const featureTemplate = readRel(targetDir, 'Harness/tasks/_template/PLAN.md');
   const progressTemplate = readRel(targetDir, 'Harness/tasks/_template/PROGRESS.md');
 
-  for (const body of [browserWorkflow, reactWorkflow]) {
+  // Stable selector guidance lives in the web-app workflow template, not the
+  // thin browser adapter skill.
+  for (const body of [reactWorkflow]) {
     assert.match(body, /data-testid/);
     assert.match(body, /accessible labels\/roles/);
     assert.match(body, /inputs, buttons, filters, rows, empty\/error\/loading states/);
   }
+
+  // The thin wf-browser skill only delegates to the optional wf-ui extension
+  // and keeps artifacts compact; it does not embed selector guidance itself.
+  assert.match(browserWorkflow, /optional wf-ui/);
+  assert.match(browserWorkflow, /wf ui\/browser command/);
+  assert.match(browserWorkflow, /compact session/);
+  assert.doesNotMatch(browserWorkflow, /data-testid/);
+  assert.doesNotMatch(browserWorkflow, /HARNESS_BRIDGE\.md/);
 
   assert.match(featureTemplate, /Compact task record/);
   assert.match(featureTemplate, /Default: keep 1-3 concise ACs/);
@@ -1281,13 +1304,20 @@ test('generated optional workflows are registered under Harness workflows and wf
   assert.equal(fs.existsSync(path.join(targetDir, '.claude', 'skills', 'browser-e2e', 'SKILL.md')), false);
   assert.equal(fs.existsSync(path.join(targetDir, '.agents', 'skills', 'browser-e2e', 'SKILL.md')), false);
   assert.equal(fs.existsSync(path.join(targetDir, 'Harness', 'workflows', 'browser-e2e.md')), false);
-  assert.match(wfBrowserSkill, /Harness\/specs\/protocols\/HARNESS_BRIDGE\.md/);
-  assert.match(wfBrowserSkill, /Cache Discipline/);
+  // The thin adapter delegates browser control to the optional wf-ui extension
+  // and does not embed the legacy bridge protocol or schema.
+  assert.match(wfBrowserSkill, /optional wf-ui extension/);
+  assert.match(wfBrowserSkill, /wf extension status/);
+  assert.match(wfBrowserSkill, /wf ui\/browser command/);
+  assert.match(wfBrowserSkill, /large artifacts on disk/);
+  assert.doesNotMatch(wfBrowserSkill, /HARNESS_BRIDGE\.md/);
+  assert.doesNotMatch(wfBrowserSkill, /WebSocket/);
+  assert.doesNotMatch(wfBrowserSkill, /Agent-Operable Web Runtime/);
   assert.equal(wfBrowserCodexSkill, wfBrowserSkill);
   assert.equal(fs.existsSync(path.join(targetDir, 'docs', 'workflows', 'browser-e2e.md')), false);
 });
 
-test('built-in wf-browser skill defines agent-operable browser control runtime', () => {
+test('wf-browser skill is a thin adapter that delegates browser control to optional wf-ui extension', () => {
   const root = tmpdir();
   const targetDir = path.join(root, 'browser-agent-runtime');
 
@@ -1300,33 +1330,32 @@ test('built-in wf-browser skill defines agent-operable browser control runtime',
 
   const browserWorkflow = readRel(targetDir, '.claude/skills/wf-browser/SKILL.md');
 
-  assert.match(browserWorkflow, /Agent-Operable Web Runtime/);
-  assert.match(browserWorkflow, /Two Jobs/);
-  assert.match(browserWorkflow, /Architecture Design Track/);
-  assert.match(browserWorkflow, /Runtime Control Track/);
-  assert.match(browserWorkflow, /Recovery Track/);
-  assert.match(browserWorkflow, /Readiness Levels/);
-  assert.match(browserWorkflow, /L4 \| Multi-agent-ready/);
-  assert.match(browserWorkflow, /Design-To-Control Continuity/);
-  assert.match(browserWorkflow, /Quality Gates/);
-  assert.match(browserWorkflow, /WebSocket/);
-  assert.match(browserWorkflow, /observe\.\*/);
-  assert.match(browserWorkflow, /act\.\*/);
-  assert.match(browserWorkflow, /virtual cursor/);
-  assert.match(browserWorkflow, /Multi-Agent Window Contract/);
-  assert.match(browserWorkflow, /window\.create/);
-  assert.match(browserWorkflow, /leaseId/);
-  assert.match(browserWorkflow, /Harness\/wf-browser\//);
-  assert.match(browserWorkflow, /BrowserOS Neo Requirement/);
-  assert.match(browserWorkflow, /Use BrowserOS Neo as the default real-browser driver/);
-  assert.match(browserWorkflow, /download, install, and start BrowserOS Neo yourself/);
-  assert.match(browserWorkflow, /never auto-download or install BrowserOS Neo/);
-  assert.match(browserWorkflow, /Third-Party Pages/);
-  assert.match(browserWorkflow, /Playwright/);
-  assert.match(browserWorkflow, /CDP/);
-  assert.match(browserWorkflow, /data-testid/);
-  assert.match(browserWorkflow, /accessible labels\/roles/);
-  assert.match(browserWorkflow, /inputs, buttons, filters, rows, empty\/error\/loading states/);
+  // Thin adapter references the optional wf-ui extension and delegates.
+  assert.match(browserWorkflow, /Thin Agent adapter for browser control provided by the optional wf-ui extension/);
+  assert.match(browserWorkflow, /optional capability of wf-ui/);
+  assert.match(browserWorkflow, /wf extension status/);
+  assert.match(browserWorkflow, /Request explicit installation when missing/);
+  assert.match(browserWorkflow, /wf ui\/browser command/);
+  assert.match(browserWorkflow, /installed extension owns/);
+
+  // Keeps large artifacts compact and never pastes raw browser output.
+  assert.match(browserWorkflow, /large artifacts on disk/);
+  assert.match(browserWorkflow, /compact session/);
+  assert.match(browserWorkflow, /Never paste full DOM trees/);
+
+  // The legacy built-in protocol and schema are not embedded in the adapter.
+  // The skill explicitly declares the negative semantic: it does NOT contain
+  // the UI tree schema, so assert the explicit "does not contain" phrase.
+  assert.doesNotMatch(browserWorkflow, /Agent-Operable Web Runtime/);
+  assert.doesNotMatch(browserWorkflow, /HARNESS_BRIDGE\.md/);
+  assert.doesNotMatch(browserWorkflow, /WebSocket/);
+  assert.match(browserWorkflow, /does not contain[\s\S]*UI tree schema/);
+  assert.doesNotMatch(browserWorkflow, /window\.create/);
+  assert.doesNotMatch(browserWorkflow, /leaseId/);
+  assert.doesNotMatch(browserWorkflow, /virtual cursor/);
+  assert.doesNotMatch(browserWorkflow, /BrowserOS Neo Requirement/);
+  assert.doesNotMatch(browserWorkflow, /data-testid/);
+  assert.doesNotMatch(browserWorkflow, /inputs, buttons, filters, rows, empty\/error\/loading states/);
 });
 
 // ============================================================================

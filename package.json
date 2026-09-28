@@ -1,6 +1,6 @@
 {
   "name": "create-harness-vibe-coding",
-  "version": "0.9.5",
+  "version": "0.9.6",
   "description": "Scaffold a 0-1 product harness for AI-assisted research, PRD, planning, architecture, build, test, and feedback loops",
   "type": "module",
   "bin": {
@@ -9,6 +9,7 @@
   "files": [
     "bin/",
     "src/",
+    "extensions/pi-host-gate/",
     "!src/ui/src",
     "!src/ui/e2e",
     "!src/ui/test-results",
@@ -64,5 +65,9 @@
   "license": "MIT",
   "optionalDependencies": {
     "@homebridge/node-pty-prebuilt-multiarch": "^0.14.1"
-  }
+  },
+  "bugs": {
+    "url": "https://github.com/LiWeny16/create-harness-vibe-coding/issues"
+  },
+  "homepage": "https://github.com/LiWeny16/create-harness-vibe-coding#readme"
 }

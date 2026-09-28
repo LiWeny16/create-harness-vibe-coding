@@ -24,7 +24,9 @@ export type ChatEnvelopeType =
   | 'done'
   | 'error'
   | 'raw'
-  | 'chat:state';
+  | 'chat:state'
+  | 'permission_mode_changed'
+  | 'permission_mode_change_failed';
 
 export type ChatEnvelope = {
   seq?: number;
@@ -43,8 +45,15 @@ export type ChatEnvelope = {
     result?: string;
     message?: string;
     data?: unknown;
+    mode?: string;
     [key: string]: unknown;
   };
+  runtime?: string;
+  supportedModes?: string[];
+  permissionMode?: string;
+  requestId?: string;
+  mode?: string;
+  message?: string;
 };
 
 export type ChatAskQuestion = {
@@ -78,6 +87,7 @@ export type ChatMessage = {
 export type ChatPermissionRequest = {
   requestId: string;
   tool: string;
+  title?: string;
   input?: unknown;
   seq: number;
 };
@@ -88,7 +98,7 @@ export type ChatAskRequest = {
   seq: number;
 };
 
-export type ChatPermissionResult = 'allow' | 'always' | 'deny';
+export type ChatPermissionResult = 'allow' | 'deny';
 
 export type ChatConnectionStatus = 'connecting' | 'connected' | 'reconnecting' | 'offline';
 
@@ -177,11 +187,13 @@ export function applyChatEnvelope(state: ChatState, envelope: ChatEnvelope): Cha
     }
     case 'text_delta': {
       const opened = ensureOpenAssistant(base, seq);
-      return appendToMessage(opened.state, opened.message.id, { text: opened.message.text + String(envelope.payload?.text || '') });
+      const delta = envelope.payload?.text ?? envelope.payload?.delta ?? envelope.payload?.message ?? '';
+      return appendToMessage(opened.state, opened.message.id, { text: opened.message.text + String(delta) });
     }
     case 'thinking_delta': {
       const opened = ensureOpenAssistant(base, seq);
-      return appendToMessage(opened.state, opened.message.id, { thinking: opened.message.thinking + String(envelope.payload?.text || '') });
+      const delta = envelope.payload?.text ?? envelope.payload?.delta ?? envelope.payload?.thinking ?? '';
+      return appendToMessage(opened.state, opened.message.id, { thinking: opened.message.thinking + String(delta) });
     }
     case 'tool_call_start': {
       const callId = String(envelope.payload?.callId || '');
@@ -236,6 +248,7 @@ export function applyChatEnvelope(state: ChatState, envelope: ChatEnvelope): Cha
           [requestId]: {
             requestId,
             tool: String(envelope.payload?.tool || ''),
+            title: envelope.payload?.title ? String(envelope.payload.title) : undefined,
             input: envelope.payload?.input,
             seq,
           },
@@ -327,6 +340,11 @@ export function useChatStream(sessionId: string) {
   const [status, setStatus] = useState<ChatConnectionStatus>('connecting');
   const [newCount, setNewCount] = useState(0);
   const [scrollAnchor, setScrollAnchor] = useState(0);
+  const [runtime, setRuntime] = useState('');
+  const [supportedModes, setSupportedModes] = useState<string[]>([]);
+  const [permissionMode, setPermissionMode] = useState('');
+  const [permissionModeError, setPermissionModeError] = useState('');
+  const [pendingPermissionModeId, setPendingPermissionModeId] = useState<string | null>(null);
 
   const wsRef = useRef<WebSocket | null>(null);
   const activeSessionRef = useRef<string>(sessionId);
@@ -334,6 +352,8 @@ export function useChatStream(sessionId: string) {
   const pollTimerRef = useRef<number | null>(null);
   const lastSeqRef = useRef(0);
   const outboxRef = useRef<Array<Record<string, unknown>>>([]);
+  const pendingModeChangesRef = useRef(new Map<string, string>());
+  const approvedRequestIdsRef = useRef(new Set<string>());
 
   useEffect(() => {
     lastSeqRef.current = state.lastSeq;
@@ -363,11 +383,11 @@ export function useChatStream(sessionId: string) {
   const backfill = useCallback(async (sid: string) => {
     try {
       const fromSeq = lastSeqRef.current + 1;
-      const range = await apiJson<ChatEnvelope[]>(
+      const range = await apiJson<ChatEnvelope[] | { envelopes?: ChatEnvelope[] }>(
         `/api/chat/${encodeURIComponent(sid)}/range?fromSeq=${fromSeq}`,
       );
       if (activeSessionRef.current !== sid) return;
-      const envelopes = Array.isArray(range) ? range : [];
+      const envelopes = Array.isArray(range) ? range : Array.isArray(range?.envelopes) ? range.envelopes : [];
       if (envelopes.length > 0) {
         dispatch({ kind: 'envelopes', envelopes });
         setScrollAnchor(anchor => anchor + 1);
@@ -392,14 +412,42 @@ export function useChatStream(sessionId: string) {
       };
       ws.onmessage = event => {
         if (activeSessionRef.current !== sid) return;
-        let envelopes: ChatEnvelope[] = [];
+        let parsed: any;
         try {
-          const parsed = JSON.parse(event.data as string);
-          envelopes = Array.isArray(parsed) ? parsed : [parsed];
+          parsed = JSON.parse(event.data as string);
         } catch {
           return;
         }
+        if (!Array.isArray(parsed) && parsed?.type === 'chat:state') {
+          const modes = Array.isArray(parsed.supportedModes)
+            ? parsed.supportedModes.map((mode: unknown) => String(mode)).filter(Boolean)
+            : [];
+          setRuntime(String(parsed.runtime || ''));
+          setSupportedModes(modes);
+          const current = String(parsed.permissionMode || '');
+          setPermissionMode(modes.includes(current) ? current : (modes[0] || ''));
+          setPermissionModeError('');
+          return;
+        }
+        const envelopes: ChatEnvelope[] = Array.isArray(parsed) ? parsed : [parsed];
         if (envelopes.length === 0) return;
+        for (const envelope of envelopes) {
+          if (envelope.type !== 'permission_mode_changed' && envelope.type !== 'permission_mode_change_failed') continue;
+          const requestId = String(envelope.payload?.requestId ?? envelope.requestId ?? '');
+          const requestedMode = requestId ? pendingModeChangesRef.current.get(requestId) : undefined;
+          if (!requestedMode) continue;
+          const mode = String(envelope.payload?.mode ?? envelope.mode ?? '');
+          pendingModeChangesRef.current.delete(requestId);
+          setPendingPermissionModeId(current => current === requestId ? null : current);
+          if (envelope.type === 'permission_mode_changed' && mode === requestedMode) {
+            setPermissionMode(mode);
+            setPermissionModeError('');
+          } else if (envelope.type === 'permission_mode_change_failed') {
+            setPermissionModeError(String(envelope.payload?.message ?? envelope.message ?? 'Permission mode change failed'));
+          } else {
+            setPermissionModeError('Permission mode confirmation did not match the requested mode');
+          }
+        }
         dispatch({ kind: 'envelopes', envelopes });
         setScrollAnchor(anchor => anchor + 1);
         setNewCount(count => count + envelopes.filter(e => e.type === 'text_delta').length);
@@ -423,6 +471,13 @@ export function useChatStream(sessionId: string) {
     dispatch({ kind: 'reset' });
     setNewCount(0);
     outboxRef.current = [];
+    pendingModeChangesRef.current.clear();
+    approvedRequestIdsRef.current.clear();
+    setRuntime('');
+    setSupportedModes([]);
+    setPermissionMode('');
+    setPermissionModeError('');
+    setPendingPermissionModeId(null);
     lastSeqRef.current = 0;
     if (!sessionId) return;
     let cancelled = false;
@@ -470,11 +525,23 @@ export function useChatStream(sessionId: string) {
   }, [rawSend]);
 
   const approve = useCallback((requestId: string, result: ChatPermissionResult) => {
+    if (!requestId || approvedRequestIdsRef.current.has(requestId) || !state.pendingPermissions[requestId]) return;
+    approvedRequestIdsRef.current.add(requestId);
     // Optimistic local resolution keeps ApprovalCard deduped even if the
     // permission_resolved frame is delayed or dropped.
     dispatch({ kind: 'envelopes', envelopes: [{ type: 'permission_resolved', payload: { requestId, result } }] });
-    rawSend({ type: 'chat:approve', requestId, result });
-  }, [rawSend]);
+    rawSend({ type: 'chat:approve', requestId, decision: result });
+  }, [rawSend, state.pendingPermissions]);
+
+  const requestPermissionMode = useCallback((mode: string) => {
+    if (!mode || !supportedModes.includes(mode) || pendingModeChangesRef.current.size > 0) return;
+    const requestId = globalThis.crypto?.randomUUID?.()
+      || `mode-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+    pendingModeChangesRef.current.set(requestId, mode);
+    setPendingPermissionModeId(requestId);
+    setPermissionModeError('');
+    rawSend({ type: 'chat:setPermissionMode', requestId, mode });
+  }, [rawSend, supportedModes]);
 
   const pendingPermissionList = useMemo(
     () => Object.values(state.pendingPermissions).sort((a, b) => a.seq - b.seq),
@@ -500,6 +567,12 @@ export function useChatStream(sessionId: string) {
     steer,
     interrupt,
     approve,
+    runtime,
+    supportedModes,
+    permissionMode,
+    permissionModeError,
+    requestPermissionMode,
+    permissionModePending: pendingPermissionModeId !== null,
     newCount,
     markSeen,
     scrollAnchor,

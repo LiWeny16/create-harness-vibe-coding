@@ -1,7 +1,17 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
+import {
+  normalizeStatus as routeNormalizeStatus,
+  archiveEligibility as routeArchiveEligibility,
+  buildArchiveIndexEntries as routeBuildArchiveIndexEntries,
+  readArchivedTasks as routeReadArchivedTasks,
+  resolveRoute as routeResolveRoute,
+  buildRouteStub as routeBuildRouteStub,
+  buildResumeSummary as routeBuildResumeSummary,
+} from './lib/task-route.mjs';
 
 const root = process.cwd();
 const harnessDir = path.join(root, 'Harness');
@@ -189,9 +199,17 @@ function print(payload) {
     if (payload.dryRun) console.log('[DRY RUN] No files changed. Use --apply to write.');
     console.log(`Operations: ${payload.operations.length}`);
     for (const op of payload.operations) console.log(`- ${op.action}: ${op.taskId || op.path} (${op.reason})`);
-  } else if (payload.command === 'archive') {
+  } else if (payload.command === 'archive' || payload.command === 'auto-archive') {
     if (payload.dryRun) console.log('[DRY RUN] No files moved. Use --apply to execute.');
     if (payload.group) console.log(`Group: ${payload.group}`);
+    if (payload.command === 'auto-archive') {
+      console.log(`Scanned: ${payload.scanned}, Eligible: ${payload.eligible}, To archive: ${payload.toArchive}`);
+      for (const r of payload.results) {
+        const suffix = r.archivePath ? ` -> ${r.archivePath}` : '';
+        console.log(`- ${r.action}: ${r.taskId} (${r.status || r.reason})${suffix}`);
+      }
+      return;
+    }
     console.log(`Scanned: ${payload.scanned}, Archiveable: ${payload.archiveable}, To archive: ${payload.toArchive}, Kept: ${payload.kept}, Skipped: ${payload.skipped}`);
     for (const r of payload.results) {
       const suffix = r.path ? ` -> _archive/${r.path}` : '';
@@ -243,15 +261,32 @@ Commands:
   reconcile [--dry-run|--apply] [--json] Normalize STATE.json and root PROGRESS.md.
   set-active <task-id> [--dry-run]       Set the focus/resume task (multiple open tasks are valid).
   transition <task-id> --status <s> --phase <p> [--dry-run]
+  transition <task-id> --reopen --status active|blocked --note "reason" [--dry-run]
+                                        --reopen is recovery-only: it may only reopen a
+                                        just-closed WF-managed task (closedAt === updatedAt),
+                                        requires a non-empty --note reason and status
+                                        active|blocked, and preserves mode and all
+                                        queues/questions. It persists lastRecovery {at, reason}.
   archive [--dry-run|--apply] [--keep n] [--task id] [--group <tag>] [--json]
                                         Archive eligible tasks to _archive/YYYY/MM/DD/.
                                         Explicit --apply (no --task/--group filter) archives ALL.
                                         --group archives a whole tag (batch op, no confirmation;
                                         it implies --apply unless --dry-run is given).
+                                        DEPRECATED: prefer auto-archive. --keep/--group still supported.
+  auto-archive [--dry-run] [--task id] [--json]
+                                        Safe auto-archive of closed tasks only.
+                                        active/blocked/unknown/reserved tasks are rejected.
+                                        Idempotent: already-archived tasks return already-archived.
+                                        Default is dry-run; use --apply to execute.
+  route --task <id> [--json]
+                                        Resolve route for a task (live or archived).
+                                        Returns id, title, status, phase, path, archivePath,
+                                        blockers, dependsOn, blocks. Does not leak full context.
   history list [--year YYYY] [--month MM] [--json]
                                         List archived tasks, optional year/month filter.
   history search <keyword> [--json]      Full-text search archived PLAN/PROGRESS/PROBLEM/REFERENCES.
-  history load <task-id> [--json]        Load one archived task's full record.
+  history load <task-id> [--summary] [--json]  Load one archived task's record.
+                                        --summary returns compact route stub (no PLAN/decisions/logs).
   history delete <task-id> [--dry-run|--apply] [--json]
                                         Delete an archived task (audit trail written).
   record <task-id> [--create] [--text "description"] [--status <s>] [--phase <p>] [--mode <m>] [--group <project>] [--project <project>] [--tag <tag[,tag...]>] [--dry-run|--apply] [--json]
@@ -271,8 +306,13 @@ function readText(file) {
 function writeTextAtomic(file, text) {
   fs.mkdirSync(path.dirname(file), { recursive: true });
   const tmp = `${file}.tmp-${process.pid}`;
-  fs.writeFileSync(tmp, text, 'utf8');
-  fs.renameSync(tmp, file);
+  try {
+    fs.writeFileSync(tmp, text, 'utf8');
+    fs.renameSync(tmp, file);
+  } catch (err) {
+    try { fs.rmSync(tmp, { force: true }); } catch {}
+    throw err;
+  }
 }
 
 function writeJsonAtomic(file, value) {
@@ -538,16 +578,48 @@ function archiveEligibility(task, activeTask) {
   if (task.id === activeTask) return { ok: false, reason: 'active task' };
   if (task.stateError) return { ok: false, reason: task.stateError };
   if (!task.state) return { ok: false, reason: 'missing STATE.json requires reconcile' };
+  // Unified route-layer eligibility. task-route.mjs is the single source of
+  // truth for canonical status checks; we layer the write-side safety rules
+  // (active-question, queue state, root/progress phase) on top. The route
+  // layer rejects malformed task ids, so we swallow that and rely on the
+  // local status checks below to produce a verdict.
+  let base = null;
+  try {
+    base = routeArchiveEligibility(root, task.id);
+  } catch {
+    base = null;
+  }
+  if (base && !base.ok) return { ok: false, reason: base.reason };
   const status = normalizeStatus(task.state.status);
   const phase = normalizePhase(task.state.phase);
   if (NEVER_ARCHIVE_STATUSES.has(status)) return { ok: false, reason: `status "${status}" is never auto-archived` };
   if (NEVER_ARCHIVE_STATUSES.has(phase)) return { ok: false, reason: `phase "${phase}" is never auto-archived` };
   if (task.state.activeQuestion) return { ok: false, reason: 'activeQuestion is set' };
+  for (const marker of ['owner', 'lease', 'lock']) {
+    const value = task.state[marker];
+    const active = typeof value === 'string'
+      ? value.trim().length > 0
+      : Array.isArray(value)
+        ? value.length > 0
+        : value && typeof value === 'object'
+          ? Object.keys(value).length > 0
+          : value !== undefined && value !== null && value !== false;
+    if (active) return { ok: false, reason: `active ${marker} marker is set` };
+  }
   const queues = normalizeQueues(task.state);
+  if (queues.ready.length > 0) return { ok: false, reason: 'ready queue is not empty' };
   if (queues.running.length > 0) return { ok: false, reason: 'running queue is not empty' };
   if (queues.blocked.length > 0) return { ok: false, reason: 'blocked queue is not empty' };
-  if (SAFE_ARCHIVE_STATUSES.has(status) || SAFE_ARCHIVE_STATUSES.has(phase)) {
-    return { ok: true, reason: 'status/phase allows archive' };
+  // Require closeout verification: task must be in closeout or later phase
+  // OR have explicit closeout/verified/archived status to be auto-archived.
+  const CLOSEOUT_PHASES = new Set(['closeout', 'verified', 'archived', 'reflect']);
+  const isClosedStatus = SAFE_ARCHIVE_STATUSES.has(status);
+  const isCloseoutPhase = CLOSEOUT_PHASES.has(phase);
+  if (isClosedStatus && isCloseoutPhase) {
+    return { ok: true, reason: 'closed + closeout verified; allows archive' };
+  }
+  if (isClosedStatus && !isCloseoutPhase) {
+    return { ok: false, reason: `closed but phase "${phase}" is not closeout/verified; run closeout first` };
   }
   if (SAFE_ARCHIVE_STATUSES.has(task.rootPhase) || SAFE_ARCHIVE_STATUSES.has(task.progressPhase)) {
     return { ok: true, reason: 'root/progress phase allows archive' };
@@ -687,7 +759,25 @@ function safeTaskPath(...segments) {
   if (normalized !== prefix && !normalized.startsWith(`${prefix}/`)) {
     throw new Error(`Resolved path is outside Harness/tasks/: ${resolved}`);
   }
+  assertRealPathWithinTasksRoot(resolved);
   return resolved;
+}
+
+function assertRealPathWithinTasksRoot(candidatePath) {
+  const rootReal = fs.realpathSync(tasksDir);
+  let existing = candidatePath;
+  while (!fs.existsSync(existing)) {
+    const parent = path.dirname(existing);
+    if (parent === existing) {
+      throw new Error(`Cannot resolve archive path under Harness/tasks/: ${candidatePath}`);
+    }
+    existing = parent;
+  }
+  const existingReal = fs.realpathSync(existing);
+  const relative = path.relative(rootReal, existingReal);
+  if (relative === '..' || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)) {
+    throw new Error(`Resolved path traverses outside Harness/tasks/: ${candidatePath}`);
+  }
 }
 
 function desiredPhaseForTask(task, activeTask) {
@@ -875,19 +965,46 @@ function buildReconcilePlan({ activeOverride = undefined, transition = null } = 
   for (const task of tasks) {
     if (task.stateError) errors.push(`${task.id}: ${task.stateError}`);
     if (transition && task.id === transition.taskId) {
-      if (transition.status) {
-        const status = normalizeStatus(transition.status);
-        if (!status) errors.push(`${task.id}: unknown transition status "${transition.status}"`);
-        const currentStatus = normalizeStatus(task.state?.status) || task.status;
-        if (status && isWfManagedMode(task.state?.mode) && currentStatus === 'closed' && status !== 'closed') {
-          errors.push(`${task.id}: closed WF-managed task cannot be reopened; create a new task capsule`);
+      const reopen = Boolean(transition.reopen);
+      const requestedStatus = transition.status ? normalizeStatus(transition.status) : '';
+      const currentStatus = normalizeStatus(task.state?.status) || task.status;
+      const localErrors = [];
+      if (reopen) {
+        const rawStatus = String(task.state?.status || '').trim().toLowerCase();
+        const reason = String(transition.reason || '').trim();
+        if (!isWfManagedMode(task.state?.mode)) {
+          localErrors.push(`${task.id}: --reopen only supports WF-managed tasks; direct tasks cannot be reopened`);
         }
-        if (status === 'active') activeTask = task.id;
-        if (rootProgress.activeTask === task.id && SAFE_ARCHIVE_STATUSES.has(status)) activeTask = null;
+        if (!localErrors.length && rawStatus !== 'closed') {
+          localErrors.push(`${task.id}: --reopen requires status "closed"; got "${rawStatus || 'unset'}"`);
+        }
+        if (!localErrors.length && String(task.state?.closedAt || '').trim() !== String(task.state?.updatedAt || '').trim()) {
+          localErrors.push(`${task.id}: --reopen only targets a just-closed WF task (closedAt must equal updatedAt); stale closures require a new task capsule`);
+        }
+        if (!localErrors.length && !reason) {
+          localErrors.push(`${task.id}: --reopen requires a non-empty --note "reason"`);
+        }
+        if (!localErrors.length) {
+          if (!requestedStatus || !OPEN_TASK_STATUSES.has(requestedStatus)) {
+            localErrors.push(`${task.id}: --reopen status must be "active" or "blocked"`);
+          } else if (requestedStatus === 'active') {
+            activeTask = task.id;
+          }
+        }
+      } else {
+        if (transition.status) {
+          if (!requestedStatus) localErrors.push(`${task.id}: unknown transition status "${transition.status}"`);
+          if (requestedStatus && isWfManagedMode(task.state?.mode) && currentStatus === 'closed' && requestedStatus !== 'closed') {
+            localErrors.push(`${task.id}: closed WF-managed task cannot be reopened; use --reopen with --note "reason"`);
+          }
+          if (requestedStatus === 'active') activeTask = task.id;
+          if (rootProgress.activeTask === task.id && SAFE_ARCHIVE_STATUSES.has(requestedStatus)) activeTask = null;
+        }
       }
       if (transition.phase && !normalizePhase(transition.phase)) {
-        errors.push(`${task.id}: unknown transition phase "${transition.phase}"`);
+        localErrors.push(`${task.id}: unknown transition phase "${transition.phase}"`);
       }
+      errors.push(...localErrors);
     }
   }
 
@@ -919,6 +1036,14 @@ function buildReconcilePlan({ activeOverride = undefined, transition = null } = 
       if (nextState.status === 'closed' && !nextState.closedAt) nextState.closedAt = now;
       if (nextState.status !== 'closed' && nextState.status !== 'archived') nextState.closedAt = null;
       nextState.updatedAt = now;
+      if (transition.reopen) {
+        nextState.mode = normalizeMode(task.state?.mode) || nextState.mode;
+        nextState.closedAt = null;
+        nextState.lastRecovery = {
+          at: now,
+          reason: String(transition.reason || '').trim(),
+        };
+      }
       normalized = {
         state: nextState,
         changed: JSON.stringify(nextState) !== JSON.stringify(task.state),
@@ -1093,6 +1218,32 @@ function taskIndexEntry(task) {
   };
 }
 
+// Generate a route revision hash from task state for consistency checks.
+// Both root INDEX.json and _archive/INDEX.json share this revision.
+function computeRouteRevision() {
+  const { rootProgress, tasks } = collectTasks();
+  const archived = routeReadArchivedTasks(root);
+  const readArchivedState = task => {
+    try {
+      const relativePath = String(task.path || task.archivePath || '')
+        .split(/[\\/]+/)
+        .filter(Boolean);
+      return JSON.parse(fs.readFileSync(path.join(root, ...relativePath, 'STATE.json'), 'utf8'));
+    } catch {
+      return null;
+    }
+  };
+  const records = [
+    ...tasks.map(task => ({ id: task.id, state: task.state || null })),
+    ...archived.map(task => ({ id: task.id, state: readArchivedState(task) })),
+  ].sort((a, b) => a.id.localeCompare(b.id));
+  const rootRoute = {
+    activeTask: rootProgress.activeTask,
+    rows: rootProgress.rows.map(({ id, goal, phase, closed }) => ({ id, goal, phase, closed })),
+  };
+  return createHash('sha256').update(JSON.stringify({ rootRoute, records })).digest('hex').slice(0, 16);
+}
+
 function buildTaskIndexModel() {
   const { rootProgress, tasks } = collectTasks();
   const entries = tasks.map(taskIndexEntry).sort((a, b) => a.id.localeCompare(b.id));
@@ -1113,6 +1264,7 @@ function buildTaskIndexModel() {
   return {
     schemaVersion: 1,
     generatedAt: new Date().toISOString(),
+    routeRevision: computeRouteRevision(),
     sourceOfTruth: 'Harness/tasks/*/STATE.json',
     activeTask: rootProgress.activeTask,
     resumeTask,
@@ -1148,6 +1300,9 @@ function writeTaskIndex() {
   const model = buildTaskIndexModel();
   writeJsonAtomic(path.join(tasksDir, 'INDEX.json'), model);
   writeTextAtomic(path.join(tasksDir, 'INDEX.md'), renderTaskIndexMd(model));
+  // The same state revision is published by live and archive indexes. Any
+  // live route change therefore refreshes both views, not only the live one.
+  refreshArchiveIndexJson();
   return model;
 }
 
@@ -1382,11 +1537,42 @@ function runTransition() {
   const status = flagValue('--status');
   const phase = flagValue('--phase');
   const nextAction = flagValue('--next');
-  if (!status && !phase && !nextAction) {
-    finish({ ok: false, command: 'transition', errors: ['transition requires --status, --phase, or --next'], warnings: [], operations: [] }, 1);
+  const reopen = hasFlag('--reopen');
+  const reason = String(flagValue('--note') || '').trim();
+  if (reopen && !reason) {
+    finish({ ok: false, command: 'transition', errors: ['--reopen requires a non-empty --note "reason"'], warnings: [], operations: [] }, 1);
+  }
+  if (!status && !phase && !nextAction && !reopen) {
+    finish({ ok: false, command: 'transition', errors: ['transition requires --status, --phase, --next, or --reopen'], warnings: [], operations: [] }, 1);
+  }
+  if (reopen) {
+    const liveStatePath = path.join(tasksDir, taskId, 'STATE.json');
+    if (!fs.existsSync(liveStatePath)) {
+      let foundInArchive = false;
+      if (fs.existsSync(archiveDir)) {
+        const walk = (dir) => {
+          for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+            const full = path.join(dir, entry.name);
+            if (entry.isDirectory()) {
+              if (entry.name === taskId && fs.existsSync(path.join(full, 'STATE.json'))) { foundInArchive = true; return; }
+              if (!foundInArchive) walk(full);
+            }
+          }
+        };
+        walk(archiveDir);
+      }
+      finish({
+        ok: false, command: 'transition',
+        errors: [foundInArchive
+          ? `Archived task "${taskId}" cannot be reopened; archive is a terminal state. Use history commands to inspect it.`
+          : `Task "${taskId}" not found under Harness/tasks/ or Harness/tasks/_archive/; --reopen only targets live, closed WF-managed tasks.`],
+        warnings: [], operations: [],
+      }, 1);
+      return;
+    }
   }
   if (!hasFlag('--apply') && !hasFlag('--dry-run')) args.push('--apply');
-  runReconcile({ commandLabel: 'transition', transition: { taskId, status, phase, nextAction } });
+  runReconcile({ commandLabel: 'transition', transition: { taskId, status, phase, nextAction, reopen: reopen ? true : null, reason: reason || null } });
 }
 
 function buildArchivePlan() {
@@ -1705,6 +1891,124 @@ function appendArchiveIndex(entries, graphContent) {
   writeTextAtomic(indexPath, lines.join('\n') + '\n');
 }
 
+const ARCHIVE_ROUTE_FILES = [
+  progressPath,
+  path.join(tasksDir, 'INDEX.json'),
+  path.join(tasksDir, 'INDEX.md'),
+  path.join(archiveDir, 'INDEX.md'),
+  path.join(archiveDir, 'INDEX.json'),
+];
+
+function capturePathSnapshot(target) {
+  if (!fs.existsSync(target) && !fs.lstatSync(target, { throwIfNoEntry: false })) return { type: 'missing' };
+  const stat = fs.lstatSync(target);
+  if (stat.isSymbolicLink()) return { type: 'symlink', link: fs.readlinkSync(target) };
+  if (stat.isDirectory()) {
+    const entries = {};
+    for (const name of fs.readdirSync(target).sort()) entries[name] = capturePathSnapshot(path.join(target, name));
+    return { type: 'directory', entries };
+  }
+  return { type: 'file', data: fs.readFileSync(target).toString('base64') };
+}
+
+function restorePathSnapshot(target, snapshot) {
+  fs.rmSync(target, { recursive: true, force: true });
+  if (snapshot.type === 'missing') return;
+  if (snapshot.type === 'directory') {
+    fs.mkdirSync(target, { recursive: true });
+    for (const [name, entry] of Object.entries(snapshot.entries)) restorePathSnapshot(path.join(target, name), entry);
+  } else if (snapshot.type === 'file') {
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.writeFileSync(target, Buffer.from(snapshot.data, 'base64'));
+  } else if (snapshot.type === 'symlink') {
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.symlinkSync(snapshot.link, target);
+  }
+}
+
+function captureArchiveRouteSnapshots() {
+  return ARCHIVE_ROUTE_FILES.map(file => ({ file, snapshot: capturePathSnapshot(file) }));
+}
+
+function restoreArchiveRouteSnapshots(snapshots) {
+  const errors = [];
+  for (const { file, snapshot } of snapshots) {
+    try { restorePathSnapshot(file, snapshot); }
+    catch (err) { errors.push(`${file}: ${err.message}`); }
+  }
+  return errors;
+}
+
+function rollbackArchiveMoves(moves) {
+  const errors = [];
+  for (const move of [...moves].reverse()) {
+    try {
+      const dest = safeTaskPath(...move.archivePath.split('/'));
+      const src = safeTaskPath(move.taskId);
+      fs.renameSync(dest, src);
+      const statePath = path.join(src, 'STATE.json');
+      if (move.originalStateRaw === null) fs.rmSync(statePath, { force: true });
+      else fs.writeFileSync(statePath, move.originalStateRaw, 'utf8');
+      const progressFile = path.join(src, 'PROGRESS.md');
+      if (move.originalProgressRaw === null) fs.rmSync(progressFile, { force: true });
+      else fs.writeFileSync(progressFile, move.originalProgressRaw, 'utf8');
+    } catch (err) {
+      errors.push(`${move.taskId}: ${err.message}`);
+    }
+  }
+  return errors;
+}
+
+function archiveTasksTransaction(candidates) {
+  const snapshots = captureArchiveRouteSnapshots();
+  const moves = [];
+  let failure = null;
+  for (const candidate of candidates) {
+    const moved = performSafeArchive(candidate, candidate.mtimeMs);
+    if (!moved.ok) {
+      failure = `${candidate.id}: ${moved.error}`;
+      break;
+    }
+    moves.push(moved);
+    const movedProgressPath = path.join(safeTaskPath(...moved.archivePath.split('/')), 'PROGRESS.md');
+    try {
+      if (fs.existsSync(movedProgressPath)) {
+        const movedState = JSON.parse(fs.readFileSync(path.join(path.dirname(movedProgressPath), 'STATE.json'), 'utf8'));
+        writeTextAtomic(movedProgressPath, renderTaskProgress(readText(movedProgressPath), candidate.id, movedState));
+      }
+    } catch (err) {
+      failure = `${candidate.id}: failed to update archived progress: ${err.message}`;
+      break;
+    }
+  }
+
+  if (!failure) {
+    try {
+      const { rootProgress, tasks } = collectTasks();
+      const rows = buildRows(tasks, rootProgress.activeTask);
+      writeTextAtomic(progressPath, renderRootProgress(rootProgress.text, rootProgress.activeTask, rows));
+      writeTaskIndex();
+      const entries = moves.map(move => {
+        const [, year, month, day] = move.archivePath.split('/');
+        return { id: move.taskId, year, month, day };
+      });
+      appendArchiveIndex(entries, buildArchiveGraphIndex());
+      refreshArchiveIndexJson();
+      return { ok: true, moves };
+    } catch (err) {
+      failure = `route index refresh failed: ${err.message}`;
+    }
+  }
+
+  const rollbackErrors = rollbackArchiveMoves(moves);
+  const restoreErrors = restoreArchiveRouteSnapshots(snapshots);
+  return {
+    ok: false,
+    moves,
+    error: [failure, ...rollbackErrors.map(error => `rollback failed: ${error}`), ...restoreErrors.map(error => `index restore failed: ${error}`)].join('; '),
+  };
+}
+
 function runArchive() {
   // --group is a confirmation-less batch op: it implies --apply unless --dry-run is given.
   if (hasFlag('--group') && !hasFlag('--apply') && !hasFlag('--dry-run')) args.push('--apply');
@@ -1712,35 +2016,21 @@ function runArchive() {
   if (!plan.ok) finish(plan, 1);
 
   if (hasFlag('--apply')) {
-    const indexEntries = [];
-    for (const result of plan.results.filter(result => result.action === 'archived')) {
-      const src = safeTaskPath(result.dir);
-      const destDir = safeTaskPath('_archive', result.year, result.month, result.day);
-      const dest = safeTaskPath('_archive', result.year, result.month, result.day, result.dir);
-      fs.mkdirSync(destDir, { recursive: true });
-      fs.renameSync(src, dest);
-      const movedStatePath = path.join(dest, 'STATE.json');
-      const movedState = fs.existsSync(movedStatePath)
-        ? JSON.parse(fs.readFileSync(movedStatePath, 'utf8'))
-        : defaultState(result.dir, 'archived', 'archived', new Date().toISOString());
-      movedState.status = 'archived';
-      movedState.phase = 'archived';
-      movedState.updatedAt = new Date().toISOString();
-      writeJsonAtomic(movedStatePath, movedState);
-      const movedProgressPath = path.join(dest, 'PROGRESS.md');
-      writeTextAtomic(movedProgressPath, renderTaskProgress(readText(movedProgressPath), result.dir, movedState));
-      indexEntries.push({ id: result.dir, year: result.year, month: result.month, day: result.day });
+    const candidates = plan.results.filter(result => result.action === 'archived').map(result => ({
+      id: result.dir,
+      mtimeMs: new Date(result.year, result.month - 1, result.day).getTime(),
+    }));
+    const transaction = archiveTasksTransaction(candidates);
+    if (!transaction.ok) {
+      const reason = transaction.error || 'archive transaction failed';
+      for (const result of plan.results.filter(result => result.action === 'archived')) {
+        result.action = 'failed';
+        result.status = 'failed';
+        result.reason = reason;
+      }
+      finish({ ok: false, command: 'archive', errors: [reason], warnings: [], results: plan.results }, 1);
+      return;
     }
-    const graphContent = buildArchiveGraphIndex();
-    appendArchiveIndex(indexEntries, graphContent);
-
-    for (const task of plan.tasks) {
-      task.desiredState = task.state || defaultState(task.id, task.status, task.phase || 'intake', new Date().toISOString());
-    }
-    const rows = buildRows(plan.tasks, plan.rootProgress.activeTask, plan.toArchiveIds);
-    const desiredProgress = renderRootProgress(plan.rootProgress.text, plan.rootProgress.activeTask, rows);
-    writeTextAtomic(progressPath, desiredProgress);
-    writeTaskIndex();
     plan.dryRun = false;
   }
 
@@ -1748,6 +2038,294 @@ function runArchive() {
   delete plan.rootProgress;
   delete plan.toArchiveIds;
   finish(plan, 0);
+}
+
+// Shared archive move primitive. Both runArchive() and runAutoArchive()
+// delegate here to ensure a single write surface for capsule moves.
+// Returns { ok, taskId, archivePath, error? }.
+function performSafeArchive(task, mtimeMs) {
+  const mtime = new Date(mtimeMs);
+  const year = mtime.getFullYear().toString();
+  const month = String(mtime.getMonth() + 1).padStart(2, '0');
+  const day = String(mtime.getDate()).padStart(2, '0');
+  const destDir = safeTaskPath('_archive', year, month, day);
+  const dest = safeTaskPath('_archive', year, month, day, task.id);
+  const src = safeTaskPath(task.id);
+  if (fs.existsSync(dest)) {
+    return { ok: false, taskId: task.id, error: `archive destination already exists: ${dest}` };
+  }
+  const originalStateRaw = fs.existsSync(path.join(src, 'STATE.json'))
+    ? fs.readFileSync(path.join(src, 'STATE.json'), 'utf8')
+    : null;
+  const originalProgressRaw = fs.existsSync(path.join(src, 'PROGRESS.md'))
+    ? fs.readFileSync(path.join(src, 'PROGRESS.md'), 'utf8')
+    : null;
+  let moved = false;
+  try {
+    fs.mkdirSync(destDir, { recursive: true });
+    fs.renameSync(src, dest);
+    moved = true;
+    const movedStatePath = path.join(dest, 'STATE.json');
+    const movedState = fs.existsSync(movedStatePath)
+      ? JSON.parse(fs.readFileSync(movedStatePath, 'utf8'))
+      : defaultState(task.id, 'archived', 'archived', new Date().toISOString());
+    movedState.status = 'archived';
+    movedState.phase = 'archived';
+    movedState.updatedAt = new Date().toISOString();
+    if (!movedState.closedAt) movedState.closedAt = movedState.updatedAt;
+    movedState.archiveEligibleAt = movedState.updatedAt;
+    writeJsonAtomic(movedStatePath, movedState);
+    return {
+      ok: true,
+      taskId: task.id,
+      archivePath: `_archive/${year}/${month}/${day}/${task.id}`,
+      originalStateRaw,
+      originalProgressRaw,
+    };
+  } catch (err) {
+    let rollbackError = null;
+    if (moved) {
+      try {
+        fs.renameSync(dest, src);
+        if (originalStateRaw === null) fs.rmSync(path.join(src, 'STATE.json'), { force: true });
+        else fs.writeFileSync(path.join(src, 'STATE.json'), originalStateRaw, 'utf8');
+        if (originalProgressRaw === null) fs.rmSync(path.join(src, 'PROGRESS.md'), { force: true });
+        else fs.writeFileSync(path.join(src, 'PROGRESS.md'), originalProgressRaw, 'utf8');
+      } catch (rollbackErr) {
+        rollbackError = `; rollback failed: ${rollbackErr.message}`;
+      }
+    }
+    return { ok: false, taskId: task.id, error: `${err.message}${rollbackError || ''}` };
+  }
+}
+
+// W4: safe auto-archive via existing task-state archive primitives.
+// Closed tasks only. Idempotent. atomic move. Failure does not corrupt the original.
+// Uses archiveEligibility (already in task-state.mjs) to decide eligibility,
+// then moves the capsule and refreshes every route index transactionally.
+function runAutoArchive() {
+  const taskFilter = flagValue('--task');
+  if (taskFilter) {
+    try {
+      ensureValidTaskId(taskFilter);
+    } catch (err) {
+      finish({ ok: false, command: 'auto-archive', errors: [err.message], warnings: [], results: [] }, 1);
+      return;
+    }
+  }
+  const dryRun = !hasFlag('--apply');
+  const { rootProgress, tasks } = collectTasks();
+  const selected = taskFilter ? tasks.filter(t => t.id === taskFilter) : tasks;
+  if (taskFilter && selected.length === 0) {
+    // Task not in live; check if it is already archived.
+    const archivedPath = findArchivedTask(taskFilter);
+    if (archivedPath) {
+      finish({
+        ok: true,
+        command: 'auto-archive',
+        dryRun,
+        scanned: 1,
+        eligible: 1,
+        toArchive: 0,
+        errors: [],
+        warnings: [],
+        results: [{ taskId: taskFilter, action: 'skipped', status: 'already-archived', archivePath: archivedPath }],
+      }, 0);
+      return;
+    }
+    finish({
+      ok: false,
+      command: 'auto-archive',
+      dryRun,
+      scanned: 0,
+      eligible: 0,
+      toArchive: 0,
+      errors: [`Task "${taskFilter}" not found in Harness/tasks/ or _archive/`],
+      warnings: [],
+      results: [],
+    }, 1);
+    return;
+  }
+  const results = [];
+  let eligible = 0;
+  let toArchive = 0;
+  const toArchiveIds = new Set();
+  for (const task of selected) {
+    const eligibility = archiveEligibility(task, rootProgress.activeTask);
+    if (!eligibility.ok) {
+      results.push({ taskId: task.id, action: 'skipped', status: 'rejected', reason: eligibility.reason });
+      continue;
+    }
+    eligible += 1;
+    // Check if already archived (idempotent no-op).
+    const alreadyArchived = fs.existsSync(safeTaskPath('_archive')) && findArchivedTask(task.id);
+    if (alreadyArchived) {
+      results.push({ taskId: task.id, action: 'skipped', status: 'already-archived', archivePath: alreadyArchived });
+      continue;
+    }
+    toArchiveIds.add(task.id);
+    if (dryRun) {
+      results.push({ taskId: task.id, action: 'would-archive', status: 'would-archive' });
+      toArchive += 1;
+      continue;
+    }
+    results.push({ taskId: task.id, action: 'pending', status: 'pending' });
+    toArchive += 1;
+  }
+
+  // Move selected capsules and refresh all route surfaces as one recoverable batch.
+  if (!dryRun && toArchive > 0) {
+    const candidates = selected.filter(task => toArchiveIds.has(task.id));
+    const transaction = archiveTasksTransaction(candidates);
+    if (transaction.ok) {
+      const byId = new Map(transaction.moves.map(move => [move.taskId, move]));
+      for (const result of results.filter(item => item.action === 'pending')) {
+        const move = byId.get(result.taskId);
+        result.action = 'archived';
+        result.status = 'archived';
+        result.archivePath = move.archivePath;
+      }
+    } else {
+      for (const result of results.filter(item => item.action === 'pending')) {
+        result.action = 'failed';
+        result.status = 'failed';
+        result.reason = transaction.error;
+      }
+    }
+  }
+
+  const failed = results.filter(r => r.action === 'failed');
+  const ok = failed.length === 0;
+  finish({
+    ok,
+    command: 'auto-archive',
+    dryRun,
+    scanned: selected.length,
+    eligible,
+    toArchive,
+    errors: failed.map(r => r.reason),
+    warnings: [],
+    results,
+  }, ok ? 0 : 1);
+}
+
+// Route command: resolve a task's route by id (live or archived).
+// Returns minimal route stub without leaking full context/PLAN/logs.
+function runRoute() {
+  const taskId = flagValue('--task') || args[1];
+  if (!taskId) {
+    finish({ ok: false, command: 'route', errors: ['route requires --task <id>'], warnings: [], route: null }, 1);
+    return;
+  }
+  try {
+    const route = routeResolveRoute(root, taskId);
+    if (!route.ok) {
+      finish({ ok: false, command: 'route', errors: ['Task not found'], warnings: [], route: null }, 1);
+      return;
+    }
+    const stub = routeBuildRouteStub(root, taskId);
+    const resume = routeBuildResumeSummary(root, taskId);
+    const boundedRoute = boundRouteForOutput({
+      id: stub.id,
+      title: stub.title,
+      status: stub.status,
+      phase: stub.phase,
+      summary: stub.summary,
+      blockers: stub.blockers,
+      dependsOn: stub.dependsOn,
+      blocks: stub.blocks,
+      path: stub.path,
+      archivePath: stub.archivePath,
+      archived: stub.archived,
+      updatedAt: stub.updatedAt,
+      nextAction: resume.nextAction,
+      activeQuestion: resume.activeQuestion,
+      queues: resume.queues,
+    });
+    finish({
+      ok: true,
+      command: 'route',
+      route: boundedRoute,
+      warnings: [],
+    }, 0);
+  } catch (err) {
+    finish({ ok: false, command: 'route', errors: ['Task not found or route ID invalid'], warnings: [], route: null }, 1);
+  }
+}
+
+function boundRouteForOutput(route) {
+  const clip = (value, maxLength) => value == null ? value : String(value).slice(0, maxLength);
+  const clipList = (value, maxItems = 2, maxLength = 32) => (Array.isArray(value) ? value : [])
+    .slice(0, maxItems)
+    .map(item => {
+      if (item == null || typeof item === 'boolean' || typeof item === 'number') return item;
+      if (typeof item === 'string') return clip(item, maxLength);
+      let serialized;
+      try { serialized = JSON.stringify(item); } catch { serialized = String(item); }
+      return clip(serialized ?? String(item), maxLength);
+    });
+  return {
+    id: clip(route.id, 64),
+    title: clip(route.title, 60),
+    status: clip(route.status, 24),
+    phase: clip(route.phase, 24),
+    summary: clip(route.summary, 80),
+    blockers: clipList(route.blockers),
+    dependsOn: clipList(route.dependsOn),
+    blocks: clipList(route.blocks),
+    path: clip(route.path, 80),
+    archivePath: clip(route.archivePath, 80),
+    archived: Boolean(route.archived),
+    updatedAt: clip(route.updatedAt, 40),
+    nextAction: clip(route.nextAction, 80),
+    activeQuestion: clip(route.activeQuestion, 80),
+    queues: Object.fromEntries(['ready', 'running', 'blocked', 'done'].map(key => [
+      key,
+      clipList(route.queues?.[key], 1, 32),
+    ])),
+  };
+}
+
+// Rebuild _archive/INDEX.json using the unified route-layer builder.
+// task-route.mjs buildArchiveIndexEntries is the single source of truth;
+// this function is the sole write surface.
+function refreshArchiveIndexJson() {
+  if (!fs.existsSync(archiveDir)) return;
+  const entries = routeBuildArchiveIndexEntries(root);
+  const indexPath = path.join(archiveDir, 'INDEX.json');
+  writeJsonAtomic(indexPath, {
+    schemaVersion: 1,
+    generatedAt: new Date().toISOString(),
+    routeRevision: computeRouteRevision(),
+    sourceOfTruth: 'Harness/tasks/_archive/**/STATE.json',
+    tasks: entries,
+  });
+}
+
+// Find an archived task by id under _archive/YYYY/MM/DD/<id>/
+function findArchivedTask(taskId) {
+  if (!fs.existsSync(archiveDir)) return null;
+  const yearDirs = fs.readdirSync(archiveDir, { withFileTypes: true })
+    .filter(e => e.isDirectory() && /^\d{4}$/.test(e.name)).sort((a, b) => b.name.localeCompare(a.name));
+  for (const year of yearDirs) {
+    const yearPath = path.join(archiveDir, year.name);
+    const monthDirs = fs.readdirSync(yearPath, { withFileTypes: true })
+      .filter(e => e.isDirectory() && /^\d{2}$/.test(e.name)).sort((a, b) => b.name.localeCompare(a.name));
+    for (const month of monthDirs) {
+      const monthPath = path.join(yearPath, month.name);
+      const dayDirs = fs.readdirSync(monthPath, { withFileTypes: true })
+        .filter(e => e.isDirectory() && /^\d{2}$/.test(e.name)).sort((a, b) => b.name.localeCompare(a.name));
+      for (const day of dayDirs) {
+        const candidate = path.join(monthPath, day.name, taskId);
+        // Only count a real archived capsule (STATE.json present). A stale
+        // directory left by a failed move is NOT a successful archive.
+        if (fs.existsSync(path.join(candidate, 'STATE.json'))) {
+          return `_archive/${year.name}/${month.name}/${day.name}/${taskId}`;
+        }
+      }
+    }
+  }
+  return null;
 }
 
 function readTemplateState() {
@@ -2250,17 +2828,36 @@ function runHistorySearch() {
 }
 
 function runHistoryLoad() {
-  const taskId = args[2];
+  const taskId = flagValue('--task') || args[2];
   if (!taskId) {
-    finish({ ok: false, command: 'history/load', errors: ['history load requires <task-id>'], warnings: [] }, 1);
+    finish({ ok: false, command: 'history/load', errors: ['history load requires <task-id> or --task <id>'], warnings: [] }, 1);
     return;
   }
+  const summaryOnly = hasFlag('--summary');
   const tasks = walkArchived({ taskId });
   if (tasks.length === 0) {
     finish({ ok: false, command: 'history/load', errors: [`Task "${taskId}" not found in archive`], warnings: [] }, 1);
     return;
   }
   const task = tasks[0];
+  if (summaryOnly) {
+    // Compact summary: no PLAN, no decisions, no raw logs. Just route stub.
+    const result = {
+      id: task.id,
+      archivePath: task.archivePath,
+      mtime: task.mtime,
+      status: task.state?.status || 'archived',
+      phase: task.state?.phase || 'archived',
+      title: task.state?.title || task.id,
+      closedAt: task.state?.closedAt || null,
+      summary: task.state?.nextAction || task.state?.title || '',
+      blockers: summarizeBlockersFromState(task.state),
+      dependsOn: task.state?.links?.dependsOn || [],
+      blocks: task.state?.links?.blocks || [],
+    };
+    finish({ ok: true, command: 'history/load', task: result, summary: true }, 0);
+    return;
+  }
   const result = {
     id: task.id,
     archivePath: task.archivePath,
@@ -2275,6 +2872,20 @@ function runHistoryLoad() {
     }
   }
   finish({ ok: true, command: 'history/load', task: result }, 0);
+}
+
+function summarizeBlockersFromState(state) {
+  const items = [];
+  if (!state) return items;
+  if (state.activeQuestion) items.push(String(state.activeQuestion));
+  const blocked = state.queues?.blocked || [];
+  for (const entry of blocked) {
+    const text = typeof entry === 'string'
+      ? entry
+      : (entry.reason || entry.text || entry.id || 'blocked queue entry');
+    items.push(String(text));
+  }
+  return items;
 }
 
 function runHistoryDelete() {
@@ -2352,6 +2963,8 @@ if (isMain) {
   if (command === 'set-active') runSetActive();
   if (command === 'transition') runTransition();
   if (command === 'archive') runArchive();
+  if (command === 'auto-archive') runAutoArchive();
+  if (command === 'route') runRoute();
   if (command === 'record') runRecord();
   if (command === 'open') runOpen();
   if (command === 'history') {

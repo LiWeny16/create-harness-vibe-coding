@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-implement-wf-search-media",
+  "status": "archived",
+  "mode": "direct",
+  "tier": "standard",
+  "phase": "archived",
+  "gate": "complete",
+  "updatedAt": "2026-09-17T02:25:41.587Z",
+  "activeQuestion": null,
+  "nextAction": "none",
+  "acceptance": [
+    {
+      "id": "AC-001",
+      "status": "passed"
+    },
+    {
+      "id": "AC-002",
+      "status": "passed"
+    },
+    {
+      "id": "AC-003",
+      "status": "passed"
+    },
+    {
+      "id": "AC-004",
+      "status": "passed"
+    }
+  ],
+  "links": {
+    "dependsOn": [],
+    "blocks": [],
+    "related": []
+  },
+  "queues": {
+    "ready": [],
+    "running": [],
+    "blocked": [],
+    "done": [
+      "AC-001",
+      "AC-002",
+      "AC-003",
+      "AC-004"
+    ]
+  },
+  "workItems": [],
+  "dispatchLedger": [],
+  "decisions": [
+    "BrowserOS Neo is the authenticated browser boundary; raw cookies never enter wf-search.",
+    "Whisper is a mutually-exclusive ai profile because Qwen currently consumes the host GPU memory."
+  ],
+  "risks": [
+    "Platform limits and login challenges may stop extraction; record the failure instead of bypassing it.",
+    "Remote model download/load time may exceed the existing ai wait budget; verify before documenting."
+  ],
+  "artifacts": [
+    "Harness/tasks/task-implement-wf-search-media/evidence/wf-search-whisper/VERIFICATION.md"
+  ],
+  "defaultRuntime": "codex",
+  "defaultAgentRuntime": "codex",
+  "tags": [],
+  "createdAt": "2026-09-17T02:25:41.318Z",
+  "startedAt": null,
+  "closedAt": "2026-09-17T02:25:41.318Z"
+}

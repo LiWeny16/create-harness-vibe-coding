@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-route-wf-search-deep-media",
+  "status": "archived",
+  "mode": "direct",
+  "defaultRuntime": "codex",
+  "defaultAgentRuntime": "codex",
+  "tier": "none",
+  "phase": "archived",
+  "gate": null,
+  "project": "default",
+  "tags": [],
+  "createdAt": "2026-09-18T07:14:19.827Z",
+  "startedAt": "2026-09-18T07:14:19.827Z",
+  "closedAt": "2026-09-23T08:08:40.988Z",
+  "updatedAt": "2026-09-23T09:10:38.361Z",
+  "activeQuestion": null,
+  "nextAction": "Review task state.",
+  "acceptance": [],
+  "queues": {
+    "ready": [],
+    "running": [],
+    "blocked": [],
+    "done": []
+  },
+  "workItems": [],
+  "dispatchLedger": [],
+  "decisions": [],
+  "risks": [],
+  "artifacts": [],
+  "links": {
+    "dependsOn": [],
+    "blocks": [],
+    "related": []
+  },
+  "archiveEligibleAt": "2026-09-23T09:10:38.361Z"
+}

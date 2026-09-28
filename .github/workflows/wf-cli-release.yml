@@ -1,0 +1,124 @@
+name: WF CLI Release
+
+# Builds the Rust wf binary for every supported platform, packs it into the
+# per-platform npm packages, and verifies the release artifact set.
+# This workflow never publishes and never pushes; publishing stays a manual,
+# out-of-band action on the maintainer's machine.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'crates/wf-cli/**'
+      - 'packages/wf-cli/**'
+      - 'packages/wf-cli-*/**'
+      - 'scripts/wf-cli-release.mjs'
+      - '.github/workflows/wf-cli-release.yml'
+  pull_request:
+    paths:
+      - 'crates/wf-cli/**'
+      - 'packages/wf-cli/**'
+      - 'packages/wf-cli-*/**'
+      - 'scripts/wf-cli-release.mjs'
+      - '.github/workflows/wf-cli-release.yml'
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Verify release contract
+        run: node scripts/wf-cli-release.mjs verify
+
+  build:
+    needs: verify
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: wf-cli-darwin-arm64
+            target: aarch64-apple-darwin
+            runner: macos-latest
+          - platform: wf-cli-darwin-x64
+            target: x86_64-apple-darwin
+            runner: macos-latest
+          - platform: wf-cli-linux-arm64-gnu
+            target: aarch64-unknown-linux-gnu
+            runner: ubuntu-latest
+          - platform: wf-cli-linux-x64-gnu
+            target: x86_64-unknown-linux-gnu
+            runner: ubuntu-latest
+          - platform: wf-cli-win32-arm64-msvc
+            target: aarch64-pc-windows-msvc
+            runner: windows-latest
+          - platform: wf-cli-win32-x64-msvc
+            target: x86_64-pc-windows-msvc
+            runner: windows-latest
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install cross toolchain for linux-aarch64
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        run: sudo apt-get update && sudo apt-get install -y gcc-aarch64-linux-gnu
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Build wf binary
+        env:
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: ${{ matrix.target == 'aarch64-unknown-linux-gnu' && 'aarch64-linux-gnu-gcc' || '' }}
+        run: cargo build --release --target ${{ matrix.target }} --manifest-path crates/wf-cli/Cargo.toml
+
+      - name: Stage binary into platform package
+        run: node scripts/wf-cli-release.mjs stage --platform ${{ matrix.platform }} --target ${{ matrix.target }}
+
+      - name: Pack platform package
+        run: node scripts/wf-cli-release.mjs pack --platform ${{ matrix.platform }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.platform }}
+          path: packages/${{ matrix.platform }}/*.tgz
+
+  package:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: wf-cli-*
+          path: dist/wf-cli
+          merge-multiple: true
+
+      - name: Verify release artifacts
+        run: node scripts/wf-cli-release.mjs verify-artifacts --dist dist/wf-cli
+
+      - name: Pack main launcher package (dry-run)
+        run: node scripts/wf-cli-release.mjs pack-main
+
+      - name: Upload release artifact bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: wf-cli-release
+          path: |
+            dist/wf-cli
+          retention-days: 7

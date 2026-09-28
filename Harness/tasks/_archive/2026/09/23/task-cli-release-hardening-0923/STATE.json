@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-cli-release-hardening-0923",
+  "status": "archived",
+  "mode": "direct",
+  "defaultRuntime": "codex",
+  "defaultAgentRuntime": "codex",
+  "tier": "none",
+  "phase": "archived",
+  "gate": null,
+  "project": "create-harness-vibe-coding",
+  "tags": [
+    "cli",
+    "release",
+    "extension",
+    "utf8"
+  ],
+  "createdAt": "2026-09-23T02:56:50.034Z",
+  "startedAt": "2026-09-23T02:56:50.034Z",
+  "closedAt": "2026-09-23T09:35:59.719Z",
+  "updatedAt": "2026-09-23T09:36:07.999Z",
+  "activeQuestion": null,
+  "nextAction": "Local release-hardening scope complete; actual six-platform GitHub Actions builds remain required before any release sign-off.",
+  "acceptance": [],
+  "queues": {
+    "ready": [],
+    "running": [],
+    "blocked": [],
+    "done": []
+  },
+  "workItems": [],
+  "dispatchLedger": [],
+  "decisions": [],
+  "risks": [],
+  "artifacts": [],
+  "group": "create-harness-vibe-coding",
+  "links": {
+    "dependsOn": [],
+    "blocks": [],
+    "related": []
+  },
+  "archiveEligibleAt": "2026-09-23T09:36:07.999Z"
+}

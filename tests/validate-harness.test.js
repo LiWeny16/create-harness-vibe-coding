@@ -704,7 +704,7 @@ test('validation fails when wf-ui direct command loses CLI launch', () => {
     writeRel(
       targetDir,
       rel,
-      readRel(targetDir, rel).replaceAll('create-harness-vibe-coding wf-ui', 'create-harness-vibe-coding ui'),
+      readRel(targetDir, rel).replaceAll('pnpm exec wf ui start', 'pnpm exec wf ui status'),
     );
   }
 
@@ -715,16 +715,16 @@ test('validation fails when wf-ui direct command loses CLI launch', () => {
   const output = `${result.stdout}\n${result.stderr}`;
 
   assert.notEqual(result.status, 0);
-  assert.match(output, /\.claude\/commands\/wf-ui\.md missing .*wf-ui direct CLI launch/);
+  assert.match(output, /\.claude\/commands\/wf-ui\.md missing .*wf-ui native CLI launch/);
 });
 
-test('validation fails when wf-ui direct command loses detached launch', () => {
+test('validation fails when wf-ui direct command loses extension install', () => {
   const targetDir = generateProject();
   for (const rel of ['.claude/commands/wf-ui.md', '.opencode/commands/wf-ui.md']) {
     writeRel(
       targetDir,
       rel,
-      readRel(targetDir, rel).replaceAll(' --detach', ''),
+      readRel(targetDir, rel).replaceAll('wf extension install wf-ui', 'wf extension status wf-ui'),
     );
   }
 
@@ -735,7 +735,7 @@ test('validation fails when wf-ui direct command loses detached launch', () => {
   const output = `${result.stdout}\n${result.stderr}`;
 
   assert.notEqual(result.status, 0);
-  assert.match(output, /\.claude\/commands\/wf-ui\.md missing .*wf-ui detached launch flag/);
+  assert.match(output, /\.claude\/commands\/wf-ui\.md missing .*wf-ui extension install path/);
 });
 
 test('validation fails when wf-ui direct command restores workflow router preload', () => {
@@ -834,7 +834,7 @@ test('validation fails when built-in wf-browser loses stable selector requiremen
   writeRel(
     targetDir,
     '.claude/skills/wf-browser/SKILL.md',
-    readRel(targetDir, '.claude/skills/wf-browser/SKILL.md').replaceAll('data-testid', 'data-qa-id'),
+    readRel(targetDir, '.claude/skills/wf-browser/SKILL.md').replaceAll('optional capability of wf-ui', 'separate capability outside wf-ui'),
   );
 
   const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {

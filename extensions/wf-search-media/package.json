@@ -1,0 +1,12 @@
+{
+  "name": "@zingspark/wf-extension-search-media",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "harnessExtension": {
+    "id": "wf-search-media",
+    "capabilities": ["search.media.download", "search.media.metadata"],
+    "defaultInstall": false
+  }
+}
+

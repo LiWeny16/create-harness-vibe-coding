@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-legacy-echo",
+  "status": "in-progress",
+  "phase": "implementation",
+  "updatedAt": "2026-01-01T00:00:00.000Z",
+  "nextAction": "Resume legacy task."
+}

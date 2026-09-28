@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "wf-search/video-transcript.v1",
+  "video": {
+    "url": "https://example.com/video",
+    "title": "测试视频",
+    "platform": "youtube",
+    "retrievedAt": "2026-09-17T00:00:00.000Z"
+  },
+  "language": "zh",
+  "languageProbability": 0.99,
+  "model": "large-v3",
+  "source": "asr",
+  "segments": [
+    { "id": 0, "startMs": 0, "endMs": 1000, "text": "先介绍背景。" },
+    { "id": 1, "startMs": 1200, "endMs": 2600, "text": "模型可以帮助阅读视频。" }
+  ]
+}

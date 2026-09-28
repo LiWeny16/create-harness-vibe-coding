@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.9.6] - 2026-09-28
+
+- Add standalone chat to Agent nodes for Claude Code, Codex, OpenCode, and Pi, with runtime-specific permission modes and correlated approvals; Pi approvals are enforced by the bundled host-gate extension.
+- Add a compact Billboard view for shared Agent context backed by the existing Markdown node store and API.
+- Expand Skills Hub discovery across five runtimes, group related skills, and pass editable skill-pack prompts into connected Agent context.
+- Improve the `wf-ui` Agent terminal by keeping sessions alive across drawer changes, replaying missed output, and debouncing terminal resize updates.
+- Harden task capsule routing, archival, lock recovery, and rollback, with route and closeout regression coverage.
+- Add the cross-platform `wf-cli` package matrix and build-artifact contract checks.
+
 ## [0.9.5] - 2026-09-14
 
 - Recommend the global runtime with project-local state, and add an explicit migration path for legacy project-local installs.

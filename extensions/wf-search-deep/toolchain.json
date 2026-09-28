@@ -1,0 +1,122 @@
+{
+  "schemaVersion": "wf-research/toolchain.v1",
+  "version": "2026-09-18",
+  "defaultInstall": false,
+  "installRoot": "<globalDir>/Harness/extensions/wf-search-deep/<version>/runtime",
+  "runtimeLayout": {
+    "root": "<globalDir>/Harness/extensions/wf-search-deep/<version>/runtime",
+    "pythonVenv": "<root>/python",
+    "pythonExecutable": { "posix": "<root>/python/bin/python", "windows": "<root>/python/Scripts/python.exe" },
+    "nodePackageRoot": "<root>/node",
+    "bin": "<root>/bin",
+    "tmp": "<root>/tmp"
+  },
+  "configuration": {
+    "file": "Harness/extensions/config.json",
+    "schemaVersion": "wf-search/backend-config.v1",
+    "keys": {
+      "researchBackend": "backends.research.baseUrl",
+      "vlmEndpoint": "backends.vlm.baseUrl",
+      "vlmModel": "backends.vlm.model",
+      "whisperEndpoint": "backends.whisper.baseUrl",
+      "searchProviders": "search-providers.json"
+    },
+    "browserSession": "BrowserOS Neo user-provided session"
+  },
+  "tools": [
+    {
+      "id": "gpt-researcher",
+      "name": "GPT Researcher",
+      "kind": "research-engine",
+      "upstream": "https://github.com/assafelovic/gpt-researcher",
+      "health": "GET <configured endpoint>/health after the adapter service is started",
+      "install": { "scope": "global-extension-runtime", "commands": ["python -m venv <root>/python", "<pythonExecutable> -m pip install --upgrade gpt-researcher"] },
+      "service": { "start": "<pythonExecutable> -m uvicorn main:app --host <bind-address> --port <port>", "configKey": "backends.research.baseUrl" },
+      "requires": ["Python 3.11+", "configured LLM/search provider credentials"],
+      "role": "planner/executor/citation research loop"
+    },
+    {
+      "id": "storm",
+      "name": "STORM knowledge curation",
+      "kind": "research-engine",
+      "upstream": "https://github.com/stanford-oval/storm",
+      "health": "<pythonExecutable> -c \"import knowledge_storm; print('ok')\" plus a configured retriever/LM probe",
+      "install": { "scope": "global-extension-runtime", "commands": ["python -m venv <root>/python", "<pythonExecutable> -m pip install --upgrade knowledge-storm"] },
+      "requires": ["configured language model module", "configured retrieval module"],
+      "role": "source-grounded knowledge curation and retrieval routing"
+    },
+    {
+      "id": "yt-dlp",
+      "name": "yt-dlp",
+      "kind": "media-adapter",
+      "upstream": "https://github.com/yt-dlp/yt-dlp",
+      "health": "<pythonExecutable> -m yt_dlp --version",
+      "install": { "scope": "global-extension-runtime", "commands": ["python -m venv <root>/python", "<pythonExecutable> -m pip install --upgrade \"yt-dlp[default,curl-cffi]\""] },
+      "requires": ["ffmpeg", "ffprobe", "yt-dlp-ejs", "a JavaScript runtime for full YouTube support"],
+      "platforms": ["youtube", "tiktok", "x", "bilibili"],
+      "sessionPolicy": "user-provided session only; never persist raw cookies in wf-search",
+      "role": "primary metadata/audio/video/caption acquisition for supported URLs"
+    },
+    {
+      "id": "tiktok-api",
+      "name": "@ssut/tiktok-api",
+      "kind": "media-adapter",
+      "upstream": "https://github.com/ssut/tiktok-api",
+      "health": "node package import probe for @ssut/tiktok-api",
+      "install": { "scope": "global-extension-runtime", "commands": ["npm install --prefix <nodeRoot> @ssut/tiktok-api@1.5.2"] },
+      "requires": ["Node.js 18+", "TikTok public/API access or a user-provided browser session for fallback"],
+      "platforms": ["tiktok"],
+      "sessionPolicy": "no raw cookie persistence; use BrowserOS Neo for account-scoped access",
+      "role": "TikTok metadata, format selection, comments, and signed media URL discovery before yt-dlp download"
+    },
+    {
+      "id": "gallery-dl",
+      "name": "gallery-dl",
+      "kind": "media-adapter",
+      "upstream": "https://github.com/mikf/gallery-dl",
+      "health": "<pythonExecutable> -m gallery_dl --version",
+      "install": { "scope": "global-extension-runtime", "commands": ["python -m venv <root>/python", "<pythonExecutable> -m pip install --upgrade gallery-dl"] },
+      "requires": ["user-provided session for account-scoped sources"],
+      "platforms": ["x", "instagram", "reddit"],
+      "sessionPolicy": "user-provided session only; never persist raw cookies in wf-search",
+      "role": "social media collection and fallback media acquisition"
+    },
+    {
+      "id": "browseros-neo",
+      "name": "BrowserOS Neo",
+      "kind": "authenticated-browser",
+      "upstream": "https://browseros.com/",
+      "health": "real BrowserOS Neo connection probe",
+      "credentials": "user-session-only",
+      "install": { "scope": "user-provided-external", "commands": [] },
+      "role": "read visible account-scoped pages without exposing cookies"
+    },
+    {
+      "id": "whisper-large",
+      "name": "Whisper Large",
+      "kind": "remote-service",
+      "upstream": "https://github.com/openai/whisper",
+      "configKey": "backends.whisper.baseUrl",
+      "health": "GET <configured endpoint>/health",
+      "role": "timestamped ASR through a user-owned backend configured outside the extension"
+    },
+    {
+      "id": "vlm-endpoint",
+      "name": "OpenAI-compatible VLM endpoint",
+      "kind": "remote-service",
+      "upstream": "https://github.com/vllm-project/vllm",
+      "configKey": "backends.vlm.baseUrl",
+      "health": "GET <configured endpoint>/models",
+      "role": "global-to-local visual segment inspection through a user-owned backend"
+    },
+    {
+      "id": "ffmpeg",
+      "name": "FFmpeg",
+      "kind": "media-runtime",
+      "upstream": "https://github.com/FFmpeg/FFmpeg",
+      "health": "<root>/bin/ffmpeg -version and <root>/bin/ffprobe -version",
+      "install": { "scope": "global-extension-runtime", "commands": ["download a pinned platform binary from the FFmpeg release source and verify its checksum", "place ffmpeg and ffprobe under <root>/bin"] },
+      "role": "audio extraction and keyframe/clip materialization"
+    }
+  ]
+}

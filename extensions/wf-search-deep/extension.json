@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "wf-search-deep",
+  "version": "0.3.0",
+  "entry": "agent.json",
+  "capabilities": [
+    "authenticated-platform-reading",
+    "video-transcript-first-research",
+    "remote-whisper-large",
+    "source-catalog",
+    "search-provider-routing",
+    "github-backed-media-download",
+    "evidence-scoring",
+    "video-temporal-reader",
+    "comment-normalization",
+    "skills-bundle"
+  ],
+  "platforms": [
+    "x",
+    "youtube",
+    "tiktok",
+    "instagram",
+    "xiaohongshu",
+    "bilibili",
+    "wechat-official-account",
+    "reddit",
+    "github"
+  ],
+  "dependencies": {
+    "browser": "browseros-neo (optional, user-provided session)",
+    "video": "skill-selected yt-dlp, gallery-dl, and platform adapters (optional, globally installed)",
+    "skills": "skills/manifest.json and its lazy-loaded skill entries",
+    "asr": "user-configured Whisper Large backend (optional)",
+    "research": "GPT Researcher or STORM (optional, adapter-selected)"
+  }
+}

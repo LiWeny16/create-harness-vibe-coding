@@ -41,6 +41,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import http from 'node:http';
+import os from 'node:os';
 import { registerHooks } from 'node:module';
 import { pathToFileURL } from 'node:url';
 import { makeHarnessTempRoot } from '../../../tests/support/temp-root.js';
@@ -56,6 +57,7 @@ import {
   resolveSpawnArgs,
 } from '../pty-adapter.mjs';
 import { resolveRuntimeResumeArgs } from '../runtime-detector.mjs';
+import { encodeClaudeProjectDir } from '../claude-transcript-materializer.mjs';
 
 // ── pty-adapter fixture ─────────────────────────────────────────────────────
 // Replaces pty-adapter.mjs for server.mjs: spawnPty records the spawn opts and
@@ -110,6 +112,8 @@ const { recorder } = await import(fixtureUrl);
 // Stub claude/codex/opencode on PATH so createRuntimeSession takes the spawn
 // branch and the fixture's spawnPty runs for real in-process.
 const ORIGINAL_PATH = process.env.PATH || '';
+const ORIGINAL_USERPROFILE = process.env.USERPROFILE;
+const ORIGINAL_HOME = process.env.HOME;
 let runtimeStubDir = '';
 
 before(() => {
@@ -124,10 +128,17 @@ before(() => {
     }
   }
   process.env.PATH = `${runtimeStubDir}${path.delimiter}${ORIGINAL_PATH}`;
+  // Keep transcript materialization and resume probes inside the test fixture.
+  process.env.USERPROFILE = runtimeStubDir;
+  process.env.HOME = runtimeStubDir;
 });
 
 after(() => {
   process.env.PATH = ORIGINAL_PATH;
+  if (ORIGINAL_USERPROFILE === undefined) delete process.env.USERPROFILE;
+  else process.env.USERPROFILE = ORIGINAL_USERPROFILE;
+  if (ORIGINAL_HOME === undefined) delete process.env.HOME;
+  else process.env.HOME = ORIGINAL_HOME;
   for (const dir of [runtimeStubDir, fixtureDir]) {
     try { fs.rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); } catch { /* best effort */ }
   }
@@ -163,6 +174,12 @@ function seedRoot(prefix) {
   fs.mkdirSync(path.join(root, 'Harness', 'tasks'), { recursive: true });
   fs.mkdirSync(path.join(root, 'Harness', 'a2a'), { recursive: true });
   return root;
+}
+
+function seedClaudeTranscript(cwd, sessionId) {
+  const transcriptDir = path.join(runtimeStubDir || os.homedir(), '.claude', 'projects', encodeClaudeProjectDir(cwd));
+  fs.mkdirSync(transcriptDir, { recursive: true });
+  fs.writeFileSync(path.join(transcriptDir, `${sessionId}.jsonl`), '{}\n', 'utf8');
 }
 
 function seedAgent(root, { nodeId, sessionId, agentKind = 'subagent', role = 'Agent', runtime = 'claude', status = 'running', agentSessionId, codexRolloutId }) {
@@ -311,6 +328,7 @@ describe('unified resume (attach-first, per-runtime session ids)', () => {
     const CODEX_ROLLOUT = '019ffa1b-1234-5678-9abc-def012345678';
     const OPENCODE_SESSION = 'ses_u2_opencode_1';
     seedAgent(root, { nodeId: 'u2-claude', sessionId: 'u2-c-s1', runtime: 'claude', status: 'exited', agentSessionId: CLAUDE_UUID });
+    seedClaudeTranscript(root, CLAUDE_UUID);
     seedAgent(root, { nodeId: 'u2-codex', sessionId: 'u2-x-s1', runtime: 'codex', status: 'exited', codexRolloutId: CODEX_ROLLOUT });
     seedAgent(root, { nodeId: 'u2-opencode', sessionId: 'u2-o-s1', runtime: 'opencode', status: 'exited', agentSessionId: OPENCODE_SESSION });
 
@@ -373,6 +391,7 @@ describe('unified resume (attach-first, per-runtime session ids)', () => {
     const stopped = await jsonRequest(baseUrl, `/api/sessions/${sessionId}/stop`, { method: 'POST' });
     assert.equal(stopped.status, 200, JSON.stringify(stopped.body));
     assert.equal(stopped.body.stopped.status, 'stopped', 'session must be stopped');
+    seedClaudeTranscript(root, uuid);
 
     const started = await jsonRequest(baseUrl, `/api/workflow/nodes/${encodeURIComponent(`session-${sessionId}`)}/actions/agent.start`, {
       method: 'POST',

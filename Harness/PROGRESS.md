@@ -12,11 +12,11 @@ Non-archived tasks only (max 5). Archived tasks are listed in `Harness/tasks/_ar
 
 | ID | Goal | Phase | Closed |
 |----|------|-------|--------|
-| task-add-web-agent-node | 新增原生 web chat agent node（非 PTY）：参考 agentre 的 claude stream-json / codex app-server 接入模式，结构化事件流+工具卡片+审批环 | Intake | - |
-| task-homepage-act1-flat-layout | Redesign Act 1 opening: 5 flat staggered boxes, zero tilt, no float, no singled-out openable box | Implementation | - |
-| task-make-wf-lifecycle-0908 | Implement explicit WF activation, durable cross-session resume, no direct-to-WF promotion, no WF exit/downgrade, and ensure wf-ui project/task views consume the same project/task state and indexes. Preserve compatibility and keep the architecture minimal. | Validation | - |
-| task-simplify-skills-hub-pack-prompt | Attempt native subagent fan-out (W0 explore + W1 architect), then W2 implementation waves | Implementation | - |
-| task-upgrade-harness-092 | 升级 Harness 协同与可恢复执行架构至 0.9.2；Luna 多代理实现与初验，主模型指挥和终验；跨 Codex/Claude/OpenCode/A2A/PTY/UI；禁止 npm publish；保留现有用户脏改动、3080.md/png 与 Harness/a2a 本地状态。 | Validation | - |
+| task-add-web-agent-node | 新增原生 web chat agent node（非 PTY）：参考 agentre 的 claude stream-json / codex app-server 接入模式，结构化事件流+工具卡片+审批环 | Closeout | 2026-09-28 |
+| task-agent-billboard-context | Add a compact Billboard presentation for shared Agent context using the existing Markdown node backend | Closeout | 2026-09-28 |
+| task-finalize-capsule-archive-route-0922 | Implement merged archive writer, safe-auto policy, route commands, and tests | Closeout | 2026-09-28 |
+| task-simplify-skills-hub-pack-prompt | Attempt native subagent fan-out (W0 explore + W1 architect), then W2 implementation waves | Closeout | 2026-09-28 |
+| task-web-terminal-smoothing | Improve the web terminal by adopting the useful xterm lifecycle and resize behavior used by OpsKat, then verify the real GUI in BrowserOS Neo. | Closeout | 2026-09-28 |
 
 ## Cross-Task Decisions
 

@@ -1,0 +1,29 @@
+[Unit]
+Description=wf-search faster-whisper ASR
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=%i
+WorkingDirectory=%h/ai/whisper
+EnvironmentFile=-/etc/default/wf-search-whisper
+Environment=WHISPER_HOST=127.0.0.1
+Environment=WHISPER_PORT=8090
+Environment=WHISPER_MODEL=large-v3
+Environment=WHISPER_DEVICE=cuda
+Environment=WHISPER_COMPUTE_TYPE=float16
+Environment=WHISPER_MODEL_DIR=%h/models/whisper
+Environment=WHISPER_MAX_BODY_BYTES=536870912
+Environment=HF_ENDPOINT=https://hf-mirror.com
+Environment=HF_HUB_DISABLE_XET=1
+ExecStart=%h/ai/whisper/.venv/bin/python %h/ai/whisper/whisper_server.py
+Restart=on-failure
+RestartSec=5
+TimeoutStartSec=900
+TimeoutStopSec=30
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

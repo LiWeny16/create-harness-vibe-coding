@@ -11,6 +11,7 @@ const CLIENT_INFO = {
 
 const TOOLISH_RE = /exec|command|file|patch|tool|shell|mcp/i;
 const APPROVAL_RE = /approval|permission|exec|patch/i;
+const SUPPORTED_MODES = Object.freeze(['untrusted', 'on-request', 'on-failure', 'never']);
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -64,6 +65,7 @@ export function createCodexAppServerDriver(options = {}) {
     model,
     effort = '',
     providerSessionId = null,
+    permissionMode = 'on-request',
     onEvent,
     _spawn,
     maxLineBytes = DEFAULT_MAX_LINE_BYTES,
@@ -81,6 +83,7 @@ export function createCodexAppServerDriver(options = {}) {
   let turnActive = false;
   let turnEndLatch = false;
   let currentThreadId = providerSessionId == null ? null : String(providerSessionId);
+  let currentPermissionMode = String(permissionMode || 'on-request');
   let resumedExisting = false;
   let nextRequestId = 1;
   let seqCounter = 0;
@@ -89,6 +92,7 @@ export function createCodexAppServerDriver(options = {}) {
   let stderrTail = '';
   const decoder = new StringDecoder('utf8');
   const pending = new Map();
+  const pendingApprovals = new Map();
   const sendQueue = [];
   let startPromise = null;
 
@@ -269,6 +273,7 @@ export function createCodexAppServerDriver(options = {}) {
   const handleServerRequest = (msg) => {
     const method = String(msg.method);
     if (APPROVAL_RE.test(method)) {
+      pendingApprovals.set(String(msg.id), { method, id: msg.id });
       return emit('permission_request', {
         requestId: msg.id,
         method,
@@ -390,13 +395,15 @@ export function createCodexAppServerDriver(options = {}) {
   const ensureThread = async () => {
     if (currentThreadId) {
       resumedExisting = true;
-      await request('thread/resume', { threadId: currentThreadId });
+      const result = await request('thread/resume', { threadId: currentThreadId });
+      if (result?.approvalPolicy) currentPermissionMode = String(result.approvalPolicy);
       return;
     }
-    const result = await request('thread/start', {});
+    const result = await request('thread/start', { approvalPolicy: currentPermissionMode });
     const threadId = extractThreadId(result);
     if (!threadId) throw new Error('thread/start returned no thread id');
     currentThreadId = String(threadId);
+    if (result?.approvalPolicy) currentPermissionMode = String(result.approvalPolicy);
   };
 
   const send = (text, meta = {}) => {
@@ -422,9 +429,27 @@ export function createCodexAppServerDriver(options = {}) {
 
   const approve = (requestId, result) => {
     if (disposed) throw new Error('driver disposed');
-    const payload = result === undefined ? null : result;
-    writeLine({ jsonrpc: '2.0', id: requestId, result: payload });
+    const id = String(requestId ?? '');
+    const approval = pendingApprovals.get(id);
+    if (!approval) return false;
+    const payload = result === 'allow'
+      ? { decision: 'accept' }
+      : result === 'deny'
+        ? { decision: 'decline' }
+        : (result === undefined ? null : result);
+    pendingApprovals.delete(id);
+    writeLine({ jsonrpc: '2.0', id: approval.id, result: payload });
     emit('permission_resolved', { requestId, result: payload });
+    return true;
+  };
+
+  const setPermissionMode = async (mode) => {
+    const value = String(mode || '');
+    if (!SUPPORTED_MODES.includes(value)) throw new Error(`unsupported Codex permission mode: ${value}`);
+    if (!threadReady || !currentThreadId || disposed) throw new Error('Codex thread is not ready');
+    await request('thread/settings/update', { threadId: currentThreadId, approvalPolicy: value });
+    currentPermissionMode = value;
+    return true;
   };
 
   const dispose = async (opts = {}) => {
@@ -509,5 +534,9 @@ export function createCodexAppServerDriver(options = {}) {
     return startPromise;
   };
 
-  return { start, send, steer, interrupt, approve, dispose };
+  return {
+    start, send, steer, interrupt, approve, setPermissionMode, dispose,
+    supportedModes: SUPPORTED_MODES,
+    get permissionMode() { return currentPermissionMode; },
+  };
 }

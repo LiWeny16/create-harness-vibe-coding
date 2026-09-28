@@ -21,6 +21,8 @@ export const PRESERVE_PATTERNS = [
   'Harness/research/search/**',
   'Harness/research/PRD.md',
   'Harness/research/research-results.md',
+  'Harness/extensions/lock.json',
+  'Harness/extensions/config.json',
   'Harness/architecture.md',
   'Harness/project/architecture.md',
   'README.md',

@@ -67,7 +67,9 @@ After reading this README, the agent selects the path that matches the project:
 | Existing `Harness/` but missing `Harness/scripts/wf-update-check.mjs` | `npx create-harness-vibe-coding@latest my-project . -y --on-conflict skip --json`. Then run `node Harness/scripts/wf-update-check.mjs --json` |
 | After install or update | `node Harness/scripts/validate-harness.mjs --strict` |
 
-Install scope policy: the CLI defaults to `global` for a new or empty target, and to `project` for an existing non-empty target so older repositories keep their historical behavior. An explicit `--install-scope project|global` always wins. For the production setup, install once per machine with `npm i -g create-harness-vibe-coding`, then run `create-harness-vibe-coding init .` (or `/wf-init`) inside each project. The global runtime is the single version source of truth for commands, skills, agents, scripts, and the wf-ui server/assets; each project keeps its bridge docs and state (`Harness/tasks/`, `Harness/PROGRESS.md`, memory, facts, and settings). `wf-ui` is included in that same runtime and lazy-loaded only when invoked, so starting the UI does not trigger a second download. Use `--install-scope project` for a self-contained or offline/CI install; use `--global-dir <dir>` and `--host-global-dir <dir>` when the shared locations must be explicit.
+Install scope policy: the CLI defaults to `global` for a new or empty target, and to `project` for an existing non-empty target so older repositories keep their historical behavior. An explicit `--install-scope project|global` always wins. The global Harness runtime provides the command and controller surfaces; wf-ui, browser control, media download, ASR, and VLM are optional CLI extensions installed through pnpm. Use `--install-scope project` for a self-contained or offline/CI install; use `--global-dir <dir>` and `--host-global-dir <dir>` when the shared locations must be explicit.
+
+Lazy extension runtime: `/wf-search` uses the native Rust CLI and requests optional capabilities through `/wf-extension`. The default runtime does not include wf-ui, browser engines, crawlers, Whisper, or VLM tooling. Install registered packages with `pnpm exec wf extension install <id> --apply`; project package versions are pinned by pnpm. CLI-backed commands first check `pnpm exec wf --help`; if the CLI is missing, they ask before installing it with `pnpm add --save-dev @zingspark/wf-cli@0.1.0`.
 
 When `/wf-update` finds an older project-local install, it recommends migrating to the global model and asks before changing scope. After confirmation, run `npm install --global create-harness-vibe-coding@latest` and `create-harness-vibe-coding init . --scope global --migrate`. Migration removes only safe Harness-owned prompt-engineering framework files and old local metadata; it preserves tasks, progress, memory, research, project facts, README/package files, and modified or user-authored Harness-interest files. Declining keeps the project-local update path.
 
@@ -91,9 +93,10 @@ When in doubt, use `/wf-help` (or `$wf-help` in Codex). It returns the full comm
 | `/wf-ui` | Open the Harness control panel for task management, workflow graphs, agents, and settings | Directly starts the local backend and browser UI on 127.0.0.1 | `/wf-ui` |
 | `/wf-readme <task>` | README, install docs, architecture diagrams, or project docs need work | Preserves facts while improving structure, setup, and usage guidance | `/wf-readme improve the Chinese README` |
 | `/wf-update` | Harness is already installed and needs an update | Compares versions, applies safe changes, leaves semantic conflicts to the agent, and reports release highlights from the changelog metadata | `/wf-update` |
-| `/wf-search` | A task needs a real tool search with verifiable sources and claims | Organizes one search into a structured ledger (operations/sources/claims), validates it with a stateless Node helper, and renders a Markdown evidence report; reports save to `Harness/research/search/` | `/wf-search --mode fact "node:test runner exit codes"` |
+| `/wf-search` | A task needs a real tool search with verifiable sources and claims | Uses the native Rust CLI for core search and evidence tracking; optional downloads, ASR, VLM, and platform adapters are installed through `/wf-extension` | `/wf-search "node:test runner exit codes"` |
+| `/wf-extension` | Manages optional CLI extensions such as wf-ui, media download, ASR, and VLM | Agents invoke the command; if the native CLI is missing, they ask before installing it | `/wf-extension list` |
 | `/wf-remove` | You need to uninstall Harness | Removes safe files, preserves user data, and asks before touching conflicts |
-| `/wf-init` | You installed the global runtime and want a new project to use it | Writes only project bridge docs and project-local state; framework files and versioning stay in the global runtime | `/wf-remove` |
+| `/wf-init` | You installed the global runtime and want a new project to use it | Writes only project bridge docs and project-local state; framework files and versioning stay in the global runtime | `/wf-init` |
 | `/wf-help` | You do not know which command to use | Returns command usage without starting a workflow | `/wf-help` |
 
 Claude Code uses `/wf-*`; Codex uses the matching `$wf-*`; OpenCode uses the registered command or Agent instruction. Browser E2E guidance is built into `wf-browser`, which uses BrowserOS Neo as its default real browser and asks the user to install it manually when it is unavailable. `/wf-auto` and `/wf-auto-spark` are continuous modes, so give the agent a clear goal, scope, and acceptance criteria before starting.
@@ -281,7 +284,7 @@ Low-version installs can have updater scripts hardcoded to the legacy mirror. Do
 | | |
 |---|---|
 | Runtime | None |
-| Dependencies | 2 (`@clack/prompts`, `picocolors`) |
+| Dependencies | 6 runtime (`@clack/prompts`, `iconv-lite`, `picocolors`, `read-excel-file`, `unpdf`, `yauzl`); optional PTY (`@homebridge/node-pty-prebuilt-multiarch`) |
 | Node.js | >=18 |
 | Generated application code | None until you choose a stack |
 

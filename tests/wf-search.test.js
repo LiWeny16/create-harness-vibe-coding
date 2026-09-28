@@ -86,19 +86,19 @@ function listFilesRecursive(root, base = '') {
 
 // ---------------------------------------------------------------- A. valid report
 
-test('AC-002 valid compare fixture validates with correct summary counts (design 3.4 rules 1-10)', () => {
+test('AC-002 valid compare fixture validates with correct summary counts without a depth budget', () => {
   const result = run(['validate', '--input', fixture('valid-compare.json')]);
   assert.equal(result.status, 0, result.stderr || result.stdout);
   const output = json(result);
   assert.equal(output.ok, true);
   assert.deepEqual(output.errors, []);
   assert.equal(output.summary.mode, 'compare');
-  assert.equal(output.summary.depth, 'standard');
+  assert.equal(Object.hasOwn(output.summary, 'depth'), false);
   assert.equal(output.summary.operations, 5);
   assert.equal(output.summary.sources, 3);
   assert.equal(output.summary.claims, 4);
   assert.equal(output.summary.status, 'complete');
-  assert.equal(output.summary.overBudget, false);
+  assert.equal(Object.hasOwn(output.summary, 'overBudget'), false);
 });
 
 // ---------------------------------------------------------------- B. structural errors
@@ -255,55 +255,25 @@ test('AC-002 URL normalization strips tracking params, keeps other query keys an
   assert.match(flat, /#section/);
 });
 
-// ---------------------------------------------------------------- C. budget
+// ---------------------------------------------------------------- C. search effort
 
-test('AC-002 quick depth rejects 3 searches as over budget (WFR-EBT001)', () => {
-  const result = run(['validate', '--input', fixture('budget', 'quick-over-search.json')]);
-  assert.equal(result.status, 1, result.stdout);
-  const output = jsonOrErrorOutput(result);
-  const error = findError(output, 'WFR-EBT001');
-  assert.ok(error, `expected WFR-EBT001 error: ${JSON.stringify(output && output.errors)}`);
-  assert.equal(output.ok, false);
-  assert.equal(output.summary.overBudget, true);
-});
-
-test('AC-002 failed searches still count: 2 searches with one failed is exactly at quick budget and passes', () => {
-  const result = run(['validate', '--input', fixture('budget', 'quick-two-searches-one-failed.json')]);
+test('AC-002 operation count is not capped by a workflow depth or budget setting', () => {
+  const result = run(['validate', '--input', fixture('budget', 'standard-over-read.json')]);
   assert.equal(result.status, 0, result.stderr || result.stdout);
   const output = json(result);
   assert.equal(output.ok, true);
-  assert.equal(output.summary.overBudget, false);
+  assert.equal(output.summary.operations, 12);
+  assert.equal(Object.hasOwn(output.summary, 'overBudget'), false);
   assert.deepEqual(output.errors, []);
 });
 
-test('AC-002 standard depth rejects 11 reads as over budget (WFR-EBT001)', () => {
-  const result = run(['validate', '--input', fixture('budget', 'standard-over-read.json')]);
-  assert.equal(result.status, 1, result.stdout);
-  const output = jsonOrErrorOutput(result);
-  const error = findError(output, 'WFR-EBT001');
-  assert.ok(error, `expected WFR-EBT001 error: ${JSON.stringify(output && output.errors)}`);
-  assert.equal(output.summary.overBudget, true);
-});
-
-test('AC-002 lowered overrides are enforced: maxSearches=1 rejects 2 searches', () => {
-  const result = run(['validate', '--input', fixture('budget', 'overrides-lowered-over-budget.json')]);
-  assert.equal(result.status, 1, result.stdout);
-  const output = jsonOrErrorOutput(result);
-  const error = findError(output, 'WFR-EBT001');
-  assert.ok(error, `expected WFR-EBT001 error: ${JSON.stringify(output && output.errors)}`);
-  assert.equal(output.summary.overBudget, true);
-});
-
-test('AC-002 raising the budget via overrides above the depth ceiling is rejected as invalid', () => {
+test('AC-002 legacy depth and budget override fields do not impose a limit', () => {
   const result = run(['validate', '--input', fixture('budget', 'overrides-raised-rejected.json')]);
-  assert.equal(result.status, 1, result.stdout);
-  const output = jsonOrErrorOutput(result);
-  assert.ok(output, 'expected JSON error payload');
-  assert.equal(output.ok, false);
-  assert.ok(
-    output.errors.some(error => (error.path || '').includes('overrides') || /override/i.test(error.message || '')),
-    `expected overrides-above-ceiling error: ${JSON.stringify(output.errors)}`
-  );
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  const output = json(result);
+  assert.equal(output.ok, true);
+  assert.equal(Object.hasOwn(output.summary, 'depth'), false);
+  assert.equal(Object.hasOwn(output.summary, 'overBudget'), false);
 });
 
 // ---------------------------------------------------------------- D. evidence semantics
@@ -486,7 +456,6 @@ test('AC-002 render refuses invalid input and must validate first (exit 1, struc
   for (const bad of [
     fixture('errors', 'missing-required.json'),
     fixture('evidence', 'snippet-only-major-fact.json'),
-    fixture('budget', 'quick-over-search.json'),
   ]) {
     const result = run(['render', '--input', bad]);
     assert.equal(result.status, 1, `${bad}: ${result.stdout}`);

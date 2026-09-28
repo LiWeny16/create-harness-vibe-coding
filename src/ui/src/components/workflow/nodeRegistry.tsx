@@ -30,7 +30,7 @@ export interface NodeRenderer {
   }>;
 }
 
-export type CreateNodeCreateMode = 'agent' | 'file' | 'markdown' | 'diagram' | 'display' | 'timer' | 'goal';
+export type CreateNodeCreateMode = 'agent' | 'file' | 'markdown' | 'billboard' | 'diagram' | 'display' | 'timer' | 'goal';
 export type CreateNodeCatalogKind =
   | CreateNodeCreateMode
   | 'timer'
@@ -76,6 +76,17 @@ const createNodeCatalog: CreateNodeCatalogItem[] = [
     state: 'ready',
     icon: Bot,
     searchText: 'agent runtime terminal codex claude opencode executor thinking',
+  },
+  {
+    kind: 'billboard',
+    createMode: 'billboard',
+    category: 'resource',
+    label: 'Billboard',
+    description: 'Compact shared team updates backed by a normal Markdown resource.',
+    agentSemantics: 'Connected Agents read recent one-line updates from shared context and append through markdown.append.',
+    state: 'ready',
+    icon: FileText,
+    searchText: 'billboard team shared agent context status update findings one line markdown',
   },
   {
     kind: 'markdown',

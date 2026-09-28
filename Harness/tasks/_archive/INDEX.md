@@ -76,6 +76,28 @@
 
 | `task-fix-wf-ui-ux-issues` | 2026/09/14 | 2026-09-14 |
 
+| `task-implement-wf-search-media` | 2026/09/17 | 2026-09-17 |
+
+| `task-fix-ai-command-semantics` | 2026/09/17 | 2026-09-17 |
+
+| `task-implement-wf-search-extensions` | 2026/09/18 | 2026-09-18 |
+
+| `task-wf-research-deep-pipeline` | 2026/09/18 | 2026-09-18 |
+
+| `task-review-release-readiness` | 2026/09/21 | 2026-09-21 |
+
+| `task-refactor-capsule-routing` | 2026/09/21 | 2026-09-21 |
+
+| `task-cli-runtime-0923` | 2026/09/23 | 2026-09-23 |
+| `task-homepage-act1-flat-layout` | 2026/09/23 | 2026-09-23 |
+| `task-make-wf-lifecycle-0908` | 2026/09/23 | 2026-09-23 |
+| `task-route-wf-search-deep-media` | 2026/09/23 | 2026-09-23 |
+| `task-architecture-review-wf-0921` | 2026/09/23 | 2026-09-23 |
+| `task-release-readiness-cleanup-0922` | 2026/09/23 | 2026-09-23 |
+
+| `task-cli-release-hardening-0923` | 2026/09/23 | 2026-09-23 |
+
+
 ## Task Graph
 
 ### Roots (no dependencies)
@@ -108,6 +130,19 @@
 - `task-improve-harness-foundations` → blocks: none
 - `task-fix-wf-ui-ux-issues` → blocks: none
 - `task-implement-wf-search-093` → blocks: none
+- `task-fix-ai-command-semantics` → blocks: none
+- `task-implement-wf-search-media` → blocks: none
+- `task-implement-wf-search-extensions` → blocks: none
+- `task-wf-research-deep-pipeline` → blocks: none
+- `task-refactor-capsule-routing` → blocks: none
+- `task-review-release-readiness` → blocks: none
+- `task-architecture-review-wf-0921` → blocks: none
+- `task-cli-release-hardening-0923` → blocks: none
+- `task-cli-runtime-0923` → blocks: none
+- `task-homepage-act1-flat-layout` → blocks: none
+- `task-make-wf-lifecycle-0908` → blocks: none
+- `task-release-readiness-cleanup-0922` → blocks: none
+- `task-route-wf-search-deep-media` → blocks: none
 
 ### Dependencies
 ```
@@ -124,6 +159,71 @@
 
 ## Task Details
 
+### `task-architecture-review-wf-0921` {#taskarchitecturereviewwf0921}
+- **Archived:** 2026/09/23
+- **Status:** archived  **Phase:** archived
+- **Goal:** 对当前 Harness/WF 全栈做一次证据化、只读、可执行的架构 review：覆盖所有 WF 命令、skills 框架、运行时脚本、agent 路由与 context、任务胶囊、hooks、归档、模板镜像、测试和发布边界，判断架构是否精...
+- **Depends on:** -  **Blocks:** -
+### `task-cli-release-hardening-0923` {#taskclireleasehardening0923}
+- **Archived:** 2026/09/23
+- **Status:** archived  **Phase:** archived
+- **Goal:** 当前 CLI 改造已完成核心架构迁移，但尚未达到可发布状态。需要补齐 Rust CLI 的跨平台预编译包与 pnpm 发布链路，接通 wf-ui 可选扩展的真实运行时，迁移仍依赖旧 wf-research、wf-search referen...
+- **Depends on:** -  **Blocks:** -
+### `task-cli-runtime-0923` {#taskcliruntime0923}
+- **Archived:** 2026/09/23
+- **Status:** archived  **Phase:** archived
+- **Goal:** Review task state.
+- **Depends on:** -  **Blocks:** -
+### `task-homepage-act1-flat-layout` {#taskhomepageact1flatlayout}
+- **Archived:** 2026/09/23
+- **Status:** archived  **Phase:** archived
+- **Goal:** Redesign the homepage **Act 1 opening frame** (hero zone, scroll progress = 0) in `docs/index.html`:
+- **Depends on:** -  **Blocks:** -
+### `task-make-wf-lifecycle-0908` {#taskmakewflifecycle0908}
+- **Archived:** 2026/09/23
+- **Status:** archived  **Phase:** archived
+- **Goal:** Implement explicit WF activation, durable cross-session resume, no direct-to-WF promotion, no WF exit/downgrade, and ens...
+- **Depends on:** -  **Blocks:** -
+### `task-release-readiness-cleanup-0922` {#taskreleasereadinesscleanup0922}
+- **Archived:** 2026/09/23
+- **Status:** archived  **Phase:** archived
+- **Goal:** 在不误删用户资产、不 publish、不 push 的前提下，完成 0.9.6 release readiness：先建立安全清理白名单，再清理有明确归属的 framework-generated artifacts，确认 legacy m...
+- **Depends on:** -  **Blocks:** -
+### `task-route-wf-search-deep-media` {#taskroutewfsearchdeepmedia}
+- **Archived:** 2026/09/23
+- **Status:** archived  **Phase:** archived
+- **Goal:** Route Wf Search Deep Media
+- **Depends on:** -  **Blocks:** -
+### `task-refactor-capsule-routing` {#taskrefactorcapsulerouting}
+- **Archived:** 2026/09/21
+- **Status:** archived  **Phase:** archived
+- **Goal:** 重构任务胶囊体系，使它成为多 Agent 协同的持久路由层：closed 任务无感归档，任何时刻可恢复进度、卡点、下一步和历史，同时默认只向 Agent 暴露最小必要上下文。
+- **Depends on:** -  **Blocks:** -
+### `task-review-release-readiness` {#taskreviewreleasereadiness}
+- **Archived:** 2026/09/21
+- **Status:** archived  **Phase:** archived
+- **Goal:** 审查当前工作区是否达到可发布状态，并归纳新增功能；只读审查，不修改生产代码、不执行发布。
+- **Depends on:** -  **Blocks:** -
+### `task-implement-wf-search-extensions` {#taskimplementwfsearchextensions}
+- **Archived:** 2026/09/18
+- **Status:** archived  **Phase:** archived
+- **Goal:** Implement global lazy extension runtime for wf-search and align wf-ui/extensions location under Harness/extensions
+- **Depends on:** -  **Blocks:** -
+### `task-wf-research-deep-pipeline` {#taskwfresearchdeeppipeline}
+- **Archived:** 2026/09/18
+- **Status:** archived  **Phase:** archived
+- **Goal:** Turn wf-research into a glue-layer deep-research pipeline. Reuse mature
+- **Depends on:** -  **Blocks:** -
+### `task-fix-ai-command-semantics` {#taskfixaicommandsemantics}
+- **Archived:** 2026/09/17
+- **Status:** archived  **Phase:** archived
+- **Goal:** - Outcome: Correct the remote `ai` command grammar so model-family startup is explicit and `ai off` is an all-model shut...
+- **Depends on:** -  **Blocks:** -
+### `task-implement-wf-search-media` {#taskimplementwfsearchmedia}
+- **Archived:** 2026/09/17
+- **Status:** archived  **Phase:** archived
+- **Goal:** - Outcome: Give `wf-search` a bounded authenticated-browser adapter contract and a tested video-transcript/ASR path back...
+- **Depends on:** -  **Blocks:** -
 ### `task-fix-wf-ui-ux-issues` {#taskfixwfuiuxissues}
 - **Archived:** 2026/09/14
 - **Status:** archived  **Phase:** archived

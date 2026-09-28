@@ -301,6 +301,50 @@ describe('claude-stream-json driver', () => {
     await driver.dispose();
   });
 
+  it('changes permission mode using a correlated nested control request and waits for confirmation', async () => {
+    let id = 0;
+    const { driver, spawnFn } = makeHarness({
+      _uuid: () => `mode_req_${++id}`,
+      _modeRequestTimeoutMs: 250,
+    });
+    driver.start();
+    const child = spawnFn.last;
+
+    const success = driver.setPermissionMode('plan');
+    assert.deepEqual(child.writtenLines().at(-1), {
+      type: 'control_request',
+      request_id: 'mode_req_1',
+      request: { subtype: 'set_permission_mode', mode: 'plan' },
+    });
+    assert.equal(driver.permissionMode, 'default');
+
+    child.pushLine({
+      type: 'control_response',
+      response: { request_id: 'unrelated', subtype: 'success' },
+    });
+    await tick();
+    assert.equal(driver.permissionMode, 'default');
+
+    child.pushLine({
+      type: 'control_response',
+      response: { request_id: 'mode_req_1', subtype: 'success' },
+    });
+    await success;
+    assert.equal(driver.permissionMode, 'plan');
+
+    const rejected = driver.setPermissionMode('acceptEdits');
+    child.pushLine({
+      type: 'control_response',
+      response: { request_id: 'mode_req_2', subtype: 'error', error: { message: 'policy locked' } },
+    });
+    await assert.rejects(rejected, /policy locked/);
+    assert.equal(driver.permissionMode, 'plan');
+
+    await assert.rejects(driver.setPermissionMode('bypassPermissions'), /did not confirm.*timeout/);
+    assert.equal(driver.permissionMode, 'plan');
+    await driver.dispose();
+  });
+
   it('interrupt writes control_request frame with uuid request_id', async () => {
     const { driver, spawnFn } = makeHarness();
     driver.start();

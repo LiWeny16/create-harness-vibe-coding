@@ -270,7 +270,8 @@ const DEFAULT_WORKFLOW_CONTEXT_SKILL = {
   skillId: 'workflow-context',
   name: 'Workflow Context',
   source: 'Harness/a2a/skills/workflow-context.json',
-  description: 'Canonical read-only workflow context commands for Agent nodes. Uses GET /api/workflow/context/:node for connected refs.',
+  description: 'Canonical read-only workflow context commands for Agent nodes. Uses GET /api/workflow/context/:node for connected refs, including recent lines from connected shared Billboards.',
+  sharedBillboardGuidance: 'Read context.sharedBillboards for recent team updates. Add one sentence per update to a connected Billboard with markdown.append: <agentNodeId>/<agentName> tried <X>; result: <Y>; avoid: <Z>; recommend: <W>. Omit fields you do not know.',
   triggers: [
     'read context',
     'workflow context',
@@ -471,6 +472,9 @@ const DEFAULT_WORKFLOW_NODE_ACTIONS_SKILL = {
     'reply agent',
     'read bridge messages',
     'shared markdown context',
+    'billboard',
+    'shared billboard',
+    'team updates',
     'agent direct message',
     'agent group message',
     '发送消息',
@@ -928,10 +932,13 @@ const DEFAULT_WORKFLOW_MARKDOWN_NODE_SKILL = {
   skillId: 'workflow-markdown-node',
   name: 'Workflow Markdown Node',
   source: 'Harness/a2a/skills/workflow-markdown-node.json',
-  description: 'On-demand Agent guide for reading and writing Markdown nodes through typed backend actions only.',
+  description: 'On-demand Agent guide for reading and writing Markdown nodes through typed backend actions only, including compact shared Billboards.',
+  billboardGuidance: 'Use a connected Billboard for concise one-line team updates. Append one sentence through markdown.append: <agentNodeId>/<agentName> tried <X>; result: <Y>; avoid: <Z>; recommend: <W>. Omit fields you do not know. Use ordinary Markdown nodes for long-form context.',
   nodeType: 'markdown',
   triggers: [
     'markdown node',
+    'billboard',
+    'shared team update',
     'write notes',
     'append markdown',
     'replace markdown',
@@ -942,7 +949,7 @@ const DEFAULT_WORKFLOW_MARKDOWN_NODE_SKILL = {
     endpoint: 'POST /api/workflow/nodes/:node/actions/:action',
     readContextFirst: 'node Harness/scripts/wf-ui-control.mjs workflow-context --project .',
     storage: 'Harness/a2a/component-nodes/**/state.json is backend-owned diagnostic storage, never an Agent control surface.',
-    outputRouting: 'Prefer connected writable Markdown nodes for durable notes, reports, task plans, and long-form text.',
+    outputRouting: 'Prefer connected writable Markdown nodes for durable notes, reports, task plans, and long-form text; use a connected Billboard for concise shared team updates.',
   },
   commands: [
     {

@@ -1,0 +1,12 @@
+{
+  "name": "@zingspark/wf-extension-search-vlm",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "harnessExtension": {
+    "id": "wf-search-vlm",
+    "capabilities": ["search.video.vlm", "search.video.frames"],
+    "defaultInstall": false
+  }
+}
+

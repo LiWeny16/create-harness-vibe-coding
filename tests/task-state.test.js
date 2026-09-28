@@ -236,32 +236,49 @@ test('transition command reports its command label and updates state by default'
   assert.match(readRel(root, 'Harness/tasks/task-keep-active/PROGRESS.md'), /- Phase: Verified/);
 });
 
-test('archive-tasks compatibility entry delegates to task-state archive', () => {
+test('archive-tasks compatibility entry delegates to task-state auto-archive', () => {
   const root = generateProject();
   writeRel(root, 'Harness/PROGRESS.md', progress(null, [
-    { id: 'task-finish-one', goal: 'Finish one', phase: 'Verified' },
+    { id: 'task-finish-one', goal: 'Finish one', phase: 'Closeout' },
   ]));
   writeTask(root, 'task-finish-one', {
-    phase: 'Verified',
-    state: { status: 'verified', phase: 'verified' },
+    phase: 'Closeout',
+    state: { status: 'closed', phase: 'closeout', closedAt: '2026-01-01T00:00:00.000Z' },
   });
 
   const result = runNode(root, 'Harness/scripts/archive-tasks.mjs', ['--task', 'task-finish-one', '--dry-run', '--json']);
   const payload = jsonResult(result);
 
   assert.equal(result.status, 0);
-  assert.equal(payload.command, 'archive');
+  assert.equal(payload.command, 'auto-archive');
   assert.equal(payload.results[0].action, 'would-archive');
 });
 
-test('archive-tasks compatibility help keeps old command surface', () => {
+test('archive-tasks compatibility with --keep uses legacy archive', () => {
+  const root = generateProject();
+  writeRel(root, 'Harness/PROGRESS.md', progress(null, [
+    { id: 'task-finish-one', goal: 'Finish one', phase: 'Closeout' },
+  ]));
+  writeTask(root, 'task-finish-one', {
+    phase: 'Closeout',
+    state: { status: 'closed', phase: 'closeout', closedAt: '2026-01-01T00:00:00.000Z' },
+  });
+
+  const result = runNode(root, 'Harness/scripts/archive-tasks.mjs', ['--task', 'task-finish-one', '--keep', '5', '--dry-run', '--json']);
+  const payload = jsonResult(result);
+
+  assert.equal(result.status, 0);
+  assert.equal(payload.command, 'archive');
+});
+
+test('archive-tasks compatibility help shows deprecation notice', () => {
   const root = generateProject();
 
   const result = runNode(root, 'Harness/scripts/archive-tasks.mjs', ['--help']);
 
   assert.equal(result.status, 0);
-  assert.match(result.stdout, /Usage: node Harness\/scripts\/archive-tasks\.mjs/);
-  assert.match(result.stdout, /task-state\.mjs archive/);
+  assert.match(result.stdout, /DEPRECATED/);
+  assert.match(result.stdout, /auto-archive/);
   assert.match(result.stdout, /--apply/);
 });
 
@@ -942,4 +959,130 @@ test('record with no args exits non-zero with requires message', () => {
   const payload = jsonResult(result);
   assert.equal(payload.ok, false);
   assert.ok(payload.errors.some(e => e.includes('requires')));
+});
+
+test('reopen just-closed WF-managed task preserves mode/queue/question and records reason', () => {
+  const root = generateProject();
+  const id = 'task-wf-reopen-allow';
+  const ts = '2026-01-05T00:00:00.000Z';
+  writeRel(root, 'Harness/PROGRESS.md', progress(null, [
+    { id, goal: 'Reopen allow', phase: 'Closeout', closed: '2026-01-05' },
+  ]));
+  writeTask(root, id, {
+    phase: 'Closeout',
+    state: {
+      taskId: id, mode: 'wf-max', status: 'closed', phase: 'closeout',
+      closedAt: ts, updatedAt: ts,
+      activeQuestion: 'MVP scope question',
+      queues: { ready: ['W1'], running: [], blocked: [], done: [] },
+    },
+  });
+
+  const result = runTaskState(root, ['transition', id, '--reopen', '--status', 'blocked', '--note', 'accidental close', '--apply', '--json']);
+  const payload = jsonResult(result);
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(payload.ok, true);
+
+  const state = JSON.parse(readRel(root, `Harness/tasks/${id}/STATE.json`));
+  assert.equal(state.status, 'blocked');
+  assert.equal(state.closedAt, null);
+  assert.equal(state.mode, 'wf-max');
+  assert.equal(state.activeQuestion, 'MVP scope question');
+  assert.deepEqual(state.queues.ready, ['W1']);
+  assert.ok(state.lastRecovery);
+  assert.equal(state.lastRecovery.reason, 'accidental close');
+  assert.match(state.lastRecovery.at, /^\d{4}-\d{2}-\d{2}T/);
+});
+
+test('ordinary transition without --reopen still refuses to reopen a closed WF-managed task', () => {
+  const root = generateProject();
+  const id = 'task-wf-reopen-refused';
+  const ts = '2026-01-06T00:00:00.000Z';
+  writeRel(root, 'Harness/PROGRESS.md', progress(null, [
+    { id, goal: 'Refused reopen', phase: 'Closeout', closed: '2026-01-06' },
+  ]));
+  writeTask(root, id, {
+    phase: 'Closeout',
+    state: { taskId: id, mode: 'wf', status: 'closed', phase: 'closeout', closedAt: ts, updatedAt: ts },
+  });
+
+  const result = runTaskState(root, ['transition', id, '--status', 'active', '--phase', 'implement', '--apply', '--json']);
+  assert.notEqual(result.status, 0);
+  const payload = jsonResult(result);
+  assert.equal(payload.ok, false);
+  assert.ok(payload.errors.some(e => /closed WF-managed task cannot be reopened|cannot be reopened/i.test(e)), `errors: ${JSON.stringify(payload.errors)}`);
+
+  const state = JSON.parse(readRel(root, `Harness/tasks/${id}/STATE.json`));
+  assert.equal(state.status, 'closed');
+  assert.equal(state.lastRecovery, undefined);
+});
+
+test('--reopen without --note is rejected', () => {
+  const root = generateProject();
+  const id = 'task-wf-reopen-noreason';
+  const ts = '2026-01-07T00:00:00.000Z';
+  writeRel(root, 'Harness/PROGRESS.md', progress(null, [
+    { id, goal: 'No reason', phase: 'Closeout', closed: '2026-01-07' },
+  ]));
+  writeTask(root, id, {
+    phase: 'Closeout',
+    state: { taskId: id, mode: 'wf-max', status: 'closed', phase: 'closeout', closedAt: ts, updatedAt: ts },
+  });
+
+  const result = runTaskState(root, ['transition', id, '--reopen', '--status', 'active', '--apply', '--json']);
+  assert.notEqual(result.status, 0);
+  const payload = jsonResult(result);
+  assert.equal(payload.ok, false);
+  assert.ok(payload.errors.some(e => /--reopen requires.*--note|non-empty.*note|requires a non-empty --note/i.test(e)), `errors: ${JSON.stringify(payload.errors)}`);
+
+  const state = JSON.parse(readRel(root, `Harness/tasks/${id}/STATE.json`));
+  assert.equal(state.status, 'closed');
+});
+
+test('--reopen rejects stale closure where closedAt !== updatedAt', () => {
+  const root = generateProject();
+  const id = 'task-wf-reopen-stale';
+  writeRel(root, 'Harness/PROGRESS.md', progress(null, [
+    { id, goal: 'Stale closure', phase: 'Closeout', closed: '2026-01-08' },
+  ]));
+  writeTask(root, id, {
+    phase: 'Closeout',
+    state: {
+      taskId: id, mode: 'wf-max', status: 'closed', phase: 'closeout',
+      closedAt: '2026-01-08T00:00:00.000Z',
+      updatedAt: '2026-01-10T00:00:00.000Z',
+    },
+  });
+
+  const result = runTaskState(root, ['transition', id, '--reopen', '--status', 'active', '--note', 'reason text', '--apply', '--json']);
+  assert.notEqual(result.status, 0);
+  const payload = jsonResult(result);
+  assert.equal(payload.ok, false);
+  assert.ok(payload.errors.some(e => /closedAt.*updatedAt|stale|new task capsule/i.test(e)), `errors: ${JSON.stringify(payload.errors)}`);
+
+  const state = JSON.parse(readRel(root, `Harness/tasks/${id}/STATE.json`));
+  assert.equal(state.status, 'closed');
+});
+
+test('--reopen rejects archived tasks', () => {
+  const root = generateProject();
+  const id = 'task-wf-reopen-archived';
+  const archiveDir = path.join(root, 'Harness', 'tasks', '_archive', '2026', '01', '01', id);
+  fs.mkdirSync(archiveDir, { recursive: true });
+  const ts = '2026-01-09T00:00:00.000Z';
+  writeRel(root, 'Harness/tasks/_archive/2026/01/01/' + id + '/STATE.json', JSON.stringify({
+    schemaVersion: 1,
+    taskId: id,
+    status: 'archived',
+    mode: 'wf-max',
+    phase: 'archived',
+    closedAt: ts,
+    updatedAt: ts,
+  }, null, 2) + '\n');
+
+  const result = runTaskState(root, ['transition', id, '--reopen', '--status', 'active', '--note', 'reason text', '--apply', '--json']);
+  assert.notEqual(result.status, 0);
+  const payload = jsonResult(result);
+  assert.equal(payload.ok, false);
+  assert.ok(payload.errors.some(e => /archived|terminal|history/i.test(e)), `errors: ${JSON.stringify(payload.errors)}`);
 });

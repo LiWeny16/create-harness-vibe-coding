@@ -2,113 +2,35 @@
 
 This repository dogfoods the generated Harness scaffold. Scaffold source files live under `templates/common/` and `templates/optional/`; generated dogfood runtime files live under root `Harness/` and `.claude/`.
 
-## 1. Harness Binding & Startup
+Keep this file thin. Detailed workflows live in `Harness/specs/workflows/`, subagent rules in `Harness/specs/runtime/subagents.md`, architecture in `Harness/project/architecture.md`, project operations in `README.md`.
 
-When running inside a Harness-managed PTY node, the backend injects identity
-through environment variables instead of terminal prompt text. If
-`HARNESS_NODE_INIT` or `HARNESS_PEER_SESSION_ID` is set, quietly read the file
-pointed to by `HARNESS_NODE_INIT` before taking node-specific action. Use
-`HARNESS_PEER_SESSION_ID`, `HARNESS_WORKFLOW_NODE_ID`, `HARNESS_AGENT_KIND`,
-`HARNESS_PEER_RUNTIME`, `HARNESS_WORKFLOW_MAP`, `HARNESS_NODE_HOME`, and
-`HARNESS_WF_UI_URL` to identify this node, runtime, graph position, and control
-plane. Do not require or wait for a user-injected bootstrap prompt.
+## 0. Routing
 
-In a Harness-managed PTY node, workflow context hydration is mandatory and
-unconditional. At the start of every operator turn, silently read this node's
-workflow context with `node Harness/scripts/wf-ui-control.mjs workflow-context
---project .`; `HARNESS_WORKFLOW_NODE_ID` selects the current graph node. Do not
-skip hydration based on wording: local shell, Git, MCP, coding, review,
-debugging, and runtime questions still hydrate first so current graph identity,
-connected nodes, and connected affordances are known. Before controlling,
-mutating, delegating to, reading from, or writing to any node, hydrate context
-again if the last context read happened before a graph change or operator
-message. If hydration fails, say workflow context is unavailable before making
-claims about node-map connections or control targets. Do not print the command
-or raw JSON unless asked.
+Default startup is thin: load `CLAUDE.md`, then `Harness/memory/startup-hints.md` (L2 digest, 5-10 hints). This is NOT loading `Harness/MEMORY.md`, `Harness/README.md`, or `Harness/PROGRESS.md`.
 
-Workflow node state files under `Harness/a2a/**/state.json` and
-`Harness/a2a/workflow-map.json` are backend-owned diagnostic storage, not
-control surfaces, nor information sources — read graph and connection state
-only through the typed wf-ui API/CLI. Do not edit event-node, goal-node,
-component-node, capability-node, node-home, workflow-map, or task state files
-to control Timer, Goal, Agent, resource, capability, or graph state; use the
-typed wf-ui backend API commands instead.
+Read `Harness/specs/runtime/startup-and-resume.md` **only** when one of these applies:
 
-### Agent Team Cooperation (WF / WF-MAX)
+- Running inside a Harness-managed PTY node (`HARNESS_NODE_INIT` or `HARNESS_PEER_SESSION_ID` set)
+- The user entered `/wf`, `$wf`, `/skills wf`, `/wf-max`, `$wf-max`, `/wf-auto`, `$wf-auto`, `/wf-auto-spark`, or `$wf-auto-spark`
+- The user said "continue", "resume", "last task", "current task", "status", "where were we"
 
-When the user enters `/wf`, `$wf`, `/wf-max`, or `$wf-max`, the main Agent node autonomously: understands the task and decides whether team collaboration is needed; finds existing agents by role or capability; connects or creates sub-agents with a role profile (displayName + roleTitle); shares context through Markdown nodes (referenced by nodeId only); sends structured requests with a request id; waits via Timer wakeup messages, checked on the agent's next turn; aggregates replies; ticks Goal items and completes the Goal when all items are checked. When the target is ambiguous, ASK THE USER — never blindly create or connect an agent.
-
-**Subagent Strategy:**
-
-Subagent mode comes from node settings (built-in-subagents default = native helpers, no canvas nodes; wf-node-subagents = visible canvas agents). Natural language: "内部助手"/"内置子代理" → built-in; "画布节点"/"WF node协作" → wf-node. Discover everything at runtime: help --json, workflow-context, manuals <type>, snapshot, workflow-ontology.
-
-Never edit `Harness/a2a/**/state.json` directly; use typed actions only. The Timer is the only wakeup source; the Goal node never wakes agents. Explain all of this to the user in plain language, without broadcast/A2A/thread/shared-context terminology.
+Resume mechanics (`continue` keyword, STATE.json recovery) are governed by `Harness/specs/workflows/WF-STATE.md`; completed/abandoned tasks archive per `Harness/specs/protocols/TASK_ARCHIVE.md`.
 
 If `Harness/` exists, this repository is governed by the Harness contract.
 
-Default installed-project startup is thin: after loading `CLAUDE.md`, read `Harness/memory/startup-hints.md` (L2 lightweight digest, 5-10 hints). This is NOT loading `Harness/MEMORY.md`, `Harness/README.md`, or PROGRESS — it is a minimal startup hint file only.
+Use **direct mode** for simple, single-step, low-risk requests: commit, push, one-line fix, file read, code question, git log, git status, or similar small operations. In direct mode, do not load the full Harness router. Inspect only the files needed and execute directly.
 
-Use **direct mode** for simple, single-step, low-risk requests: commit, push, one-line fix, file read, code question, git log, git status, or similar small operations.
+Complex work may use direct planning, task capsules, tests, and subagents without entering WF. WF execution modes are explicit only — no other phrasing, complexity heuristic, or inferred intent triggers WF.
 
-In direct mode, do not load the full Harness router. Inspect only the files needed for the task and execute directly.
+`/wf-help`, `$wf-help`, `/skills wf-help`, `/wf-update`, `$wf-update`, `/skills wf-update`, `/wf-task-record`, `$wf-task-record`, `/skills wf-task-record`, `/wf-task-list`, `$wf-task-list`, `/skills wf-task-list`, `/wf-task-archive`, `$wf-task-archive`, `/skills wf-task-archive`, `/wf-command-create`, `$wf-command-create`, `/skills wf-command-create`, `/wf-ui`, `$wf-ui`, `/skills wf-ui`, `/wf-init`, `$wf-init`, `/skills wf-init`, `/wf-search`, `$wf-search`, `/skills wf-search`, `/wf-extension`, `$wf-extension`, and `/skills wf-extension` are **direct/compat commands** — do NOT load `Harness/MEMORY.md`, do NOT enter WF. Hosts execute direct command files; Codex may invoke compatibility skill shims.
 
-Complex work may use direct planning, task capsules, tests, and subagents without entering WF. WF execution modes are explicit only: the user must type `/wf`, `$wf`, `/skills wf`, `/wf-max`, `$wf-max`, `/skills wf-max`, `/wf-auto`, `$wf-auto`, `/skills wf-auto`, `/wf-auto-spark`, `$wf-auto-spark`, or `/skills wf-auto-spark` to enter the WF kernel. No other phrasing, complexity heuristic, or inferred intent triggers WF.
+**Non-direct workflow commands** (`/wf`, `/wf-max`, `/wf-auto`, `/wf-review`, `/wf-learn`, `/wf-readme`, `/wf-remove`, `/wf-browser`, `/wf-auto-spark`, and matching `$wf-*` / `/skills wf-*` forms): load `Harness/MEMORY.md` first, then `Harness/README.md`.
 
-`/wf-help`, `$wf-help`, `/skills wf-help`, `/wf-update`, `$wf-update`, `/skills wf-update`, `/wf-task-record`, `$wf-task-record`, `/skills wf-task-record`, `/wf-task-list`, `$wf-task-list`, `/skills wf-task-list`, `/wf-task-archive`, `$wf-task-archive`, `/skills wf-task-archive`, `/wf-command-create`, `$wf-command-create`, `/skills wf-command-create`, `/wf-ui`, `$wf-ui`, `/skills wf-ui`, `/wf-init`, `$wf-init`, `/skills wf-init`, `/wf-search`, `$wf-search`, and `/skills wf-search` are **direct/compat commands** — do NOT load `Harness/MEMORY.md`, do NOT enter WF. Hosts execute direct command files; Codex may invoke compatibility skill shims.
+Use **/wf** for multi-step work needing structured coordination. Use **/wf-max** for maximum-parallelism with CEO/Manager/Worker decomposition. See `Harness/specs/workflows/WF.md` for tier selection (WF-Light, WF-Standard, WF-Full) and `Harness/specs/workflows/WF-MAX.md` for fan-out rules.
 
-For non-direct workflow commands (`/wf`, `/wf-max`, `/wf-auto`, `/wf-review`, `/wf-learn`, `/wf-readme`, `/wf-remove`, `/wf-browser`, `/wf-auto-spark`, and matching `$wf-*` or `/skills wf-*` forms except the direct/compat commands above), load `Harness/MEMORY.md` first, then `Harness/README.md`.
+WF entry uses a bounded role pack (`task-context.mjs pack`) and fresh `show`/`pack` on resume. Before external web/GitHub/Hugging Face lookup, ask `research-policy.mjs decide`; search only when `search: true` and record source metadata plus adopt/adapt/reject. Direct commands stay direct.
 
-### Active Task Resume
-
-Durable WF task ownership is opt-in and sticky. Only a task explicitly created
-or entered with `wf` or `wf-max` is WF-managed. When that task remains `active`
-or `blocked`, the next session automatically resumes WF mode from it; the user
-does not need to repeat the trigger. A `direct`, `wf-auto`, `wf-auto-spark`,
-`wf-review`, or `wf-browser` task never becomes a durable WF task by inference.
-A managed task cannot exit or downgrade its mode: close it terminally, then
-create a new task with an explicit WF trigger.
-
-If the user says "continue", "resume", "last task", "current task", "status", "where were we", or similar resume language, or the current work is not a simple direct task:
-
-1. Read `Harness/PROGRESS.md` → find Active Task.
-2. If Active Task exists, read `Harness/tasks/<active-task>/STATE.json` first.
-3. From STATE.json, check `links.dependsOn` — if non-empty, check whether any dependency tasks are still open (STATE.json status is `active` or `blocked`; legacy statuses are normalized) and report blocked dependencies.
-4. From STATE.json, check `workItems[]` — if non-empty, inspect items with status `running` or `ready` for parallel dispatch candidates.
-5. Read `Harness/tasks/<active-task>/PROGRESS.md`.
-6. Read `Harness/tasks/<active-task>/PLAN.md` only if decisions or scope need review.
-7. From STATE.json, recover: phase, gate, tier, ready/running/blocked/done queues, activeQuestion, nextAction.
-8. Do NOT bulk-read `Harness/tasks/` to find context. Use the active pointer and `Harness/tasks/INDEX.json` for deterministic project/group lookup. The pointer is a focus/resume hint, not a single-task lock; multiple open tasks are valid.
-
-If the active pointer names an open `wf`/`wf-max` task, the sticky lifecycle
-rule above takes precedence over the generic direct-task shortcut. Multiple
-open tasks are allowed, but the Harness focus remains a WF task until it is
-closed or another WF task is explicitly selected.
-9. Direct simple tasks may skip STATE/PLAN/PROGRESS unless the user says "continue"/"resume". The `continue` keyword resolves deterministically from the active pointer plus STATE.json — it always recovers the same state.
-
-See `Harness/specs/workflows/WF-STATE.md` for the full state machine contract. Completed/abandoned tasks are archived to `Harness/tasks/_archive/` per `Harness/specs/protocols/TASK_ARCHIVE.md`.
-
-Use **/wf** for multi-step work that needs structured coordination. Use **/wf-max** for maximum-parallelism with CEO/Manager/Worker decomposition. See `Harness/specs/workflows/WF.md` for tier selection (WF-Light, WF-Standard, WF-Full) and `Harness/specs/workflows/WF-MAX.md` for fan-out rules (WF-Max-Useful, WF-Max-Strict).
-
-WF entry uses a bounded role pack (`task-context.mjs pack`) and fresh
-`show`/`pack` on resume. Before external web/GitHub/Hugging Face lookup, ask
-`research-policy.mjs decide`; search only when `search: true` and record source
-metadata plus adopt/adapt/reject. Direct commands stay direct.
-
-### 1a. WF-MAX Role Contract
-
-This section is active only when `/wf-max` is invoked.
-
-In `/wf-max`, the top-level agent is the **CEO**. The CEO owns task framing, decomposition, dispatch, review coordination, and task evidence.
-
-The CEO must not edit source files directly. Source edits must be delegated to Workers through dispatch packets with explicit boundaries.
-
-Each Worker dispatch must define: role, objective, allowed writeSet, forbidden files/actions, required verification, and expected return evidence.
-
-Workers may edit only inside their assigned writeSet. Reviewers and verifiers must be independent from the Worker whose output they evaluate.
-
-Detailed WF-MAX role rules live in `Harness/specs/workflows/WF-KERNEL.md`, `Harness/specs/workflows/WF-MAX.md`, and `Harness/specs/runtime/subagents.md`.
-
-### 1b. User-Facing Language
+## 1. User-Facing Language
 
 Match the user's language for all user-facing prose. Use the dominant language of the latest user message unless the user explicitly asks for another language; preserve code, identifiers, file paths, commands, logs, and quoted source text exactly.
 
@@ -143,12 +65,9 @@ Match the user's language for all user-facing prose. Use the dominant language o
 - Define verifiable success criteria before implementation.
 - For bugs, reproduce the failure or document why reproduction is impossible before fixing.
 - For multi-step work, keep `Harness/tasks/<task-id>/PROGRESS.md` and `Harness/tasks/<task-id>/PLAN.md` current. Only the controller or task-scribe writes task state; subagents return suggestions only.
-- State assumptions before implementation and record only durable assumptions, decisions, blockers, handoffs, and verification evidence in `Harness/tasks/<task-id>/PLAN.md`.
 - Every task needs a test, build check, validator run, or recorded manual check.
 - Do not claim web/UI acceptance without real-browser evidence from Chrome DevTools, CDP, Playwright, or documented manual browser checks.
-- Do not place project build scripts, git conventions, run commands, or release process in this file. Put them in `README.md`.
-- Do not place code architecture here. Put architecture in `Harness/project/architecture.md` or the current feature doc.
-- If this file has accumulated unrelated project notes, pause and propose moving them to the right place: `README.md` for development operations, `Harness/project/architecture.md` for architecture, `Harness/specs/workflows/WF.md` or `Harness/workflows/` for workflow rules.
+- Do not place project build scripts, git conventions, run commands, release process, or architecture in this file. Put operations in `README.md`, architecture in `Harness/project/architecture.md`.
 
 ## 5a. Low-Noise Progress
 
@@ -171,7 +90,4 @@ Never record secrets, credentials, tokens, or private data in memory.
 
 - Never call `EnterPlanMode`. Delegate planning to `planner` subagents (see `Harness/specs/workflows/WF.md`).
 - In `/wf` or `/wf-max`, follow the selected workflow role contract instead of improvising execution flow.
-- In `/wf-max`, the CEO must not edit source files directly. Implementation must be delegated to Workers with explicit writeSet boundaries.
-- If a Worker dispatch is missing role, objective, writeSet, forbidden scope, or verification requirements, the controller must not proceed with source edits.
-
-Keep CLAUDE.md as a thin routing and global-behavior file. Put detailed workflows in `Harness/specs/workflows/WF.md` or `Harness/workflows/`, subagent rules in `Harness/specs/runtime/subagents.md`, architecture in `Harness/project/architecture.md`, and project operations in `README.md`.
+- In `/wf-max`, the CEO must not edit source files directly. Implementation must be delegated to Workers with explicit writeSet boundaries. If a Worker dispatch is missing role, objective, writeSet, forbidden scope, or verification requirements, the controller must not proceed with source edits.

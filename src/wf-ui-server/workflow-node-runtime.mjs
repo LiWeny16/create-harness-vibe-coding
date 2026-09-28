@@ -394,6 +394,7 @@ function buildNodeSnapshot(node, state, settings) {
   return {
     nodeId: node.nodeId,
     kind: node.type, // markdown | excalidraw | file
+    ...(node.presentation ? { presentation: node.presentation } : {}),
     version: node.revision,
     lifecycle: 'ready',
     status: { state: 'ready', updatedAt: new Date().toISOString() },
@@ -454,6 +455,7 @@ function buildCapabilityNodeSnapshot(node, state, settings) {
       connections: [],
     },
     stateRef: { path: node.statePath, revision: node.revision },
+    ...(node.type === 'skill-group' ? { prompt: state.prompt || '' } : {}),
     contentRef: buildContentRef(node, state),
     settings: normalizeSettings(node.type, settings),
     capabilities: buildCapabilities(node.type, state),

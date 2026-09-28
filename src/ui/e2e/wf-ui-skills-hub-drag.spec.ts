@@ -8,6 +8,8 @@ const sessionId = 'e2e-session-skills-hub';
 const graphNodeId = 'e2e-node-skills-agent';
 const alphaSkillId = 'skill:alpha';
 const betaSkillId = 'skill:beta';
+const larkSearchSkillId = 'skill:lark-search';
+const larkCalendarSkillId = 'skill:lark-calendar';
 const draftLabel = 'Alpha Skill + Beta Skill';
 
 /** Must match WorkflowSkillsHubOverlay.SKILL_GROUP_TRANSFER_TYPE. */
@@ -18,6 +20,7 @@ type JsonRecord = Record<string, any>;
 type HarnessNetwork = {
   skillGroupCreateRequests: JsonRecord[];
   skillsHubRequests: string[];
+  skillsMarketRequests: string[];
   pageErrors: string[];
   failedResponses: string[];
 };
@@ -79,14 +82,15 @@ function skillsHubPayload(): JsonRecord {
     generatedAt: '2026-08-14T00:00:00.000Z',
     query: { scope: 'project', q: '', limit: 50 },
     roots: [{ id: 'project-root', label: 'Project', scope: 'project', runtime: 'local', exists: true, path: '.' }],
-    summary: { skillCount: 2, groupCount: 0, sourceCount: 1 },
-    installTargets: [{ id: 'project-agents', label: 'Project agents', scope: 'project', runtime: 'local', default: true, path: '.' }],
+    summary: { skillCount: 4, groupCount: 1, sourceCount: 1 },
     nodeSemantics: { role: 'agent-attached-capability-provider', defaultConnection: 'bidirectional capability port to Agent nodes', executor: 'agent' },
     skills: [
       { id: alphaSkillId, name: 'alpha', title: 'Alpha Skill', description: 'alpha fixture skill', kind: 'skill', nodeSemantics: 'agent-attached-capability-provider', attachable: true, state: 'indexed', sources: [{ rootId: 'project-root', label: 'Project', scope: 'project', runtime: 'local', relativePath: 'skills/alpha', path: 'skills/alpha' }] },
       { id: betaSkillId, name: 'beta', title: 'Beta Skill', description: 'beta fixture skill', kind: 'skill', nodeSemantics: 'agent-attached-capability-provider', attachable: true, state: 'indexed', sources: [{ rootId: 'project-root', label: 'Project', scope: 'project', runtime: 'local', relativePath: 'skills/beta', path: 'skills/beta' }] },
+      { id: larkSearchSkillId, name: 'lark-search', title: 'Lark Search', description: 'Search fixture skill', kind: 'skill', nodeSemantics: 'agent-attached-capability-provider', attachable: true, state: 'indexed', sources: [{ rootId: 'project-root', label: 'Project', scope: 'project', runtime: 'local', relativePath: 'skills/lark-search', path: 'skills/lark-search' }] },
+      { id: larkCalendarSkillId, name: 'lark-calendar', title: 'Lark Calendar', description: 'Calendar fixture skill', kind: 'skill', nodeSemantics: 'agent-attached-capability-provider', attachable: true, state: 'indexed', sources: [{ rootId: 'project-root', label: 'Project', scope: 'project', runtime: 'local', relativePath: 'skills/lark-calendar', path: 'skills/lark-calendar' }] },
     ],
-    groups: [],
+    groups: [{ id: 'family:lark', label: 'lark', kind: 'name-family', skillIds: [larkSearchSkillId, larkCalendarSkillId] }],
   };
 }
 
@@ -312,6 +316,7 @@ async function installWorkflowFixture(page: Page): Promise<{
   const network: HarnessNetwork = {
     skillGroupCreateRequests: [],
     skillsHubRequests: [],
+    skillsMarketRequests: [],
     pageErrors: [],
     failedResponses: [],
   };
@@ -319,6 +324,9 @@ async function installWorkflowFixture(page: Page): Promise<{
   let graphVersion = 1;
 
   page.on('pageerror', error => network.pageErrors.push(error.message));
+  page.on('request', request => {
+    if (request.url().includes('/api/workflow/skills-market')) network.skillsMarketRequests.push(request.url());
+  });
   page.on('response', response => {
     if (response.status() >= 400 && !response.url().includes('/favicon.ico')) {
       network.failedResponses.push(`${response.status()} ${response.url()}`);
@@ -531,6 +539,70 @@ async function simulateChipDrag(
 }
 
 test.describe('WF UI AC-004 skills-hub to canvas drag', () => {
+  test('AC-002 name families start collapsed and can be expanded', async ({ page }) => {
+    const { network } = await installWorkflowFixture(page);
+    await openWorkflow(page);
+    const overlay = await openSkillsHub(page);
+
+    const family = overlay.getByRole('button', { name: /lark/i });
+    await expect(family).toHaveAttribute('aria-expanded', 'false');
+    await expect(overlay.getByText('Lark Search')).toBeHidden();
+    await family.click();
+    await expect(family).toHaveAttribute('aria-expanded', 'true');
+    await expect(overlay.getByText('Lark Search')).toBeVisible();
+    await expect(overlay.getByText('Lark Calendar')).toBeVisible();
+
+    expect(network.pageErrors, 'page errors').toEqual([]);
+  });
+
+  test('AC-005 selecting skills and using the primary action creates one pack node', async ({ page }) => {
+    const { network } = await installWorkflowFixture(page);
+    await openWorkflow(page);
+    const overlay = await openSkillsHub(page);
+
+    const createPack = overlay.getByTestId('skills-hub-create-pack');
+    await expect(createPack).toHaveAccessibleName('Create skill pack');
+    await expect(createPack).toBeDisabled();
+    await overlay.getByRole('checkbox', { name: 'Select skill Alpha Skill' }).check();
+    await overlay.getByRole('checkbox', { name: 'Select skill Beta Skill' }).check();
+    await expect(createPack).toBeEnabled();
+    await createPack.click();
+
+    await expect.poll(() => network.skillGroupCreateRequests.length).toBe(1);
+    const createRequest = network.skillGroupCreateRequests[0];
+    expect(createRequest.type).toBe('skill-group');
+    expect(createRequest.skills.map((skill: JsonRecord) => skill.name)).toEqual(['alpha', 'beta']);
+    await expect(page.locator('[data-testid="workflow-capability-node"][data-capability-type="skill-group"][data-skill-count="2"]')).toBeVisible();
+    expect(network.pageErrors, 'page errors').toEqual([]);
+  });
+
+  test('AC-006 the Skills Hub has no Market surface or market requests', async ({ page }) => {
+    const { network } = await installWorkflowFixture(page);
+    await openWorkflow(page);
+    const overlay = await openSkillsHub(page);
+
+    await expect(overlay.getByText(/market/i)).toHaveCount(0);
+    await expect(overlay.getByText('Context', { exact: true })).toHaveCount(0);
+    await expect.poll(() => network.skillsMarketRequests.length).toBe(0);
+
+    expect(network.pageErrors, 'page errors').toEqual([]);
+  });
+
+  test('AC-001 opening the global Skills Hub requests both user and project skill roots', async ({ page }) => {
+    const { network } = await installWorkflowFixture(page);
+    await openWorkflow(page);
+    await openSkillsHub(page);
+
+    await expect.poll(() => network.skillsHubRequests.length).toBeGreaterThan(0);
+    const scopes = new Set(network.skillsHubRequests.map(requestUrl => new URL(requestUrl).searchParams.get('scope')));
+    const requestsAllRoots = scopes.has('all');
+    const requestsBothScopes = scopes.has('user') && scopes.has('project');
+    expect(
+      requestsAllRoots || requestsBothScopes,
+      `expected scope=all or separate user+project requests; got ${[...scopes].join(', ')}`,
+    ).toBe(true);
+  });
+
   test('AC-004 composes two skills and drops the draft chip onto the canvas, creating a skill-group node', async ({ page }) => {
     const { network } = await installWorkflowFixture(page);
     await openWorkflow(page);

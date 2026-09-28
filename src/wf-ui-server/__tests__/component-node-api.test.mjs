@@ -6,6 +6,7 @@ import path from 'node:path';
 import { makeHarnessTempRoot } from '../../../tests/support/temp-root.js';
 import { startServer, stopServer } from '../server.mjs';
 import { SessionRegistry } from '../session-registry.mjs';
+import { createComponentNode } from '../component-node-store.mjs';
 
 const cleanup = [];
 
@@ -30,6 +31,7 @@ async function makeServer() {
     acceptance: [{ id: 'AC-006', text: 'trusted component nodes', status: 'pending' }],
     links: { dependsOn: [], blocks: [] },
   }, null, 2));
+  createComponentNode(root, { nodeId: 'component-notes', type: 'markdown', title: 'Notes', markdown: '# Notes\n' });
 
   const registry = new SessionRegistry();
   const started = await startServer({ projectRoot: root, host: '127.0.0.1', port: 0, sessionRegistry: registry });

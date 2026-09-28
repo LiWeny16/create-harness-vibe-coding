@@ -1,0 +1,566 @@
+{
+  "schemaVersion": "wf-search/video-transcript.v1",
+  "video": {
+    "url": "https://example.com/remote-sample",
+    "title": "Remote ASR smoke sample",
+    "platform": "test",
+    "retrievedAt": "2026-09-17T02:20:13.932Z",
+    "durationMs": 17440
+  },
+  "language": "en",
+  "languageProbability": 1,
+  "model": "large-v3",
+  "source": "asr",
+  "segments": [
+    {
+      "id": 0,
+      "startMs": 0,
+      "endMs": 2160,
+      "text": "The New York Times from July 21st, 1969.",
+      "words": [
+        {
+          "id": 0,
+          "text": "The",
+          "startMs": 0,
+          "endMs": 80,
+          "probability": 0.93603515625
+        },
+        {
+          "id": 1,
+          "text": "New",
+          "startMs": 80,
+          "endMs": 140,
+          "probability": 0.99951171875
+        },
+        {
+          "id": 2,
+          "text": "York",
+          "startMs": 140,
+          "endMs": 340,
+          "probability": 1
+        },
+        {
+          "id": 3,
+          "text": "Times",
+          "startMs": 340,
+          "endMs": 600,
+          "probability": 0.99755859375
+        },
+        {
+          "id": 4,
+          "text": "from",
+          "startMs": 600,
+          "endMs": 840,
+          "probability": 0.96484375
+        },
+        {
+          "id": 5,
+          "text": "July",
+          "startMs": 840,
+          "endMs": 1040,
+          "probability": 1
+        },
+        {
+          "id": 6,
+          "text": "21st,",
+          "startMs": 1040,
+          "endMs": 1700,
+          "probability": 0.88525390625
+        },
+        {
+          "id": 7,
+          "text": "1969.",
+          "startMs": 1700,
+          "endMs": 2160,
+          "probability": 0.99951171875
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "startMs": 2600,
+      "endMs": 4120,
+      "text": "This isn't just newsprint and ink.",
+      "words": [
+        {
+          "id": 0,
+          "text": "This",
+          "startMs": 2600,
+          "endMs": 3040,
+          "probability": 0.998046875
+        },
+        {
+          "id": 1,
+          "text": "isn't",
+          "startMs": 3040,
+          "endMs": 3340,
+          "probability": 1
+        },
+        {
+          "id": 2,
+          "text": "just",
+          "startMs": 3340,
+          "endMs": 3440,
+          "probability": 1
+        },
+        {
+          "id": 3,
+          "text": "newsprint",
+          "startMs": 3440,
+          "endMs": 3800,
+          "probability": 0.998291015625
+        },
+        {
+          "id": 4,
+          "text": "and",
+          "startMs": 3800,
+          "endMs": 3940,
+          "probability": 0.99658203125
+        },
+        {
+          "id": 5,
+          "text": "ink.",
+          "startMs": 3940,
+          "endMs": 4120,
+          "probability": 1
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "startMs": 4200,
+      "endMs": 6040,
+      "text": "This is the moment when humanity's oldest dream",
+      "words": [
+        {
+          "id": 0,
+          "text": "This",
+          "startMs": 4200,
+          "endMs": 4460,
+          "probability": 1
+        },
+        {
+          "id": 1,
+          "text": "is",
+          "startMs": 4460,
+          "endMs": 4580,
+          "probability": 1
+        },
+        {
+          "id": 2,
+          "text": "the",
+          "startMs": 4580,
+          "endMs": 4660,
+          "probability": 1
+        },
+        {
+          "id": 3,
+          "text": "moment",
+          "startMs": 4660,
+          "endMs": 4900,
+          "probability": 1
+        },
+        {
+          "id": 4,
+          "text": "when",
+          "startMs": 4900,
+          "endMs": 5080,
+          "probability": 1
+        },
+        {
+          "id": 5,
+          "text": "humanity's",
+          "startMs": 5080,
+          "endMs": 5580,
+          "probability": 1
+        },
+        {
+          "id": 6,
+          "text": "oldest",
+          "startMs": 5580,
+          "endMs": 5780,
+          "probability": 0.9990234375
+        },
+        {
+          "id": 7,
+          "text": "dream",
+          "startMs": 5780,
+          "endMs": 6040,
+          "probability": 1
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "startMs": 6040,
+      "endMs": 7180,
+      "text": "became front page reality.",
+      "words": [
+        {
+          "id": 0,
+          "text": "became",
+          "startMs": 6040,
+          "endMs": 6340,
+          "probability": 0.9990234375
+        },
+        {
+          "id": 1,
+          "text": "front",
+          "startMs": 6340,
+          "endMs": 6620,
+          "probability": 0.99951171875
+        },
+        {
+          "id": 2,
+          "text": "page",
+          "startMs": 6620,
+          "endMs": 6820,
+          "probability": 0.60302734375
+        },
+        {
+          "id": 3,
+          "text": "reality.",
+          "startMs": 6820,
+          "endMs": 7180,
+          "probability": 1
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "startMs": 7540,
+      "endMs": 9980,
+      "text": "Men walk on moon declares the bold headline",
+      "words": [
+        {
+          "id": 0,
+          "text": "Men",
+          "startMs": 7540,
+          "endMs": 7980,
+          "probability": 0.9951171875
+        },
+        {
+          "id": 1,
+          "text": "walk",
+          "startMs": 7980,
+          "endMs": 8220,
+          "probability": 0.6318359375
+        },
+        {
+          "id": 2,
+          "text": "on",
+          "startMs": 8220,
+          "endMs": 8580,
+          "probability": 1
+        },
+        {
+          "id": 3,
+          "text": "moon",
+          "startMs": 8580,
+          "endMs": 8820,
+          "probability": 0.990234375
+        },
+        {
+          "id": 4,
+          "text": "declares",
+          "startMs": 8820,
+          "endMs": 9280,
+          "probability": 0.982421875
+        },
+        {
+          "id": 5,
+          "text": "the",
+          "startMs": 9280,
+          "endMs": 9420,
+          "probability": 1
+        },
+        {
+          "id": 6,
+          "text": "bold",
+          "startMs": 9420,
+          "endMs": 9620,
+          "probability": 1
+        },
+        {
+          "id": 7,
+          "text": "headline",
+          "startMs": 9620,
+          "endMs": 9980,
+          "probability": 1
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "startMs": 9980,
+      "endMs": 11460,
+      "text": "across America's newspaper of record.",
+      "words": [
+        {
+          "id": 0,
+          "text": "across",
+          "startMs": 9980,
+          "endMs": 10260,
+          "probability": 1
+        },
+        {
+          "id": 1,
+          "text": "America's",
+          "startMs": 10260,
+          "endMs": 10760,
+          "probability": 1
+        },
+        {
+          "id": 2,
+          "text": "newspaper",
+          "startMs": 10760,
+          "endMs": 10980,
+          "probability": 0.99951171875
+        },
+        {
+          "id": 3,
+          "text": "of",
+          "startMs": 10980,
+          "endMs": 11260,
+          "probability": 0.9970703125
+        },
+        {
+          "id": 4,
+          "text": "record.",
+          "startMs": 11260,
+          "endMs": 11460,
+          "probability": 1
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "startMs": 11560,
+      "endMs": 12420,
+      "text": "For over a century,",
+      "words": [
+        {
+          "id": 0,
+          "text": "For",
+          "startMs": 11560,
+          "endMs": 11780,
+          "probability": 1
+        },
+        {
+          "id": 1,
+          "text": "over",
+          "startMs": 11780,
+          "endMs": 12000,
+          "probability": 1
+        },
+        {
+          "id": 2,
+          "text": "a",
+          "startMs": 12000,
+          "endMs": 12140,
+          "probability": 1
+        },
+        {
+          "id": 3,
+          "text": "century,",
+          "startMs": 12140,
+          "endMs": 12420,
+          "probability": 1
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "startMs": 12560,
+      "endMs": 13580,
+      "text": "the New York Times has documented",
+      "words": [
+        {
+          "id": 0,
+          "text": "the",
+          "startMs": 12560,
+          "endMs": 12660,
+          "probability": 0.88525390625
+        },
+        {
+          "id": 1,
+          "text": "New",
+          "startMs": 12660,
+          "endMs": 12760,
+          "probability": 1
+        },
+        {
+          "id": 2,
+          "text": "York",
+          "startMs": 12760,
+          "endMs": 12860,
+          "probability": 1
+        },
+        {
+          "id": 3,
+          "text": "Times",
+          "startMs": 12860,
+          "endMs": 13060,
+          "probability": 1
+        },
+        {
+          "id": 4,
+          "text": "has",
+          "startMs": 13060,
+          "endMs": 13240,
+          "probability": 1
+        },
+        {
+          "id": 5,
+          "text": "documented",
+          "startMs": 13240,
+          "endMs": 13580,
+          "probability": 1
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "startMs": 13580,
+      "endMs": 14860,
+      "text": "our nation's most pivotal moments,",
+      "words": [
+        {
+          "id": 0,
+          "text": "our",
+          "startMs": 13580,
+          "endMs": 13820,
+          "probability": 0.99951171875
+        },
+        {
+          "id": 1,
+          "text": "nation's",
+          "startMs": 13820,
+          "endMs": 14140,
+          "probability": 1
+        },
+        {
+          "id": 2,
+          "text": "most",
+          "startMs": 14140,
+          "endMs": 14280,
+          "probability": 1
+        },
+        {
+          "id": 3,
+          "text": "pivotal",
+          "startMs": 14280,
+          "endMs": 14520,
+          "probability": 1
+        },
+        {
+          "id": 4,
+          "text": "moments,",
+          "startMs": 14520,
+          "endMs": 14860,
+          "probability": 1
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "startMs": 14960,
+      "endMs": 16180,
+      "text": "but rarely has any story matched",
+      "words": [
+        {
+          "id": 0,
+          "text": "but",
+          "startMs": 14960,
+          "endMs": 15100,
+          "probability": 1
+        },
+        {
+          "id": 1,
+          "text": "rarely",
+          "startMs": 15100,
+          "endMs": 15340,
+          "probability": 1
+        },
+        {
+          "id": 2,
+          "text": "has",
+          "startMs": 15340,
+          "endMs": 15520,
+          "probability": 1
+        },
+        {
+          "id": 3,
+          "text": "any",
+          "startMs": 15520,
+          "endMs": 15700,
+          "probability": 1
+        },
+        {
+          "id": 4,
+          "text": "story",
+          "startMs": 15700,
+          "endMs": 15920,
+          "probability": 1
+        },
+        {
+          "id": 5,
+          "text": "matched",
+          "startMs": 15920,
+          "endMs": 16180,
+          "probability": 0.9931640625
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "startMs": 16180,
+      "endMs": 17400,
+      "text": "the cosmic significance of this one.",
+      "words": [
+        {
+          "id": 0,
+          "text": "the",
+          "startMs": 16180,
+          "endMs": 16380,
+          "probability": 1
+        },
+        {
+          "id": 1,
+          "text": "cosmic",
+          "startMs": 16380,
+          "endMs": 16600,
+          "probability": 0.99951171875
+        },
+        {
+          "id": 2,
+          "text": "significance",
+          "startMs": 16600,
+          "endMs": 17000,
+          "probability": 1
+        },
+        {
+          "id": 3,
+          "text": "of",
+          "startMs": 17000,
+          "endMs": 17220,
+          "probability": 1
+        },
+        {
+          "id": 4,
+          "text": "this",
+          "startMs": 17220,
+          "endMs": 17300,
+          "probability": 1
+        },
+        {
+          "id": 5,
+          "text": "one.",
+          "startMs": 17300,
+          "endMs": 17400,
+          "probability": 0.98681640625
+        }
+      ]
+    }
+  ]
+}

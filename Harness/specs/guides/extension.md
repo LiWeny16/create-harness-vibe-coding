@@ -59,6 +59,34 @@ Skills should extend the harness. They should not replace `Harness/README.md`, `
 - Do not run stack-specific writing agents in parallel unless write sets are disjoint.
 - If an added asset conflicts with this harness, adapt the asset instead of changing the core contract.
 
+## Runtime Extensions
+
+Runtime extensions are optional, lazy-installed capabilities. They must not add
+large browser engines, crawlers, ASR models, or platform SDKs to the default
+Harness package.
+
+The shared layout is:
+
+```text
+<globalDir>/Harness/extensions/<id>/<version>/   # downloaded payload
+<projectRoot>/Harness/extensions/lock.json      # project metadata only
+<projectRoot>/Harness/extensions/config.json     # optional project metadata
+```
+
+`node Harness/scripts/extensions.mjs ensure --id <id> --global-dir <globalDir>
+--project <projectRoot> --json` verifies the registry manifest and SHA-256
+hashes, stages files, and atomically installs them in the global runtime. A
+failed or offline download must not write a project lock or leave a partial
+payload. The global cache is shared by projects; removing one project must not
+delete it.
+
+`wf-search-deep` is a downloadable extension. It only declares optional
+BrowserOS Neo, user-installed media tools, and a user-configured Whisper/VLM
+backend read from `Harness/extensions/config.json`; it never stores cookies,
+tokens, host-specific deployment details, or SSH keys. `wf-ui` is a
+built-in global-runtime capability that is lazy-loaded from the Harness
+runtime, not a downloaded extension.
+
 ## Registration
 
 After adding assets:

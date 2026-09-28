@@ -136,7 +136,6 @@ import {
 } from './workflow-graph-store.mjs';
 import { appendWorkflowOperation } from './workflow-operation-store.mjs';
 import { listSkillsHub } from './workflow-skills-hub.mjs';
-import { installSkillsMarketPack, listSkillsMarket } from './workflow-skills-market.mjs';
 import { listMcpHub } from './workflow-mcp-hub.mjs';
 import { attachEventsWs } from './ws-events.mjs';
 import { refreshBaseline, watchFileNodes } from './file-watcher.mjs';
@@ -1602,47 +1601,6 @@ export function createServer({
       }))
         .then(data => sendJson(res, 200, data))
         .catch(e => sendMappedError(res, e));
-      return;
-    }
-
-    if (req.method === 'GET' && pathname === '/api/workflow/skills-market') {
-      Promise.resolve().then(() => listSkillsMarket(absRoot, {
-        q: url.searchParams.get('q') || '',
-        scope: url.searchParams.get('scope') || 'project',
-        limit: url.searchParams.get('limit') || undefined,
-      }))
-        .then(data => sendJson(res, 200, data))
-        .catch(e => sendMappedError(res, e));
-      return;
-    }
-
-    if (req.method === 'POST' && pathname === '/api/workflow/skills-market/install') {
-      readJsonBody(req)
-        .then((payload) => {
-          const installPayload = isPlainObject(payload) ? { ...payload } : {};
-          // Market list responses use a stable provider:slug id. Accepting
-          // that id keeps the UI from having to duplicate provider parsing,
-          // while still letting the market service validate the provider.
-          if (!installPayload.packSlug && installPayload.packId) {
-            const rawPackId = String(installPayload.packId);
-            const separator = rawPackId.indexOf(':');
-            if (separator > 0) {
-              installPayload.provider = installPayload.provider || rawPackId.slice(0, separator);
-              installPayload.packSlug = rawPackId.slice(separator + 1);
-            } else {
-              installPayload.packSlug = rawPackId;
-            }
-          }
-          return installSkillsMarketPack(absRoot, installPayload);
-        })
-        .then(data => sendJson(res, 200, data))
-        .catch((e) => sendJson(res, Number(e?.statusCode || 400), {
-          ok: false,
-          error: {
-            code: e?.code || 'SKILLS_MARKET_REQUEST_FAILED',
-            message: e?.message || 'Skills market request failed',
-          },
-        }));
       return;
     }
 

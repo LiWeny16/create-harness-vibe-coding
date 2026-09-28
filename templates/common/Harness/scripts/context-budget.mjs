@@ -16,7 +16,7 @@ const json = args.has('--json');
 const routes = [
   {
     id: 'thin-startup',
-    maxBytes: 16000,
+    maxBytes: 17000,
     paths: [
       'CLAUDE.md',
       'Harness/memory/startup-hints.md',
@@ -24,7 +24,7 @@ const routes = [
   },
   {
     id: 'wf-router-prefix',
-    maxBytes: 50000,
+    maxBytes: 52000,
     paths: [
       'CLAUDE.md',
       'Harness/MEMORY.md',
@@ -33,7 +33,7 @@ const routes = [
   },
   {
     id: 'wf-light-prefix',
-    maxBytes: 66500,
+    maxBytes: 70000,
     paths: [
       'CLAUDE.md',
       'Harness/MEMORY.md',

@@ -21,7 +21,9 @@ const TEMPLATE_LIB = path.join(ROOT, 'templates', 'common', 'Harness', 'scripts'
 const FIXTURE_VALID = path.join(ROOT, 'tests', 'fixtures', 'wf-search', 'valid-compare.json');
 
 const WF_SEARCH_ALIASES = ['/wf-search', '$wf-search', '/skills wf-search'];
-const SKILL_REFERENCE_FILES = [
+// Legacy reference files that existed before the wf-search skill was slimmed
+// down to SKILL.md only. They must NOT exist on disk nor be packed by npm.
+const LEGACY_SKILL_REFERENCE_FILES = [
   'references/evidence-contract.md',
   'references/policies/compare.md',
   'references/policies/fact.md',
@@ -29,6 +31,8 @@ const SKILL_REFERENCE_FILES = [
   'references/policies/verify.md',
   'references/source-routing.md',
   'references/tool-adapters.md',
+  'references/platform-adapters.md',
+  'references/video-research.md',
 ];
 
 function abs(rel) {
@@ -132,7 +136,7 @@ after(() => {
 
 // ================================================================ 1. template surfaces
 
-test('AC-003 wf-search command wrappers exist, stay direct, and fit the 80-line budget', () => {
+test('AC-003 wf-search command wrappers are thin adapters calling the wf CLI', () => {
   const files = [
     'templates/common/.claude/commands/wf-search.md',
     'templates/common/.opencode/commands/wf-search.md',
@@ -140,14 +144,21 @@ test('AC-003 wf-search command wrappers exist, stay direct, and fit the 80-line 
   for (const rel of files) {
     assert.ok(exists(rel), `${rel} should exist`);
     const body = readRaw(rel);
+    assert.match(body, /pnpm exec wf search/, `${rel} should invoke the native wf CLI via pnpm exec wf search`);
     assert.match(body, /direct command/i, `${rel} should be marked as a direct command`);
-    assert.match(body, /Do not invoke a skill/, `${rel} should not invoke a skill`);
+    for (const legacy of LEGACY_SKILL_REFERENCE_FILES) {
+      assert.doesNotMatch(
+        body,
+        new RegExp(legacy.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
+        `${rel} must not reference the removed legacy reference ${legacy}`,
+      );
+    }
     assert.ok(lineCount(body) <= 80, `${rel} exceeds the 80-line wrapper budget (${lineCount(body)} lines)`);
   }
   assert.equal(readRaw(files[0]), readRaw(files[1]), 'claude and opencode wrappers should carry the same content');
 });
 
-test('AC-003 wf-search skill frontmatter and the seven references exist within the 180-line budget', () => {
+test('AC-003 wf-search skill tree is exactly SKILL.md within the 180-line budget', () => {
   const skillRel = 'templates/common/.claude/skills/wf-search/SKILL.md';
   assert.ok(exists(skillRel), `${skillRel} should exist`);
   const body = readRaw(skillRel);
@@ -155,16 +166,16 @@ test('AC-003 wf-search skill frontmatter and the seven references exist within t
   assert.match(body, /^name: wf-search$/m, 'SKILL.md frontmatter should declare name: wf-search');
   assert.ok(lineCount(body) <= 180, `SKILL.md exceeds the 180-line budget (${lineCount(body)} lines)`);
 
-  for (const rel of SKILL_REFERENCE_FILES) {
-    assert.ok(exists(`templates/common/.claude/skills/wf-search/${rel}`), `reference missing: ${rel}`);
-  }
-
+  // The wf-search skill tree has been slimmed to SKILL.md only; no references.
   const fileSet = walkFilesRel(abs('templates/common/.claude/skills/wf-search'));
-  assert.deepEqual(
-    fileSet,
-    ['SKILL.md', ...SKILL_REFERENCE_FILES].sort(),
-    'the skill payload should be exactly SKILL.md plus the seven references',
-  );
+  assert.deepEqual(fileSet, ['SKILL.md'], 'the wf-search skill payload should be exactly [SKILL.md]');
+
+  for (const legacy of LEGACY_SKILL_REFERENCE_FILES) {
+    assert.ok(
+      !exists(`templates/common/.claude/skills/wf-search/${legacy}`),
+      `legacy reference must not exist: ${legacy}`,
+    );
+  }
 });
 
 test('AC-003 root dogfood command wrappers mirror the templates byte-identically', () => {
@@ -253,11 +264,14 @@ test('AC-003 wf-remove built-in registries cover the wf-search skill, command, a
 });
 
 test('AC-003 CLAUDE.md direct alias list carries all three wf-search alias forms', () => {
+  // Root CLAUDE.md (dogfood) and templates/common/CLAUDE.md intentionally carry
+  // different responsibilities; they are NOT byte-identical by design. Verify
+  // the relevant wf-search aliases exist in each independently.
   const rootBody = readRaw('CLAUDE.md');
   const templateBody = readRaw('templates/common/CLAUDE.md');
-  assert.equal(rootBody, templateBody, 'root and template CLAUDE.md should be byte-identical');
   for (const alias of WF_SEARCH_ALIASES) {
-    assert.ok(rootBody.includes(`\`${alias}\``), `CLAUDE.md missing alias ${alias}`);
+    assert.ok(rootBody.includes(`\`${alias}\``), `root CLAUDE.md missing alias ${alias}`);
+    assert.ok(templateBody.includes(`\`${alias}\``), `template CLAUDE.md missing alias ${alias}`);
   }
 });
 
@@ -514,7 +528,7 @@ function assertPacked(output, posixPath) {
   );
 }
 
-test('AC-005 npm pack ships the wf-search helper, command, and skill references', () => {
+test('AC-005 npm pack ships the wf-search CLI helper, command, and SKILL only', () => {
   const result =
     process.platform === 'win32'
       ? spawnSync('npm pack --dry-run', { encoding: 'utf8', shell: true })
@@ -522,13 +536,25 @@ test('AC-005 npm pack ships the wf-search helper, command, and skill references'
   const output = `${result.stdout}\n${result.stderr}`;
   assert.equal(result.status, 0, output);
 
+  // CLI helper
   assertPacked(output, 'templates/common/Harness/scripts/wf-search.mjs');
   assertPacked(output, 'templates/common/Harness/scripts/lib/wf-search.mjs');
+  assertPacked(output, 'templates/common/Harness/scripts/wf-search-download.mjs');
+  // Thin command adapter
   assertPacked(output, 'templates/common/.claude/commands/wf-search.md');
+  // SKILL.md only — no references directory
   assertPacked(output, 'templates/common/.claude/skills/wf-search/SKILL.md');
-  assert.match(
+  assert.doesNotMatch(
     output,
     /templates[/\\]common[/\\]\.claude[/\\]skills[/\\]wf-search[/\\]references[/\\]/,
-    'npm pack should ship at least one wf-search skill reference file',
+    'npm pack must not ship any wf-search skill references directory',
   );
+  for (const legacy of LEGACY_SKILL_REFERENCE_FILES) {
+    const needle = legacy.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    assert.doesNotMatch(
+      output,
+      new RegExp(needle),
+      `npm pack must not ship the removed legacy reference ${legacy}`,
+    );
+  }
 });

@@ -106,6 +106,32 @@ Use `Harness/scripts/task-state.mjs` as the deterministic state writer:
 - `node Harness/scripts/task-state.mjs transition <task-id> --status <status> --phase <phase>`
 - `node Harness/scripts/task-state.mjs archive --keep 5 --dry-run --json`
 - `node Harness/scripts/task-state.mjs archive --keep 5 --apply`
+- `node Harness/scripts/task-state.mjs auto-archive --dry-run --json`
+- `node Harness/scripts/task-state.mjs auto-archive --apply`
+- `node Harness/scripts/auto-archive-session-start.mjs` (SessionStart/Stop hook helper,
+  dry-run by default; never mutates unless the user invokes `task-state auto-archive --apply`)
+
+## Derived Route Layer
+
+`Harness/scripts/lib/task-route.mjs` is a pure derivation layer that reads live and
+archived capsules and computes routes, focus, blockers, archive eligibility, and
+resume summaries without writing anything to disk. It is read-only: the sole write
+surface for archives is `task-state.mjs auto-archive`.
+
+**Key functions:** `resolveRoute`, `resolveFocus`, `aggregateBlockers`,
+`archiveEligibility`, `buildRouteStub`, `buildResumeSummary`,
+`buildArchiveIndexEntries`.
+
+The `task-context.mjs pack` command uses `aggregateBlockers` via a static import
+to inject a mandatory `Task Header` into every context pack.
+
+## SessionStart Hook Semantics
+
+The SessionStart/Stop hook (`auto-archive-session-start.mjs`) runs
+`task-state auto-archive` in **dry-run mode only**. It reports which closed tasks
+are eligible for archive but does NOT move them. Archive is a user-initiated
+action via `task-state auto-archive --apply`. The hook exists to surface
+"eligible for archive" reminders without mutating state.
 
 Do not rely on prompt instructions alone to keep task `STATE.json`, task
 `PROGRESS.md`, the generated task route, and root `Harness/PROGRESS.md`

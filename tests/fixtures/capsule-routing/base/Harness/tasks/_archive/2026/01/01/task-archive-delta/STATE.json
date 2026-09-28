@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-archive-delta",
+  "status": "closed",
+  "mode": "direct",
+  "defaultRuntime": "codex",
+  "defaultAgentRuntime": "codex",
+  "tier": "none",
+  "phase": "verified",
+  "gate": null,
+  "project": "default",
+  "tags": [],
+  "createdAt": "2025-12-01T00:00:00.000Z",
+  "startedAt": "2025-12-01T00:00:00.000Z",
+  "closedAt": "2025-12-05T00:00:00.000Z",
+  "updatedAt": "2025-12-05T00:00:00.000Z",
+  "activeQuestion": null,
+  "nextAction": "Archived.",
+  "acceptance": [],
+  "queues": {
+    "ready": [],
+    "running": [],
+    "blocked": [],
+    "done": ["task-archive-delta-step-1"]
+  },
+  "workItems": [],
+  "dispatchLedger": [],
+  "decisions": [],
+  "risks": [],
+  "artifacts": [],
+  "group": "default",
+  "links": {
+    "dependsOn": [],
+    "blocks": [],
+    "related": []
+  }
+}

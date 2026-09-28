@@ -43,13 +43,20 @@ The hub currently has two overlapping surfaces (global overlay `WorkflowSkillsHu
 
 | ID | Criterion | Evidence | Status |
 |----|-----------|----------|--------|
-| AC-001 | `listSkillsHub` scans all 5 runtimes' default roots; response `roots[]` includes codex/claude/opencode/pi/copilot entries (user+project where conventional); missing roots present with `exists:false`, no throw. | New/updated unit test in `workflow-skills-hub` + manual `node` call against a temp project. | pending |
+| AC-001 | `listSkillsHub` scans all 5 runtimes' default roots; response `roots[]` includes codex/claude/opencode/pi/copilot entries (user+project where conventional); missing roots present with `exists:false`, no throw. The global Hub requests `scope=all` so both user and project roots appear in the UI. | New/updated unit test in `workflow-skills-hub`, temp-project route test, and Hub E2E asserting the query scope. | pending |
 | AC-002 | Skills whose names share a prefix (e.g. `lark-*`) are grouped by the server under `family:<prefix>`, and the hub UI renders each family as a collapsible section (collapsed by default, expandable). | UI unit/e2e asserting a `lark` family section exists and toggles; server test asserting `family:lark` group. | pending |
 | AC-003 | A skill-group (pack) node supports an optional `prompt` field: set via configure, persisted in state, returned by read/list. Default is a derived "you have these skills" sentence when omitted. | Unit test on capability store + skill-group node type. | pending |
 | AC-004 | For an Agent connected to a pack, the agent context surfaces the pack's prompt (and skill names) so the agent is told it has those skills; a pack with no `prompt` still yields a derived "has these skills" line. Connection ⇒ always surfaced. | Unit test in `workflow-agent-context.test.mjs` asserting the connected pack's prompt appears in the built agent context. | pending |
 | AC-005 | The global hub overlay has ONE primary action (select/drag skills → create pack node on the map). "Add" is renamed to reflect "add to pack" (or removed in favor of the single action); the empty Context JSON block is removed; hub mode no longer renders dead `onSetSkillEnabled`/`onAddSkillToGroup`-dependent controls. | UI code review + e2e: clicking the primary action with a selection creates a skill-group node. | pending |
 | AC-006 | The Market tab is removed from the hub UI and `workflow-skills-market.mjs` is no longer wired into the hub surface (no market routes referenced by the overlay/route). | Grep + build: no `skills-market` import/usage in the hub overlay/route path. | pending |
 | AC-007 | Build + existing wf-ui-server and UI test suites pass; no regression in existing `effectiveSkills`/skill-group tests. | `npm test` (or the repo's test script) green. | pending |
+
+### AC-005 UI contract
+
+- Skill choices are exposed as accessible checkbox controls named `Select skill <skill name>`.
+- The single primary action is a button with `data-testid="skills-hub-create-pack"` and accessible name `Create skill pack`; it is disabled until at least one skill is selected.
+- Clicking it creates one `skill-group` node on the workflow map carrying the selected skill names. A drag onto the map remains supported, but is not required for the primary-action acceptance test.
+- The observable result is the new node in the graph; tests must not assume a particular screen coordinate or persistence API beyond the existing route contract.
 
 ## Expanded Contracts
 

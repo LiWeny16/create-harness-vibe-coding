@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
-import { readStoredEnvelopes } from './chat-store.mjs';
-import { sendTo, interrupt, approve, setChatEventBroadcaster } from './chat-driver.mjs';
+import { appendChatEnvelope, readStoredEnvelopes } from './chat-store.mjs';
+import { sendTo, interrupt, approve, setPermissionMode, getLiveChatDriverMeta, setChatEventBroadcaster } from './chat-driver.mjs';
 
 // ── Chat WebSocket channel (/ws/chat/:sessionId) ──
 // Mirrors the ws-terminal.mjs hub architecture (frame helpers, per-session
@@ -155,12 +155,16 @@ export function attachChatWs(httpServer, expectedToken, sessionRegistry, options
 
     // Handshake state, then replay every stored envelope so a (re)connecting
     // client rebuilds the transcript before live events flow.
+    const driverMeta = getLiveChatDriverMeta(sessionId);
     sendFrame(socket, JSON.stringify({
       type: 'chat:state',
       sessionId,
       state: session.status || 'starting',
       uiMode: 'chat',
-      providerSessionId: session.providerSessionId || null,
+      providerSessionId: driverMeta?.providerSessionId || session.providerSessionId || null,
+      runtime: driverMeta?.runtime || session.runtime || null,
+      supportedModes: driverMeta?.supportedModes || [],
+      permissionMode: driverMeta?.permissionMode || null,
     }));
     try {
       if (options.projectRoot) {
@@ -214,12 +218,41 @@ export function attachChatWs(httpServer, expectedToken, sessionRegistry, options
         void interrupt(sessionId);
         break;
       case 'chat:approve':
-        void approve(sessionId, msg.requestId, msg.result);
+        if (msg.requestId && ['allow', 'deny'].includes(String(msg.decision))) {
+          void approve(sessionId, msg.requestId, String(msg.decision));
+        }
+        break;
+      case 'chat:setPermissionMode':
+        void changePermissionMode(sessionId, msg);
         break;
       default:
         // Unknown frame type — ignore
         break;
     }
+  }
+
+  async function changePermissionMode(sessionId, msg) {
+    const requestId = String(msg.requestId || '');
+    const mode = String(msg.mode || '');
+    if (!requestId) return;
+    try {
+      await setPermissionMode(sessionId, mode);
+      publishModeEnvelope(sessionId, { type: 'permission_mode_changed', payload: { requestId, mode } });
+    } catch (err) {
+      publishModeEnvelope(sessionId, {
+        type: 'permission_mode_change_failed',
+        payload: { requestId, mode, message: String(err?.message || err) },
+      });
+    }
+  }
+
+  function publishModeEnvelope(sessionId, event) {
+    const session = sessionRegistry?.get?.(sessionId);
+    const projectRoot = options.projectRoot;
+    const envelope = projectRoot && session
+      ? appendChatEnvelope(projectRoot, session, event)
+      : { ...event, ts: new Date().toISOString() };
+    broadcastToSession(sessionId, envelope);
   }
 
   function cleanupClient(sessionId, client) {

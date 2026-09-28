@@ -3,8 +3,9 @@
   "skillId": "workflow-markdown-node",
   "name": "Workflow Markdown Node",
   "source": "Harness/a2a/skills/workflow-markdown-node.json",
-  "description": "On-demand Agent guide for reading and writing Markdown nodes through typed backend actions only.",
+  "description": "On-demand Agent guide for reading and writing Markdown nodes through typed backend actions only, including compact shared Billboards.",
   "nodeType": "markdown",
+  "billboardGuidance": "Use a connected Billboard for concise one-line team updates. Append one sentence through markdown.append: <agentNodeId>/<agentName> tried <X>; result: <Y>; avoid: <Z>; recommend: <W>. Omit fields you do not know. Use ordinary Markdown nodes for long-form context.",
   "findGuidance": {
     "how": "Find Markdown nodes by nodeId (exact) or title (substring) with markdown.find. It returns metadata only (nodeId, title, revision) — never content. Share nodes by nodeId only in request contextRefs; receivers read the content through typed actions."
   },
@@ -23,6 +24,8 @@
   },
   "triggers": [
     "markdown node",
+    "billboard",
+    "shared team update",
     "find markdown",
     "lock markdown",
     "write notes",
@@ -35,7 +38,7 @@
     "endpoint": "POST /api/workflow/nodes/:node/actions/:action",
     "readContextFirst": "node Harness/scripts/wf-ui-control.mjs workflow-context --project .",
     "storage": "Harness/a2a/component-nodes/**/state.json is backend-owned diagnostic storage, never an Agent control surface.",
-    "outputRouting": "Prefer connected writable Markdown nodes for durable notes, reports, task plans, and long-form text."
+    "outputRouting": "Prefer connected writable Markdown nodes for durable notes, reports, task plans, and long-form text; use a connected Billboard for concise shared team updates."
   },
   "environment": [
     "HARNESS_PEER_SESSION_ID",

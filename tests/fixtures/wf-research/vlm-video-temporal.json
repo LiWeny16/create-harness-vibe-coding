@@ -1,0 +1,59 @@
+{
+  "schemaVersion": "wf-research/result.v1",
+  "question": "如何让 VLM agent 看懂视频的时序信息，并且省 token？",
+  "checkedAt": "2026-09-18T00:00:00Z",
+  "plan": {
+    "profileId": "technical-frontier",
+    "sourceIds": ["arxiv", "github", "huggingface", "youtube", "x", "reddit"],
+    "stages": [
+      { "id": "collect", "kind": "collect", "toolIds": ["gpt-researcher", "browseros-neo"] },
+      { "id": "video-understand", "kind": "understand", "toolIds": ["yt-dlp", "whisper-large", "vlm-endpoint"] },
+      { "id": "discard-and-replan", "kind": "decide", "toolIds": ["evidence-scorer"] },
+      { "id": "output", "kind": "output", "toolIds": ["report-renderer"] }
+    ]
+  },
+  "operations": [
+    { "id": "op-paper", "kind": "read", "tool": "gpt-researcher", "url": "https://arxiv.org/abs/2512.13059", "outcome": "success", "checkedAt": "2026-09-18T00:00:00Z" },
+    { "id": "op-longvt", "kind": "read", "tool": "github", "url": "https://github.com/EvolvingLMMs-Lab/LongVT", "outcome": "success", "checkedAt": "2026-09-18T00:00:00Z" },
+    { "id": "op-lva", "kind": "read", "tool": "github", "url": "https://github.com/longvideoagent/LongVideoAgent", "outcome": "success", "checkedAt": "2026-09-18T00:00:00Z" },
+    { "id": "op-social", "kind": "read", "tool": "BrowserOS Neo:x", "url": "https://x.com/search?q=long%20video%20agent", "outcome": "success", "checkedAt": "2026-09-18T00:00:00Z" },
+    { "id": "op-video", "kind": "read", "tool": "BrowserOS Neo:youtube", "url": "https://www.youtube.com/watch?v=example", "outcome": "success", "checkedAt": "2026-09-18T00:00:00Z" }
+  ],
+  "evidence": [
+    { "id": "e-longvt", "sourceId": "github", "url": "https://github.com/EvolvingLMMs-Lab/LongVT", "title": "LongVT", "kind": "source-code", "excerpt": "Global-to-local temporal reasoning uses a crop_video tool to resample frames in a targeted time window.", "locator": "README.md#overview", "access": "full", "publishedAt": "2026-02-21T00:00:00Z", "retrievedAt": "2026-09-18T00:00:00Z", "operationIds": ["op-longvt"], "relevance": 1, "directness": 1, "authority": 0.9, "recency": 0.9, "independence": 1, "evidenceQuality": 1 },
+    { "id": "e-lva", "sourceId": "github", "url": "https://github.com/longvideoagent/LongVideoAgent", "title": "LongVideoAgent", "kind": "source-code", "excerpt": "A master agent coordinates a grounding agent and a vision agent to inspect targeted segments.", "locator": "README.md#abstract", "access": "full", "publishedAt": "2026-01-01T00:00:00Z", "retrievedAt": "2026-09-18T00:00:00Z", "operationIds": ["op-lva"], "relevance": 1, "directness": 0.95, "authority": 0.9, "recency": 0.8, "independence": 0.9, "evidenceQuality": 0.95 },
+    { "id": "e-paper", "sourceId": "arxiv", "url": "https://arxiv.org/abs/2512.13059", "title": "Open and Reproducible Deep Research Agent", "kind": "paper", "excerpt": "Long-video agents should retrieve sparse query-relevant evidence rather than pack dense frames into one context.", "locator": "abstract", "access": "full", "publishedAt": "2025-12-01T00:00:00Z", "retrievedAt": "2026-09-18T00:00:00Z", "operationIds": ["op-paper"], "relevance": 0.9, "directness": 0.85, "authority": 0.85, "recency": 0.7, "independence": 1, "evidenceQuality": 0.9 },
+    { "id": "e-social", "sourceId": "x", "url": "https://x.com/search?q=long%20video%20agent", "title": "X discussion sample", "kind": "social", "excerpt": "Practitioners discuss coarse-to-fine video retrieval and token budgets.", "locator": "visible search results", "access": "snippet", "publishedAt": null, "retrievedAt": "2026-09-18T00:00:00Z", "operationIds": ["op-social"], "relevance": 0.6, "directness": 0.35, "authority": 0.35, "recency": 0.9, "independence": 0.5, "evidenceQuality": 0.4 },
+    { "id": "e-video", "sourceId": "youtube", "url": "https://www.youtube.com/watch?v=example", "title": "Video sample", "kind": "video", "excerpt": "Transcript and visible frames support a coarse-to-fine reading workflow.", "locator": "00:01:12-00:01:28", "access": "excerpt", "publishedAt": null, "retrievedAt": "2026-09-18T00:00:00Z", "operationIds": ["op-video"], "relevance": 0.8, "directness": 0.7, "authority": 0.55, "recency": 0.8, "independence": 0.6, "evidenceQuality": 0.75 },
+    { "id": "e-noise", "sourceId": "social", "url": "https://example.com/repost", "title": "Unrelated repost", "kind": "social", "excerpt": "A short unrelated repost without evidence.", "locator": null, "access": "snippet", "publishedAt": null, "retrievedAt": "2026-09-18T00:00:00Z", "operationIds": ["op-social"], "relevance": 0.05, "directness": 0.05, "authority": 0.1, "recency": 0.2, "independence": 0.1, "evidenceQuality": 0.1 }
+  ],
+  "claims": [
+    { "id": "c-1", "text": "最省 token 的可靠路径是先用字幕/ASR和低成本全局扫描定位候选时间段，再对局部片段进行高密度视觉重采样。", "kind": "recommendation", "importance": "major", "evidenceIds": ["e-longvt", "e-lva", "e-video"], "status": "supported", "confidence": "high", "confidenceReason": "Two source-code projects and one timestamped video excerpt agree on the global-to-local pattern.", "gaps": [] },
+    { "id": "c-2", "text": "X snippets alone are insufficient to establish a technical claim.", "kind": "community-observation", "importance": "minor", "evidenceIds": ["e-social"], "status": "supported", "confidence": "low", "confidenceReason": "Visible snippets are recent but secondary and incomplete.", "gaps": ["full post context"] }
+  ],
+  "video": {
+    "sourceUrl": "https://www.youtube.com/watch?v=example",
+    "transcript": [
+      { "id": 0, "startMs": 72000, "endMs": 76000, "text": "先粗略扫描整个视频，再放大相关片段。" },
+      { "id": 1, "startMs": 76000, "endMs": 82000, "text": "这样可以减少送入视觉模型的帧数。" }
+    ],
+    "visualSegments": [
+      { "id": "v-1", "startMs": 72000, "endMs": 82000, "summary": "时间轴上先出现全局采样，再出现局部放大帧。", "evidenceIds": ["e-video"] }
+    ],
+    "comments": [
+      { "id": "comment-1", "platform": "youtube", "author": "viewer", "text": "局部重采样比逐帧发给模型省很多 token。", "sourceUrl": "https://www.youtube.com/watch?v=example", "createdAt": null, "likeCount": 4, "replyCount": 0, "access": "visible" }
+    ],
+    "tokenPolicy": {
+      "globalPass": "low-fps scene/semantic scan with transcript anchors",
+      "localPass": "high-fps crop only around candidate intervals",
+      "contextRule": "send compact timestamped evidence, not the full video"
+    }
+  },
+  "decision": {
+    "keptEvidenceIds": [],
+    "discardedEvidenceIds": [],
+    "scoreThreshold": 55,
+    "discardedCount": 0
+  },
+  "limitations": ["The social-media sample is visible-snippet evidence, not an exhaustive comment crawl."]
+}

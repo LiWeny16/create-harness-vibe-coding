@@ -7,6 +7,7 @@ export type Session = {
   sessionId: string;
   taskId?: string | null;
   peerId?: string;
+  uiMode?: 'pty' | 'chat';
   runtime: string;
   role?: string;
   objective?: string;
@@ -145,6 +146,7 @@ export type WorkflowNode = {
   kind: string;
   componentType?: 'markdown' | 'excalidraw' | string;
   type?: 'markdown' | 'excalidraw' | string;
+  presentation?: string;
   level: number;
   status?: string;
   lifecycle?: 'live' | 'stopping' | 'stopped' | 'deleted' | string;
@@ -171,6 +173,7 @@ export type WorkflowNode = {
   agentKind?: 'main' | 'subagent' | string;
   runtime?: string;
   peerId?: string;
+  uiMode?: 'pty' | 'chat';
   model?: string;
   provider?: string;
   subagentMode?: SubagentMode;
@@ -215,6 +218,7 @@ export type WorkflowNodeConfig = {
   recommendedSkills: string[];
   contextSources: string[];
   capabilities: string[];
+  uiMode?: 'pty' | 'chat';
 };
 
 export type WorkflowEdgeDirection = 'bidirectional' | 'source-to-target';
@@ -498,6 +502,7 @@ export type WorkflowCapabilityNodeState = {
 export type WorkflowComponentNodeState = {
   nodeId: string;
   type: WorkflowComponentType;
+  presentation?: string;
   title: string;
   revision: number;
   markdown?: string;

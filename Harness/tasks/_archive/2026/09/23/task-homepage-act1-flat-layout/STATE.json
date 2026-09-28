@@ -1,0 +1,57 @@
+{
+  "taskId": "task-homepage-act1-flat-layout",
+  "phase": "archived",
+  "gate": "CONTRACT-GATE passed; TEST-GATE = manual browser verification (no test framework)",
+  "tier": "WF-Standard",
+  "ready": [
+    "implementer: apply E1-E4b in docs/index.html"
+  ],
+  "running": [],
+  "blocked": [],
+  "done": [
+    "intake",
+    "bounded-exploration",
+    "plan"
+  ],
+  "activeQuestion": null,
+  "nextAction": "dispatch implementer, then browser-verify AC1-AC6",
+  "writeSet": [
+    "docs/index.html"
+  ],
+  "acceptance": [
+    "AC1 positions",
+    "AC2 flat/zero-tilt/no-float",
+    "AC3 no singled-out box",
+    "AC4 transition preserved",
+    "AC5 no regressions",
+    "AC6 browser evidence"
+  ],
+  "schemaVersion": 1,
+  "status": "archived",
+  "mode": "direct",
+  "queues": {
+    "ready": [
+      "implementer: apply E1-E4b in docs/index.html"
+    ],
+    "running": [],
+    "blocked": [],
+    "done": [
+      "intake",
+      "bounded-exploration",
+      "plan"
+    ]
+  },
+  "dispatchLedger": [],
+  "decisions": [],
+  "risks": [],
+  "artifacts": [],
+  "updatedAt": "2026-09-23T09:10:38.342Z",
+  "defaultRuntime": "codex",
+  "defaultAgentRuntime": "codex",
+  "tags": [],
+  "createdAt": "2026-09-14T04:41:50.354Z",
+  "startedAt": "2026-09-14T04:41:50.354Z",
+  "closedAt": "2026-09-23T08:08:40.656Z",
+  "workItems": [],
+  "archiveEligibleAt": "2026-09-23T09:10:38.342Z"
+}

@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-blocked-bravo",
+  "status": "blocked",
+  "mode": "direct",
+  "defaultRuntime": "codex",
+  "defaultAgentRuntime": "codex",
+  "tier": "none",
+  "phase": "implement",
+  "gate": null,
+  "project": "default",
+  "tags": [],
+  "createdAt": "2026-01-01T00:00:00.000Z",
+  "startedAt": "2026-01-01T00:00:00.000Z",
+  "closedAt": null,
+  "updatedAt": "2026-01-01T00:00:00.000Z",
+  "activeQuestion": "Choose the next route strategy?",
+  "nextAction": "Blocked waiting for user.",
+  "acceptance": [],
+  "queues": {
+    "ready": [],
+    "running": [],
+    "blocked": [
+      {
+        "id": "task-blocked-bravo-step-1",
+        "reason": "Needs user decision on route strategy"
+      }
+    ],
+    "done": []
+  },
+  "workItems": [],
+  "dispatchLedger": [],
+  "decisions": [],
+  "risks": [],
+  "artifacts": [],
+  "group": "default",
+  "context": {
+    "handoff": {
+      "summary": "Waiting for user to decide route strategy.",
+      "unresolved": ["Choose the next route strategy"]
+    }
+  },
+  "links": {
+    "dependsOn": ["task-active-alpha"],
+    "blocks": [],
+    "related": []
+  }
+}

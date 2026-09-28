@@ -44,6 +44,15 @@ function normalizeType(type) {
   return value;
 }
 
+function normalizePresentation(type, presentation) {
+  const value = String(presentation || '').trim().toLowerCase();
+  if (!value) return '';
+  if (type !== 'markdown' || value !== 'billboard') {
+    throw new ComponentNodeError('Invalid component presentation; only Markdown nodes support billboard');
+  }
+  return value;
+}
+
 function generateNodeId(type, title) {
   return `component-${slugPart(title, type)}-${crypto.randomBytes(3).toString('hex')}`;
 }
@@ -198,7 +207,7 @@ function stateFor(projectRoot, type, payload, revision) {
   return state;
 }
 
-function nodeFor({ nodeId, type, title, position, revision }) {
+function nodeFor({ nodeId, type, title, position, revision, presentation }) {
   const statePath = relStatePath(nodeId);
   return {
     id: nodeId,
@@ -208,6 +217,7 @@ function nodeFor({ nodeId, type, title, position, revision }) {
     title,
     position,
     revision,
+    ...(presentation ? { presentation } : {}),
     statePath,
     stateRef: { path: statePath, revision },
     config: {
@@ -241,6 +251,7 @@ function validatedIndexNode(projectRoot, node) {
       title: normalizeTitle(node?.title, type),
       position: normalizePosition(node?.position),
       revision,
+      presentation: normalizePresentation(type, node?.presentation),
     }),
   };
 }
@@ -276,6 +287,7 @@ export function createComponentNode(projectRoot, payload = {}) {
     title,
     position: normalizePosition(payload.position),
     revision: 1,
+    presentation: normalizePresentation(type, payload.presentation),
   });
   const state = stateFor(projectRoot, type, payload, node.revision);
   const stateFile = absoluteStatePath(projectRoot, node.statePath, node.nodeId);
@@ -326,6 +338,9 @@ export function updateComponentNode(projectRoot, nodeId, payload = {}) {
     title: payload.title !== undefined ? normalizeTitle(payload.title, current.node.type) : current.node.title,
     position: payload.position !== undefined ? normalizePosition(payload.position) : current.node.position,
     revision: nextRevision,
+    presentation: payload.presentation !== undefined
+      ? normalizePresentation(current.node.type, payload.presentation)
+      : current.node.presentation,
   });
   const state = stateFor(projectRoot, current.node.type, {
     markdown: payload.markdown !== undefined ? payload.markdown : current.state.markdown,
@@ -600,6 +615,7 @@ export function componentStateRefs(projectRoot) {
       title: node.title,
       statePath: node.statePath,
       revision: node.revision,
+      ...(node.presentation ? { presentation: node.presentation } : {}),
       ...(current.state.file ? { file: current.state.file } : {}),
     };
   }
@@ -646,6 +662,7 @@ export function componentNodeStates(projectRoot) {
       type: node.type,
       title: node.title,
       revision: node.revision,
+      ...(node.presentation ? { presentation: node.presentation } : {}),
       observableInputs: portIds(inputs, inputsForType(node.type)),
       observableOutputs: portIds(outputs, outputsForType(node.type)),
       statePath: node.statePath,
@@ -672,6 +689,7 @@ export function componentNodeStatesForSnapshot(projectRoot) {
       type: node.type,
       title: node.title,
       revision: node.revision,
+      ...(node.presentation ? { presentation: node.presentation } : {}),
       observableInputs: portIds(inputs, inputsForType(node.type)),
       observableOutputs: portIds(outputs, outputsForType(node.type)),
       statePath: node.statePath,

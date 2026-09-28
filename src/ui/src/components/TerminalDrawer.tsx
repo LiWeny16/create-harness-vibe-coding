@@ -4,11 +4,12 @@ import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import { Terminal as XTerm } from '@xterm/xterm';
 import '@xterm/xterm/css/xterm.css';
-import { Clipboard, Copy, Eye, EyeOff, Maximize2, Minimize2, Square, Terminal, Trash2, Users, X } from 'lucide-react';
+import { Clipboard, Copy, Eye, EyeOff, Maximize2, MessagesSquare, Minimize2, Square, Terminal, Trash2, Users, X } from 'lucide-react';
 import { motion } from 'motion/react';
 import { apiJson, wsUrl } from '../api';
 import { useT } from '../i18n/index';
 import { useReducedMotion } from '../hooks/useReducedMotion';
+import ChatPanel from './chat/ChatPanel';
 import type { ControlRequest, Session } from '../types';
 import {
   announceTerminalInputOwner,
@@ -30,6 +31,40 @@ type Props = {
 type Point = { x: number; y: number };
 type Size = { width: number; height: number };
 type TerminalSize = { cols: number; rows: number };
+type Disposable = { dispose: () => void };
+type TerminalCacheEntry = {
+  terminal: XTerm;
+  fitAddon: FitAddon;
+  lastSeq: number;
+  hydrated: boolean;
+  lastResizeSent: TerminalSize;
+  webglDisposable: Disposable | null;
+  responseGuardDisposables: Disposable[];
+  attachmentDisposables: Disposable[];
+};
+
+// Keep the floating drawer's xterm instance alive while the drawer is closed.
+// This preserves its scrollback and lets the next mount fetch only unseen output.
+const terminalCache = new Map<string, TerminalCacheEntry>();
+
+function disposeCachedTerminal(sessionId: string) {
+  const entry = terminalCache.get(sessionId);
+  if (!entry) return;
+  terminalCache.delete(sessionId);
+  entry.attachmentDisposables.forEach(disposable => disposable.dispose());
+  entry.attachmentDisposables = [];
+  entry.responseGuardDisposables.forEach(disposable => disposable.dispose());
+  entry.webglDisposable?.dispose();
+  entry.fitAddon.dispose();
+  entry.terminal.dispose();
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('harness:sessions-changed', (event) => {
+    const detail = (event as CustomEvent<{ sessionId?: string; state?: string }>).detail;
+    if (detail?.sessionId && detail.state === 'deleted') disposeCachedTerminal(detail.sessionId);
+  });
+}
 
 // Bridge message envelope (src/wf-ui-server/bridge-store.mjs). Cooperation
 // audit entries are sourced from the bridge messages API, grouped by requestId
@@ -160,6 +195,7 @@ export default function TerminalDrawer({ sessionId, onClose }: Props) {
   const [attachMode, setAttachMode] = useState(true);
   const [sessionState, setSessionState] = useState<string>('starting');
   const [sessionMeta, setSessionMeta] = useState<Session | null>(null);
+  const [sessionMetaLoaded, setSessionMetaLoaded] = useState(false);
   const [ptyTitle, setPtyTitle] = useState('');
   const [open, setOpen] = useState(false);
   const [connected, setConnected] = useState(false);
@@ -189,8 +225,7 @@ export default function TerminalDrawer({ sessionId, onClose }: Props) {
   const reconnectTimerRef = useRef<number | null>(null);
   const pollingTimerRef = useRef<number | null>(null);
   const resizeSyncTimerRef = useRef<number | null>(null);
-  const lastResizeSentRef = useRef<TerminalSize>({ cols: 0, rows: 0 });
-  const lastSeqRef = useRef(0);
+  const fitDebounceTimerRef = useRef<number | null>(null);
   const dragRef = useRef<{ mode: 'move' | 'resize'; start: Point; position: Point; size: Size } | null>(null);
   // 全屏前的位置/尺寸，用于退出全屏时精确还原。
   const fullscreenRectRef = useRef<{ position: Point; size: Size } | null>(null);
@@ -243,24 +278,28 @@ export default function TerminalDrawer({ sessionId, onClose }: Props) {
     return false;
   }, []);
 
-  const schedulePtyResize = useCallback((next: TerminalSize, delay = 80) => {
+  const schedulePtyResize = useCallback((next: TerminalSize, delay = 50) => {
     if (!next.cols || !next.rows) return;
     if (resizeSyncTimerRef.current) window.clearTimeout(resizeSyncTimerRef.current);
     resizeSyncTimerRef.current = window.setTimeout(() => {
       const term = terminalRef.current;
       const target = term ? { cols: term.cols, rows: term.rows } : next;
-      const last = lastResizeSentRef.current;
+      const entry = sessionId ? terminalCache.get(sessionId) : undefined;
+      if (!entry) return;
+      const last = entry.lastResizeSent;
       if (target.cols === last.cols && target.rows === last.rows) return;
       if (sendMessage({ type: 'pty:resize', cols: target.cols, rows: target.rows })) {
-        lastResizeSentRef.current = target;
+        entry.lastResizeSent = target;
       }
     }, delay);
-  }, [sendMessage]);
+  }, [sendMessage, sessionId]);
 
   const fitAndSync = useCallback(() => {
     const term = terminalRef.current;
     const fit = fitAddonRef.current;
-    if (!term || !fit) return;
+    const host = terminalHostRef.current;
+    if (!term || !fit || !host || host.clientWidth <= 0 || host.clientHeight <= 0) return;
+    if (host.closest('[data-testid="terminal-window"]')?.getAttribute('aria-hidden') === 'true') return;
     try {
       fit.fit();
       const next = { cols: term.cols, rows: term.rows };
@@ -371,22 +410,24 @@ export default function TerminalDrawer({ sessionId, onClose }: Props) {
     }
   };
 
-  const loadHistory = useCallback(async (sid: string, { reset = true }: { reset?: boolean } = {}) => {
+  const loadHistory = useCallback(async (sid: string, options: { reset?: boolean } = {}) => {
     try {
-      const fromSeq = reset ? undefined : lastSeqRef.current + 1;
+      const entry = terminalCache.get(sid);
+      if (!entry) return;
+      const reset = options.reset ?? !entry.hydrated;
+      const fromSeq = reset ? undefined : entry.lastSeq + 1;
       const path = fromSeq
         ? `/api/terminals/${encodeURIComponent(sid)}/range?fromSeq=${fromSeq}`
         : `/api/terminals/${encodeURIComponent(sid)}/range?tail=800`;
       const range = await apiJson<{ entries: { seq?: number; stream?: string; data: string }[] }>(path);
-      if (activeSessionRef.current !== sid) return;
-      const term = terminalRef.current;
-      if (!term) return;
+      if (activeSessionRef.current !== sid || terminalCache.get(sid) !== entry) return;
+      const term = entry.terminal;
       if (reset) term.reset();
-      for (const entry of range.entries) {
-        lastSeqRef.current = Math.max(lastSeqRef.current, Number(entry.seq || 0));
-        if (entry.stream === 'stdin') continue;
-        term.write(String(entry.data || ''));
+      for (const rangeEntry of range.entries) {
+        entry.lastSeq = Math.max(entry.lastSeq, Number(rangeEntry.seq || 0));
+        if (rangeEntry.stream !== 'stdin') term.write(String(rangeEntry.data || ''));
       }
+      entry.hydrated = true;
     } catch {
       // New sessions may not have a transcript yet.
     }
@@ -412,6 +453,13 @@ export default function TerminalDrawer({ sessionId, onClose }: Props) {
         setConnected(true);
         ws.send(JSON.stringify({ type: 'control:attach-mode', attachMode: attachModeRef.current }));
         fitAndSync();
+        const entry = terminalCache.get(sid);
+        const term = entry?.terminal;
+        if (entry && term?.cols && term.rows) {
+          const size = { cols: term.cols, rows: term.rows };
+          ws.send(JSON.stringify({ type: 'pty:resize', ...size }));
+          entry.lastResizeSent = size;
+        }
         terminalRef.current?.focus();
       };
       ws.onmessage = (event) => {
@@ -419,7 +467,8 @@ export default function TerminalDrawer({ sessionId, onClose }: Props) {
           const msg = JSON.parse(event.data);
           if (msg.type === 'pty:data') {
             const seq = Number(msg.seq || 0);
-            if (Number.isFinite(seq) && seq > 0) lastSeqRef.current = Math.max(lastSeqRef.current, seq);
+            const entry = terminalCache.get(sid);
+            if (entry && Number.isFinite(seq) && seq > 0) entry.lastSeq = Math.max(entry.lastSeq, seq);
             terminalRef.current?.write(String(msg.data || ''));
           } else if (msg.type === 'session:state') {
             const nextState = displaySessionStatus(String(msg.state || 'unknown'));
@@ -485,13 +534,14 @@ export default function TerminalDrawer({ sessionId, onClose }: Props) {
     setOpen(true);
     setMinimized(false);
     setConnected(false);
-    setTerminalReady(Boolean(terminalRef.current));
+    setTerminalReady(false);
     setStopping(false);
     setAttachMode(true);
     attachModeRef.current = true;
     setSessionState('starting');
     sessionStateRef.current = 'starting';
     setSessionMeta(null);
+    setSessionMetaLoaded(false);
     setPtyTitle('');
     setControlRequest(null);
     setRespondingControl(null);
@@ -499,89 +549,142 @@ export default function TerminalDrawer({ sessionId, onClose }: Props) {
     auditLoadedRef.current = false;
     setAuditEntries([]);
     setAuditError('');
-    lastResizeSentRef.current = { cols: 0, rows: 0 };
-    lastSeqRef.current = 0;
     setPosition(initialPosition());
     setSize(initialSize());
   }, [sessionId]);
 
   useEffect(() => {
-    if (!open || !terminalHostRef.current || terminalRef.current) return;
-    const term = new XTerm({
-      cursorBlink: true,
-      convertEol: false,
-      disableStdin: false,
-      fontFamily: '"Cascadia Mono", "Cascadia Code", Consolas, "SFMono-Regular", Menlo, monospace',
-      fontSize: 13,
-      lineHeight: 1.15,
-      scrollback: 8000,
-      theme: {
-        background: '#0b0d10',
-        foreground: '#e5e7eb',
-        cursor: '#f9fafb',
-        selectionBackground: '#374151',
-        black: '#111827',
-        red: '#f87171',
-        green: '#86efac',
-        yellow: '#fde68a',
-        blue: '#93c5fd',
-        magenta: '#d8b4fe',
-        cyan: '#67e8f9',
-        white: '#f9fafb',
-        brightBlack: '#6b7280',
-        brightRed: '#fca5a5',
-        brightGreen: '#bbf7d0',
-        brightYellow: '#fef3c7',
-        brightBlue: '#bfdbfe',
-        brightMagenta: '#e9d5ff',
-        brightCyan: '#a5f3fc',
-        brightWhite: '#ffffff',
-      },
+    if (!sessionId) {
+      setSessionMetaLoaded(true);
+      return;
+    }
+    let cancelled = false;
+    loadSessionMeta(sessionId).finally(() => {
+      if (!cancelled && activeSessionRef.current === sessionId) setSessionMetaLoaded(true);
     });
+    return () => { cancelled = true; };
+  }, [loadSessionMeta, sessionId]);
+
+  useEffect(() => {
+    const host = terminalHostRef.current;
+    if (!open || !sessionId || !sessionMetaLoaded || sessionMeta?.uiMode === 'chat' || !host) return;
+
+    let entry = terminalCache.get(sessionId);
+    if (!entry) {
+      const term = new XTerm({
+        cursorBlink: true,
+        convertEol: false,
+        disableStdin: false,
+        fontFamily: '"Cascadia Mono", "Cascadia Code", Consolas, "SFMono-Regular", Menlo, monospace',
+        fontSize: 13,
+        lineHeight: 1.15,
+        scrollback: 8000,
+        theme: {
+          background: '#0b0d10',
+          foreground: '#e5e7eb',
+          cursor: '#f9fafb',
+          selectionBackground: '#374151',
+          black: '#111827',
+          red: '#f87171',
+          green: '#86efac',
+          yellow: '#fde68a',
+          blue: '#93c5fd',
+          magenta: '#d8b4fe',
+          cyan: '#67e8f9',
+          white: '#f9fafb',
+          brightBlack: '#6b7280',
+          brightRed: '#fca5a5',
+          brightGreen: '#bbf7d0',
+          brightYellow: '#fef3c7',
+          brightBlue: '#bfdbfe',
+          brightMagenta: '#e9d5ff',
+          brightCyan: '#a5f3fc',
+          brightWhite: '#ffffff',
+        },
+      });
+      const fit = new FitAddon();
+      term.loadAddon(fit);
+      term.loadAddon(new WebLinksAddon());
+      term.open(host);
+      entry = {
+        terminal: term,
+        fitAddon: fit,
+        lastSeq: 0,
+        hydrated: false,
+        lastResizeSent: { cols: 0, rows: 0 },
+        webglDisposable: loadTerminalWebglAddon(term),
+        responseGuardDisposables: installTerminalResponseGuards(term),
+        attachmentDisposables: [],
+      };
+      terminalCache.set(sessionId, entry);
+    } else if (entry.terminal.element?.parentElement !== host && entry.terminal.element) {
+      // XTerm.open() owns internal services and can only run once. Moving its
+      // existing root preserves renderer state and scrollback across drawer mounts.
+      host.appendChild(entry.terminal.element);
+    }
+
+    const term = entry.terminal;
+    const fit = entry.fitAddon;
     term.attachCustomKeyEventHandler((event) => (
       terminalControlShouldHandleKey(event, attachModeRef.current && isLiveState(sessionStateRef.current), term)
     ));
-    const fit = new FitAddon();
-    term.loadAddon(fit);
-    term.loadAddon(new WebLinksAddon());
-    term.open(terminalHostRef.current);
-    const webglDisposable = loadTerminalWebglAddon(term);
-    const responseGuardDisposables = installTerminalResponseGuards(term);
-    const titleDisposable = term.onTitleChange(title => setPtyTitle(title));
-    const dataDisposable = term.onData(data => {
-      const input = stripTerminalResponseInput(data);
-      if (input) writeInput(input);
-    });
-    const resizeDisposable = term.onResize(next => {
-      setTerminalSize(next);
-      schedulePtyResize(next);
-    });
+    term.options.disableStdin = !attachModeRef.current || !isLiveState(sessionStateRef.current);
+    entry.attachmentDisposables.forEach(disposable => disposable.dispose());
+    entry.attachmentDisposables = [
+      term.onTitleChange(nextTitle => setPtyTitle(nextTitle)),
+      term.onData(data => {
+        const input = stripTerminalResponseInput(data);
+        if (input) writeInput(input);
+      }),
+      term.onResize(next => {
+        if (activeSessionRef.current !== sessionId) return;
+        setTerminalSize(next);
+        schedulePtyResize(next);
+      }),
+    ];
     terminalRef.current = term;
     fitAddonRef.current = fit;
     setTerminalReady(true);
     requestAnimationFrame(fitAndSync);
 
-    const observer = new ResizeObserver(() => fitAndSync());
-    observer.observe(terminalHostRef.current);
+    const observer = new ResizeObserver(() => {
+      if (fitDebounceTimerRef.current) window.clearTimeout(fitDebounceTimerRef.current);
+      fitDebounceTimerRef.current = window.setTimeout(fitAndSync, 50);
+    });
+    observer.observe(host);
 
     return () => {
       observer.disconnect();
-      titleDisposable.dispose();
-      dataDisposable.dispose();
-      resizeDisposable.dispose();
-      responseGuardDisposables.forEach(disposable => disposable.dispose());
-      webglDisposable?.dispose();
-      fit.dispose();
+      if (fitDebounceTimerRef.current) window.clearTimeout(fitDebounceTimerRef.current);
       if (resizeSyncTimerRef.current) window.clearTimeout(resizeSyncTimerRef.current);
-      term.dispose();
-      terminalRef.current = null;
-      fitAddonRef.current = null;
-      setTerminalReady(false);
+      entry?.attachmentDisposables.forEach(disposable => disposable.dispose());
+      if (entry) entry.attachmentDisposables = [];
+      if (term.element?.parentElement === host) term.element.remove();
+      if (terminalRef.current === term) {
+        terminalRef.current = null;
+        fitAddonRef.current = null;
+      }
+      if (activeSessionRef.current === sessionId) activeSessionRef.current = null;
     };
-  }, [fitAndSync, open, schedulePtyResize, writeInput]);
+  }, [fitAndSync, open, schedulePtyResize, sessionId, sessionMeta?.uiMode, sessionMetaLoaded, writeInput]);
 
   useEffect(() => {
-    if (!sessionId || !terminalReady || !terminalRef.current) return;
+    if (!sessionId) return;
+    const onDeleted = (event: Event) => {
+      const detail = (event as CustomEvent<{ sessionId?: string; state?: string }>).detail;
+      if (detail?.sessionId !== sessionId || detail.state !== 'deleted') return;
+      setOpen(false);
+      wsRef.current?.close();
+      if (reconnectTimerRef.current) window.clearTimeout(reconnectTimerRef.current);
+      if (pollingTimerRef.current) window.clearInterval(pollingTimerRef.current);
+      onClose();
+    };
+    window.addEventListener('harness:sessions-changed', onDeleted);
+    return () => window.removeEventListener('harness:sessions-changed', onDeleted);
+  }, [onClose, sessionId]);
+
+  useEffect(() => {
+    if (!sessionId || !sessionMetaLoaded || sessionMeta?.uiMode === 'chat' || !terminalReady || !terminalRef.current) return;
     let cancelled = false;
     (async () => {
       await loadSessionMeta(sessionId);
@@ -598,7 +701,7 @@ export default function TerminalDrawer({ sessionId, onClose }: Props) {
       if (pollingTimerRef.current) window.clearInterval(pollingTimerRef.current);
       if (resizeSyncTimerRef.current) window.clearTimeout(resizeSyncTimerRef.current);
     };
-  }, [connectWs, loadHistory, loadSessionMeta, sessionId, setAttach, startPollingFallback, terminalReady]);
+  }, [connectWs, loadHistory, loadSessionMeta, sessionId, sessionMeta?.uiMode, sessionMetaLoaded, setAttach, startPollingFallback, terminalReady]);
 
   const clampPosition = (next: Point, nextSize = size): Point => ({
     x: Math.min(Math.max(8, next.x), Math.max(8, window.innerWidth - Math.min(240, nextSize.width))),
@@ -730,7 +833,6 @@ export default function TerminalDrawer({ sessionId, onClose }: Props) {
       height: Math.min(Math.max(340, drag.size.height + dy), Math.max(360, window.innerHeight - drag.position.y - 12)),
     };
     setSize(nextSize);
-    requestAnimationFrame(fitAndSync);
   };
 
   const endPointer = (event: PointerEvent<HTMLDivElement>) => {
@@ -766,7 +868,6 @@ export default function TerminalDrawer({ sessionId, onClose }: Props) {
       }
       return next;
     });
-    requestAnimationFrame(() => fitAndSync());
   }, [position, size, fitAndSync]);
 
   // 全屏期间跟随窗口尺寸变化；Esc 退出全屏（不冒泡到画布）。
@@ -777,7 +878,6 @@ export default function TerminalDrawer({ sessionId, onClose }: Props) {
         width: Math.max(500, window.innerWidth - FULLSCREEN_MARGIN * 2),
         height: Math.max(360, window.innerHeight - FULLSCREEN_MARGIN * 2),
       });
-      requestAnimationFrame(() => fitAndSync());
     };
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -790,7 +890,6 @@ export default function TerminalDrawer({ sessionId, onClose }: Props) {
           setPosition(clampPosition(rect.position, rect.size));
           setSize(rect.size);
         }
-        requestAnimationFrame(() => fitAndSync());
       }
     };
     window.addEventListener('resize', onResize);
@@ -808,6 +907,51 @@ export default function TerminalDrawer({ sessionId, onClose }: Props) {
   }, [fullscreen]);
 
   if (!open) return null;
+
+  if (sessionMetaLoaded && sessionMeta?.uiMode === 'chat') {
+    return (
+      <>
+        {minimized && (
+          <button
+            data-testid="terminal-minimized"
+            onClick={restoreTerminal}
+            style={{ position: 'fixed', left: 16, bottom: 10, zIndex: 'var(--wf-z-panel)', width: 390, maxWidth: 'calc(100vw - 32px)', height: 36, display: 'flex', alignItems: 'center', gap: 8, padding: '0 12px', border: '1px solid var(--border)', borderRadius: 'var(--radius)', background: 'rgba(255,255,255,0.96)', boxShadow: '0 10px 28px rgba(0,0,0,0.16)', color: 'var(--fg)', textAlign: 'left' }}
+          >
+            <MessagesSquare size={13} />
+            <span style={{ fontSize: 11, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{title}</span>
+            <span style={{ marginLeft: 'auto', fontSize: 10, color: stateColor(sessionState, connected) }}>{displaySessionStatus(sessionState)}</span>
+          </button>
+        )}
+        <motion.div
+          data-testid="chat-drawer"
+          data-fullscreen={fullscreen ? 'true' : 'false'}
+          initial={reducedMotion ? undefined : { opacity: 0, scale: 0.98 }}
+          animate={{ opacity: minimized ? 0 : 1, scale: minimized ? 0.98 : 1 }}
+          aria-hidden={minimized}
+          onPointerMove={handlePointerMove}
+          onPointerUp={endPointer}
+          onPointerCancel={endPointer}
+          style={{ position: 'fixed', left: position.x, top: position.y, width: size.width, height: size.height, zIndex: 'var(--wf-z-panel)', display: 'flex', flexDirection: 'column', border: '1px solid var(--border)', borderRadius: 'var(--radius)', background: 'var(--bg)', boxShadow: '0 24px 80px rgba(0,0,0,0.22)', overflow: 'hidden', pointerEvents: minimized ? 'none' : 'auto', visibility: minimized ? 'hidden' : 'visible' }}
+        >
+          <div onPointerDown={startMove} style={{ height: 42, display: 'flex', alignItems: 'center', padding: '0 10px', borderBottom: '1px solid var(--border)', gap: 8, background: 'rgba(255,255,255,0.96)', cursor: 'move', flexShrink: 0 }}>
+            <MessagesSquare size={13} />
+            <span data-testid="terminal-session-id" title={sessionId || ''} style={{ fontSize: 11, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{title}</span>
+            <span style={{ fontSize: 10, color: stateColor(sessionState, connected), flexShrink: 0 }}>{displaySessionStatus(sessionState)}</span>
+            <span style={{ flex: 1 }} />
+            <button data-testid="terminal-fullscreen-toggle" aria-pressed={fullscreen ? 'true' : 'false'} title={fullscreen ? t('Exit fullscreen') : t('Fullscreen')} onClick={toggleFullscreen} style={{ color: fullscreen ? 'var(--success)' : 'var(--muted)', display: 'grid', placeItems: 'center', width: 26, height: 26, border: '1px solid var(--border)', borderRadius: 'var(--radius)' }}>
+              {fullscreen ? <Minimize2 size={11} /> : <Maximize2 size={11} />}
+            </button>
+            <button title={t('Minimize chat')} onClick={minimizeTerminal} style={{ color: 'var(--muted)', display: 'grid', placeItems: 'center', width: 26, height: 26, border: '1px solid var(--border)', borderRadius: 'var(--radius)' }}><Minimize2 size={11} /></button>
+            <button data-testid="terminal-stop" title={t('Stop session')} onClick={stopSession} disabled={stopping} style={{ color: 'var(--danger)', display: 'grid', placeItems: 'center', width: 26, height: 26, border: '1px solid var(--border)', borderRadius: 'var(--radius)', opacity: stopping ? 0.45 : 1 }}><Square size={11} /></button>
+            <button title={t('Close chat')} onClick={close} style={{ color: 'var(--muted)', display: 'grid', placeItems: 'center', width: 26, height: 26, border: '1px solid var(--border)', borderRadius: 'var(--radius)' }}><X size={12} /></button>
+          </div>
+          <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+            {sessionId && <ChatPanel sessionId={sessionId} live={isLiveState(sessionState)} canSendInput={isLiveState(sessionState)} />}
+          </div>
+        </motion.div>
+      </>
+    );
+  }
 
   return (
     <>

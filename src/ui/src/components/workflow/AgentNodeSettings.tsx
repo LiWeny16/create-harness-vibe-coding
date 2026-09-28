@@ -7,7 +7,13 @@ import type { WorkflowRuntimeNode } from './nodeRuntimeClient';
 import NodeSettingsShell from './NodeSettingsShell';
 import { executeNodeActionResponse, patchNodeSettings } from './nodeRuntimeClient';
 
-type Props = { node: WorkflowRuntimeNode; onClose: () => void; onDelete: () => void; loading?: boolean };
+type Props = {
+  node: WorkflowRuntimeNode;
+  onClose: () => void;
+  onDelete: () => void;
+  onUiModeChange?: (mode: 'pty' | 'chat') => void;
+  loading?: boolean;
+};
 
 // Role profile identity fields (agent-team-cooperation-spec §3.1): canonical
 // roleTitle vocabulary plus free-form roles preserved as-is.
@@ -44,7 +50,7 @@ function textFromResult(result: unknown) {
   return JSON.stringify(result, null, 2);
 }
 
-export default function AgentNodeSettings({ node, onClose, onDelete, loading = false }: Props) {
+export default function AgentNodeSettings({ node, onClose, onDelete, onUiModeChange, loading = false }: Props) {
   const t = useT();
   const settingsValues = node.settings?.values || {};
   // Legacy sessions without identity fields fall back to the spec §3.2
@@ -66,6 +72,8 @@ export default function AgentNodeSettings({ node, onClose, onDelete, loading = f
   const [output, setOutput] = useState('');
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
+  const [uiMode, setUiMode] = useState<'pty' | 'chat'>(settingsValues.uiMode === 'chat' ? 'chat' : 'pty');
+  const [savingUiMode, setSavingUiMode] = useState(false);
 
   // The settings shell mounts immediately with a loading preview node and
   // replaces it with the runtime node after the GET resolves.  Keep the form
@@ -80,6 +88,7 @@ export default function AgentNodeSettings({ node, onClose, onDelete, loading = f
     setResponsibility(String(values.responsibility || ''));
     setCapabilitiesText(capabilitiesToText(values.capabilities));
     setSubagentMode(values.subagentMode === 'wf-node-subagents' ? 'wf-node-subagents' : 'built-in-subagents');
+    setUiMode(values.uiMode === 'chat' ? 'chat' : 'pty');
   }, [loading, node.nodeId, node.settings?.revision]);
 
   // The snapshot's subagentModes catalog drives the dropdown options.
@@ -112,6 +121,21 @@ export default function AgentNodeSettings({ node, onClose, onDelete, loading = f
       setIdentityError(e?.message || t('Save failed'));
     } finally {
       setSavingIdentity(false);
+    }
+  };
+
+  const changeUiMode = async (next: 'pty' | 'chat') => {
+    if (savingUiMode || next === uiMode) return;
+    setSavingUiMode(true);
+    setError('');
+    try {
+      await patchNodeSettings(node.nodeId, { uiMode: next });
+      setUiMode(next);
+      onUiModeChange?.(next);
+    } catch (e: any) {
+      setError(e?.message || t('Could not save session surface'));
+    } finally {
+      setSavingUiMode(false);
     }
   };
 
@@ -156,6 +180,28 @@ export default function AgentNodeSettings({ node, onClose, onDelete, loading = f
       )}
       {!loading && (
       <>
+      <div className="workflow-node-settings-section">
+        <div className="workflow-node-settings-label">{t('Session surface')}</div>
+        <div className="workflow-node-settings-segmented" role="group" aria-label={t('Session surface')} style={{ marginTop: 6 }}>
+          <button
+            type="button"
+            aria-pressed={uiMode === 'pty'}
+            onClick={() => void changeUiMode('pty')}
+            disabled={savingUiMode}
+          >
+            <Terminal size={12} /> {t('Terminal')}
+          </button>
+          <button
+            type="button"
+            aria-pressed={uiMode === 'chat'}
+            onClick={() => void changeUiMode('chat')}
+            disabled={savingUiMode}
+          >
+            <Send size={12} /> {t('Chat')}
+          </button>
+        </div>
+      </div>
+
       <div className="workflow-node-settings-section">
         <div className="workflow-node-settings-grid">
           <div>

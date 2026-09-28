@@ -45,6 +45,7 @@ import { registerPtyProcess, unregisterPtyProcess } from '../ws-terminal.mjs';
 import { persistSession } from '../terminal-store.mjs';
 import { connectNodes, updateEdge } from '../workflow-graph-store.mjs';
 import { loadWorkflowGraphMap, writeWorkflowGraphMap } from '../a2a-store.mjs';
+import { encodeClaudeProjectDir } from '../claude-transcript-materializer.mjs';
 
 // ── pty-adapter fixture (deterministic spawn path) ──────────────────────────
 // Replaces pty-adapter.mjs for this process AND for the helper server
@@ -98,6 +99,8 @@ const { recorder } = await import(fixtureUrl);
 // (runtimeInfo.path + launchable) so spawnPty runs for real (through the
 // fixture) in the in-process tests and in the helper server subprocess.
 const ORIGINAL_PATH = process.env.PATH || '';
+const ORIGINAL_USERPROFILE = process.env.USERPROFILE;
+const ORIGINAL_HOME = process.env.HOME;
 let runtimeStubDir = '';
 
 before(() => {
@@ -110,10 +113,16 @@ before(() => {
     fs.chmodSync(stub, 0o755);
   }
   process.env.PATH = `${runtimeStubDir}${path.delimiter}${ORIGINAL_PATH}`;
+  process.env.USERPROFILE = runtimeStubDir;
+  process.env.HOME = runtimeStubDir;
 });
 
 after(() => {
   process.env.PATH = ORIGINAL_PATH;
+  if (ORIGINAL_USERPROFILE === undefined) delete process.env.USERPROFILE;
+  else process.env.USERPROFILE = ORIGINAL_USERPROFILE;
+  if (ORIGINAL_HOME === undefined) delete process.env.HOME;
+  else process.env.HOME = ORIGINAL_HOME;
   for (const dir of [runtimeStubDir, fixtureDir]) {
     try { fs.rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); } catch { /* best effort */ }
   }
@@ -196,6 +205,12 @@ function seedAgent(root, { nodeId, sessionId, agentKind = 'subagent', role = 'Ag
     ...(parentAgentId ? { parentAgentId } : {}),
     ...(parentNodeId ? { parentNodeId } : {}),
   });
+}
+
+function seedClaudeTranscript(root, sessionId) {
+  const transcriptDir = path.join(runtimeStubDir, '.claude', 'projects', encodeClaudeProjectDir(root));
+  fs.mkdirSync(transcriptDir, { recursive: true });
+  fs.writeFileSync(path.join(transcriptDir, `${sessionId}.jsonl`), '{}\n', 'utf8');
 }
 
 async function waitFor(fn, { timeout = 5000, step = 25 } = {}) {
@@ -354,6 +369,7 @@ describe('W2: depth gate, resume wiring, dock actions, updateEdge route', () => 
 
     it('R1 - start with a persisted previous session defaults to resume with the runtime args', async () => {
       seedAgent(root, { nodeId: 'r1-main', sessionId: 'r1-s1', runtime: 'claude', agentKind: 'main', role: 'Main Agent', status: 'exited' });
+      seedClaudeTranscript(root, 'r1-s1');
       const res = await startNode('r1-main');
       assert.equal(res.status, 200, JSON.stringify(res.body));
       assert.equal(res.body.result.alreadyRunning, false);
@@ -379,6 +395,7 @@ describe('W2: depth gate, resume wiring, dock actions, updateEdge route', () => 
 
     it('R4 - restart defaults to resume=true and carries the replaced session id', async () => {
       seedAgent(root, { nodeId: 'r4-main', sessionId: 'r4-s1', runtime: 'claude', agentKind: 'main', role: 'Main Agent', status: 'running' });
+      seedClaudeTranscript(root, 'r4-s1');
       const res = await jsonRequest(baseUrl, `/api/workflow/nodes/${encodeURIComponent('r4-main')}/actions/agent.restart`, {
         method: 'POST',
         body: { deferPtySpawn: true },

@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-01-01T00:00:00.000Z",
+  "sourceOfTruth": "Harness/tasks/*/STATE.json",
+  "activeTask": "task-active-alpha",
+  "resumeTask": {
+    "taskId": "task-active-alpha",
+    "mode": "direct",
+    "status": "active",
+    "project": "default"
+  },
+  "resumeRequired": true,
+  "projects": {
+    "default": [
+      "task-active-alpha",
+      "task-blocked-bravo",
+      "task-closed-charlie"
+    ]
+  },
+  "tasks": [
+    {
+      "id": "task-active-alpha",
+      "project": "default",
+      "group": "default",
+      "title": "Active task for routing",
+      "status": "active",
+      "mode": "direct",
+      "wfManaged": false,
+      "resumeRequired": false,
+      "phase": "plan",
+      "tags": [],
+      "createdAt": "2026-01-01T00:00:00.000Z",
+      "startedAt": "2026-01-01T00:00:00.000Z",
+      "updatedAt": "2026-01-01T00:00:00.000Z",
+      "closedAt": null,
+      "dependsOn": [],
+      "blocks": [],
+      "path": "Harness/tasks/task-active-alpha"
+    },
+    {
+      "id": "task-blocked-bravo",
+      "project": "default",
+      "group": "default",
+      "title": "Blocked task for routing",
+      "status": "blocked",
+      "mode": "direct",
+      "wfManaged": false,
+      "resumeRequired": false,
+      "phase": "implement",
+      "tags": [],
+      "createdAt": "2026-01-01T00:00:00.000Z",
+      "startedAt": "2026-01-01T00:00:00.000Z",
+      "updatedAt": "2026-01-01T00:00:00.000Z",
+      "closedAt": null,
+      "dependsOn": ["task-active-alpha"],
+      "blocks": [],
+      "path": "Harness/tasks/task-blocked-bravo"
+    },
+    {
+      "id": "task-closed-charlie",
+      "project": "default",
+      "group": "default",
+      "title": "Closed task for routing",
+      "status": "closed",
+      "mode": "direct",
+      "wfManaged": false,
+      "resumeRequired": false,
+      "phase": "verified",
+      "tags": [],
+      "createdAt": "2026-01-01T00:00:00.000Z",
+      "startedAt": "2026-01-01T00:00:00.000Z",
+      "updatedAt": "2026-01-01T00:00:00.000Z",
+      "closedAt": "2026-01-02T00:00:00.000Z",
+      "dependsOn": [],
+      "blocks": [],
+      "path": "Harness/tasks/task-closed-charlie"
+    }
+  ]
+}
