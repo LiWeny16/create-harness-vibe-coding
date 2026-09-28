@@ -219,3 +219,10 @@ test('AC-001: main launcher package packs without any native binary', () => {
   assert.ok(paths.includes('bin/wf.js'), 'launcher bin must ship');
   assert.equal(paths.some((p) => /(^|\/)wf(\.exe)?$/.test(p)), false, 'no native binary may ship in the main package');
 });
+
+test('AC-002: Windows package jobs launch npm through a shell for npm.cmd', async () => {
+  const { npmShellOptions } = await import(releaseScriptUrl);
+
+  assert.deepEqual(npmShellOptions('win32'), { shell: true });
+  assert.deepEqual(npmShellOptions('linux'), { shell: false });
+});

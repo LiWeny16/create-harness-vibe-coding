@@ -36,6 +36,11 @@ export const PLATFORMS = [
   { dir: 'wf-cli-win32-x64-msvc', launcher: 'win32-x64', os: 'win32', cpu: 'x64', target: 'x86_64-pc-windows-msvc', ext: '.exe' },
 ];
 
+export function npmShellOptions(platform = process.platform) {
+  // Windows exposes npm through npm.cmd, which requires a shell to launch.
+  return { shell: platform === 'win32' };
+}
+
 const SCOPE = '@zingspark';
 
 function read(rel) {
@@ -177,7 +182,11 @@ export function pack({ platform }) {
   const dir = path.join(ROOT, 'packages', p.dir);
   const binary = path.join(dir, `wf${p.ext}`);
   if (!fs.existsSync(binary)) return fail([`binary not staged in ${dir}: wf${p.ext}`]);
-  const tgz = execFileSync('npm', ['pack'], { cwd: dir, encoding: 'utf8' }).trim().split('\n').pop();
+  const tgz = execFileSync('npm', ['pack'], {
+    cwd: dir,
+    encoding: 'utf8',
+    ...npmShellOptions(),
+  }).trim().split('\n').pop();
   ok(`pack: ${path.join(dir, tgz)}`);
 }
 
@@ -200,7 +209,11 @@ export function verifyArtifacts({ dist }) {
 
 export function packMain({ dryRun = true } = {}) {
   const args = dryRun ? ['pack', '--dry-run'] : ['pack'];
-  const out = execFileSync('npm', args, { cwd: path.join(ROOT, 'packages', 'wf-cli'), encoding: 'utf8' });
+  const out = execFileSync('npm', args, {
+    cwd: path.join(ROOT, 'packages', 'wf-cli'),
+    encoding: 'utf8',
+    ...npmShellOptions(),
+  });
   ok(`pack-main: ${dryRun ? 'dry-run ' : ''}npm pack succeeded for ${mainName()}.`);
 }
 
