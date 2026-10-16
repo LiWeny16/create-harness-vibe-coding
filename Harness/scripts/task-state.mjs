@@ -21,7 +21,7 @@ const progressPath = path.join(harnessDir, 'PROGRESS.md');
 const args = process.argv.slice(2);
 const command = args[0] && !args[0].startsWith('--') ? args[0] : 'help';
 
-const OUTER_TASK_CAP = 5;
+const LEGACY_ARCHIVE_KEEP_DEFAULT = 0;
 const RESERVED = new Set(['_template', '_archive', 'continuous']);
 const TASK_ID_RE = /^task-[a-z]+(-[a-z0-9]+){1,4}$/;
 const CANONICAL_STATUSES = new Set(['active', 'blocked', 'closed']);
@@ -295,7 +295,7 @@ Commands:
   open [--project <project>] [--status <s>] [--json]
                                         List all active/blocked tasks; multiple open tasks are valid.
 
-Archive defaults to dry-run and keeps ${OUTER_TASK_CAP} non-archived task capsules.`,
+Legacy archive defaults to dry-run and previews all eligible tasks; --keep only applies when explicitly supplied. Prefer safe auto-archive.`,
   }, 0);
 }
 
@@ -723,15 +723,10 @@ function validateState({ strict = false } = {}) {
     }
   }
 
-  if (tasks.length > OUTER_TASK_CAP) {
-    issue(`Harness/tasks/ has ${tasks.length} outer task capsules (cap ${OUTER_TASK_CAP}); remind the user to run $wf-task-archive when they want to archive completed tasks`);
-  }
-
   return {
     ok: errors.length === 0,
     command: 'validate',
     activeTask: rootProgress.activeTask,
-    outerTaskCap: OUTER_TASK_CAP,
     taskCount: tasks.length,
     errors,
     warnings,
@@ -875,7 +870,7 @@ function renderRootProgress(existingText, activeTask, rows) {
   const activeSection = `## Active Task\n\n- ${activeTask || 'None'}`;
   const taskIndex = `## Task Index
 
-Non-archived tasks only (max ${OUTER_TASK_CAP}). Archived tasks are listed in \`Harness/tasks/_archive/INDEX.md\` (see \`Harness/specs/protocols/TASK_ARCHIVE.md\`).
+Non-archived task capsules. Archived tasks are listed in \`Harness/tasks/_archive/INDEX.md\` (see \`Harness/specs/protocols/TASK_ARCHIVE.md\`).
 
 | ID | Goal | Phase | Closed |
 |----|------|-------|--------|
@@ -1576,7 +1571,7 @@ function runTransition() {
 }
 
 function buildArchivePlan() {
-  const keepValue = Number.parseInt(flagValue('--keep', String(OUTER_TASK_CAP)), 10);
+  const keepValue = Number.parseInt(flagValue('--keep', String(LEGACY_ARCHIVE_KEEP_DEFAULT)), 10);
   if (!Number.isInteger(keepValue) || keepValue < 0) {
     return { ok: false, command: 'archive', errors: ['--keep must be a non-negative integer'], warnings: [], results: [] };
   }

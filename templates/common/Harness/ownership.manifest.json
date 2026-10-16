@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "generator": "0.9.6",
+  "generator": "0.9.7",
   "source": "https://raw.githubusercontent.com/LiWeny16/create-harness-vibe-coding/main/templates/common/",
-  "generated": "2026-09-28T11:27:47.338Z",
+  "generated": "2026-10-16T11:19:55.457Z",
   "preserve": [
     "Harness/PROGRESS.md",
     "Harness/tasks/**",
@@ -13,7 +13,7 @@
     "Harness/extensions/lock.json",
     "Harness/extensions/config.json",
     "Harness/architecture.md",
-    "Harness/project/architecture.md",
+    "Harness/project/**",
     "README.md",
     "package.json",
     "package-lock.json",
@@ -935,6 +935,21 @@
       "overwrite": "safe"
     },
     {
+      "path": "Harness/schemas/project-record-v1.schema.json",
+      "kind": "config",
+      "overwrite": "safe"
+    },
+    {
+      "path": "Harness/schemas/project-v1.schema.json",
+      "kind": "config",
+      "overwrite": "safe"
+    },
+    {
+      "path": "Harness/schemas/workspace-index-v1.schema.json",
+      "kind": "config",
+      "overwrite": "safe"
+    },
+    {
       "path": "Harness/scripts/README.md",
       "kind": "script",
       "overwrite": "safe"
@@ -980,6 +995,16 @@
       "overwrite": "safe"
     },
     {
+      "path": "Harness/scripts/lib/project-import.mjs",
+      "kind": "script",
+      "overwrite": "safe"
+    },
+    {
+      "path": "Harness/scripts/lib/project-store.mjs",
+      "kind": "script",
+      "overwrite": "safe"
+    },
+    {
       "path": "Harness/scripts/lib/research-policy.mjs",
       "kind": "script",
       "overwrite": "safe"
@@ -1001,6 +1026,11 @@
     },
     {
       "path": "Harness/scripts/memory-context.mjs",
+      "kind": "script",
+      "overwrite": "safe"
+    },
+    {
+      "path": "Harness/scripts/project-state.mjs",
       "kind": "script",
       "overwrite": "safe"
     },

@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
   "taskId": "task-web-terminal-smoothing",
-  "status": "closed",
+  "status": "archived",
   "mode": "direct",
   "defaultRuntime": "codex",
   "defaultAgentRuntime": "codex",
   "tier": "none",
-  "phase": "closeout",
+  "phase": "archived",
   "gate": null,
   "project": "default",
   "tags": [
@@ -15,7 +15,7 @@
   "createdAt": "2026-09-28T04:53:04.217Z",
   "startedAt": "2026-09-28T04:53:04.217Z",
   "closedAt": "2026-09-28T08:04:41.884Z",
-  "updatedAt": "2026-09-28T08:04:41.884Z",
+  "updatedAt": "2026-10-16T10:13:37.826Z",
   "activeQuestion": null,
   "nextAction": "Terminal lifecycle and resize behavior are verified with Playwright and wf-ui APIs; implementation is complete.",
   "acceptance": [],
@@ -35,5 +35,6 @@
     "dependsOn": [],
     "blocks": [],
     "related": []
-  }
+  },
+  "archiveEligibleAt": "2026-10-16T10:13:37.826Z"
 }

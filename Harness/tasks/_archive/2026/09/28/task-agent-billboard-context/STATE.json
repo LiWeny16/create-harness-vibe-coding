@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
   "taskId": "task-agent-billboard-context",
-  "status": "closed",
+  "status": "archived",
   "mode": "direct",
   "defaultRuntime": "codex",
   "defaultAgentRuntime": "codex",
   "tier": "none",
-  "phase": "closeout",
+  "phase": "archived",
   "gate": null,
   "project": "create-harness-vibe-coding",
   "tags": [
@@ -17,7 +17,7 @@
   "createdAt": "2026-09-28T07:17:42.851Z",
   "startedAt": "2026-09-28T07:17:42.851Z",
   "closedAt": "2026-09-28T08:04:41.479Z",
-  "updatedAt": "2026-09-28T08:04:41.479Z",
+  "updatedAt": "2026-10-16T10:13:37.787Z",
   "activeQuestion": null,
   "nextAction": "All four Billboard acceptance criteria passed; shared context implementation is complete.",
   "acceptance": [],
@@ -37,5 +37,6 @@
     "dependsOn": [],
     "blocks": [],
     "related": []
-  }
+  },
+  "archiveEligibleAt": "2026-10-16T10:13:37.787Z"
 }

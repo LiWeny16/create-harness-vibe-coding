@@ -153,7 +153,7 @@ const PRESERVE_PATTERNS = [
   /^Harness\/research\/research-results\.md$/,
   /^Harness\/extensions\/(?:lock|config)\.json$/,
   /^Harness\/architecture\.md$/,
-  /^Harness\/project\/architecture\.md$/,
+  /^Harness\/project\//,
   /^README\.md$/,
   /^\.gitignore$/,
   /^package\.json$/,

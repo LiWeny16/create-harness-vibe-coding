@@ -512,6 +512,31 @@ test('generated scaffold stores harness-owned payload under root Harness directo
   assert.match(wf, /\.claude\/agents\//);
   assert.match(wf, /WF Tiers/);
 
+  const wfReview = readRel(targetDir, '.claude/skills/wf-review/SKILL.md');
+  assert.match(wfReview, /Method-neutral review contract/);
+  assert.match(wfReview, /Independent first pass/);
+  assert.match(wfReview, /Targeted challenge/);
+  assert.match(wfReview, /Controller adjudication/i);
+  assert.match(wfReview, /Confirmed.*Rejected.*Unresolved/s);
+  assert.match(wfReview, /not.*majority vote/i);
+  assert.doesNotMatch(wfReview, /native-only review|External CLI: forbidden|peer CLIs are forbidden|never invokes another CLI/i);
+  assert.doesNotMatch(wfReview, /claude -p|codex exec|opencode run/i);
+  assert.equal(readRel(targetDir, '.agents/skills/wf-review/SKILL.md'), wfReview);
+  const wfReviewReviewer = readRel(targetDir, '.claude/agents/reviewer.md');
+  assert.match(wfReviewReviewer, /Affected AC \/ contract \/ invariant/);
+  assert.match(wfReviewReviewer, /Concrete failure scenario/);
+  assert.match(wfReviewReviewer, /Evidence: source path/);
+  assert.match(wfReviewReviewer, /Verification: reproduced/);
+  assert.doesNotMatch(wfReviewReviewer, /^model:\s*(?!inherit)\S+/m, 'reviewer must inherit the session model, not pin an exclusive one');
+  const wfReviewManager = readRel(targetDir, '.claude/agents/review-manager.md');
+  assert.match(wfReviewManager, /challenge/);
+  assert.match(wfReviewManager, /unresolved/i);
+  assert.doesNotMatch(wfReviewManager, /^model:\s*(?!inherit)\S+/m, 'review manager must inherit the session model, not pin an exclusive one');
+  assert.doesNotMatch(wfReviewManager, /native fan-out|External CLI|claude -p|codex exec|opencode run/i);
+  const wfReviewCommand = readRel(targetDir, '.opencode/commands/wf-review.md');
+  assert.match(wfReviewCommand, /method-neutral/);
+  assert.doesNotMatch(wfReviewCommand, /native-only|Do not invoke another CLI/i);
+
   const wfKernel = readRel(targetDir, 'Harness/specs/workflows/WF-KERNEL.md');
   assert.match(wfKernel, /Cache-First Context Contract/);
   assert.match(wfKernel, /MaxReturnTokens/);
@@ -877,6 +902,31 @@ test('global install scope rejects target/global directory overlap', () => {
   assert.match(result.errors.join('\n'), /Global install directory must be outside the target project/);
   assert.equal(fs.existsSync(targetDir), false);
 });
+
+for (const policy of ['overwrite', 'backup']) {
+  test(`AC-001/AC-006 ${policy} preserves customized Project state and stable ID`, () => {
+    const root = tmpdir();
+    const targetDir = path.join(root, `project-${policy}`);
+    assert.equal(generate({ projectName: 'original', targetDir }).success, true);
+    const projectDir = path.join(targetDir, 'Harness', 'project');
+    const manifestPath = path.join(projectDir, 'PROJECT.json');
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+    manifest.id = 'stable-user-project-id';
+    manifest.name = 'User-owned name';
+    fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+    const charterPath = path.join(projectDir, 'charter.json');
+    const charter = JSON.parse(fs.readFileSync(charterPath, 'utf8'));
+    charter.goal = 'User-owned goal';
+    fs.writeFileSync(charterPath, `${JSON.stringify(charter, null, 2)}\n`);
+    const before = [fs.readFileSync(manifestPath), fs.readFileSync(charterPath)];
+
+    const result = generate({ projectName: 'changed-template-name', targetDir, onConflict: policy });
+    assert.equal(result.success, true, result.errors.join('\n'));
+    assert.deepEqual(fs.readFileSync(manifestPath), before[0]);
+    assert.deepEqual(fs.readFileSync(charterPath), before[1]);
+    assert.equal(JSON.parse(fs.readFileSync(manifestPath, 'utf8')).id, 'stable-user-project-id');
+  });
+}
 
 test('backup conflict policy keeps original and writes template file', () => {
   const root = tmpdir();

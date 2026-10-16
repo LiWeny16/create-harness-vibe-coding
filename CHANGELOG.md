@@ -1,5 +1,15 @@
 # Changelog
 
+## [Unreleased]
+
+## [0.9.7] - 2026-10-16
+
+- Add a Project state layer that keeps each project's own Project files (charter, plan, progress, risks, decisions, evidence) as the source of truth alongside Tasks, with a routing-only workspace index, a `project-state.mjs` CLI, `/api/projects` routes, byte-bounded and cursor-paginated reads, strict schema validation, and crash-recoverable multi-file transactions.
+- Expose the Project layer through the `wf-ui` server at `/api/projects` with revision-checked writes (stale or missing revisions are refused), byte-bounded section reads, and structured error payloads shared with the CLI.
+- Add an explicit-source Project importer that maps legacy Progress/Plan/Problem documents into Project records, preserves the original files, requires a reviewed plan hash before applying, bounds per-file and aggregate byte reads, and keeps a hash-verified rollback journal - including recovery of an import interrupted by a crash.
+- Make `/wf-review` method-neutral: risk-based independent perspectives, structured evidence-backed findings, one targeted challenge pass for material or disputed issues, and controller adjudication rather than majority voting; no runtime, CLI, or model is mandated, and reviewer roles inherit the session model.
+- Make task archival lifecycle-driven instead of count-driven: SessionStart safely auto-archives only closed, closeout-verified capsules and never moves active, blocked, focus, unverified, questioned, queued, or owner/lease/locked work; `HARNESS_SAFE_AUTO_ARCHIVE=0` and `--dry-run` opt out, Stop stays dry-run, and total capsule count no longer gates validation.
+
 ## [0.9.6] - 2026-09-28
 
 - Add standalone chat to Agent nodes for Claude Code, Codex, OpenCode, and Pi, with runtime-specific permission modes and correlated approvals; Pi approvals are enforced by the bundled host-gate extension.

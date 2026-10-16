@@ -85,3 +85,19 @@ npm.key
 .tmp-*
 src/ui/verification-screenshots/
 Harness/scripts/tmp-*.log
+
+# Rust workspace build output
+crates/*/target/
+
+# Release staging assets (pre-publish notes/verification)
+.release-assets-*/
+
+# Python bytecode caches
+__pycache__/
+
+# Windows reserved-name files created by shell redirection
+nul
+
+# UI Playwright/test artifacts
+src/ui/test-results/
+src/ui/trace-unpack-*/

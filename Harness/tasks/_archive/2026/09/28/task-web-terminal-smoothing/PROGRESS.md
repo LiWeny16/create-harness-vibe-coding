@@ -2,7 +2,7 @@
 
 ## Status
 
-- Phase: Closeout
+- Phase: Archived
 - Implementation and focused acceptance test are green.
 - This direct capsule remains outside active WF focus. Visible behavior was verified with Playwright; backend state was inspected through `wf-ui` HTTP APIs. No BrowserOS Neo interaction is part of current acceptance.
 

@@ -51,8 +51,10 @@ The task lifecycle is separate from workflow capability routing:
 
 `wf-auto` and `wf-auto-spark` retain their explicit continuous workflows and
 their `Harness/tasks/continuous/` capsule; they do not adopt ordinary task
-capsules. `wf-review` remains native review capability and never invokes an
-external CLI or recursively starts another review.
+capsules. `wf-review` is a method-neutral review capability: it uses bounded,
+risk-based independent perspectives, evidence-backed findings, targeted
+challenge, and controller adjudication. Reviewers remain read-only and do not
+expand their own panel.
 
 ## Memory Preflight
 

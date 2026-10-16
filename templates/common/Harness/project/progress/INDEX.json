@@ -1,0 +1,6 @@
+{
+  "schemaVersion": 1,
+  "segmentsRoot": "segments",
+  "partition": "YYYY/MM",
+  "maxSegmentBytes": 8192
+}

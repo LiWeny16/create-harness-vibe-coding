@@ -14,12 +14,13 @@
  *   - Uses global lock to prevent concurrent moves
  *
  * Configuration:
- *   - HARNESS_SAFE_AUTO_ARCHIVE=1 enables safe-auto (apply mode)
- *   - Default: dry-run (safe for templates)
- *   - Current repo: set env var or use --apply explicitly
+ *   - Default: safe apply at SessionStart after eligibility checks pass
+ *   - HARNESS_SAFE_AUTO_ARCHIVE=0 (also false/no/off) opts out to dry-run
+ *   - --dry-run forces preview; explicit --apply overrides the env opt-out
+ *   - Stop is always dry-run and never mutates task routes
  *
  * Usage:
- *   node Harness/scripts/auto-archive-session-start.mjs [--apply] [--json] [--stop]
+ *   node Harness/scripts/auto-archive-session-start.mjs [--apply] [--dry-run] [--json] [--stop]
  */
 
 import fs from 'node:fs';
@@ -28,9 +29,13 @@ import { spawnSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 
 const args = process.argv.slice(2);
-const apply = args.includes('--apply') || process.env.HARNESS_SAFE_AUTO_ARCHIVE === '1';
 const json = args.includes('--json');
 const isStop = args.includes('--stop');
+const forceApply = args.includes('--apply');
+const forceDryRun = args.includes('--dry-run');
+const autoArchiveSetting = String(process.env.HARNESS_SAFE_AUTO_ARCHIVE ?? '').trim().toLowerCase();
+const optedOut = ['0', 'false', 'no', 'off'].includes(autoArchiveSetting);
+const apply = !isStop && !forceDryRun && (forceApply || !optedOut);
 
 function findProjectRoot() {
   let dir = process.cwd();
@@ -144,12 +149,26 @@ if (isStop) {
 // SessionStart: lock the full reindex + safe auto-archive sequence.
 runSessionStart();
 
+function describeLockOwner() {
+  try {
+    const lockData = JSON.parse(fs.readFileSync(lockFile, 'utf8'));
+    const owner = Number.isInteger(lockData.pid) ? `pid ${lockData.pid}` : 'unknown pid';
+    const since = lockData.startedAt ? ` since ${lockData.startedAt}` : '';
+    return `${lockFile} (${owner}${since})`;
+  } catch {
+    return lockFile;
+  }
+}
+
 function runSessionStart() {
   let locked = false;
   if (apply) {
     locked = acquireLock();
     if (!locked) {
-      console.log('auto-archive-session-start: another session is auto-archiving; skipping');
+      // Never steal a lock whose owner may still be alive, but say exactly which
+      // lock is held so a stranded lock is not silently disabling auto-archive.
+      console.log(`auto-archive-session-start: another session is auto-archiving; skipping (lock: ${describeLockOwner()})`);
+      console.log('auto-archive-session-start: if no archive is running, delete the lock file above and rerun');
       process.exitCode = 0;
       return;
     }

@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
   "taskId": "task-finalize-capsule-archive-route-0922",
-  "status": "closed",
+  "status": "archived",
   "mode": "direct",
   "tier": "none",
-  "phase": "closeout",
+  "phase": "archived",
   "gate": null,
-  "updatedAt": "2026-09-28T04:14:59.174Z",
+  "updatedAt": "2026-10-16T10:13:37.800Z",
   "createdAt": "2026-09-22T02:10:00.000Z",
   "activeQuestion": null,
   "nextAction": "Acceptance and closeout evidence are recorded; no task work remains.",
@@ -70,5 +70,6 @@
   "defaultAgentRuntime": "codex",
   "tags": [],
   "startedAt": "2026-09-23T08:06:31.454Z",
-  "closedAt": "2026-09-28T04:14:59.174Z"
+  "closedAt": "2026-09-28T04:14:59.174Z",
+  "archiveEligibleAt": "2026-10-16T10:13:37.800Z"
 }

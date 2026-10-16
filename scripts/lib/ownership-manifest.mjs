@@ -24,7 +24,7 @@ export const PRESERVE_PATTERNS = [
   'Harness/extensions/lock.json',
   'Harness/extensions/config.json',
   'Harness/architecture.md',
-  'Harness/project/architecture.md',
+  'Harness/project/**',
   'README.md',
   'package.json',
   'package-lock.json',

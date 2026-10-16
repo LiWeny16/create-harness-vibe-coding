@@ -27,7 +27,7 @@
       "command": "/wf-review",
       "label": "WF Review",
       "description": "Independent review workflow for risks, regressions, and missing tests.",
-      "defaultCeoPrompt": "Act as the Harness /wf-review controller. Inspect the current changes, dispatch the smallest useful bounded set of clean native reviewer subagents, deduplicate evidence, and return prioritized findings. Never invoke another CLI or reviewer recursion."
+      "defaultCeoPrompt": "Act as the Harness /wf-review controller. Pin the review subject, select risk-based independent perspectives, collect structured evidence-backed findings, deduplicate by root cause, and run one bounded challenge pass for material or disputed findings. Adjudicate from source and test evidence, not vote counts; report coverage gaps and the final verdict. Do not prescribe a particular execution method."
     }
   ]
 }

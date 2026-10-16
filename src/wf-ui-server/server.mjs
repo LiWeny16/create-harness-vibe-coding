@@ -6,6 +6,29 @@ import path from 'node:path';
 import { spawn, spawnSync } from 'node:child_process';
 import { isDeepStrictEqual } from 'node:util';
 import { fileURLToPath } from 'node:url';
+import {
+  ProjectError,
+  RECORD_INPUT_FIELDS,
+  archiveProject,
+  getProjectRecord,
+  listLocalProject,
+  loadProjectManifest,
+  listWorkspaceProjects,
+  readProjectSection,
+  resolveProject,
+  restoreProject,
+  searchProjectRecords,
+  showProject,
+  summarizeProject,
+  updateProject,
+  updateProjectCharter,
+  writeProjectRecord,
+} from '../../templates/common/Harness/scripts/lib/project-store.mjs';
+import {
+  applyProjectImport,
+  previewProjectImport,
+  rollbackProjectImport,
+} from '../../templates/common/Harness/scripts/lib/project-import.mjs';
 import { canonicalizeProjectPath, validateTaskId } from './security.mjs';
 import {
   parseTaskList,
@@ -401,6 +424,26 @@ function sendError(res, statusCode, code, message, details) {
 // messages are unchanged (agent-team-cooperation-spec §6.2/§7/§8).
 const TYPED_ERROR_DETAIL_FIELDS = ['remaining', 'currentRevision', 'expectedRevision', 'holder', 'expiresAt', 'existingGoalNodeId', 'timerNodeId'];
 
+function safeProjectErrorDetails(err) {
+  if (!(err instanceof ProjectError) || !err.details || typeof err.details !== 'object' || Array.isArray(err.details)) return null;
+  const details = {};
+  if (Array.isArray(err.details.conflicts)) {
+    details.conflicts = err.details.conflicts.slice(0, 50).map(conflict => {
+      if (!conflict || typeof conflict !== 'object') return null;
+      const rawPath = typeof conflict.path === 'string' ? conflict.path : '';
+      const normalizedPath = rawPath.replaceAll(String.fromCharCode(92), '/');
+      if (!normalizedPath || path.isAbsolute(rawPath) || path.win32.isAbsolute(rawPath) || normalizedPath.split('/').includes('..')) return null;
+      const item = { path: normalizedPath.slice(0, 240) };
+      if (typeof conflict.reason === 'string') item.reason = conflict.reason.replaceAll(String.fromCharCode(13), ' ').replaceAll(String.fromCharCode(10), ' ').slice(0, 240);
+      for (const field of ['expected', 'actual']) {
+        if (typeof conflict[field] === 'string' && /^[a-f0-9]{64}$/i.test(conflict[field])) item[field] = conflict[field].toLowerCase();
+      }
+      return item;
+    }).filter(Boolean);
+  }
+  return Object.keys(details).length ? details : null;
+}
+
 function sendMappedError(res, err) {
   const statusCode = Number(err?.statusCode || 400);
   const code = err?.code || (statusCode === 404 ? 'NOT_FOUND' : statusCode === 409 ? 'CONFLICT' : 'BAD_REQUEST');
@@ -422,7 +465,10 @@ function sendMappedError(res, err) {
     }
     if (Object.keys(safeDetails).length > 0) detail.capability = safeDetails;
   }
-  return sendJson(res, statusCode, { error: { code, message: err?.message || 'Request failed' }, ...detail });
+  const error = { code, message: err?.message || 'Request failed' };
+  const projectDetails = safeProjectErrorDetails(err);
+  if (projectDetails) error.details = projectDetails;
+  return sendJson(res, statusCode, { error, ...detail });
 }
 
 function wfBrowserCommandId(payload = {}) {
@@ -901,6 +947,7 @@ function withResumeMetadata(session) {
 
 export function createServer({
   projectRoot,
+  workspaceRoot = projectRoot,
   sessionRegistry: sr,
   token: expectedToken,
   terminalHub = null,
@@ -908,6 +955,13 @@ export function createServer({
   modelCapabilityProbe = null,
 }) {
   const absRoot = canonicalizeProjectPath(projectRoot);
+  const absWorkspaceRoot = canonicalizeProjectPath(workspaceRoot || projectRoot);
+  const workspaceProjectIndexPath = path.join(absWorkspaceRoot, '.harness-workspace', 'INDEX.json');
+  const localProjectApiRoot = fs.existsSync(path.join(absRoot, 'Harness', 'project', 'PROJECT.json')) ? absRoot : absWorkspaceRoot;
+  const hasWorkspaceProjectIndex = () => fs.existsSync(workspaceProjectIndexPath);
+  const projectApiOptions = (projectId, includeArchived = false) => hasWorkspaceProjectIndex()
+    ? { projectId, workspaceRoot: absWorkspaceRoot, includeArchived }
+    : { projectId, projectRoot: localProjectApiRoot, includeArchived };
   const startTime = Date.now();
   ensureA2aDefaults(absRoot);
 
@@ -923,7 +977,7 @@ export function createServer({
     if (req.method === 'OPTIONS') {
       res.writeHead(204, {
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, HEAD, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Methods': 'GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Harness-Session-Id, X-Harness-Actor-Type, X-Harness-Actor-Kind, X-Harness-Workflow-Node-Id, X-Harness-Node-Id, X-Harness-Worker-Capability, If-Match',
       });
       res.end();
@@ -964,6 +1018,187 @@ export function createServer({
         projects: taskView.projects,
         projectTaskCounts: taskView.projectTaskCounts,
       });
+    }
+
+    // Project resources share the generated-project store/schema. The workspace
+    // catalog is route-only; project entries and domain records are loaded only
+    // by the requested endpoint.
+    if (req.method === 'GET' && pathname === '/api/projects') {
+      try {
+        const includeArchived = ['true', '1'].includes(String(url.searchParams.get('includeArchived') || url.searchParams.get('include-archived') || '').toLowerCase());
+        const budgetBytes = url.searchParams.get('budgetBytes') || undefined;
+        if (hasWorkspaceProjectIndex()) {
+          return sendJson(res, 200, listWorkspaceProjects(absWorkspaceRoot, {
+            includeArchived,
+            limit: url.searchParams.get('limit') || 20,
+            cursor: url.searchParams.get('cursor') || null,
+            budgetBytes,
+          }));
+        }
+        return sendJson(res, 200, listLocalProject(localProjectApiRoot, {
+          includeArchived,
+          limit: url.searchParams.get('limit') || 20,
+          cursor: url.searchParams.get('cursor') || null,
+          budgetBytes,
+        }));
+      } catch (error) {
+        return sendMappedError(res, error);
+      }
+    }
+
+    const projectApiMatch = pathname.match(/^\/api\/projects\/([^/]+)(?:\/(.*))?$/);
+    if (projectApiMatch) {
+      let projectId;
+      try {
+        projectId = decodeURIComponent(projectApiMatch[1]);
+      } catch {
+        return sendError(res, 400, 'BAD_REQUEST', 'Project id encoding is invalid');
+      }
+      const suffix = projectApiMatch[2] || '';
+      const includeArchived = ['true', '1'].includes(String(url.searchParams.get('includeArchived') || url.searchParams.get('include-archived') || '').toLowerCase());
+      const options = projectApiOptions(projectId, includeArchived);
+
+      if (req.method === 'GET' && suffix === '') {
+        try {
+          return sendJson(res, 200, showProject({ ...options, budgetBytes: url.searchParams.get('budgetBytes') || undefined }));
+        } catch (error) {
+          return sendMappedError(res, error);
+        }
+      }
+      if (req.method === 'GET' && suffix === 'summary') {
+        try {
+          return sendJson(res, 200, summarizeProject({ ...options, budgetBytes: url.searchParams.get('budgetBytes') || undefined }));
+        } catch (error) {
+          return sendMappedError(res, error);
+        }
+      }
+      const sectionMatch = suffix.match(/^sections\/([^/]+)$/);
+      if (req.method === 'GET' && sectionMatch) {
+        try {
+          return sendJson(res, 200, readProjectSection({
+            ...options,
+            section: decodeURIComponent(sectionMatch[1]),
+            cursor: url.searchParams.get('cursor') || null,
+            limit: url.searchParams.get('limit') || 20,
+            budgetBytes: url.searchParams.get('budgetBytes') || undefined,
+          }));
+        } catch (error) {
+          return sendMappedError(res, error);
+        }
+      }
+      if (req.method === 'GET' && suffix === 'search') {
+        try {
+          return sendJson(res, 200, searchProjectRecords({
+            ...options,
+            query: url.searchParams.get('query') || '',
+            section: url.searchParams.get('section') || null,
+            cursor: url.searchParams.get('cursor') || null,
+            limit: url.searchParams.get('limit') || 20,
+            budgetBytes: url.searchParams.get('budgetBytes') || undefined,
+          }));
+        } catch (error) {
+          return sendMappedError(res, error);
+        }
+      }
+      const recordMatch = suffix.match(/^records\/([^/]+)$/);
+      if (req.method === 'GET' && recordMatch) {
+        try {
+          return sendJson(res, 200, getProjectRecord({ ...options, recordId: decodeURIComponent(recordMatch[1]), section: url.searchParams.get('section') }));
+        } catch (error) {
+          return sendMappedError(res, error);
+        }
+      }
+      if (req.method === 'PATCH' && suffix === '') {
+        readJsonBody(req).then(payload => {
+          try {
+            if (!payload || typeof payload.expectedRevision !== 'number' || !Number.isInteger(payload.expectedRevision)) throw new ProjectError('BAD_REQUEST', 'PATCH requires integer expectedRevision');
+            const patch = { ...payload };
+            delete patch.expectedRevision;
+            return sendJson(res, 200, updateProject({ ...options, expectedRevision: payload.expectedRevision, patch }));
+          } catch (error) {
+            return sendMappedError(res, error);
+          }
+        }).catch(error => sendMappedError(res, error));
+        return;
+      }
+      if (req.method === 'PUT' && suffix === 'charter') {
+        readJsonBody(req).then(payload => {
+          try {
+            if (!payload || typeof payload.expectedRevision !== 'number' || !Number.isInteger(payload.expectedRevision)) throw new ProjectError('BAD_REQUEST', 'Charter update requires integer expectedRevision');
+            const patch = { ...payload };
+            delete patch.expectedRevision;
+            return sendJson(res, 200, updateProjectCharter({ ...options, expectedRevision: payload.expectedRevision, patch }));
+          } catch (error) {
+            return sendMappedError(res, error);
+          }
+        }).catch(error => sendMappedError(res, error));
+        return;
+      }
+      if (req.method === 'POST' && suffix === 'records') {
+        readJsonBody(req).then(payload => {
+          try {
+            if (!payload || typeof payload !== 'object' || Array.isArray(payload)) throw new ProjectError('INVALID_RECORD', 'Project record payload must be an object');
+            const recordInputFields = new Set(RECORD_INPUT_FIELDS);
+            const unsupportedFields = Object.keys(payload).filter(field => !recordInputFields.has(field));
+            if (unsupportedFields.length) throw new ProjectError('INVALID_RECORD', `Project record has unsupported fields: ${unsupportedFields.slice(0, 10).join(', ')}`);
+            if (payload.schemaVersion !== undefined && payload.schemaVersion !== 1) throw new ProjectError('INVALID_RECORD', 'Project record schemaVersion must be 1');
+            return sendJson(res, 201, writeProjectRecord({ ...options, section: payload.section, record: payload }));
+          } catch (error) {
+            return sendMappedError(res, error);
+          }
+        }).catch(error => sendMappedError(res, error));
+        return;
+      }
+      if (req.method === 'POST' && (suffix === 'archive' || suffix === 'restore')) {
+        readJsonBody(req).then(payload => {
+          try {
+            const expectedRevision = payload?.expectedRevision;
+            if (typeof expectedRevision !== 'number' || !Number.isInteger(expectedRevision)) throw new ProjectError('BAD_REQUEST', `${suffix} requires integer expectedRevision`);
+            const action = suffix === 'archive' ? archiveProject : restoreProject;
+            return sendJson(res, 200, action({ ...options, expectedRevision }));
+          } catch (error) {
+            return sendMappedError(res, error);
+          }
+        }).catch(error => sendMappedError(res, error));
+        return;
+      }
+      if (req.method === 'POST' && suffix === 'imports/preview') {
+        readJsonBody(req).then(payload => {
+          try {
+            return sendJson(res, 200, previewProjectImport({ ...options, sources: payload.sources || [] }));
+          } catch (error) {
+            return sendMappedError(res, error);
+          }
+        }).catch(error => sendMappedError(res, error));
+        return;
+      }
+      if (req.method === 'POST' && suffix === 'imports') {
+        readJsonBody(req).then(payload => {
+          try {
+            return sendJson(res, 200, applyProjectImport({ ...options, sources: payload.sources || [], planHash: payload.planHash }));
+          } catch (error) {
+            return sendMappedError(res, error);
+          }
+        }).catch(error => sendMappedError(res, error));
+        return;
+      }
+      const rollbackMatch = suffix.match(/^imports\/([^/]+)\/rollback$/);
+      if (req.method === 'POST' && rollbackMatch) {
+        readJsonBody(req).then(payload => {
+          try {
+            const resolved = resolveProject({ ...options, includeArchived: true });
+            return sendJson(res, 200, rollbackProjectImport({
+              projectRoot: resolved.projectRoot,
+              transactionId: decodeURIComponent(rollbackMatch[1]),
+              apply: payload.apply === true,
+            }));
+          } catch (error) {
+            return sendMappedError(res, error);
+          }
+        }).catch(error => sendMappedError(res, error));
+        return;
+      }
+      return sendError(res, 404, 'NOT_FOUND', `Unknown Project API route: ${req.method} ${pathname}`);
     }
 
     if (req.method === 'GET' && pathname === '/api/wf-browser/capabilities') {
@@ -5807,12 +6042,14 @@ async function regenerateTaskGroupIndex(absRoot) {
 
 export function startServer(opts = {}) {
   const projectRoot = canonicalizeProjectPath(opts.projectRoot || process.cwd());
+  const workspaceRoot = canonicalizeProjectPath(opts.workspaceRoot || projectRoot);
   const host = opts.host || '127.0.0.1';
   const port = opts.port !== undefined ? opts.port : 0;
   const token = opts.token || '';
 
   const server = createServer({
     projectRoot,
+    workspaceRoot,
     sessionRegistry: opts.sessionRegistry,
     token,
     terminalHub: opts.terminalHub || null,

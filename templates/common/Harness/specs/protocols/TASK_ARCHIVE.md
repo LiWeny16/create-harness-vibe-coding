@@ -1,15 +1,15 @@
 # TASK_ARCHIVE - Task Archive Mechanism
 
-Purpose: keep `Harness/tasks/` lean by archiving completed/abandoned tasks while
-preserving all evidence.
+Purpose: keep completed work browsable without imposing a magic total-capsule
+limit: archive verified closed tasks safely while preserving all evidence.
 
 ## Archive Surfaces
 
 **Single writer**: `task-state.mjs` is the sole write surface for archives.
 All archive operations delegate to the shared `performSafeArchive()` primitive.
 
-- `task-state.mjs archive` — **DEPRECATED** legacy surface, mtime-based date, `--keep` cap, batch `--group`.
-  Still functional for compatibility but new work should use `auto-archive`.
+- `task-state.mjs archive` — **DEPRECATED** legacy surface, mtime-based date, optional `--keep` preview target, batch `--group`.
+  Still functional for compatibility but new work should use safe `auto-archive`.
 - `task-state.mjs auto-archive` — safe surface. Closed-only, idempotent, atomic move.
   Refreshes both `INDEX.md` and `INDEX.json` with shared `routeRevision`.
 - `task-state.mjs route --task <id> [--json]` — resolve route for a task (live or archived).
@@ -17,20 +17,23 @@ All archive operations delegate to the shared `performSafeArchive()` primitive.
 - `task-route.mjs` — pure derivation layer. Exposes route/focus/blocker/archive
   eligibility/resume summaries without writing anything to disk.
 - `auto-archive-session-start.mjs` — SessionStart/Stop hook helper with safe-auto policy.
-  - SessionStart: reindex + safe auto-archive if `HARNESS_SAFE_AUTO_ARCHIVE=1`
+  - SessionStart: reindex + safe auto-archive by default; `HARNESS_SAFE_AUTO_ARCHIVE=0` opts out
+  - `--dry-run` forces preview; explicit `--apply` overrides the environment opt-out
   - Stop: dry-run only (detection, no mutation)
   - Global owner-token lock prevents concurrent moves; a live PID keeps its lock regardless of age, and a stale lock is recoverable only after its owner is confirmed dead
 
 ### Safe-Auto Policy
 
-Safe auto-archive (SessionStart with apply) only archives tasks that meet ALL criteria:
+Safe auto-archive (SessionStart by default) only archives tasks that meet ALL criteria:
 1. Status is `closed` (not active/blocked/unknown)
 2. Closeout verified (phase is `closeout` or later)
 3. No active owner/lease/lock on the task
 4. Not the current focus task (active pointer)
-5. Global archive lock acquired (prevents concurrent moves)
+5. No unresolved active question or pending/running/blocked queue work
+6. Global archive lock acquired (prevents concurrent moves)
 
-Templates default to dry-run; set `HARNESS_SAFE_AUTO_ARCHIVE=1` to enable.
+Direct `task-state.mjs auto-archive` remains dry-run by default and requires
+`--apply`; validation never performs archival.
 
 ## Archive Location
 
@@ -100,14 +103,16 @@ when any route-relevant input changes.
 
 - Archived tasks retain: PLAN, PROGRESS, STATE, ARTIFACTS, NOTES.
 - Do NOT delete historical evidence.
-- `Harness/PROGRESS.md` keeps the last 5 non-archived task entries in the Task
-  Index.
-- When outer task capsules exceed 5 completed/abandoned/obsolete tasks, remind
-  the user to run the task archive command. Do not auto-archive during unrelated
-  validation or closeout unless the user explicitly invokes archive apply mode.
-- The validator (`Harness/scripts/validate-harness.mjs`) warns when
-  `Harness/tasks/` holds more than 5 outer task capsules (excluding `_archive`,
-  `_template`, `auto`) and fails in `--strict` mode.
+- `Harness/PROGRESS.md` and the live task indexes list every non-archived task;
+  archived tasks are listed under `Harness/tasks/_archive/`.
+- There is no hard total-capsule limit. Validation checks task state and route
+  integrity, never count alone, and never moves files.
+- The SessionStart hook runs safe auto-archive by default after lifecycle and
+  eligibility checks. Only closed, closeout-verified tasks without active focus,
+  unresolved questions, pending queues, or owner/lease/lock state are moved.
+  Ineligible tasks remain live regardless of count.
+- Set `HARNESS_SAFE_AUTO_ARCHIVE=0` to opt out of SessionStart apply mode;
+  `--dry-run` forces preview. Stop is always dry-run.
 
 ## Scripts
 
@@ -121,10 +126,10 @@ User-facing command:
 Underlying implementation: `Harness/scripts/task-state.mjs archive`.
 
 - **DEPRECATED**: prefer `auto-archive` for new work.
-- Default: dry-run (respects `--keep` cap, archives oldest-eligible up to cap).
+- Default: dry-run; without an explicit `--keep`, preview all eligible tasks.
 - `--apply` to execute.
 - Explicit `--apply` with no `--task` filter: archives **ALL** eligible tasks, bypassing `--keep`.
-- `--keep 5` to set the non-archived task threshold.
+- `--keep <n>` optionally limits the preview to a chosen non-archived target; it is a manual legacy option, not a global policy.
 - `--task <task-id>` to archive a specific task.
 - `--group <tag>` to archive by tag (batch op).
 - `--json` for machine-readable output.
@@ -143,7 +148,8 @@ Use this surface when you want:
 node Harness/scripts/task-state.mjs auto-archive [--dry-run] [--task <id>] [--json]
 ```
 
-- Default: dry-run. Use `--apply` to execute.
+- Direct CLI default: dry-run. Use `--apply` to execute explicitly.
+- SessionStart hook default: apply after safe eligibility checks; `HARNESS_SAFE_AUTO_ARCHIVE=0` opts out, `--dry-run` forces preview, and Stop remains dry-run.
 - `--task <id>` for a single task (also returns `already-archived` if found under `_archive/`).
 - `--json` for machine-readable output.
 - After archiving, `Harness/tasks/_archive/INDEX.md` and `INDEX.json` are regenerated.

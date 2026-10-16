@@ -154,6 +154,77 @@ for (const variant of scriptVariants) {
     assert.equal(archivedTaskPaths(root, taskId).length, 0, 'Stop must not create an archive route');
   });
 
+  test(`AC-SessionStart [${variant.name}] defaults to verified-closeout auto-archive and preserves unsafe capsules`, async () => {
+    const root = makeCapsuleProject();
+    installScripts(root, variant.directory);
+    writeTaskState(root, 'task-closed-charlie', {
+      status: 'closed', phase: 'verified', activeQuestion: { question: 'Hold this fixture task open.' },
+    });
+    const eligibleId = `task-default-archive-${variant.name}`;
+    const activeId = `task-default-active-${variant.name}`;
+    const blockedId = `task-default-blocked-${variant.name}`;
+    const unverifiedId = `task-default-unverified-${variant.name}`;
+    const questionId = `task-default-question-${variant.name}`;
+    makeEligible(root, eligibleId);
+    writeTaskState(root, activeId, { status: 'active', phase: 'implement', closedAt: null });
+    writeTaskState(root, blockedId, { status: 'blocked', phase: 'verify', activeQuestion: { question: 'Need a decision.' } });
+    writeTaskState(root, unverifiedId, { status: 'closed', phase: 'implement' });
+    makeEligible(root, questionId, { activeQuestion: { question: 'Keep this open.' } });
+
+    const result = await runSessionStart(root, isolatedSessionEnv(root, ''));
+    const output = `${result.stdout}\n${result.stderr}`;
+    assert.equal(result.status, 0, output);
+    assert.match(output, /archived 1 task/i);
+    assert.equal(archivedTaskPaths(root, eligibleId).length, 1);
+    for (const taskId of [activeId, blockedId, unverifiedId, questionId]) {
+      assert.equal(fs.existsSync(path.join(root, 'Harness', 'tasks', taskId)), true, `${taskId} must remain live`);
+      assert.equal(archivedTaskPaths(root, taskId).length, 0, `${taskId} must not be archived`);
+    }
+
+    const liveIndex = JSON.parse(fs.readFileSync(path.join(root, 'Harness', 'tasks', 'INDEX.json'), 'utf8'));
+    const archiveIndex = JSON.parse(fs.readFileSync(path.join(root, 'Harness', 'tasks', '_archive', 'INDEX.json'), 'utf8'));
+    for (const taskId of [activeId, blockedId, unverifiedId, questionId, 'task-closed-charlie']) {
+      assert.ok(liveIndex.tasks.some(task => task.id === taskId), `${taskId} must remain in the live route index`);
+      assert.ok(!archiveIndex.tasks.some(task => task.id === taskId), `${taskId} must not appear in the archive index`);
+    }
+    assert.ok(!liveIndex.tasks.some(task => task.id === eligibleId), 'eligible closed task must leave the live route index');
+    assert.ok(archiveIndex.tasks.some(task => task.id === eligibleId), 'eligible closed task must appear in the archive route index');
+
+    const second = await runSessionStart(root, isolatedSessionEnv(root, ''));
+    assert.equal(second.status, 0, second.stderr || second.stdout);
+    assert.equal(archivedTaskPaths(root, eligibleId).length, 1, 'repeated SessionStart must remain idempotent');
+  });
+
+  test(`AC-SessionStart [${variant.name}] supports environment opt-out and explicit dry-run`, async () => {
+    const optedOutRoot = makeCapsuleProject();
+    installScripts(optedOutRoot, variant.directory);
+    const optedOutId = `task-opt-out-${variant.name}`;
+    makeEligible(optedOutRoot, optedOutId);
+    const optedOut = await runSessionStart(optedOutRoot, isolatedSessionEnv(optedOutRoot, '0'));
+    assert.equal(optedOut.status, 0, optedOut.stderr || optedOut.stdout);
+    assert.match(`${optedOut.stdout}\n${optedOut.stderr}`, /dry[\s-]?run/i);
+    assert.ok(fs.existsSync(path.join(optedOutRoot, 'Harness', 'tasks', optedOutId)));
+    assert.equal(archivedTaskPaths(optedOutRoot, optedOutId).length, 0);
+
+    const dryRunRoot = makeCapsuleProject();
+    installScripts(dryRunRoot, variant.directory);
+    const dryRunId = `task-explicit-dry-run-${variant.name}`;
+    makeEligible(dryRunRoot, dryRunId);
+    const dryRun = runScript(dryRunRoot, 'auto-archive-session-start.mjs', ['--dry-run'], isolatedSessionEnv(dryRunRoot, '1'));
+    assert.equal(dryRun.status, 0, dryRun.stderr || dryRun.stdout);
+    assert.match(`${dryRun.stdout}\n${dryRun.stderr}`, /dry[\s-]?run/i);
+    assert.ok(fs.existsSync(path.join(dryRunRoot, 'Harness', 'tasks', dryRunId)));
+    assert.equal(archivedTaskPaths(dryRunRoot, dryRunId).length, 0);
+
+    const applyRoot = makeCapsuleProject();
+    installScripts(applyRoot, variant.directory);
+    const applyId = `task-explicit-apply-${variant.name}`;
+    makeEligible(applyRoot, applyId);
+    const explicitApply = runScript(applyRoot, 'auto-archive-session-start.mjs', ['--apply'], isolatedSessionEnv(applyRoot, '0'));
+    assert.equal(explicitApply.status, 0, explicitApply.stderr || explicitApply.stdout);
+    assert.equal(archivedTaskPaths(applyRoot, applyId).length, 1, 'explicit --apply may override the environment opt-out');
+  });
+
   test(`AC-SessionStart [${variant.name}] a completed apply releases the global lock before exit`, async () => {
     const root = makeCapsuleProject();
     installScripts(root, variant.directory);
@@ -197,6 +268,28 @@ for (const variant of scriptVariants) {
     assert.equal(second.status, 0, second.stderr || second.stdout);
     const secondIndex = JSON.parse(fs.readFileSync(liveIndexPath, 'utf8'));
     assert.notEqual(secondIndex.routeRevision, firstIndex.routeRevision, 'routeRevision must reflect updatedAt and route-relevant task data');
+  });
+
+  test(`AC-012 [${variant.name}] recovers a legacy lock only after confirming its PID is dead`, async () => {
+    const root = makeCapsuleProject();
+    installScripts(root, variant.directory);
+    const taskId = `task-stale-legacy-lock-${variant.name}`;
+    makeEligible(root, taskId);
+    const deadOwner = spawnSync(process.execPath, ['-e', 'process.exit(0)'], { encoding: 'utf8' });
+    assert.equal(deadOwner.status, 0);
+    const lockFile = path.join(root, 'Harness', '.archive-lock', 'auto-archive.lock');
+    fs.mkdirSync(path.dirname(lockFile), { recursive: true });
+    fs.writeFileSync(lockFile, JSON.stringify({
+      pid: deadOwner.pid,
+      startedAt: '2020-01-01T00:00:00.000Z',
+    }), 'utf8');
+
+    const result = await runSessionStart(root, isolatedSessionEnv(root, ''));
+    const output = `${result.stdout}\n${result.stderr}`;
+    assert.equal(result.status, 0, output);
+    assert.doesNotMatch(output, /another session is auto-archiving/i);
+    assert.equal(archivedTaskPaths(root, taskId).length, 1, 'safe work should resume after stale lock recovery');
+    assert.equal(fs.existsSync(lockFile), false, 'the acquired lock must be released after recovery and apply');
   });
 
   test(`AC-012 [${variant.name}] a live lock owner cannot be displaced by an old timestamp`, async () => {

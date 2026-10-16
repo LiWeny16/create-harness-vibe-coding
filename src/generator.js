@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 
 /** Files excluded from checksum tracking. Most are PRESERVE user data; starter
  * docs that need move/create upgrade tracking may remain PRESERVE while still
@@ -734,6 +734,13 @@ function existingCandidateIsUserOwned(dest, destPath, candidateSet, srcPath = nu
   }
 }
 
+function isProjectUserStateDest(dest) {
+  return PROJECT_USER_STATE_PATTERNS.some(pattern => {
+    if (pattern.endsWith('/**')) return dest.startsWith(pattern.slice(0, -2));
+    return dest === pattern;
+  });
+}
+
 function addFileActions(plan, fileSpecs, resolvedDir, onConflict, candidateSet, specsByDest = null) {
   for (const { dest: file } of fileSpecs) {
     const destPath = path.join(resolvedDir, ...file.split('/'));
@@ -748,6 +755,16 @@ function addFileActions(plan, fileSpecs, resolvedDir, onConflict, candidateSet, 
         plan.skip.push(file);
       } else {
         plan.conflict.push(file);
+      }
+      continue;
+    }
+
+    if (isProjectUserStateDest(file)) {
+      if (onConflict === 'fail') {
+        plan.conflict.push(file);
+      } else {
+        plan.skip.push(file);
+        plan.userOwnedSkip.push(file);
       }
       continue;
     }
@@ -1002,8 +1019,11 @@ export function generate({
   const resolvedGlobalDir = normalizedInstallScope === 'global'
     ? path.resolve(process.cwd(), globalDir || defaultGlobalDir())
     : undefined;
+  const normalizedProjectName = String(projectName || path.basename(resolvedDir));
   const vars = {
-    projectName,
+    projectName: normalizedProjectName,
+    projectNameJson: JSON.stringify(normalizedProjectName),
+    projectId: `project-${randomUUID()}`,
     generatorVersion: pkg.version,
     generatedTimestamp: new Date().toISOString(),
   };

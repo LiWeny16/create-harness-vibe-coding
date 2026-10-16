@@ -216,18 +216,19 @@ matrix from running behavior and evidence, not from the implementer's summary.
 
 If either reviewer finds issues, the implementer or debugger fixes them and the same gate runs again. Do not move to final acceptance with open critical/high findings or without reflector PASS.
 
-For `/wf-review`, use the installed `reviewer` role before inventing any
-ad hoc review prompt. Dispatch it as an independent clean native subagent
-context; peer CLIs are forbidden for this command. For broad reviews, dispatch
-`review-manager` only when the runtime supports bounded native nested fan-out.
-Reviewer agents report suggestions only. The controller accepts, rejects, or
-escalates each finding and owns the final decision.
+For `/wf-review`, the controller selects review perspectives by risk and
+available capacity; no particular role, runtime, model, or invocation method is
+mandatory. Collect independent first-pass reports before sharing findings,
+deduplicate by root cause, then use one bounded challenge pass for material,
+high-impact, or disputed candidates. Reviewers return evidence-backed
+suggestions only. The controller verifies the evidence, classifies each
+candidate as Confirmed, Rejected, Unresolved, or Duplicate, and owns the final
+verdict. Do not use reviewer counts or agreement as a substitute for evidence.
 
-### OpenCode Reviewer Caveat
-
-`opencode run --agent reviewer`: current installed `.opencode/agents/reviewer.md`
-is `mode: subagent`; OpenCode falls back to the default agent. Probe before
-claiming primary-runner review. Prefer same-runtime reviewer subagent fallback.
+A missing, malformed, or timed-out report is a coverage gap, never an implicit
+pass. Use another available perspective when useful; otherwise mark the review
+incomplete when the gap affects material risk. Reviewers do not modify the
+pinned change or expand their own panel.
 
 ## Subagent Status Handling
 

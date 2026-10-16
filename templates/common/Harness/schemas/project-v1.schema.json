@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://create-harness-vibe-coding/schema/project-v1.schema.json",
+  "title": "Harness Project v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "id", "name", "status", "stage", "revision", "domains"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "status": { "enum": ["active", "paused", "completed", "archived"] },
+    "stage": { "enum": ["discovery", "planning", "execution", "maintenance", "sunset"] },
+    "revision": { "type": "integer", "minimum": 1 },
+    "domains": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["charter", "plan", "risks", "decisions", "progress", "evidence"],
+      "properties": {
+        "charter": { "$ref": "#/$defs/projectRelativePath" },
+        "plan": { "$ref": "#/$defs/projectRelativePath" },
+        "risks": { "$ref": "#/$defs/projectRelativePath" },
+        "decisions": { "$ref": "#/$defs/projectRelativePath" },
+        "progress": { "$ref": "#/$defs/projectRelativePath" },
+        "evidence": { "$ref": "#/$defs/projectRelativePath" }
+      }
+    }
+  },
+  "$defs": {
+    "projectRelativePath": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 240,
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9._/-]+$"
+    }
+  }
+}

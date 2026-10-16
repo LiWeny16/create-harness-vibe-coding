@@ -29,6 +29,9 @@ const MIRROR_PAIRS = [
   'sync-host-global.mjs',
   'validate-harness.mjs',
   'wf-update-runner.mjs',
+  'project-state.mjs',
+  'lib/project-store.mjs',
+  'lib/project-import.mjs',
 ];
 
 function readNormalized(rel) {

@@ -120,6 +120,19 @@ node Harness/scripts/validate-harness.mjs [--strict] [--json]
 
 **When to use:** pre-commit checks, CI gates, release validation. Strict mode fails on any violation.
 
+## Project management
+
+`project-state.mjs` manages project-level facts separately from Task execution state. Each generated project owns `Harness/project/PROJECT.json` and bounded domain records; Task status, next action, dependencies, and evidence remain in `Harness/tasks/`.
+
+```bash
+node Harness/scripts/project-state.mjs summary --root . --json
+node Harness/scripts/project-state.mjs list --workspace <workspace-root> --json
+node Harness/scripts/project-state.mjs section <project-id> --section risks --workspace <workspace-root> --json
+node Harness/scripts/project-state.mjs import <project-id> --source <project-relative-markdown> --workspace <workspace-root> --json
+```
+
+Import defaults to a read-only preview. Apply only with the reviewed `planHash` and `--apply`; rollback also previews by default and refuses to overwrite outputs changed since import. Project archive hides the route but does not move the repository; Task archive remains the existing dated physical archive.
+
 ## Maintenance
 
 ### `wf-remove.mjs`

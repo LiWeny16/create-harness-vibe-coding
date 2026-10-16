@@ -104,12 +104,11 @@ Use `Harness/scripts/task-state.mjs` as the deterministic state writer:
 - `node Harness/scripts/task-state.mjs reconcile --apply`
 - `node Harness/scripts/task-state.mjs set-active <task-id>`
 - `node Harness/scripts/task-state.mjs transition <task-id> --status <status> --phase <phase>`
-- `node Harness/scripts/task-state.mjs archive --keep 5 --dry-run --json`
-- `node Harness/scripts/task-state.mjs archive --keep 5 --apply`
+- `node Harness/scripts/task-state.mjs archive --dry-run --json` (deprecated legacy preview; all eligible tasks unless explicit `--keep <n>`)
 - `node Harness/scripts/task-state.mjs auto-archive --dry-run --json`
-- `node Harness/scripts/task-state.mjs auto-archive --apply`
-- `node Harness/scripts/auto-archive-session-start.mjs` (SessionStart/Stop hook helper,
-  dry-run by default; never mutates unless the user invokes `task-state auto-archive --apply`)
+- `node Harness/scripts/task-state.mjs auto-archive --apply` (explicit manual apply)
+- `node Harness/scripts/auto-archive-session-start.mjs` (SessionStart/Stop hook helper;
+  SessionStart applies safe eligible closeouts by default, `HARNESS_SAFE_AUTO_ARCHIVE=0` opts out, and Stop is always dry-run)
 
 ## Derived Route Layer
 

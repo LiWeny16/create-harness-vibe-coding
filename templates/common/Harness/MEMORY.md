@@ -23,7 +23,7 @@
 - [explore-manager](../.claude/agents/explore-manager.md) - WF-MAX W0 exploration: spawn 5-10 read-only researchers, synthesize, report to CEO.
 - [architect-manager](../.claude/agents/architect-manager.md) - WF-MAX W1 architecture: spawn 3 architects, synthesize interface contracts, report to CEO.
 - [implement-manager](../.claude/agents/implement-manager.md) - WF-MAX W2 implementation: spawn 5-7 implementers (one file_claim each), merge, report to CEO.
-- [review-manager](../.claude/agents/review-manager.md) - optional native review manager: choose the smallest bounded fan-out, deduplicate, classify severity, and report to the controller.
+- [review-manager](../.claude/agents/review-manager.md) - optional review coordinator: select risk-based lenses, synthesize evidence, and coordinate a bounded challenge; the controller adjudicates.
 
 Stack-specific agents can be added after the product shape is known.
 
@@ -34,7 +34,7 @@ Stack-specific agents can be added after the product shape is known.
 - [subagent-orchestrator](../.claude/skills/subagent-orchestrator/SKILL.md) - controller-led subagent orchestration, parallel read-only passes, review gates, and recovery handoffs.
 - [wf-readme](../.claude/skills/wf-readme/SKILL.md) - README preservation, append-only development sections, structured tables, and approved architecture diagrams.
 - [wf-agents-docs](../.claude/skills/wf-agents-docs/SKILL.md) - source-backed Claude/Codex/OpenCode CLI invocation, JSON output, resume, telemetry, and automation gotchas.
-- [wf-review](../.claude/skills/wf-review/SKILL.md) - native-only peer review: the controller dispatches bounded clean reviewer subagents, deduplicates evidence, and decides.
+- [wf-review](../.claude/skills/wf-review/SKILL.md) - method-neutral cross-review: risk-based independent perspectives, structured evidence, targeted challenge, and controller adjudication.
 - [wf-help](../.claude/skills/wf-help/SKILL.md) - Codex compatibility shim for `$wf-help` / `/skills wf-help`; returns the direct command table without entering WF.
 - [wf-update](../.claude/skills/wf-update/SKILL.md) - GitHub-based incremental harness update, checksum comparison, and safe in-place updates.
 - [wf-learn](../.claude/skills/wf-learn/SKILL.md) - explicit evidence-to-method learning cycle with anti-overfitting gate, route-load proof, and scoped memory writes.

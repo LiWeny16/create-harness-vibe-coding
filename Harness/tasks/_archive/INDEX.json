@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-09-28T09:56:20.957Z",
-  "routeRevision": "4fc808f163e5d566",
+  "generatedAt": "2026-10-16T10:57:42.608Z",
+  "routeRevision": "1daa5f66ee69f216",
   "sourceOfTruth": "Harness/tasks/_archive/**/STATE.json",
   "tasks": [
     {
@@ -16,6 +16,34 @@
       "latestEvidenceRefs": [],
       "archivePath": "Harness/tasks/_archive/2026/08/28/task-action-registry-consolidation",
       "updatedAt": "2026-08-28T02:35:58.918Z"
+    },
+    {
+      "id": "task-add-web-agent-node",
+      "title": "task-add-web-agent-node",
+      "status": "closed",
+      "phase": "archived",
+      "summary": "Acceptance and closeout evidence are recorded; no task work remains.",
+      "blockers": [],
+      "dependsOn": [],
+      "blocks": [],
+      "latestEvidenceRefs": [
+        "Harness/tasks/task-add-web-agent-node/CLOSEOUT.md"
+      ],
+      "archivePath": "Harness/tasks/_archive/2026/09/28/task-add-web-agent-node",
+      "updatedAt": "2026-10-16T10:13:37.778Z"
+    },
+    {
+      "id": "task-agent-billboard-context",
+      "title": "task-agent-billboard-context",
+      "status": "closed",
+      "phase": "archived",
+      "summary": "All four Billboard acceptance criteria passed; shared context implementation is complete.",
+      "blockers": [],
+      "dependsOn": [],
+      "blocks": [],
+      "latestEvidenceRefs": [],
+      "archivePath": "Harness/tasks/_archive/2026/09/28/task-agent-billboard-context",
+      "updatedAt": "2026-10-16T10:13:37.787Z"
     },
     {
       "id": "task-agent-control-parity",
@@ -122,6 +150,21 @@
       "latestEvidenceRefs": [],
       "archivePath": "Harness/tasks/_archive/2026/08/01/task-define-workflow-context-surface",
       "updatedAt": "2026-08-01T15:42:23.015Z"
+    },
+    {
+      "id": "task-finalize-capsule-archive-route-0922",
+      "title": "Finalize capsule archive route: single writer, safe auto-archive, route rebuild, CLI parity, mirror sync",
+      "status": "closed",
+      "phase": "archived",
+      "summary": "Acceptance and closeout evidence are recorded; no task work remains.",
+      "blockers": [],
+      "dependsOn": [],
+      "blocks": [],
+      "latestEvidenceRefs": [
+        "Harness/tasks/task-finalize-capsule-archive-route-0922/CLOSEOUT.md"
+      ],
+      "archivePath": "Harness/tasks/_archive/2026/09/28/task-finalize-capsule-archive-route-0922",
+      "updatedAt": "2026-10-16T10:13:37.800Z"
     },
     {
       "id": "task-fix-ai-command-semantics",
@@ -445,6 +488,21 @@
       "updatedAt": "2026-09-23T09:10:38.361Z"
     },
     {
+      "id": "task-simplify-skills-hub-pack-prompt",
+      "title": "task-simplify-skills-hub-pack-prompt",
+      "status": "closed",
+      "phase": "archived",
+      "summary": "Acceptance and closeout evidence are recorded; no task work remains.",
+      "blockers": [],
+      "dependsOn": [],
+      "blocks": [],
+      "latestEvidenceRefs": [
+        "Harness/tasks/task-simplify-skills-hub-pack-prompt/CLOSEOUT.md"
+      ],
+      "archivePath": "Harness/tasks/_archive/2026/09/28/task-simplify-skills-hub-pack-prompt",
+      "updatedAt": "2026-10-16T10:13:37.813Z"
+    },
+    {
       "id": "task-stabilize-workflow-agent-control",
       "title": "task-stabilize-workflow-agent-control",
       "status": "closed",
@@ -586,6 +644,19 @@
       ],
       "archivePath": "Harness/tasks/_archive/2026/08/01/task-upgrade-workflow-agent-canvas",
       "updatedAt": "2026-08-01T15:42:23.034Z"
+    },
+    {
+      "id": "task-web-terminal-smoothing",
+      "title": "task-web-terminal-smoothing",
+      "status": "closed",
+      "phase": "archived",
+      "summary": "Terminal lifecycle and resize behavior are verified with Playwright and wf-ui APIs; implementation is complete.",
+      "blockers": [],
+      "dependsOn": [],
+      "blocks": [],
+      "latestEvidenceRefs": [],
+      "archivePath": "Harness/tasks/_archive/2026/09/28/task-web-terminal-smoothing",
+      "updatedAt": "2026-10-16T10:13:37.826Z"
     },
     {
       "id": "task-wf-research-deep-pipeline",

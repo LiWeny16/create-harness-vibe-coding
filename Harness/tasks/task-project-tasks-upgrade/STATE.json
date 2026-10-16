@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-project-tasks-upgrade",
+  "status": "active",
+  "mode": "direct",
+  "defaultRuntime": "codex",
+  "defaultAgentRuntime": "codex",
+  "tier": "none",
+  "phase": "review",
+  "gate": null,
+  "project": "default",
+  "tags": [],
+  "createdAt": "2026-10-15T08:05:22.412Z",
+  "startedAt": "2026-10-15T08:05:22.412Z",
+  "closedAt": null,
+  "updatedAt": "2026-10-16T03:44:04.676Z",
+  "activeQuestion": null,
+  "nextAction": "Resolve independent review findings and user-owned strict pre-push gate; confirm release target before closeout.",
+  "acceptance": [],
+  "queues": {
+    "ready": [],
+    "running": [],
+    "blocked": [],
+    "done": []
+  },
+  "workItems": [],
+  "dispatchLedger": [],
+  "decisions": [],
+  "risks": [],
+  "artifacts": [],
+  "links": {
+    "dependsOn": [],
+    "blocks": [],
+    "related": []
+  }
+}

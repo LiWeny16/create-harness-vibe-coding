@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
   "taskId": "task-add-web-agent-node",
-  "status": "closed",
+  "status": "archived",
   "mode": "wf-max",
   "tier": "standard",
-  "phase": "closeout",
+  "phase": "archived",
   "gate": "test-gate",
-  "updatedAt": "2026-09-28T04:15:07.407Z",
+  "updatedAt": "2026-10-16T10:13:37.778Z",
   "activeQuestion": null,
   "nextAction": "Acceptance and closeout evidence are recorded; no task work remains.",
   "acceptance": [
@@ -77,5 +77,6 @@
   "lastRecovery": {
     "at": "2026-09-23T09:10:23.804Z",
     "reason": "Mistaken closure by controller; restore unresolved intake question and keep blocked."
-  }
+  },
+  "archiveEligibleAt": "2026-10-16T10:13:37.778Z"
 }

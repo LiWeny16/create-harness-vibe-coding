@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "{{projectId}}",
+  "name": {{projectNameJson}},
+  "status": "active",
+  "stage": "discovery",
+  "revision": 1,
+  "domains": {
+    "charter": "charter.json",
+    "plan": "plan/INDEX.json",
+    "risks": "risks/INDEX.json",
+    "decisions": "decisions/INDEX.json",
+    "progress": "progress/INDEX.json",
+    "evidence": "evidence/INDEX.json"
+  }
+}

@@ -1,5 +1,5 @@
 ---
-description: Run native Harness reviewer-subagent review via the wf-review skill
+description: Run method-neutral, evidence-first wf-review via the wf-review skill
 ---
 
 # /wf-review
@@ -9,8 +9,8 @@ static help or script command.
 
 1. Load `CLAUDE.md`, `Harness/MEMORY.md` (index only per Memory Preflight), then `Harness/README.md`.
 2. Preserve cache-first order per `Harness/specs/runtime/context-loading.md#Cache-First Context Contract`.
-3. Execute per the native-only skill adapter `.claude/skills/wf-review/SKILL.md` (mirror: `.agents/skills/wf-review/SKILL.md`).
-4. Do not invoke another CLI. Do not duplicate the workflow here. The skill adapter and the wf-review native review contract are authoritative.
+3. Follow `.claude/skills/wf-review/SKILL.md` (mirror: `.agents/skills/wf-review/SKILL.md`) for risk-based independent review, targeted challenge, and evidence adjudication.
+4. The skill owns the review strategy; do not duplicate its process here.
 
 If this runtime cannot invoke the skill directly, read
 `.claude/skills/wf-review/SKILL.md` and follow it in place.

@@ -1173,13 +1173,14 @@ test('validation fails when the OpenCode wf-help body drifts from the .claude so
   assert.match(output, /\.opencode\/commands\/wf-help\.md body must mirror \.claude\/commands\/wf-help\.md/);
 });
 
-test('strict validation fails when Harness/tasks exceeds the outer task capsule cap', () => {
+test('strict validation does not block a healthy project for total capsule count alone', () => {
   const targetDir = generateProject();
   writeResolvedProjectFacts(targetDir);
-  for (let i = 1; i <= 6; i += 1) {
-    const dir = path.join(targetDir, 'Harness', 'tasks', `task-test-capsule-${i}`);
-    fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(path.join(dir, 'PROGRESS.md'), '# PROGRESS\n\n## Phase\n\nCurrent: Build\n', 'utf8');
+  for (let i = 1; i <= 8; i += 1) {
+    const taskId = `task-test-capsule-${i}`;
+    execFileSync(process.execPath, [
+      'Harness/scripts/task-state.mjs', 'record', taskId, '--create', '--apply', '--json',
+    ], { cwd: targetDir, encoding: 'utf8' });
   }
 
   const strictResult = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs', '--strict'], {
@@ -1187,15 +1188,14 @@ test('strict validation fails when Harness/tasks exceeds the outer task capsule 
     encoding: 'utf8',
   });
   const strictOutput = `${strictResult.stdout}\n${strictResult.stderr}`;
-  assert.notEqual(strictResult.status, 0);
-  assert.match(strictOutput, /outer task capsules \(cap 5\)/);
+  assert.equal(strictResult.status, 0, strictOutput);
+  assert.doesNotMatch(strictOutput, /outer task capsules.*cap|\$wf-task-archive/i);
 
   const result = spawnSync(process.execPath, ['Harness/scripts/validate-harness.mjs'], {
     cwd: targetDir,
     encoding: 'utf8',
   });
   const output = `${result.stdout}\n${result.stderr}`;
-  assert.equal(result.status, 0);
-  assert.match(output, /outer task capsules \(cap 5\)/);
-  assert.match(output, /\$wf-task-archive/);
+  assert.equal(result.status, 0, output);
+  assert.doesNotMatch(output, /outer task capsules.*cap|\$wf-task-archive/i);
 });

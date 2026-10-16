@@ -13,7 +13,7 @@ which returns this same table without loading `Harness/MEMORY.md` or entering WF
 | `/wf-max <task>` | workflow skill | `/wf-max refactor auth module` | WF-Max-Useful default (fan-out only where independent), WF-Max-Strict override (unconditional fan-out). |
 | `/wf-auto` | workflow skill | `/wf-auto` | Perpetual adaptive auto-optimization using project evidence, dynamic probes, risk obligations, evidence ledger, and confirmation-based exhaustion. |
 | `/wf-auto-spark` | workflow skill | `/wf-auto-spark` | Perpetual inspiration mode with roadmap anchoring and external spark search. |
-| `/wf-review <focus>` | workflow skill | `/wf-review security and test coverage` | Native Harness reviewer subagents with bounded, evidence-backed fan-out. |
+| `/wf-review <focus>` | workflow skill | `/wf-review security and test coverage` | Risk-based independent review with evidence-backed findings, targeted challenge, and controller adjudication. |
 | `/wf-learn` | workflow skill | `/wf-learn` | Extract generalized methods with anti-overfitting and route-load checks after verified failures or closeout. |
 | `/wf-browser <task>` | workflow skill | `/wf-browser verify checkout flow` | Agent-operable browser architecture and runtime control through BrowserOS Neo; BrowserOS Neo must be downloaded and started by the user, with no automatic install. |
 | `/wf-readme <task>` | workflow skill | `/wf-readme polish quickstart` | Preserve, merge, or improve README docs without trampling existing project documentation. |

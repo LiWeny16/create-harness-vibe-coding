@@ -1,123 +1,35 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-09-28T09:56:20.910Z",
-  "routeRevision": "4fc808f163e5d566",
+  "generatedAt": "2026-10-16T10:57:42.554Z",
+  "routeRevision": "1daa5f66ee69f216",
   "sourceOfTruth": "Harness/tasks/*/STATE.json",
   "activeTask": null,
   "resumeTask": null,
   "resumeRequired": false,
   "projects": {
     "default": [
-      "task-add-web-agent-node",
-      "task-finalize-capsule-archive-route-0922",
-      "task-simplify-skills-hub-pack-prompt",
-      "task-web-terminal-smoothing"
-    ],
-    "create-harness-vibe-coding": [
-      "task-agent-billboard-context"
+      "task-project-tasks-upgrade"
     ]
   },
   "tasks": [
     {
-      "id": "task-add-web-agent-node",
+      "id": "task-project-tasks-upgrade",
       "project": "default",
       "group": "default",
-      "title": "新增原生 web chat agent node（非 PTY）：参考 agentre 的 claude stream-json / codex app-server 接入模式，结构化事件流+工具卡片+审批环",
-      "status": "closed",
-      "mode": "wf-max",
-      "wfManaged": true,
-      "resumeRequired": false,
-      "phase": "closeout",
-      "tags": [],
-      "createdAt": "2026-09-14T04:41:50.354Z",
-      "startedAt": "2026-09-14T04:41:50.354Z",
-      "updatedAt": "2026-09-28T04:15:07.407Z",
-      "closedAt": "2026-09-28T04:15:07.407Z",
-      "dependsOn": [],
-      "blocks": [],
-      "path": "Harness/tasks/task-add-web-agent-node"
-    },
-    {
-      "id": "task-agent-billboard-context",
-      "project": "create-harness-vibe-coding",
-      "group": "create-harness-vibe-coding",
-      "title": "Add a compact Billboard presentation for shared Agent context using the existing Markdown node backend",
-      "status": "closed",
+      "title": "Add project-scoped Project management, bounded routing, safe legacy import, and preserve Task archive behavior.",
+      "status": "active",
       "mode": "direct",
       "wfManaged": false,
       "resumeRequired": false,
-      "phase": "closeout",
-      "tags": [
-        "a2a",
-        "ui",
-        "markdown"
-      ],
-      "createdAt": "2026-09-28T07:17:42.851Z",
-      "startedAt": "2026-09-28T07:17:42.851Z",
-      "updatedAt": "2026-09-28T08:04:41.479Z",
-      "closedAt": "2026-09-28T08:04:41.479Z",
-      "dependsOn": [],
-      "blocks": [],
-      "path": "Harness/tasks/task-agent-billboard-context"
-    },
-    {
-      "id": "task-finalize-capsule-archive-route-0922",
-      "project": "default",
-      "group": "default",
-      "title": "Implement merged archive writer, safe-auto policy, route commands, and tests",
-      "status": "closed",
-      "mode": "direct",
-      "wfManaged": false,
-      "resumeRequired": false,
-      "phase": "closeout",
+      "phase": "review",
       "tags": [],
-      "createdAt": "2026-09-22T02:10:00.000Z",
-      "startedAt": "2026-09-23T08:06:31.454Z",
-      "updatedAt": "2026-09-28T04:14:59.174Z",
-      "closedAt": "2026-09-28T04:14:59.174Z",
+      "createdAt": "2026-10-15T08:05:22.412Z",
+      "startedAt": "2026-10-15T08:05:22.412Z",
+      "updatedAt": "2026-10-16T03:44:04.676Z",
+      "closedAt": null,
       "dependsOn": [],
       "blocks": [],
-      "path": "Harness/tasks/task-finalize-capsule-archive-route-0922"
-    },
-    {
-      "id": "task-simplify-skills-hub-pack-prompt",
-      "project": "default",
-      "group": "default",
-      "title": "Attempt native subagent fan-out (W0 explore + W1 architect), then W2 implementation waves",
-      "status": "closed",
-      "mode": "wf-max",
-      "wfManaged": true,
-      "resumeRequired": false,
-      "phase": "closeout",
-      "tags": [],
-      "createdAt": "2026-09-14T04:41:50.354Z",
-      "startedAt": "2026-09-14T04:41:50.354Z",
-      "updatedAt": "2026-09-28T04:15:03.339Z",
-      "closedAt": "2026-09-28T04:15:03.339Z",
-      "dependsOn": [],
-      "blocks": [],
-      "path": "Harness/tasks/task-simplify-skills-hub-pack-prompt"
-    },
-    {
-      "id": "task-web-terminal-smoothing",
-      "project": "default",
-      "group": "default",
-      "title": "Improve the web terminal by adopting the useful xterm lifecycle and resize behavior used by OpsKat, then verify the real GUI in BrowserOS Neo.",
-      "status": "closed",
-      "mode": "direct",
-      "wfManaged": false,
-      "resumeRequired": false,
-      "phase": "closeout",
-      "tags": [
-        "web-terminal"
-      ],
-      "createdAt": "2026-09-28T04:53:04.217Z",
-      "startedAt": "2026-09-28T04:53:04.217Z",
-      "updatedAt": "2026-09-28T08:04:41.884Z",
-      "closedAt": "2026-09-28T08:04:41.884Z",
-      "dependsOn": [],
-      "blocks": [],
-      "path": "Harness/tasks/task-web-terminal-smoothing"
+      "path": "Harness/tasks/task-project-tasks-upgrade"
     }
   ]
 }

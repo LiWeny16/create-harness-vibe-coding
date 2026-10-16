@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://create-harness-vibe-coding/schema/workspace-index-v1.schema.json",
+  "title": "Harness Workspace Project Route Index v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "routesRoot", "activeRoot", "archivedRoot", "shardAlgorithm"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "routesRoot": { "const": "routes" },
+    "activeRoot": { "const": "routes/active" },
+    "archivedRoot": { "const": "routes/archived" },
+    "shardAlgorithm": { "const": "sha256-prefix-2" }
+  }
+}

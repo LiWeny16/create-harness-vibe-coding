@@ -66,7 +66,7 @@ Global task index.
 
 ## Task Index
 
-Non-archived tasks only (max 5). Archived tasks are listed in \`Harness/tasks/_archive/INDEX.md\` (see \`Harness/specs/protocols/TASK_ARCHIVE.md\`).
+Non-archived capsules stay listed here; archived tasks are listed in \`Harness/tasks/_archive/INDEX.md\` (see \`Harness/specs/protocols/TASK_ARCHIVE.md\`).
 
 | ID | Goal | Phase | Closed |
 |----|------|-------|--------|
@@ -569,15 +569,15 @@ test('validate --json returns valid JSON with ok/errors/warnings', () => {
   assert.ok(Array.isArray(payload.tasks));
 });
 
-test('validate cap warning points users to wf-task-archive', () => {
+test('validate does not impose a total outer-capsule count limit', () => {
   const root = generateProject();
   const rows = [];
-  for (let i = 1; i <= 6; i += 1) {
-    const id = `task-archive-hint-${i}`;
-    rows.push({ id, goal: `Archive hint ${i}`, phase: 'Verified' });
+  for (let i = 1; i <= 8; i += 1) {
+    const id = `task-live-capsule-${i}`;
+    rows.push({ id, goal: `Live capsule ${i}`, phase: 'Implementation' });
     writeTask(root, id, {
-      phase: 'Verified',
-      state: { status: 'verified', phase: 'verified' },
+      phase: 'Implementation',
+      state: { status: 'active', phase: 'implement', closedAt: null },
     });
   }
   writeRel(root, 'Harness/PROGRESS.md', progress(null, rows));
@@ -586,8 +586,9 @@ test('validate cap warning points users to wf-task-archive', () => {
   const payload = jsonResult(result);
 
   assert.equal(result.status, 0);
-  assert.ok(payload.warnings.some(warning => warning.includes('$wf-task-archive')));
-  assert.ok(!payload.warnings.some(warning => warning.includes('run node Harness/scripts/task-state.mjs archive --apply')));
+  assert.equal(payload.ok, true);
+  assert.ok(!payload.warnings.some(warning => /capsule.*count|wf-task-archive|cap 5/i.test(warning)));
+  assert.equal(Object.hasOwn(payload, 'outerTaskCap'), false);
 });
 
 test('record --create --apply --dry-run reports dry-run without writing files', () => {

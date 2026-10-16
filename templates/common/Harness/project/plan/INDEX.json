@@ -1,0 +1,5 @@
+{
+  "schemaVersion": 1,
+  "recordsRoot": "milestones",
+  "shardAlgorithm": "sha256-prefix-2"
+}

@@ -97,6 +97,11 @@
 
 | `task-cli-release-hardening-0923` | 2026/09/23 | 2026-09-23 |
 
+| `task-add-web-agent-node` | 2026/09/28 | 2026-10-16 |
+| `task-agent-billboard-context` | 2026/09/28 | 2026-10-16 |
+| `task-finalize-capsule-archive-route-0922` | 2026/09/28 | 2026-10-16 |
+| `task-simplify-skills-hub-pack-prompt` | 2026/09/28 | 2026-10-16 |
+| `task-web-terminal-smoothing` | 2026/09/28 | 2026-10-16 |
 
 ## Task Graph
 
@@ -143,6 +148,11 @@
 - `task-make-wf-lifecycle-0908` → blocks: none
 - `task-release-readiness-cleanup-0922` → blocks: none
 - `task-route-wf-search-deep-media` → blocks: none
+- `task-add-web-agent-node` → blocks: none
+- `task-agent-billboard-context` → blocks: none
+- `task-finalize-capsule-archive-route-0922` → blocks: none
+- `task-simplify-skills-hub-pack-prompt` → blocks: none
+- `task-web-terminal-smoothing` → blocks: none
 
 ### Dependencies
 ```
@@ -159,6 +169,31 @@
 
 ## Task Details
 
+### `task-add-web-agent-node` {#taskaddwebagentnode}
+- **Archived:** 2026/09/28
+- **Status:** archived  **Phase:** archived
+- **Goal:** 在 wf-ui 现有 terminal PTY agent node 之外，新增一种「原生 web chat」agent node：不嵌终端，用结构化事件流（文本增量/工具卡片/审批请求）直接驱动 Claude Code、Codex、Ope...
+- **Depends on:** -  **Blocks:** -
+### `task-agent-billboard-context` {#taskagentbillboardcontext}
+- **Archived:** 2026/09/28
+- **Status:** archived  **Phase:** archived
+- **Goal:** All four Billboard acceptance criteria passed; shared context implementation is complete.
+- **Depends on:** -  **Blocks:** -
+### `task-finalize-capsule-archive-route-0922` {#taskfinalizecapsulearchiveroute0922}
+- **Archived:** 2026/09/28
+- **Status:** archived  **Phase:** archived
+- **Goal:** Make task archival a single-writer, recoverable operation. Safe auto-archive may move only verified closed capsules, kee...
+- **Depends on:** -  **Blocks:** -
+### `task-simplify-skills-hub-pack-prompt` {#tasksimplifyskillshubpackprompt}
+- **Archived:** 2026/09/28
+- **Status:** archived  **Phase:** archived
+- **Goal:** - Outcome: Simplify the Skills Hub so it is a single-surface, low-friction way to (1) see every skill the machine has ac...
+- **Depends on:** -  **Blocks:** -
+### `task-web-terminal-smoothing` {#taskwebterminalsmoothing}
+- **Archived:** 2026/09/28
+- **Status:** archived  **Phase:** archived
+- **Goal:** Terminal lifecycle and resize behavior are verified with Playwright and wf-ui APIs; implementation is complete.
+- **Depends on:** -  **Blocks:** -
 ### `task-architecture-review-wf-0921` {#taskarchitecturereviewwf0921}
 - **Archived:** 2026/09/23
 - **Status:** archived  **Phase:** archived

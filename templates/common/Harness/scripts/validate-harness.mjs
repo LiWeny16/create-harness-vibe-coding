@@ -2,19 +2,33 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
+import { validateProjectTree } from './lib/project-store.mjs';
 
 const root = process.cwd();
-const args = new Set(process.argv.slice(2));
+const argv = process.argv.slice(2);
+const args = new Set(argv);
 const strict = args.has('--strict') || args.has('--post-bootstrap');
 const manifestAudit = args.has('--manifest-audit');
 
 if (args.has('--help') || args.has('-h')) {
-  console.log(`Usage: node Harness/scripts/validate-harness.mjs [--strict] [--manifest-audit]
+  console.log(`Usage: node Harness/scripts/validate-harness.mjs [--strict] [--workspace <root>] [--manifest-audit]
 
 Default mode checks scaffold structure, links, agents, and skills.
 --strict also fails when project fact docs still contain unresolved {{TOKEN}} placeholders.
+--workspace explicitly selects a workspace root for Project route reconciliation; otherwise only an index at the project root is checked.
 --manifest-audit cross-references ownership.manifest.json against disk: flags missing framework files (manifest-to-disk) and extra files in harness directories (disk-to-manifest).`);
   process.exit(0);
+}
+
+let explicitWorkspaceRoot = null;
+const workspaceFlagIndex = argv.indexOf('--workspace');
+if (workspaceFlagIndex >= 0) {
+  const workspaceValue = argv[workspaceFlagIndex + 1];
+  if (!workspaceValue || workspaceValue.startsWith('--')) {
+    console.error('--workspace requires a workspace root path');
+    process.exit(2);
+  }
+  explicitWorkspaceRoot = path.resolve(workspaceValue);
 }
 
 let commandSurfaceLoadError = null;
@@ -219,6 +233,17 @@ const legacyRootSpecDocs = [
 ];
 
 const errors = [];
+const projectEntryPath = path.join(root, 'Harness', 'project', 'PROJECT.json');
+if (fs.existsSync(projectEntryPath)) {
+  try {
+    const workspaceIndexPath = path.join(root, '.harness-workspace', 'INDEX.json');
+    const workspaceRoot = explicitWorkspaceRoot || (fs.existsSync(workspaceIndexPath) ? root : false);
+    const report = validateProjectTree(root, { includeWorkspace: workspaceRoot });
+    if (!report.ok) errors.push(...report.errors.map(message => `Project validation: ${message}`));
+  } catch (error) {
+    errors.push(`Project validation: ${error.message}`);
+  }
+}
 
 function read(rel) {
   const file = path.join(root, rel);
@@ -1581,14 +1606,17 @@ forbidText('Harness/scripts/wf-remove.mjs', '\uFFFD', 'replacement character in 
 for (const marker of ['codebase-explorer', 'task-scribe', 'wf-agents-docs', 'wf-auto-spark']) {
   requireText('Harness/scripts/wf-remove.mjs', marker, `wf-remove built-in registry includes ${marker}`);
 }
-requireText('.claude/skills/wf-review/SKILL.md', 'Harness-native review workflow', 'wf-review native runtime contract');
-requireText('.claude/skills/wf-review/SKILL.md', 'External CLI: forbidden', 'wf-review external CLI prohibition');
-requireText('.claude/skills/wf-review/SKILL.md', 'Spawn child agents: forbidden', 'wf-review recursion prohibition');
-requireText('.claude/skills/wf-review/SKILL.md', 'Role: reviewer', 'wf-review installed reviewer role fallback');
-requireText('.claude/skills/wf-review/SKILL.md', 'The main agent is the controller', 'wf-review controller final authority');
-for (const forbiddenReviewCli of ['claude -p', 'codex exec', 'opencode run']) {
-  forbidText('.claude/skills/wf-review/SKILL.md', forbiddenReviewCli, `wf-review must not invoke ${forbiddenReviewCli}`);
+requireText('.claude/skills/wf-review/SKILL.md', 'Method-neutral review contract', 'wf-review method-neutral policy');
+requireText('.claude/skills/wf-review/SKILL.md', 'Independent first pass', 'wf-review independent first pass');
+requireText('.claude/skills/wf-review/SKILL.md', 'Targeted challenge', 'wf-review bounded challenge pass');
+requireText('.claude/skills/wf-review/SKILL.md', 'not use a majority vote as the acceptance rule', 'wf-review evidence adjudication over votes');
+requireText('.claude/skills/wf-review/SKILL.md', 'Confirmed', 'wf-review confirmation outcome');
+requireText('.claude/skills/wf-review/SKILL.md', 'INCOMPLETE', 'wf-review incomplete verdict');
+for (const staleReviewMethod of ['native-only review contract', 'External CLI: forbidden', 'peer CLIs are forbidden', 'never invokes another CLI', 'claude -p', 'codex exec', 'opencode run']) {
+  forbidText('.claude/skills/wf-review/SKILL.md', staleReviewMethod, `wf-review stale method restriction: ${staleReviewMethod}`);
 }
+requireText('.claude/agents/reviewer.md', 'Concrete failure scenario and reachability', 'reviewer evidence schema');
+requireText('.claude/agents/review-manager.md', 'one bounded challenge pass', 'review-manager challenge policy');
 requireText('.claude/skills/wf-agents-docs/SKILL.md', 'claude -p --output-format json', 'wf-agents-docs Claude JSON CLI path');
 requireText('.claude/skills/wf-agents-docs/SKILL.md', 'codex exec --json', 'wf-agents-docs Codex JSONL CLI path');
 requireText('.claude/skills/wf-agents-docs/SKILL.md', 'opencode run --format json', 'wf-agents-docs OpenCode JSON CLI path');
@@ -1599,8 +1627,8 @@ requireText('.claude/skills/wf-agents-docs/SKILL.md', 'No Scratch-File Rule', 'w
 requireText('.claude/skills/wf-agents-docs/SKILL.md', 'Subagent Output Contract', 'wf-agents-docs subagent output contract');
 requireText('.claude/skills/wf-agents-docs/SKILL.md', 'Do not write CLI probe output under `%TEMP%`', 'wf-agents-docs temp pollution guard');
 requireText('Harness/README.md', 'Need peer CLI automation docs', 'Harness router peer CLI automation docs row');
-requireText('.opencode/commands/wf-review.md', 'native-only skill adapter', 'OpenCode wf-review native review contract');
-requireText('Harness/specs/runtime/subagents.md', 'For `/wf-review`, use the installed `reviewer` role', 'subagents wf-review role fallback');
+requireText('.opencode/commands/wf-review.md', 'method-neutral', 'OpenCode wf-review method-neutral routing');
+requireText('Harness/specs/runtime/subagents.md', 'no particular role, runtime, model, or invocation method is', 'subagents wf-review method neutrality');
 requireText('.claude/agents/tdd-guide.md', 'Browser Acceptance Rules', 'tdd-guide browser acceptance rules');
 requireText('.claude/agents/tdd-guide.md', 'real user actions', 'tdd-guide real user action requirement');
 requireText('.claude/agents/test-writer.md', 'Harness/specs/protocols/ACCEPTANCE_PROTOCOL.md', 'test-writer loads acceptance protocol');
@@ -1935,13 +1963,7 @@ for (const taskDir of outerTaskSet) {
   }
 }
 
-// Outer task capsule cap: keep Harness/tasks/ lean (see Harness/specs/protocols/TASK_ARCHIVE.md)
-const OUTER_TASK_CAP = 5;
-const outerTasks = taskDirs.filter(name => !TASK_RESERVED.has(name) && !name.startsWith('_'));
-if (outerTasks.length > OUTER_TASK_CAP) {
-  const capMsg = `Harness/tasks/ has ${outerTasks.length} outer task capsules (cap ${OUTER_TASK_CAP}); remind the user to run $wf-task-archive when they want to archive completed tasks (apply mode maps to node Harness/scripts/task-state.mjs archive --apply)`;
-  if (strict) errors.push(capMsg);
-  else console.warn(`Warning: ${capMsg}`);
-}
+// Total task count is not an integrity failure. Safe auto-archive manages
+// closed capsules; active/blocked and otherwise ineligible tasks remain live.
 
 finishValidation();

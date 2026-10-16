@@ -2,7 +2,7 @@
 
 ## Status
 
-- Phase: Closeout
+- Phase: Archived
 - Lifecycle: acceptance complete; awaiting canonical state transition.
 
 ## Completed

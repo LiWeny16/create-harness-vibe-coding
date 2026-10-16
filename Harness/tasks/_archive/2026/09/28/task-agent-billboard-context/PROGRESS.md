@@ -4,7 +4,7 @@ Compact heartbeat. Update on phase changes, blockers, failures, and closeout.
 
 ## Status
 
-- Phase: Closeout
+- Phase: Archived
 - AC-001 through AC-004: passed.
 - Billboard persists as a Markdown node presentation, uses the existing revision, lock, and Markdown actions, and adds no Billboard-only endpoint or store.
 - Connected Agents receive the same latest 20 non-empty `shared-context` Billboard entries; unconnected Agents receive none.

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://create-harness-vibe-coding/schema/project-record-v1.schema.json",
+  "title": "Harness Project Domain Record v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "id", "section", "kind", "title", "content", "createdAt"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "id": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "section": { "enum": ["plan", "risks", "decisions", "evidence", "progress"] },
+    "kind": { "type": "string", "minLength": 1, "maxLength": 64 },
+    "title": { "type": "string", "minLength": 1, "maxLength": 240 },
+    "content": { "type": "string", "maxLength": 4096 },
+    "status": { "type": "string", "maxLength": 64 },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "source": { "type": "object" },
+    "taskIds": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+    "milestoneIds": { "type": "array", "items": { "type": "string" }, "uniqueItems": true }
+  }
+}
