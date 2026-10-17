@@ -13,7 +13,8 @@ DIRECT command. Wraps `node Harness/scripts/task-state.mjs archive`. Never loads
 - Defaults to dry-run (`--dry-run`) without `--apply`.
 - With `--apply`: moves eligible task directories into dated paths under `_archive/YYYY/MM/DD/`.
 - With `--task <id>`: targets a specific task for archive eligibility check.
-- With `--keep <n>`: keeps N most recent non-archived task capsules (default 5).
+- With `--keep <n>`: previews only the N most recent non-archived capsules. Without it, every eligible capsule is previewed; there is no implicit cap.
+- Prefer the safe surface (`node Harness/scripts/task-state.mjs auto-archive`, or the SessionStart hook, which applies it automatically) for routine archival: it archives only closed, closeout-verified capsules and never moves active, blocked, focus, unverified, questioned, queued, or owner/lease/locked work.
 - Only closed tasks are archive candidates. Legacy completed status values remain
   readable and are treated as closed during eligibility checks.
 
