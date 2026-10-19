@@ -1,6 +1,6 @@
 {
-  "generator": "0.9.7",
-  "generated": "2026-10-17T04:01:51.187Z",
+  "generator": "0.9.8",
+  "generated": "2026-10-19T02:07:26.980Z",
   "options": [],
   "autoCheck": true,
   "source": "https://raw.githubusercontent.com/LiWeny16/create-harness-vibe-coding/main/templates/common/",
@@ -14,8 +14,8 @@
     ".agents/skills/wf-browser/references/BROWSER_CONTROL_PATTERNS.md": "sha256-349e08e6ab96705e32447a0d280a0ed49c6b0e957f12835832d54b89b015f76d",
     ".agents/skills/wf-command-create/SKILL.md": "sha256-b8df91106d4ea161d659d1099a2ae509b8c81e9954946c2f53629ccbc5ffe70a",
     ".agents/skills/wf-extension/SKILL.md": "sha256-6246e5960e9b0dad31e415185015242e209ddcd3f40dea31126118a19562109c",
-    ".agents/skills/wf-help/SKILL.md": "sha256-418564cbe5e2df1e63fccdc9cd1cc12b05df9589836c6ff39ff43610eddf4e56",
-    ".agents/skills/wf-init/SKILL.md": "sha256-38942449891b8c173ebf7143c88f43570b437e11dfa3ae0993b856e3d1ccd517",
+    ".agents/skills/wf-help/SKILL.md": "sha256-682f6bfa6b99f6811f991ccad08bcf368fe585dc89584d26a583933165b5f708",
+    ".agents/skills/wf-init/SKILL.md": "sha256-d79ac53ec9242f52dad3773c3ff2187e0887cd9457c9ca09f039f69ea1e7d2b2",
     ".agents/skills/wf-learn/SKILL.md": "sha256-1f2224d92d9a16e48ffcdf6dd0059187a8fd673c587d379dcd937eb7a214c27c",
     ".agents/skills/wf-max/SKILL.md": "sha256-86b0f7a8c1a262409685d42ca19db97ea03f9bda7990f182d7341b93bb3c4b81",
     ".agents/skills/wf-readme/SKILL.md": "sha256-9dec6768f87300dc6b64a7d72ae95159930e632a71c24057b524e24414dad665",
@@ -26,7 +26,7 @@
     ".agents/skills/wf-task-list/SKILL.md": "sha256-04bcae617ef70e6b46c267ed726f6e8352d2f0b72aaaa8a486e3a760a8144b48",
     ".agents/skills/wf-task-record/SKILL.md": "sha256-7afb4a9f04da96e45b9159f596d00c563184a27aff538385519187f2868811f8",
     ".agents/skills/wf-ui/SKILL.md": "sha256-cbd14ec7b759887fbaf0c96a4c5d89ae119f03a25fda1e968262b8fe53425037",
-    ".agents/skills/wf-update/SKILL.md": "sha256-9f90ec8ce9c795309f952cd1d3cb86efd27758968f40bc3469ceff5adb5ddb07",
+    ".agents/skills/wf-update/SKILL.md": "sha256-68a05d085861becac770e3a4170f8778e331648742beb9c6c7c7169858f7ccaf",
     ".agents/skills/wf/SKILL.md": "sha256-feb329a32b69befeed32ba3a375588d50651b391906ea30f800f4faeb4121c05",
     ".claude/agents/architect-manager.md": "sha256-21f16d8d5e9d0a88d9663dbe798421501e0de89ccad5f8f3c1ef9db5b79edaf7",
     ".claude/agents/architect.md": "sha256-8a57c6a85ec21d49deaa37a73a81367dabfdb22efd781f58e66b6628e14b218c",
@@ -76,8 +76,8 @@
     ".claude/skills/wf-browser/SKILL.md": "sha256-6a4b7ca3ab4251d034acc6196faa22a321f61e1764ab3a654bc05c44a43a0d8f",
     ".claude/skills/wf-command-create/SKILL.md": "sha256-b8df91106d4ea161d659d1099a2ae509b8c81e9954946c2f53629ccbc5ffe70a",
     ".claude/skills/wf-extension/SKILL.md": "sha256-6246e5960e9b0dad31e415185015242e209ddcd3f40dea31126118a19562109c",
-    ".claude/skills/wf-help/SKILL.md": "sha256-418564cbe5e2df1e63fccdc9cd1cc12b05df9589836c6ff39ff43610eddf4e56",
-    ".claude/skills/wf-init/SKILL.md": "sha256-38942449891b8c173ebf7143c88f43570b437e11dfa3ae0993b856e3d1ccd517",
+    ".claude/skills/wf-help/SKILL.md": "sha256-682f6bfa6b99f6811f991ccad08bcf368fe585dc89584d26a583933165b5f708",
+    ".claude/skills/wf-init/SKILL.md": "sha256-d79ac53ec9242f52dad3773c3ff2187e0887cd9457c9ca09f039f69ea1e7d2b2",
     ".claude/skills/wf-learn/SKILL.md": "sha256-1f2224d92d9a16e48ffcdf6dd0059187a8fd673c587d379dcd937eb7a214c27c",
     ".claude/skills/wf-max/SKILL.md": "sha256-86b0f7a8c1a262409685d42ca19db97ea03f9bda7990f182d7341b93bb3c4b81",
     ".claude/skills/wf-readme/SKILL.md": "sha256-9dec6768f87300dc6b64a7d72ae95159930e632a71c24057b524e24414dad665",
@@ -88,7 +88,7 @@
     ".claude/skills/wf-task-list/SKILL.md": "sha256-04bcae617ef70e6b46c267ed726f6e8352d2f0b72aaaa8a486e3a760a8144b48",
     ".claude/skills/wf-task-record/SKILL.md": "sha256-7afb4a9f04da96e45b9159f596d00c563184a27aff538385519187f2868811f8",
     ".claude/skills/wf-ui/SKILL.md": "sha256-cbd14ec7b759887fbaf0c96a4c5d89ae119f03a25fda1e968262b8fe53425037",
-    ".claude/skills/wf-update/SKILL.md": "sha256-9f90ec8ce9c795309f952cd1d3cb86efd27758968f40bc3469ceff5adb5ddb07",
+    ".claude/skills/wf-update/SKILL.md": "sha256-68a05d085861becac770e3a4170f8778e331648742beb9c6c7c7169858f7ccaf",
     ".claude/skills/wf/SKILL.md": "sha256-feb329a32b69befeed32ba3a375588d50651b391906ea30f800f4faeb4121c05",
     ".codex/config.toml": "sha256-b561d07aaba9bb32df0c48713f6a00be95462af9fa9383efb7cee89f9b24f9ba",
     ".codex/hooks.json": "sha256-f6a27016c0bde2b57e83de234862d08012a84041fe51329892688927bdb0ab3d",
@@ -161,7 +161,7 @@
     "Harness/integrations/wf-search/whisper/switch.sh": "sha256-fbfa0d38445993c749deb6515bcd9bb72dc0bacf52fc9ed2e8e2801409bea908",
     "Harness/integrations/wf-search/whisper/whisper-server@.service": "sha256-3a3386f7d35ab21b6eec1b30d7d10903ed91b967e6cbbddff84952c2ec9b8187",
     "Harness/integrations/wf-search/whisper/whisper_server.py": "sha256-bb23dccbee36f1f0dd235847ed0cf7e0ccd982c900042125490834311361479f",
-    "Harness/ownership.manifest.json": "sha256-b6a0cbc69887fd539e91e6d63e2c8e5fd48e79ca223730d21b9083e9f79f7cdc",
+    "Harness/ownership.manifest.json": "sha256-68e0fc294c6e5a323f9bb63b08e2cfcdf054f2cf3f5c95b5b7164bd68d52e375",
     "Harness/project/architecture.md": "sha256-35fbf29a3ad7357cfa3aa74800db2b7c98337709ec111fe73009f4724fc747c8",
     "Harness/research/README.md": "sha256-7cfe4678bf1c2227f3e23c6ffdac48079e06c39cc3c366b10631392615fb3d59",
     "Harness/schemas/project-record-v1.schema.json": "sha256-c317f14a6a1e6c0368440c0bbb018bf31a3c3629994651a641f337f18b041c6c",
@@ -659,14 +659,12 @@
     }
   ],
   "releaseNotes": {
-    "version": "0.9.7",
-    "date": "2026-10-16",
+    "version": "0.9.8",
+    "date": "2026-10-19",
     "highlights": [
-      "Add a Project state layer that keeps each project's own Project files (charter, plan, progress, risks, decisions, evidence) as the source of truth alongside Tasks, with a routing-only workspace index, a `project-state.mjs` CLI, `/api/projects` routes, byte-bounded and cursor-paginated reads, strict schema validation, and crash-recoverable multi-file transactions.",
-      "Expose the Project layer through the `wf-ui` server at `/api/projects` with revision-checked writes (stale or missing revisions are refused), byte-bounded section reads, and structured error payloads shared with the CLI.",
-      "Add an explicit-source Project importer that maps legacy Progress/Plan/Problem documents into Project records, preserves the original files, requires a reviewed plan hash before applying, bounds per-file and aggregate byte reads, and keeps a hash-verified rollback journal - including recovery of an import interrupted by a crash.",
-      "Make `/wf-review` method-neutral: risk-based independent perspectives, structured evidence-backed findings, one targeted challenge pass for material or disputed issues, and controller adjudication rather than majority voting; no runtime, CLI, or model is mandated, and reviewer roles inherit the session model.",
-      "Make task archival lifecycle-driven instead of count-driven: SessionStart safely auto-archives only closed, closeout-verified capsules and never moves active, blocked, focus, unverified, questioned, queued, or owner/lease/locked work; `HARNESS_SAFE_AUTO_ARCHIVE=0` and `--dry-run` opt out, Stop stays dry-run, and total capsule count no longer gates validation."
+      "Fix the `wf-help`, `wf-init`, and `wf-update` skill frontmatter: their `description` values are now quoted, so YAML no longer reads `Codex compatibility: ...` as a nested mapping. Those three shims previously failed frontmatter parsing and were not loaded by any runtime that validates `SKILL.md`.",
+      "Ship the corrected template, both project mirrors (`.claude/skills` and `.agents/skills`), and the refreshed `.harness-version` checksum manifests, so a fresh install and `/wf-update` both deliver skill files that load.",
+      "Keep the wf-ui Skills Hub index, agent terminal, and cross-runtime command surfaces covered by the release validation suite."
     ]
   }
 }

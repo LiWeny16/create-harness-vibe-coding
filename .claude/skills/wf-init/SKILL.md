@@ -1,6 +1,6 @@
 ---
 name: wf-init
-description: Codex compatibility: use $wf-init or /skills wf-init in Codex. In Claude Code and OpenCode, /wf-init is a direct command that initializes this project against the globally installed Harness runtime.
+description: "Codex compatibility: use $wf-init or /skills wf-init in Codex. In Claude Code and OpenCode, /wf-init is a direct command that initializes this project against the globally installed Harness runtime."
 ---
 
 # WF-INIT Adapter

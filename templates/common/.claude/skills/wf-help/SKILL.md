@@ -1,6 +1,6 @@
 ---
 name: wf-help
-description: Codex compatibility: use $wf-help or /skills wf-help in Codex to show the Harness WF command table. Claude Code and OpenCode use the direct /wf-help command.
+description: "Codex compatibility: use $wf-help or /skills wf-help in Codex to show the Harness WF command table. Claude Code and OpenCode use the direct /wf-help command."
 ---
 
 # WF Help Adapter

@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.9.8] - 2026-10-19
+
+- Fix the `wf-help`, `wf-init`, and `wf-update` skill frontmatter: their `description` values are now quoted, so YAML no longer reads `Codex compatibility: ...` as a nested mapping. Those three shims previously failed frontmatter parsing and were not loaded by any runtime that validates `SKILL.md`.
+- Ship the corrected template, both project mirrors (`.claude/skills` and `.agents/skills`), and the refreshed `.harness-version` checksum manifests, so a fresh install and `/wf-update` both deliver skill files that load.
+- Keep the wf-ui Skills Hub index, agent terminal, and cross-runtime command surfaces covered by the release validation suite.
+
 ## [0.9.7] - 2026-10-16
 
 - Add a Project state layer that keeps each project's own Project files (charter, plan, progress, risks, decisions, evidence) as the source of truth alongside Tasks, with a routing-only workspace index, a `project-state.mjs` CLI, `/api/projects` routes, byte-bounded and cursor-paginated reads, strict schema validation, and crash-recoverable multi-file transactions.

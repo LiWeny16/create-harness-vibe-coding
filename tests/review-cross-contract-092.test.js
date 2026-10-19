@@ -49,6 +49,10 @@ function jsonRequest(route, { method = 'GET', body, headers = {} } = {}) {
     const url = new URL(route, baseUrl);
     const payload = body === undefined ? null : JSON.stringify(body);
     const request = http.request({
+      // No keep-alive: a pooled socket the server already closed (default 5s
+      // keepAliveTimeout) surfaces as ECONNRESET when a slow, loaded run reuses
+      // it. A fresh connection per request keeps the gate deterministic.
+      agent: false,
       hostname: url.hostname,
       port: url.port,
       path: `${url.pathname}${url.search}`,

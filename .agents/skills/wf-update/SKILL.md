@@ -1,6 +1,6 @@
 ---
 name: wf-update
-description: Codex compatibility: use $wf-update or /skills wf-update in Codex. In Claude Code and OpenCode, /wf-update is a direct command (see .claude/commands/wf-update.md and .opencode/commands/wf-update.md).
+description: "Codex compatibility: use $wf-update or /skills wf-update in Codex. In Claude Code and OpenCode, /wf-update is a direct command (see .claude/commands/wf-update.md and .opencode/commands/wf-update.md)."
 ---
 
 # WF Update Adapter
