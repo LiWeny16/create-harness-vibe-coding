@@ -1,6 +1,6 @@
 {
   "name": "@zingspark/wf-extension-ui",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "Optional Harness UI/browser control extension for wf-ui.",
   "bin": {
@@ -19,7 +19,11 @@
   },
   "harnessExtension": {
     "id": "wf-ui",
-    "capabilities": ["ui.control", "browser.control", "ui.server"],
+    "capabilities": [
+      "ui.control",
+      "browser.control",
+      "ui.server"
+    ],
     "defaultInstall": false
   }
 }

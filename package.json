@@ -69,5 +69,8 @@
   "bugs": {
     "url": "https://github.com/LiWeny16/create-harness-vibe-coding/issues"
   },
-  "homepage": "https://github.com/LiWeny16/create-harness-vibe-coding#readme"
+  "homepage": "https://github.com/LiWeny16/create-harness-vibe-coding#readme",
+  "devDependencies": {
+    "@zingspark/wf-extension-ui": "^0.1.1"
+  }
 }

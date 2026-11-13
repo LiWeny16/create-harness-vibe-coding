@@ -124,6 +124,24 @@ fn print_json(value: Value) -> Result<()> {
     Ok(())
 }
 
+/// Build a pnpm invocation.
+///
+/// Windows ships pnpm as `pnpm.cmd`, which CreateProcess cannot launch directly
+/// (only `.exe` is appended when resolving a bare name), so route through
+/// cmd.exe. Elsewhere exec pnpm as-is.
+fn pnpm_command() -> Command {
+    #[cfg(windows)]
+    {
+        let mut cmd = Command::new("cmd");
+        cmd.arg("/C").arg("pnpm");
+        cmd
+    }
+    #[cfg(not(windows))]
+    {
+        Command::new("pnpm")
+    }
+}
+
 fn package_name(extension: &Value) -> Result<String> {
     extension
         .get("package")
@@ -169,7 +187,7 @@ fn run_wf_ui(project: &Path, command: &str) -> Result<Value> {
         }
     };
 
-    let mut cmd = Command::new("pnpm");
+    let mut cmd = pnpm_command();
     cmd.arg("exec");
     cmd.arg("wf-ui");
     cmd.arg(command);
@@ -220,6 +238,15 @@ fn package_version(extension: &Value) -> Result<String> {
 }
 
 fn install_package(project: &Path, extension: &Value, apply: bool) -> Result<Value> {
+    let id = extension.get("id").and_then(Value::as_str).unwrap_or_default();
+    if extension.get("availability").and_then(Value::as_str) == Some("not-published") {
+        return Ok(json!({
+            "ok": false,
+            "status": "not-published",
+            "extension": id,
+            "hint": "this extension package is not published yet; installation is deferred"
+        }));
+    }
     let name = package_name(extension)?;
     let version = package_version(extension)?;
     let spec = format!("{name}@{version}");
@@ -233,7 +260,7 @@ fn install_package(project: &Path, extension: &Value, apply: bool) -> Result<Val
         }));
     }
 
-    let status = Command::new("pnpm")
+    let status = pnpm_command()
         .args(["add", "--save-dev", &spec])
         .current_dir(project)
         .status()
@@ -312,7 +339,7 @@ fn run(cli: Cli) -> Result<Value> {
                             "command": ["pnpm", "remove", "--save-dev", name]
                         }));
                     }
-                    let status = Command::new("pnpm")
+                    let status = pnpm_command()
                         .args(["remove", "--save-dev", &name])
                         .current_dir(&project)
                         .status()

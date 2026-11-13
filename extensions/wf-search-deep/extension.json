@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "wf-search-deep",
-  "version": "0.3.0",
+  "version": "0.1.0",
   "entry": "agent.json",
   "capabilities": [
     "authenticated-platform-reading",

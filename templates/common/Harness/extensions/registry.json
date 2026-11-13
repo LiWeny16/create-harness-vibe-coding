@@ -3,16 +3,20 @@
   "extensions": [
     {
       "id": "wf-ui",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "kind": "package",
       "defaultInstall": false,
       "description": "Optional Harness UI/browser control runtime.",
       "package": {
         "scope": "@zingspark",
         "name": "@zingspark/wf-extension-ui",
-        "version": "0.1.0",
+        "version": "0.1.1",
         "manager": "pnpm",
-        "capabilities": ["ui.control", "browser.control", "ui.server"]
+        "capabilities": [
+          "ui.control",
+          "browser.control",
+          "ui.server"
+        ]
       }
     },
     {
@@ -20,13 +24,17 @@
       "version": "0.1.0",
       "kind": "package",
       "defaultInstall": false,
+      "availability": "not-published",
       "description": "Optional media download, metadata, and media artifact runtime for wf-search.",
       "package": {
         "scope": "@zingspark",
         "name": "@zingspark/wf-extension-search-media",
         "version": "0.1.0",
         "manager": "pnpm",
-        "capabilities": ["search.media.download", "search.media.metadata"]
+        "capabilities": [
+          "search.media.download",
+          "search.media.metadata"
+        ]
       }
     },
     {
@@ -34,13 +42,16 @@
       "version": "0.1.0",
       "kind": "package",
       "defaultInstall": false,
+      "availability": "not-published",
       "description": "Optional ASR/transcription runtime for wf-search video evidence.",
       "package": {
         "scope": "@zingspark",
         "name": "@zingspark/wf-extension-search-asr",
         "version": "0.1.0",
         "manager": "pnpm",
-        "capabilities": ["search.video.asr"]
+        "capabilities": [
+          "search.video.asr"
+        ]
       }
     },
     {
@@ -48,13 +59,17 @@
       "version": "0.1.0",
       "kind": "package",
       "defaultInstall": false,
+      "availability": "not-published",
       "description": "Optional VLM/frame-understanding runtime for wf-search video evidence.",
       "package": {
         "scope": "@zingspark",
         "name": "@zingspark/wf-extension-search-vlm",
         "version": "0.1.0",
         "manager": "pnpm",
-        "capabilities": ["search.video.vlm", "search.video.frames"]
+        "capabilities": [
+          "search.video.vlm",
+          "search.video.frames"
+        ]
       }
     },
     {
@@ -68,10 +83,18 @@
         "name": "@zingspark/wf-extension-search-deep",
         "version": "0.1.0",
         "manager": "pnpm",
-        "capabilities": ["search.deep", "search.media.download", "search.video.asr", "search.video.vlm"],
-        "includes": ["wf-search-media", "wf-search-asr", "wf-search-vlm"]
+        "capabilities": [
+          "search.deep",
+          "search.media.download",
+          "search.video.asr",
+          "search.video.vlm"
+        ],
+        "includes": [
+          "wf-search-media",
+          "wf-search-asr",
+          "wf-search-vlm"
+        ]
       }
     }
   ]
 }
-

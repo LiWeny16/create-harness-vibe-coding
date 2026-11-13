@@ -1,6 +1,6 @@
 {
   "schemaVersion": "wf-search/skills-manifest.v1",
-  "version": "0.3.0",
+  "version": "0.1.0",
   "bundle": "wf-search-deep",
   "principle": "wf-search routes; skills own platform and modality-specific capabilities and are loaded lazily.",
   "skills": [

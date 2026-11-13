@@ -6,6 +6,7 @@
 // and atomically writes the ready file once listening.
 
 import fs from 'node:fs';
+import { createRequire } from 'node:module';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -58,7 +59,19 @@ function writeReadyAtomic(projectRoot, info) {
 
 // --- server resolution ---------------------------------------------------
 
-function resolveServerModule() {
+// Node's own resolver understands every package-manager layout (npm flat,
+// pnpm virtual store, yarn) — try it before filesystem probing.
+function resolveViaNodeResolver() {
+  try {
+    const require = createRequire(import.meta.url);
+    const resolved = require.resolve('create-harness-vibe-coding/src/wf-ui-server/server.mjs');
+    return fs.existsSync(resolved) ? resolved : null;
+  } catch {
+    return null;
+  }
+}
+
+function resolveServerModule(projectRoot) {
   if (process.env.WF_UI_SERVER_PATH) {
     const p = path.resolve(process.env.WF_UI_SERVER_PATH);
     if (!fs.existsSync(p)) {
@@ -66,11 +79,16 @@ function resolveServerModule() {
     }
     return p;
   }
+  const resolved = resolveViaNodeResolver();
+  if (resolved) return resolved;
   const candidates = [
+    // Dev fallback for a local checkout (this repo's own workspace): start the
+    // server from the project under test so local edits are live.
+    path.join(projectRoot, 'src', 'wf-ui-server', 'server.mjs'),
+    // pnpm virtual store: the dependency sits beside the package's scope dir.
+    path.resolve(here, '..', '..', '..', 'create-harness-vibe-coding', 'src', 'wf-ui-server', 'server.mjs'),
     path.join(here, '..', 'node_modules', 'create-harness-vibe-coding', 'src', 'wf-ui-server', 'server.mjs'),
     path.join(here, '..', '..', 'node_modules', 'create-harness-vibe-coding', 'src', 'wf-ui-server', 'server.mjs'),
-    path.resolve(here, '..', '..', '..', 'src', 'wf-ui-server', 'server.mjs'),
-    path.resolve(here, '..', '..', 'src', 'wf-ui-server', 'server.mjs'),
   ];
   for (const candidate of candidates) {
     if (fs.existsSync(candidate)) return candidate;
@@ -88,7 +106,7 @@ async function main() {
   const projectRoot = findProjectArg(argv);
   const host = parseHost(argv);
   const port = parsePort(argv);
-  const serverPath = resolveServerModule();
+  const serverPath = resolveServerModule(projectRoot);
 
   const mod = await import(pathToFileURL(serverPath).href);
   const startServer = mod.startServer;

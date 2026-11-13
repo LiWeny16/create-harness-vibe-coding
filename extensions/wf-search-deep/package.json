@@ -1,0 +1,45 @@
+{
+  "name": "@zingspark/wf-extension-search-deep",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Deep source-diverse research bundle for wf-search: platform skills, media/video/ASR/VLM passes, and evidence scoring.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LiWeny16/create-harness-vibe-coding.git",
+    "directory": "extensions/wf-search-deep"
+  },
+  "keywords": [
+    "harness",
+    "wf-search",
+    "deep-research",
+    "evidence",
+    "asr",
+    "vlm"
+  ],
+  "files": [
+    "README.md",
+    "adapters.json",
+    "agent.json",
+    "docs/",
+    "extension.json",
+    "search-providers.json",
+    "skills/",
+    "source-catalog.json",
+    "toolchain.json",
+    "workflow.json"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "harnessExtension": {
+    "id": "wf-search-deep",
+    "capabilities": [
+      "search.deep",
+      "search.media.download",
+      "search.video.asr",
+      "search.video.vlm"
+    ],
+    "defaultInstall": false
+  }
+}
