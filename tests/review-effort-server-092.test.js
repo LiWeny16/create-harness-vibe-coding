@@ -8,7 +8,7 @@ import http from 'node:http';
 import path from 'node:path';
 import { registerHooks } from 'node:module';
 import { pathToFileURL } from 'node:url';
-import { makeHarnessTempRoot } from './support/temp-root.js';
+import { makeHarnessTempRoot, rmHarnessTempRootRobust } from './support/temp-root.js';
 import { SessionRegistry } from '../src/wf-ui-server/session-registry.mjs';
 
 const repoRoot = path.resolve('.');
@@ -206,7 +206,7 @@ afterEach(async () => {
     const resolved = path.resolve(tempRoot);
     const allowed = path.resolve('Harness', '.temp') + path.sep;
     assert.ok(resolved.startsWith(allowed), `refusing to remove non-temp root: ${tempRoot}`);
-    fs.rmSync(resolved, { recursive: true, force: true, maxRetries: 20, retryDelay: 100 });
+    await rmHarnessTempRootRobust(resolved);
   }
   roots.clear();
   root = null;

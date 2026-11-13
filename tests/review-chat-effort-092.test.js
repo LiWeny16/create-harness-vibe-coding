@@ -12,7 +12,7 @@ import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
 import { registerHooks } from 'node:module';
-import { makeHarnessTempRoot } from './support/temp-root.js';
+import { makeHarnessTempRoot, rmHarnessTempRootRobust } from './support/temp-root.js';
 import { SessionRegistry } from '../src/wf-ui-server/session-registry.mjs';
 import { flushTerminalBuffer } from '../src/wf-ui-server/terminal-store.mjs';
 import { createCodexAppServerDriver } from '../src/wf-ui-server/drivers/codex-appserver.mjs';
@@ -208,7 +208,7 @@ async function removeTempRoot(resolved) {
   let lastError;
   for (let attempt = 0; attempt < 12; attempt += 1) {
     try {
-      fs.rmSync(resolved, { recursive: true, force: true, maxRetries: 0 });
+      await rmHarnessTempRootRobust(resolved);
       return;
     } catch (error) {
       lastError = error;
@@ -268,14 +268,14 @@ afterEach(async () => {
   activeSessionIds.clear();
 });
 
-after(() => {
+after(async () => {
   process.env.PATH = originalPath;
   if (originalOpencodeDb === undefined) delete process.env.OPENCODE_DB;
   else process.env.OPENCODE_DB = originalOpencodeDb;
   const resolved = path.resolve(detectionRoot);
   const allowed = path.resolve('Harness', '.temp') + path.sep;
   assert.ok(resolved.startsWith(allowed), `refusing to remove non-temp root: ${detectionRoot}`);
-  fs.rmSync(resolved, { recursive: true, force: true, maxRetries: 20, retryDelay: 100 });
+  await rmHarnessTempRootRobust(resolved);
 });
 
 test('AC-05 RED: real POST transport:chat preserves model/effort/variant on initial and one retry', async () => {
